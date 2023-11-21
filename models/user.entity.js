@@ -1,0 +1,159 @@
+// models/User.js
+const { EntitySchema } = require('typeorm');
+const { userRoleConstant, matchComissionTypeConstant, baseColumnsSchemaPart } = require("./../config/contants");
+
+const userSchema = new EntitySchema({
+  name: 'user',
+  columns: {
+    ...baseColumnsSchemaPart,
+    userName: {
+      type: 'varchar',
+      nullable: false,
+      unique: true
+    },
+    fullName: {
+      type: 'varchar',
+      nullable: true
+    },
+    password: {
+      type: 'varchar',
+      nullable: false
+    },
+    transPassword: {
+      type: 'varchar',
+      nullable: true
+    },
+    phoneNumber: {
+      type: 'varchar',
+      nullable: true
+    },
+    city: {
+      type: 'varchar',
+      nullable: true
+    },
+    roleName: {
+      type: 'enum',
+      enum: [userRoleConstant.fairGameWallet, userRoleConstant.fairGameAdmin, userRoleConstant.superAdmin, userRoleConstant.admin, userRoleConstant.superMaster, userRoleConstant.master, userRoleConstant.user, userRoleConstant.expert],
+      nullable: false
+    },
+    userBlock: {
+      type: 'boolean',
+      nullable: false,
+      default: false
+    },
+    betBlock: {
+      type: 'boolean',
+      nullable: false,
+      default: false,
+    },
+    fwPartnership: {
+      type: 'int',
+      nullable: false,
+      default: 0
+    },
+    faPartnership: {
+      type: 'int',
+      nullable: false,
+      default: 0
+    },
+    saPartnership: {
+      type: 'int',
+      nullable: false,
+      default: 0
+    },
+    aPartnership: {
+      type: 'int',
+      nullable: false,
+      default: 0
+    },
+    smPartnership: {
+      type: 'int',
+      nullable: false,
+      default: 0
+    },
+    mPartnership: {
+      type: 'int',
+      nullable: false,
+      default: 0
+    },
+    exposureLimit: {
+      type: 'decimal',
+      nullable: false,
+      default: false,
+      precision: 13,
+      scale: 2,
+      default: 0
+    },
+    maxBetLimit: {
+      type: 'decimal',
+      nullable: false,
+      default: false,
+      precision: 13,
+      scale: 2,
+      default: 0
+    },
+    minBetLimit: {
+      type: 'decimal',
+      nullable: false,
+      default: false,
+      precision: 13,
+      scale: 2,
+      default: 0
+    },
+    creditRefrence: {
+      type: 'decimal',
+      nullable: false,
+      default: false,
+      precision: 13,
+      scale: 2,
+      default: 0
+    },
+    downLevelCreditRefrence: {
+      type: 'decimal',
+      nullable: false,
+      default: false,
+      precision: 13,
+      scale: 2,
+      default: 0
+    },
+    sessionCommission: {
+      type: 'float',
+      nullable: false,
+      default: false,
+      default: 0.0
+    },
+    matchComissionType: {
+      type: 'enum',
+      enum: [matchComissionTypeConstant.totalLoss, matchComissionTypeConstant.entryWise],
+      nullable: true
+    },
+    matchCommission: {
+      type: 'float',
+      nullable: false,
+      default: false,
+      default: 0.0
+    },
+    totalComission: {
+      type: 'decimal',
+      nullable: false,
+      default: false,
+      precision: 13,
+      scale: 2,
+      default: 0
+    },
+    delayTime: {
+      type: 'int',
+      nullable: false,
+      default: 5
+    },
+  },
+  indices: [
+    {
+      name: 'user_userName',   // index name should be start with the table name
+      unique: true, // Optional: Set to true if you want a unique index
+      columns: ['id', 'userName'],
+    }
+  ],
+});
+
+module.exports = userSchema;
