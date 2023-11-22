@@ -9,7 +9,7 @@ class PluralNamingStrategy extends DefaultNamingStrategy {
   }
 
   tableNameWithoutPrefix(className) {
-    return customPluralizeWord(className); // Assume you have a pluralization function (e.g., using 'pluralize' library)
+    return customPluralizeWord(className); // Assume you have a pluralization function
   }
 }
 
@@ -46,14 +46,12 @@ AppDataSource.initialize()
   })
   .catch((error) => console.log(`Error in connection:${error}`));
 
-const getDataSource = (delay = 500) => {
+const getDataSource = () => {
   if (AppDataSource.isInitialized) return Promise.resolve(AppDataSource);
 
   return new Promise((resolve, reject) => {
-    setTimeout(() => {
       if (AppDataSource.isInitialized) resolve(AppDataSource);
       else reject("Failed to create connection with database");
-    }, delay);
   });
 };
 

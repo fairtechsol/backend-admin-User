@@ -20,6 +20,10 @@ module.exports.baseColumnsSchemaPart = {
         primary: true,
         generated: 'uuid',
     },
+    createBy: {
+        type: 'uuid',
+        nullable: true
+    },
     createdAt: {
         type: 'timestamp with time zone',
         createDate: true,
@@ -34,4 +38,7 @@ module.exports.baseColumnsSchemaPart = {
     }
 }
 
-// module.exports = { UserRoles };
+module.exports.transType = { 
+    add: "add",
+    withDraw: "withDraw"
+}

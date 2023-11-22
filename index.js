@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const app = express();
+const route = require('./routes/index.js');
 
 /**
  * Enable Cross-Origin Resource Sharing (CORS)
@@ -19,8 +20,7 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
-const authRoutes = require('./routes/authRoutes');
-app.use('/auth', authRoutes);
+app.use('/', route);
 
 // Start server
 const PORT = process.env.PORT || 5000;

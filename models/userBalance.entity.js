@@ -1,6 +1,4 @@
-// models/User.js
 const { EntitySchema } = require('typeorm');
-const { userSchema } = require('./user.entity');
 
 const userBalanceSchema = new EntitySchema({
     name: 'userBalance',
@@ -13,7 +11,6 @@ const userBalanceSchema = new EntitySchema({
         currentBalance: {
             type: 'decimal',
             nullable: false,
-            default: false,
             precision: 13,
             scale: 2,
             default: 0
@@ -21,7 +18,6 @@ const userBalanceSchema = new EntitySchema({
         exposure: {
             type: 'decimal',
             nullable: false,
-            default: false,
             precision: 13,
             scale: 2,
             default: 0
@@ -34,7 +30,6 @@ const userBalanceSchema = new EntitySchema({
         profitLoss: {
             type: 'decimal',
             nullable: false,
-            default: false,
             precision: 13,
             scale: 2,
             default: 0
@@ -42,7 +37,6 @@ const userBalanceSchema = new EntitySchema({
         myProfitLoss: {
             type: 'decimal',
             nullable: false,
-            default: false,
             precision: 13,
             scale: 2,
             default: 0
@@ -50,7 +44,6 @@ const userBalanceSchema = new EntitySchema({
         downLevelBalance: {
             type: 'decimal',
             nullable: false,
-            default: false,
             precision: 13,
             scale: 2,
             default: 0
@@ -70,7 +63,7 @@ const userBalanceSchema = new EntitySchema({
         {
             name: 'userBalance_userId',   // index name should be start with the table name
             unique: true, // Optional: Set to true if you want a unique index
-            columns: ['id', 'userId'],
+            columns: ['userId'],
         }
     ],
 });

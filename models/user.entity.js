@@ -1,4 +1,3 @@
-// models/User.js
 const { EntitySchema } = require('typeorm');
 const { userRoleConstant, matchComissionTypeConstant, baseColumnsSchemaPart } = require("./../config/contants");
 
@@ -79,7 +78,6 @@ const userSchema = new EntitySchema({
     exposureLimit: {
       type: 'decimal',
       nullable: false,
-      default: false,
       precision: 13,
       scale: 2,
       default: 0
@@ -87,7 +85,6 @@ const userSchema = new EntitySchema({
     maxBetLimit: {
       type: 'decimal',
       nullable: false,
-      default: false,
       precision: 13,
       scale: 2,
       default: 0
@@ -95,7 +92,6 @@ const userSchema = new EntitySchema({
     minBetLimit: {
       type: 'decimal',
       nullable: false,
-      default: false,
       precision: 13,
       scale: 2,
       default: 0
@@ -103,7 +99,6 @@ const userSchema = new EntitySchema({
     creditRefrence: {
       type: 'decimal',
       nullable: false,
-      default: false,
       precision: 13,
       scale: 2,
       default: 0
@@ -111,7 +106,6 @@ const userSchema = new EntitySchema({
     downLevelCreditRefrence: {
       type: 'decimal',
       nullable: false,
-      default: false,
       precision: 13,
       scale: 2,
       default: 0
@@ -119,8 +113,7 @@ const userSchema = new EntitySchema({
     sessionCommission: {
       type: 'float',
       nullable: false,
-      default: false,
-      default: 0.0
+      default: 0
     },
     matchComissionType: {
       type: 'enum',
@@ -130,13 +123,11 @@ const userSchema = new EntitySchema({
     matchCommission: {
       type: 'float',
       nullable: false,
-      default: false,
-      default: 0.0
+      default: 0
     },
     totalComission: {
       type: 'decimal',
       nullable: false,
-      default: false,
       precision: 13,
       scale: 2,
       default: 0
@@ -146,6 +137,11 @@ const userSchema = new EntitySchema({
       nullable: false,
       default: 5
     },
+  },
+  orderBy: {
+    "betBlock": "ASC",
+    "userBlock": "ASC",
+    "userName": "ASC",
   },
   indices: [
     {

@@ -2,6 +2,7 @@ const authService = require('../services/authService');
 
 exports.login = async (req, res) => {
   try {
+    console.log("at the controller");
     const users = await authService.getAllUsers();
     res.json(users);
   } catch (err) {
