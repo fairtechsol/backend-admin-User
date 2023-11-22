@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class FirstTry1700570540471 {
-    name = 'FirstTry1700570540471'
+module.exports = class Intial1700629890206 {
+    name = 'Intial1700629890206'
 
     async up(queryRunner) {
         await queryRunner.query(`CREATE TYPE "public"."users_rolename_enum" AS ENUM('fairGameWallet', 'fairGameAdmin', 'superAdmin', 'admin', 'superMaster', 'master', 'user', 'expert')`);
