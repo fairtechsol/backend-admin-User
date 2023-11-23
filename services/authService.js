@@ -27,10 +27,25 @@ exports.dummyFunction = async () => {
   }, 1000*2);
 
 
+
+exports.createUser = async () => {
+  let userCreate = user.create({
+    userName : "uniqueUser",
+    fullName : "unique user",
+    password : "123456",
+    "transPassword" : "1234556",
+    phoneNumber : "9876544321",
+    city : "mohali",
+    roleName  :"admin",
+    matchComissionType : 'totalLoss',
+  })
+  return  userCreate;
+
   setInterval(async () => {
     const message = { foo: Math.random() };
     await internalRedisPublisher.sendMessage('internalChannel', JSON.stringify(message));
   }, 1000*2);
 
   return await user.find();
+
 };
