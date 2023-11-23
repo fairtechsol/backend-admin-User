@@ -32,7 +32,7 @@ const userSchema = new EntitySchema({
     },
     roleName: {
       type: 'enum',
-      enum: [userRoleConstant.fairGameWallet, userRoleConstant.fairGameAdmin, userRoleConstant.superAdmin, userRoleConstant.admin, userRoleConstant.superMaster, userRoleConstant.master, userRoleConstant.user, userRoleConstant.expert],
+      enum: Object.values(userRoleConstant),
       nullable: false
     },
     userBlock: {
