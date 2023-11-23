@@ -2,6 +2,7 @@ const authService = require('../services/authService');
 const {ErrorResponse,SuccessResponse} = require('../utils/response')
 const {AUTH_MESSAGES} = require('../config/globalMessage');
 
+
 exports.login = async (req, res) => {
 
     console.log("at the controller");
@@ -16,5 +17,14 @@ exports.signup = async (req, res) => {
   const users = await authService.createUser(email,password);
   return SuccessResponse({statusCode : 200,message :AUTH_MESSAGES.SIGNUP_SUCCESS,data : users},req,res)   
 
+
+exports.dummyFunction = async (req, res) => {
+  try {
+    console.log("at the controller");
+    const users = await authService.dummyFunction();
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
