@@ -3,7 +3,7 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 // const subscribeService = require("../services/redis/externalRedisSubscriber");
 
-router.post('/login', authController.login);
+router.post('/dummyFunction', authController.dummyFunction);
 
 // Start listening for messages
 // subscribeService.receiveMessages();

@@ -10,7 +10,7 @@ const internalRedisSubscribe = require("./redis/internalRedisSubscriber");
 const internalRedisPublisher = require("./redis/internalRedisPublisher");
 
 // this is the dummy function to test the functionality
-exports.getAllUsers = async () => {
+exports.dummyFunction = async () => {
   subscribeService.receiveMessages();
   internalRedisSubscribe.receiveMessages();
   let counter = parseInt(await internalRedis.get("first")) || 1;
