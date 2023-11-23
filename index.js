@@ -3,7 +3,8 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const app = express();
 const route = require('./routes/index.js');
-
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger_output.json');
 /**
  * Enable Cross-Origin Resource Sharing (CORS)
  */
@@ -21,7 +22,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes
 app.use('/', route);
-
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
