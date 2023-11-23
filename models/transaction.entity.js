@@ -33,7 +33,7 @@ const transactionSchema = new EntitySchema({
         },
         transType: {
             type: 'enum',
-            enum: [transType.add, transType.withDraw],
+            enum: Object.values(transType),
             nullable: false,
         },
         description: {

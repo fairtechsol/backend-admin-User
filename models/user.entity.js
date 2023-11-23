@@ -117,7 +117,7 @@ const userSchema = new EntitySchema({
     },
     matchComissionType: {
       type: 'enum',
-      enum: [matchComissionTypeConstant.totalLoss, matchComissionTypeConstant.entryWise],
+      enum: Object.values(matchComissionTypeConstant),
       nullable: true
     },
     matchCommission: {
