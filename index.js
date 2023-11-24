@@ -5,7 +5,6 @@ const app = express();
 const route = require("./routes/index.js");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger_output.json");
-const { ErrorResponse } = require("./utils/response.js");
 const error = require("./utils/error.js");
 const i18n = require("./config/i18n");
 const setI18Language = require("./middleware/setI18Language.js");

@@ -9,6 +9,9 @@ module.exports.userRoleConstant = {
     user: 'user',
 }
 
+module.exports.redisTimeOut= 24 * 60 * 60;
+
+
 module.exports.matchComissionTypeConstant = {
     totalLoss: 'totalLoss',
     entryWise: 'entryWise',

@@ -1,7 +1,14 @@
 {
-  "internalServerErr": "Internal server error",
-  "login":"Login successfully",
-  "signup":"Signup successfully",
-  "invalidData":"Invalid data",
-  "authFailed":"Please login into your account"
+  "internalServerError": "Internal server error",
+  "auth": {
+    "loginSuccess": "Login successfully",
+    "invalidPass": "Invalid Password",
+    "authFailed": "Please login into your account",
+    "roleNotCorrectLogin":"Please login with correct user"
+  },
+  "user": {
+    "blocked": "There is something wrong with your account. Please contact your administrator."
+  },
+  "invalidData": "Invalid data",
+  "notFound": "{name} not found"
 }

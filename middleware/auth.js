@@ -1,5 +1,6 @@
 const { ErrorResponse } = require("../utils/response");
-const jwt=require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
+
 
 exports.isAuthenticate = async (req, res, next) => {
   const { token } = req.headers;
@@ -8,7 +9,7 @@ exports.isAuthenticate = async (req, res, next) => {
       {
         statusCode: 401,
         message: {
-          msg: "authFailed",
+          msg: "auth.authFailed",
         },
       },
       req,
@@ -16,9 +17,23 @@ exports.isAuthenticate = async (req, res, next) => {
     );
   }
 
-  if (auth) {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    
+  if (token) {
+    const decodedUser = jwt.verify(token, process.env.JWT_SECRET || "secret");
+console.log(decodedUser);
+    if (!decodedUser) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            key: { name: "User" },
+          },
+        },
+        req,
+        res
+      );
+    }
+    req.user = decodedUser;
     next();
   }
 };
