@@ -1,0 +1,7 @@
+{
+  "internalServerErr": "Internal server error",
+  "login":"Login successfully",
+  "signup":"Signup successfully",
+  "invalidData":"Invalid data",
+  "authFailed":"Please login into your account"
+}
