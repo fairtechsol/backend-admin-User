@@ -41,14 +41,25 @@ const setUserDetailsRedis = async (user) => {
   if (redisUserPartnerShip) {
     internalRedis.expire(user.id, redisTimeOut);
   }
-  let obj = await findUserPartnerShipObj(user);
-  let userPartnerShipData = { partnerShips: obj, userRole: user.roleName };
+
+  let partnerShipObject = await findUserPartnerShipObj(user);
+  const userPartnerShipData = {
+    partnerShips: partnerShipObject,
+    userRole: user.roleName,
+  };
   await internalRedis.hmset(user.id, userPartnerShipData);
   await internalRedis.expire(user.id, redisTimeOut);
 };
 
 const findUserPartnerShipObj = async (user) => {
   const obj = {};
+
+  if (
+    user.userRole == userRoleConstant.user ||
+    user.userRole == userRoleConstant.expert
+  ) {
+    return JSON.stringify(obj);
+  }
 
   const roleFieldMapping = {
     [userRoleConstant.master]: "m",
@@ -74,7 +85,7 @@ const findUserPartnerShipObj = async (user) => {
     if (currentUser.createBy) {
       const createdByUser = await authService.getUserById(
         currentUser.createBy,
-        ["id","roleName","createBy"]
+        ["id", "roleName", "createBy"]
       );
       await traverseHierarchy(createdByUser);
     }
