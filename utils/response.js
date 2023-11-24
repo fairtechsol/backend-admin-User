@@ -6,7 +6,7 @@ module.exports.ErrorResponse = (errorData, req, res) => {
   const errorObj = {
     status: errorData.status,
     statusCode: errorData.statusCode,
-    message: __mf(errorData.message.msg, errorData.message.keys),
+    message: __mf(errorData.message.msg || errorData.message, errorData?.message?.keys || undefined),
     stack: errorData.stack,
   };
   console.log(errorObj);

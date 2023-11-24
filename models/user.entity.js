@@ -137,6 +137,11 @@ const userSchema = new EntitySchema({
       nullable: false,
       default: 5
     },
+    loginAt : {
+      type: 'timestamp with time zone',
+      nullable: true,
+      default : null
+    }
   },
   orderBy: {
     "betBlock": "ASC",
