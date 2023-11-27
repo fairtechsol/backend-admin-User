@@ -89,7 +89,7 @@ const findUserPartnerShipObj = async (user) => {
 exports.login = async (req, res) => {
   try {
     const { password, loginType } = req.body;
-    const userName = req.body.userName.trim().toUpperCase();
+    const userName = req.body.userName.trim();
     const user = await validateUser(userName, password);
 
     if (user?.error) {
