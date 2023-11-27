@@ -198,7 +198,7 @@ exports.login = async (req, res) => {
     );
 
     // checking transition password
-    const isTransPasswordCreated = user.transPassword ? true : false;
+    const isTransPasswordCreated = Boolean(user.transPassword) ;
     // const forceChangePassword = user.loginAt ? false : true;
 
     // setting token in redis for checking if user already loggedin
