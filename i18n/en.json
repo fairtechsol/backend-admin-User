@@ -1,0 +1,11 @@
+{
+  "internalServerErr": "Internal server error",
+  "login":"Login successfully",
+  "signup":"Signup successfully",
+  "invalidData":"Invalid data",
+  "authFailed":"Please login into your account",
+  "invalidId" : "Given id is invalid",
+  "user" : {
+    "passwordMatch" : "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?)"
+  }
+}
