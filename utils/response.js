@@ -1,6 +1,7 @@
 const { __mf } = require("i18n");
 
 module.exports.ErrorResponse = (errorData, req, res) => {
+
   errorData.statusCode = errorData.statusCode || 500;
   errorData.status = "error";
   const errorObj = {
@@ -9,7 +10,6 @@ module.exports.ErrorResponse = (errorData, req, res) => {
     message: __mf(errorData.message.msg||errorData.message, errorData.message.key),
     stack: errorData.stack,
   };
-  console.log(errorObj);
   res.status(errorData.statusCode).json(errorObj);
 };
 

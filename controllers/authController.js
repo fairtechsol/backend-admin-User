@@ -99,7 +99,7 @@ const findUserPartnerShipObj = async (user) => {
 exports.login = async (req, res) => {
   try {
     const { password, loginType } = req.body;
-    const userName = req.body.userName.trim.toUpperCase();
+    const userName = req.body.userName.trim().toUpperCase();
     const user = await validateUser(userName, password);
 
     if (user?.error) {
@@ -188,6 +188,8 @@ exports.login = async (req, res) => {
 
     // force logout user if already login on another device
     await CheckAlreadyLogin(user.id);
+
+    
     setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
