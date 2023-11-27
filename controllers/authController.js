@@ -1,14 +1,14 @@
-const { userRoleConstant, redisTimeOut } = require("../config/contants");
+const { userRoleConstant, redisTimeOut, partnershipPrefixByRole, differLoginTypeByRoles } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
-const authService = require("../services/authService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { getUserById, getUserByUserName } = require("../services/userService");
+const { userLoginAtUpdate } = require("../services/authService");
 
 const validateUser = async (userName, password) => {
   // Find user by username and select specific fields
-  const user = await authService.getUserByUsername(userName, []);
-
+  const user = await getUserByUserName(userName);
   if (user) {
     if (bcrypt.compareSync(password, user.password)) {
       const { password, ...result } = user;
@@ -24,13 +24,11 @@ const validateUser = async (userName, password) => {
 };
 
 const CheckAlreadyLogin = async (userId) => {
-  let userRedisData = await internalRedis.hgetall(userId);
-  if (userRedisData) {
-    let token = userRedisData.token;
+  let token = await internalRedis.hget(userId,"token");
+  
     if (token) {
       // function to force logout
     }
-  }
 };
 
 const setUserDetailsRedis = async (user) => {
@@ -40,6 +38,7 @@ const setUserDetailsRedis = async (user) => {
   );
   if (redisUserPartnerShip) {
     internalRedis.expire(user.id, redisTimeOut);
+    return;
   }
 
   let partnerShipObject = await findUserPartnerShipObj(user);
@@ -61,15 +60,6 @@ const findUserPartnerShipObj = async (user) => {
     return JSON.stringify(obj);
   }
 
-  const roleFieldMapping = {
-    [userRoleConstant.master]: "m",
-    [userRoleConstant.superMaster]: "sm",
-    [userRoleConstant.admin]: "a",
-    [userRoleConstant.superAdmin]: "sa",
-    [userRoleConstant.fairGameAdmin]: "fa",
-    [userRoleConstant.fairGameWallet]: "fw",
-  };
-
   const updateObj = (prefix, id) => {
     obj[`${prefix}Partnership`] = user[`${prefix}Partnership`];
     obj[`${prefix}PartnershipId`] = id;
@@ -80,10 +70,10 @@ const findUserPartnerShipObj = async (user) => {
       return;
     }
 
-    updateObj(roleFieldMapping[currentUser.roleName], currentUser.id);
+    updateObj(partnershipPrefixByRole[currentUser.roleName], currentUser.id);
 
     if (currentUser.createBy) {
-      const createdByUser = await authService.getUserById(
+      const createdByUser = await getUserById(
         currentUser.createBy,
         ["id", "roleName", "createBy"]
       );
@@ -107,8 +97,7 @@ exports.login = async (req, res) => {
         {
           statusCode: 404,
           message: {
-            msg: user.message,
-            key: user.statusCode,
+            msg: user.message
           },
         },
         req,
@@ -122,7 +111,7 @@ exports.login = async (req, res) => {
           statusCode: 404,
           message: {
             msg: "notFound",
-            key: { name: "User" },
+            keys: { name: "User" },
           },
         },
         req,
@@ -142,12 +131,12 @@ exports.login = async (req, res) => {
     }
     const { roleName } = user;
 
-    const throwBlockedError = () => {
+    const throwUserNotCorrectError = () => {
       return ErrorResponse(
         {
           statusCode: 404,
           message: {
-            msg: "user.blocked",
+            msg: "user.roleNotCorrectLogin",
           },
         },
         req,
@@ -159,29 +148,21 @@ exports.login = async (req, res) => {
       case userRoleConstant.user:
       case userRoleConstant.expert:
         if (roleName !== loginType) {
-          return throwBlockedError();
+          return throwUserNotCorrectError();
         }
         break;
 
       case userRoleConstant.admin:
-        const adminRoles = [
-          userRoleConstant.admin,
-          userRoleConstant.superAdmin,
-          userRoleConstant.master,
-          userRoleConstant.superMaster,
-        ];
-        if (!adminRoles.includes(roleName)) {
-          return throwBlockedError();
+        
+        if (!differLoginTypeByRoles.admin.includes(roleName)) {
+          return throwUserNotCorrectError();
         }
         break;
 
       case "wallet":
-        const walletRoles = [
-          userRoleConstant.fairGameAdmin,
-          userRoleConstant.fairGameWallet,
-        ];
-        if (!walletRoles.includes(roleName)) {
-          return throwBlockedError();
+        
+        if (!differLoginTypeByRoles.wallet.includes(roleName)) {
+          return throwUserNotCorrectError();
         }
         break;
     }
@@ -199,8 +180,9 @@ exports.login = async (req, res) => {
 
     // checking transition password
     const isTransPasswordCreated = Boolean(user.transPassword) ;
-    // const forceChangePassword = user.loginAt ? false : true;
-
+    const forceChangePassword = !Boolean(user.loginAt);
+    userLoginAtUpdate(user.id);
+    
     // setting token in redis for checking if user already loggedin
     await internalRedis.hmset(user.id, { token: token });
 
@@ -214,6 +196,7 @@ exports.login = async (req, res) => {
           token,
           isTransPasswordCreated: isTransPasswordCreated,
           role: roleName,
+          forceChangePassword
         },
       },
       req,
@@ -223,7 +206,7 @@ exports.login = async (req, res) => {
     return ErrorResponse(
       {
         statusCode: 500,
-        message: error,
+        message: error.message,
       },
       req,
       res
@@ -233,7 +216,7 @@ exports.login = async (req, res) => {
 
 exports.signup = async (req, res) => {
   const { email, password } = req.body;
-  const users = await authService.createUser(email, password);
+  const users = await createUser(email, password);
   return SuccessResponse(
     { statusCode: 200, message: { msg: "signup" }, data: users },
     req,
@@ -244,7 +227,7 @@ exports.signup = async (req, res) => {
 exports.dummyFunction = async (req, res) => {
   try {
     console.log("at the controller");
-    const users = await authService.dummyFunction();
+    const users = await dummyFunction();
     res.json(users);
   } catch (err) {
     res.status(500).json({ message: err.message });

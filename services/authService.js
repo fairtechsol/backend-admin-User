@@ -38,18 +38,9 @@ exports.dummyFunction = async () => {
   return await user.find();
 };
 
-exports.getUserByUsername = async (userName,select) => {
-  const user = await userRepo.findOne({
-    where: { userName },
-    select: select,
-  });
-  return user;
-};
 
-exports.getUserById = async (id,select) => {
-  const user = await userRepo.findOne({
-    where: { id },
-    select: select,
-  });
-  return user;
-};
+exports.userLoginAtUpdate=async (userId)=>{
+  userRepo.update(userId,{
+    loginAt:new Date()
+  })
+}

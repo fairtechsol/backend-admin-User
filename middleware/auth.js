@@ -19,14 +19,13 @@ exports.isAuthenticate = async (req, res, next) => {
 
   if (token) {
     const decodedUser = jwt.verify(token, process.env.JWT_SECRET || "secret");
-console.log(decodedUser);
     if (!decodedUser) {
       return ErrorResponse(
         {
           statusCode: 400,
           message: {
             msg: "notFound",
-            key: { name: "User" },
+            keys: { name: "User" },
           },
         },
         req,

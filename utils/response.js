@@ -6,9 +6,7 @@ module.exports.ErrorResponse = (errorData, req, res) => {
   const errorObj = {
     status: errorData.status,
     statusCode: errorData.statusCode,
-    message: errorData?.message?.key
-      ? __mf(errorData.message.msg || errorData.message, errorData.message.key)
-      : __(errorData.message.msg || errorData.message),
+    message: __mf(errorData.message.msg || errorData.message, errorData?.message?.keys || undefined),
     stack: errorData.stack,
   };
   res.status(errorData.statusCode).json(errorObj);
@@ -21,9 +19,7 @@ module.exports.SuccessResponse = (resData, req, res) => {
   return res.status(resData.statusCode).json({
     status: resData.status,
     statusCode: resData.statusCode,
-    message: resData.message.key
-      ? __mf(resData.message.msg, resData.message.key)
-      : __(resData.message.msg),
+    message: __mf(resData.message.msg, resData.message.keys),
     data: resData.data,
     meta: resData.meta,
   });
