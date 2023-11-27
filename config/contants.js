@@ -72,3 +72,8 @@ module.exports.buttonType = {
     MATCH : 'Match',
     SESSION : 'Session'
 }
+
+
+module.exports.walletDescription = {
+    userCreate : "CREDIT REFRENCE as user create",
+}
