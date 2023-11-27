@@ -44,6 +44,10 @@ const transactionSchema = new EntitySchema({
             type: 'uuid',
             nullable: true
         },
+        betId : {      // will add the relation in the future while add the match table
+            type: 'uuid',
+            nullable: true
+        },
     },
     relations: {
         user: {
@@ -70,7 +74,7 @@ const transactionSchema = new EntitySchema({
     indices: [
         {
             name: 'transaction_searchId',   // index name should be start with the table name
-            unique: true, // Optional: Set to true if you want a unique index
+            unique: false, // Optional: Set to true if you want a unique index
             columns: ['searchId'],
         }
     ],
