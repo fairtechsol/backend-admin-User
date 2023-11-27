@@ -136,7 +136,7 @@ exports.login = async (req, res) => {
         {
           statusCode: 404,
           message: {
-            msg: "user.roleNotCorrectLogin",
+            msg: "auth.roleNotCorrectLogin",
           },
         },
         req,
@@ -175,7 +175,7 @@ exports.login = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, role: user.roleName, userName: user.userName },
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET||"secret"
     );
 
     // checking transition password
