@@ -9,7 +9,6 @@ module.exports.ErrorResponse = (errorData, req, res) => {
     message: __mf(errorData.message.msg || errorData.message, errorData?.message?.keys || undefined),
     stack: errorData.stack,
   };
-  console.log(errorObj);
   res.status(errorData.statusCode).json(errorObj);
 };
 

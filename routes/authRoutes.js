@@ -4,11 +4,10 @@ const authController = require('../controllers/authController');
 
 const validator = require('../middleware/joi.validator')
 
-const {signUp,Login} = require('../validators/authValidator')
+const {Login} = require('../validators/authValidator')
 
 
-router.post('/login',validator(Login),authController.login);
-router.post('/signup',validator(signUp), authController.signup)
+router.post('/login',validator(Login), authController.login);
 
 // const subscribeService = require("../services/redis/externalRedisSubscriber");
 

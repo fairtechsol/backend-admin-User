@@ -1,11 +1,17 @@
 {
-  "internalServerErr": "Internal server error",
-  "login":"Login successfully",
-  "signup":"Signup successfully",
-  "invalidData":"Invalid data",
-  "authFailed":"Please login into your account",
-  "invalidId" : "Given id is invalid",
-  "user" : {
-    "passwordMatch" : "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?)"
+  "internalServerError": "Internal server error",
+
+  "invalidData": "Invalid data",
+  "notFound": "{name} not found",
+  "invalidId": "Given id is invalid",
+  "auth": {
+    "loginSuccess": "Login successfully",
+    "invalidPass": "Invalid Password",
+    "authFailed": "Please login into your account",
+    "roleNotCorrectLogin": "Please login with correct user"
+  },
+  "user": {
+    "blocked": "There is something wrong with your account. Please contact your administrator.",
+    "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?)"
   }
 }

@@ -1,13 +1,15 @@
 const { AppDataSource } = require("../config/postGresConnection");
-const bcrypt = require("bcryptjs");
-const userSchema = require("../models/user.entity");
-const user = AppDataSource.getRepository(userSchema);
 const internalRedis = require("../config/internalRedisConnection");
 const externalRedis = require("../config/externalRedisConnection");
 const publisherService = require("./redis/externalRedisPublisher");
 const subscribeService = require("./redis/externalRedisSubscriber");
 const internalRedisSubscribe = require("./redis/internalRedisSubscriber");
 const internalRedisPublisher = require("./redis/internalRedisPublisher");
+const userSchema = require("../models/user.entity");
+const userRepo = AppDataSource.getRepository(userSchema);
+
+
+
 
 // this is the dummy function to test the functionality
 exports.dummyFunction = async () => {
@@ -35,11 +37,10 @@ exports.dummyFunction = async () => {
 
   return await user.find();
 };
-exports.createUser = async (data) => {
-  const { password } = data;
 
-  data.password = await bcrypt.hash(password, 10);
-  const user = await user.save(data);
-  return user;
 
-};
+exports.userLoginAtUpdate=async (userId)=>{
+  userRepo.update(userId,{
+    loginAt:new Date()
+  })
+}

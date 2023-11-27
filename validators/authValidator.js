@@ -7,6 +7,8 @@ module.exports.signUp = Joi.object({
 })
 
 module.exports.Login = Joi.object({
-    email : Joi.string().email().required(),
-    password : Joi.string().required()
+    userName : Joi.string().required(),
+    password : Joi.string().required(),
+    loginType : Joi.string().required(),
+
 })

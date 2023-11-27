@@ -8,18 +8,25 @@ const publisherService = require("./redis/externalRedisPublisher");
 const subscribeService = require("./redis/externalRedisSubscriber");
 const internalRedisSubscribe = require("./redis/internalRedisSubscriber");
 const internalRedisPublisher = require("./redis/internalRedisPublisher");
+const { ILike } = require("typeorm");
 
 // this is the dummy function to test the functionality
 
-exports.getUserById = async(id) =>{
-    return await user.findOne({id})
-}
+exports.getUserById = async (id, select) => {
+  return await user.findOne({
+    where: { id },
+    select: select,
+  });
+};
 
-exports.addUser = async(body) =>{
-        let insertUser = await user.save(body);
-        return insertUser;
-}
+exports.addUser = async (body) => {
+  let insertUser = await user.save(body);
+  return insertUser;
+};
 
-exports.getUserByUserName = async(userName) =>{
-    return await user.findOne({userName});
-}
+exports.getUserByUserName = async (userName,select) => {
+  return await user.findOne({
+    where: { userName:ILike(userName) },
+    select: select,
+  });
+};
