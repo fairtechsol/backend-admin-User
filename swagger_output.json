@@ -15,16 +15,6 @@
     "/auth/login": {
       "post": {
         "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/auth/signup": {
-      "post": {
-        "description": "",
         "parameters": [
           {
             "name": "body",
@@ -32,14 +22,34 @@
             "schema": {
               "type": "object",
               "properties": {
-                "email": {
+                "userName": {
                   "example": "any"
                 },
                 "password": {
                   "example": "any"
+                },
+                "loginType": {
+                  "example": "any"
                 }
               }
             }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "header",
+            "type": "string"
           }
         ],
         "responses": {
@@ -88,12 +98,6 @@
                   "example": "any"
                 },
                 "roleName": {
-                  "example": "any"
-                },
-                "userBlock": {
-                  "example": "any"
-                },
-                "betBlock": {
                   "example": "any"
                 },
                 "myPartnership": {
