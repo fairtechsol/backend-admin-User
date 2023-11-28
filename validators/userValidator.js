@@ -18,3 +18,11 @@ module.exports.CreateUser = Joi.object({
     }),
     creditRefrence :  Joi.number(),
     })
+
+    module.exports.ChangePassword=Joi.object({
+      oldPassword:Joi.string(),
+      newPassword:Joi.string().required(),
+      transactionPassword:Joi.string().length(6),
+      confirmPassword:Joi.string().required(),
+      userId:Joi.string()
+    })

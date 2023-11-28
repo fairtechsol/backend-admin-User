@@ -4,12 +4,12 @@ const {createUser,insertWallet, changePassword} = require('../controllers/userCo
 
 const validator = require('../middleware/joi.validator')
 
-const {CreateUser} = require('../validators/userValidator');
+const {CreateUser, ChangePassword} = require('../validators/userValidator');
 const { isAuthenticate } = require('../middleware/auth');
 
 
 router.post('/add',validator(CreateUser),createUser);
 router.post('/insert/wallet',insertWallet);
-router.post('/changePassword',isAuthenticate,changePassword);
+router.post('/changePassword',isAuthenticate,validator(ChangePassword),changePassword);
 
 module.exports = router;

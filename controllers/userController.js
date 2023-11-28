@@ -341,7 +341,6 @@ const handleUserNotFound = () => ({
 const checkOldPassword = async (userId, oldPassword) => {
   // Retrieve user's password from the database
   const user = await getUserById(userId, ["password"]);
-  console.log(user);
   if (!user) {
     // User not found, return error response
     return handleUserNotFound();
@@ -354,7 +353,6 @@ const checkOldPassword = async (userId, oldPassword) => {
 const checkTransactionPassword = async (userId, oldTransactionPass) => {
   // Retrieve user's transaction password from the database
   const user = await getUserById(userId, ["transPassword","id"]);
-  console.log(user);
   if (!user) {
     // User not found, return error response
     return handleUserNotFound();
