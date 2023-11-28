@@ -66,3 +66,14 @@ module.exports.differLoginTypeByRoles = {
     this.userRoleConstant.fairGameWallet,
   ]
 };
+module.exports.defaultButtonValue = {buttons: '{"25000":"25000","50000":"50000","100000":"100000","200000":"200000","300000":"300000","500000":"500000","1000000":"1000000","2500000":"2500000"}'}
+module.exports.sessiontButtonValue = {buttons: '{"5000":"5000","10000":"10000","15000":"15000","25000":"25000","50000":"50000","100000":"100000","200000":"200000","500000":"500000"}'}
+module.exports.buttonType = {
+    MATCH : 'Match',
+    SESSION : 'Session'
+}
+
+
+module.exports.walletDescription = {
+    userCreate : "CREDIT REFRENCE as user create",
+}

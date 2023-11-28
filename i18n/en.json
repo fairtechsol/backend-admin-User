@@ -11,9 +11,11 @@
     "roleNotCorrectLogin": "Please login with correct user",
     "logoutSuccess":"Logout successfully"
   },
-  "user": {
+  "user" : {
     "blocked": "There is something wrong with your account. Please contact your administrator.",
     "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?)",
-    "confirmPasswordNotMatch":"Password and confirm password did not match"
+    "confirmPasswordNotMatch":"Password and confirm password did not match",
+    "partnershipNotValid" : "Given partnership not valid",
+    "InvalidExposureLimit" : "Given Exposure limit is invalid"
   }
 }
