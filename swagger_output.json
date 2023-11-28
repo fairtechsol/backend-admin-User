@@ -74,6 +74,9 @@
                 "password": {
                   "example": "any"
                 },
+                "confirmPassword": {
+                  "example": "any"
+                },
                 "phoneNumber": {
                   "example": "any"
                 },

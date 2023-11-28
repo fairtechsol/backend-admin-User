@@ -3,10 +3,11 @@ const { getUserById, addUser, getUserByUserName } = require('../services/userSer
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
-
+const bcrypt = require("bcryptjs");
+const lodash = require('lodash')
 exports.createUser = async (req, res) => {
     try {
-        let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy,creditRefrence,exposureLimit,maxBetLimit,minBetLimit } = req.body;
+        let { userName, fullName, password,confirmPassword, phoneNumber, city, roleName, myPartnership, createdBy,creditRefrence,exposureLimit,maxBetLimit,minBetLimit } = req.body;
         let reqUser = req.user || {}
         let creator = await getUserById(reqUser.id || createdBy);
         if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
@@ -17,7 +18,10 @@ exports.createUser = async (req, res) => {
 
         if(exposureLimit && exposureLimit > creator.exposureLimit)
             return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
-
+            password = await bcrypt.hash(
+                password,
+                process.env.BCRYPTSALT
+              );
         let userData = {
             userName,
             fullName,
@@ -33,7 +37,7 @@ exports.createUser = async (req, res) => {
             maxBetLimit : maxBetLimit ? maxBetLimit : creator.maxBetLimit,
             minBetLimit : minBetLimit ? minBetLimit : creator.minBetLimit
         }
-
+        console.log(userData)
         let partnerships = await calculatePartnership(userData, creator)
         userData = { ...userData, ...partnerships };
         let insertUser = await addUser(userData);
@@ -76,7 +80,8 @@ exports.createUser = async (req, res) => {
             ]
             let insertedButton = await insertButton(buttonValue)
         }
-        return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: insertUser }, req, res)
+        let response = lodash.omit(insertUser,["password","transPassword"])
+        return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
     } catch (err) {
         return ErrorResponse(err, req, res);
     }

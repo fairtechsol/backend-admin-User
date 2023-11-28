@@ -3,6 +3,7 @@ const { __mf } = require("i18n");
 module.exports.ErrorResponse = (errorData, req, res) => {
   errorData.statusCode = errorData.statusCode || 500;
   errorData.status = "error";
+  console.log(errorData)
   const errorObj = {
     status: errorData.status,
     statusCode: errorData.statusCode,
