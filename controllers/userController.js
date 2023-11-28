@@ -11,10 +11,13 @@ exports.createUser = async (req, res) => {
         let reqUser = req.user || {}
         let creator = await getUserById(reqUser.id || createdBy);
         if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+
+        if(!checkUserCreationHierarchy(creator,roleName))
+            return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidHierarchy" } }, req, res);
         creator.myPartnership = parseInt(myPartnership)
         userName = userName.toUpperCase();
         let userExist = await getUserByUserName(userName);
-        if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "userExist" } }, req, res);
+        if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
 
         if(exposureLimit && exposureLimit > creator.exposureLimit)
             return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
@@ -206,6 +209,19 @@ const calculatePartnership = async (userData, creator) => {
     }
 }
 
+const checkUserCreationHierarchy =(creator,createUserRoleName) =>{
+    const hierarchyArray = Object.values(userRoleConstant)
+    let creatorIndex = hierarchyArray.indexOf(creator.roleName)
+    if(creatorIndex  == -1) return false
+    let index = hierarchyArray.indexOf(createUserRoleName)
+    if(index == -1) return false
+    if(index < creatorIndex)return false;
+    if(createUserRoleName == userRoleConstant.expert && creator.roleName !== userRoleConstant.fairGameAdmin){
+        return false
+    }
+    return true
+    
+}
 exports.insertWallet = async (req, res) => {
     try {
         let wallet = {
