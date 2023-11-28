@@ -15,16 +15,6 @@
     "/auth/login": {
       "post": {
         "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/auth/signup": {
-      "post": {
-        "description": "",
         "parameters": [
           {
             "name": "body",
@@ -32,10 +22,13 @@
             "schema": {
               "type": "object",
               "properties": {
-                "email": {
+                "userName": {
                   "example": "any"
                 },
                 "password": {
+                  "example": "any"
+                },
+                "loginType": {
                   "example": "any"
                 }
               }
@@ -88,6 +81,12 @@
                   "example": "any"
                 },
                 "roleName": {
+                  "example": "any"
+                },
+                "userBlock": {
+                  "example": "any"
+                },
+                "betBlock": {
                   "example": "any"
                 },
                 "myPartnership": {
