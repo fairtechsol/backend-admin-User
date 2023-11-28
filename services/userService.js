@@ -24,6 +24,12 @@ exports.addUser = async (body) => {
   return insertUser;
 };
 
+exports.updateUser = async (id,body) =>{
+  let updateUser = await user.update(id,body);
+  return updateUser;
+}
+
+
 exports.getUserByUserName = async (userName,select) => {
   return await user.findOne({
     where: { userName:ILike(userName) },

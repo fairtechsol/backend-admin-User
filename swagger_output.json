@@ -90,12 +90,6 @@
                 "roleName": {
                   "example": "any"
                 },
-                "userBlock": {
-                  "example": "any"
-                },
-                "betBlock": {
-                  "example": "any"
-                },
                 "myPartnership": {
                   "example": "any"
                 },
@@ -106,6 +100,36 @@
             }
           }
         ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/user/insert/wallet": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/button/": {
+      "get": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/button/insert": {
+      "get": {
+        "description": "",
         "responses": {
           "default": {
             "description": ""
