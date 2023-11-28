@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, lockUnlockUserService } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -226,6 +226,44 @@ exports.insertWallet = async (req, res) => {
         let insertUser = await addUser(wallet);
         return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: insertUser }, req, res)
     } catch (err) {
+        return ErrorResponse(err, req, res);
+    }
+}
+
+exports.lockUnlockUser = async (req, res) => {
+    try{
+        const { userId, transPassword, userBlock, betBlock, createBy } = req.body;
+        let reqUserId = req.user?.id || createBy;
+        let loginUser = await getUserById(reqUserId, ["id", "userBlock", "betBlock", "roleName"]);
+        let updateUser = await getUserById(userId, ["id", "userBlock", "betBlock", "roleName"]);
+        console.log(loginUser);
+        console.log(updateUser);
+        
+        if(!loginUser){
+            throw {
+                msg: {
+                  code: "notFound",
+                  keys: { name: "Login User" },
+                }
+              };            
+        }
+        if(!updateUser){
+            throw {
+                msg: {
+                  code: "notFound",
+                  keys: { name: "Update User" },
+                }
+              };  
+        }
+        if (loginUser.userBlock == true) {
+            throw new Error("user.userBlockError");
+        }
+        if (loginUser.betBlock == true && betBlock == false) {
+            throw new Error("user.betBlockError");
+        }
+        let result = lockUnlockUserService(loginUser, updateUser, userBlock, betBlock);
+        return SuccessResponse({ statusCode: 200, message: { msg: "login" } }, req, res);
+    } catch (err){
         return ErrorResponse(err, req, res);
     }
 }

@@ -83,16 +83,58 @@
                 "roleName": {
                   "example": "any"
                 },
+                "myPartnership": {
+                  "example": "any"
+                },
+                "createdBy": {
+                  "example": "any"
+                },
+                "creditRefrence": {
+                  "example": "any"
+                },
+                "exposureLimit": {
+                  "example": "any"
+                },
+                "maxBetLimit": {
+                  "example": "any"
+                },
+                "minBetLimit": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/user/lockUnlockUser": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "example": "any"
+                },
+                "transPassword": {
+                  "example": "any"
+                },
                 "userBlock": {
                   "example": "any"
                 },
                 "betBlock": {
                   "example": "any"
                 },
-                "myPartnership": {
-                  "example": "any"
-                },
-                "createdBy": {
+                "createBy": {
                   "example": "any"
                 }
               }

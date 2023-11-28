@@ -3,13 +3,21 @@ const { __mf } = require("i18n");
 module.exports.ErrorResponse = (errorData, req, res) => {
   errorData.statusCode = errorData.statusCode || 500;
   errorData.status = "error";
+  const errorMessage = errorData.msg || "Internal Server Error";
+  
+  // Extracting message code and keys
+  const { code, keys } = errorMessage;
+
+  let i18Code = code ? code : errorData.message.msg || errorData.message;
+
   const errorObj = {
     status: errorData.status,
     statusCode: errorData.statusCode,
-    message: __mf(errorData.message.msg || errorData.message, errorData?.message?.keys || undefined),
+    message: __mf(i18Code, keys || undefined), // Using i18n to get the translated message
     stack: errorData.stack,
   };
   res.status(errorData.statusCode).json(errorObj);
+
 };
 
 module.exports.SuccessResponse = (resData, req, res) => {
