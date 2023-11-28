@@ -15,16 +15,6 @@
     "/auth/login": {
       "post": {
         "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/auth/signup": {
-      "post": {
-        "description": "",
         "parameters": [
           {
             "name": "body",
@@ -32,10 +22,13 @@
             "schema": {
               "type": "object",
               "properties": {
-                "email": {
+                "userName": {
                   "example": "any"
                 },
                 "password": {
+                  "example": "any"
+                },
+                "loginType": {
                   "example": "any"
                 }
               }
@@ -95,6 +88,18 @@
                 },
                 "createdBy": {
                   "example": "any"
+                },
+                "creditRefrence": {
+                  "example": "any"
+                },
+                "exposureLimit": {
+                  "example": "any"
+                },
+                "maxBetLimit": {
+                  "example": "any"
+                },
+                "minBetLimit": {
+                  "example": "any"
                 }
               }
             }
@@ -128,8 +133,28 @@
       }
     },
     "/button/insert": {
-      "get": {
+      "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "example": "any"
+                },
+                "type": {
+                  "example": "any"
+                },
+                "value": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
