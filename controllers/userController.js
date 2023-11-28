@@ -37,7 +37,6 @@ exports.createUser = async (req, res) => {
             maxBetLimit : maxBetLimit ? maxBetLimit : creator.maxBetLimit,
             minBetLimit : minBetLimit ? minBetLimit : creator.minBetLimit
         }
-        console.log(userData)
         let partnerships = await calculatePartnership(userData, creator)
         userData = { ...userData, ...partnerships };
         let insertUser = await addUser(userData);
