@@ -9,7 +9,8 @@
     "invalidPass": "Invalid {type} password",
     "authFailed": "Please login into your account",
     "roleNotCorrectLogin": "Please login with correct user",
-    "logoutSuccess":"Logout successfully"
+    "logoutSuccess":"Logout successfully",
+    "passwordChanged":"Password changed successfully"
   },
   "user" : {
     "blocked": "There is something wrong with your account. Please contact your administrator.",

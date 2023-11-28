@@ -1,10 +1,16 @@
-const { userRoleConstant, redisTimeOut, partnershipPrefixByRole, differLoginTypeByRoles } = require("../config/contants");
+const {
+  userRoleConstant,
+  redisTimeOut,
+  partnershipPrefixByRole,
+  differLoginTypeByRoles,
+} = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { getUserById, getUserByUserName } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
+const { forceLogoutIfLogin } = require("../services/commonService");
 
 // Function to validate a user by username and password
 const validateUser = async (userName, password) => {
@@ -23,22 +29,13 @@ const validateUser = async (userName, password) => {
     // If the passwords don't match, return an error object
     return {
       error: true,
-      message: "auth.invalidPass",
+      message: { msg: "auth.invalidPass", keys: { type: "user" } },
       statusCode: 403,
     };
   }
 
   // If the user is not found, return null
   return null;
-};
-
-
-const CheckAlreadyLogin = async (userId) => {
-  let token = await internalRedis.hget(userId,"token");
-
-  if (token) {
-    // function to force logout
-  }
 };
 
 const setUserDetailsRedis = async (user) => {
@@ -106,9 +103,7 @@ exports.login = async (req, res) => {
       return ErrorResponse(
         {
           statusCode: 404,
-          message: {
-            msg: user.message
-          },
+          message: user.message,
         },
         req,
         res
@@ -163,33 +158,32 @@ exports.login = async (req, res) => {
         break;
 
       case userRoleConstant.admin:
-
         if (!differLoginTypeByRoles.admin.includes(roleName)) {
           return throwUserNotCorrectError();
         }
         break;
 
       case "wallet":
-
         if (!differLoginTypeByRoles.wallet.includes(roleName)) {
           return throwUserNotCorrectError();
         }
         break;
+      default:
+        return throwUserNotCorrectError();
     }
 
     // force logout user if already login on another device
-    await CheckAlreadyLogin(user.id);
-
+    await forceLogoutIfLogin(user.id);
 
     setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, role: user.roleName, userName: user.userName },
-      process.env.JWT_SECRET||"secret"
+      process.env.JWT_SECRET || "secret"
     );
 
     // checking transition password
-    const isTransPasswordCreated = Boolean(user.transPassword) ;
+    const isTransPasswordCreated = Boolean(user.transPassword);
     const forceChangePassword = !Boolean(user.loginAt);
 
     if (!forceChangePassword) {
@@ -208,7 +202,7 @@ exports.login = async (req, res) => {
           token,
           isTransPasswordCreated: isTransPasswordCreated,
           role: roleName,
-          forceChangePassword
+          forceChangePassword,
         },
       },
       req,
@@ -234,17 +228,16 @@ exports.logout = async (req, res) => {
 
     // If the user is an expert, remove their ID from the "expertLoginIds" set in Redis
     if (user.roleName === userRoleConstant.expert) {
-      internalRedis.srem("expertLoginIds", user.id);
+      await internalRedis.srem("expertLoginIds", user.id);
     }
 
     // Remove the user's token from Redis using their ID as the key
-    internalRedis.hdel(user.id, "token");
+    await internalRedis.hdel(user.id, "token");
 
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "auth.logoutSuccess" },
-       
       },
       req,
       res
