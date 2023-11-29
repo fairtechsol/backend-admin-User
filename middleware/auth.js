@@ -1,11 +1,11 @@
+const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse } = require("../utils/response");
 const jwt = require("jsonwebtoken");
-
 
 exports.isAuthenticate = async (req, res, next) => {
   const { token } = req.headers;
   if (!token) {
-    ErrorResponse(
+    return ErrorResponse(
       {
         statusCode: 401,
         message: {
@@ -32,6 +32,21 @@ exports.isAuthenticate = async (req, res, next) => {
         res
       );
     }
+    const userTokenRedis = await internalRedis.hget(decodedUser.id, "token");
+    if (userTokenRedis != token) {
+      return ErrorResponse(
+        {
+          statusCode: 401,
+          message: {
+            msg: "invalid",
+            keys: { name: "token" },
+          },
+        },
+        req,
+        res
+      );
+    }
+
     req.user = decodedUser;
     next();
   }
