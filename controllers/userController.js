@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName,updateUser } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName,updateUser, getUser } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -50,7 +50,7 @@ exports.createUser = async (req, res) => {
         if(creditRefrence) {
             updateUser = await addUser({
                 id : creator.id,
-                downLevelCreditRefrence : creditRefrence + creator.downLevelCreditRefrence
+                downLevelCreditRefrence : parseInt(creditRefrence) + parseInt(creator.downLevelCreditRefrence)
             })
         }
         let walletArray = [{
@@ -91,6 +91,24 @@ exports.createUser = async (req, res) => {
         return ErrorResponse(err, req, res);
     }
 };
+
+exports.updateUser = async (req, res) => {
+  try {
+      let { sessionCommission,matchComissionType,matchCommission,id,createBy } = req.body;
+      let reqUser = req.user || {}
+      let updateUser = await getUser({id,createBy},["id","createBy","sessionCommission","matchComissionType","matchCommission"])
+      if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+      updateUser.sessionCommission = sessionCommission ?? updateUser.sessionCommission;
+      updateUser.matchCommission = matchCommission ?? updateUser.matchCommission;
+      updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
+      updateUser = await addUser(updateUser);
+      let response = lodash.pick(updateUser,["sessionCommission","matchCommission","matchComissionType"])
+      return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
+  } catch (err) {
+      return ErrorResponse(err, req, res);
+  }
+};
+
 
 const calculatePartnership = async (userData, creator) => {
   let {

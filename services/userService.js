@@ -36,3 +36,10 @@ exports.getUserByUserName = async (userName,select) => {
     select: select,
   });
 };
+
+exports.getUser = async (where={}, select) => {
+  return await user.findOne({
+    where,
+    select: select,
+  });
+};
