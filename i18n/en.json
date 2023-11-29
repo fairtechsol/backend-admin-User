@@ -14,6 +14,8 @@
     "blocked": "There is something wrong with your account. Please contact your administrator.",
     "passwordMatch" : "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?)",
     "partnershipNotValid" : "Given partnership not valid",
-    "InvalidExposureLimit" : "Given Exposure limit is invalid"
+    "InvalidExposureLimit" : "Given Exposure limit is invalid",
+    "InvalidHierarchy" : "Invalid user role you given for creation",
+    "userExist" : "User already exist on given user name" 
   }
 }
