@@ -29,3 +29,11 @@ module.exports.CreateUser = Joi.object({
            'any.only': 'Confirm Password must match Password',
          }),
     })
+
+    module.exports.ChangePassword=Joi.object({
+      oldPassword:Joi.string(),
+      newPassword:Joi.string().required(),
+      transactionPassword:Joi.string().length(6),
+      confirmPassword:Joi.string().required(),
+      userId:Joi.string()
+    })

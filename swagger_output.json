@@ -50,6 +50,23 @@
         }
       }
     },
+    "/auth/logout": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "header",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/auth/dummyFunction": {
       "post": {
         "description": "",
@@ -135,6 +152,47 @@
     "/user/insert/wallet": {
       "post": {
         "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/user/changePassword": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "header",
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "userId": {
+                  "example": "any"
+                },
+                "oldPassword": {
+                  "example": "any"
+                },
+                "newPassword": {
+                  "example": "any"
+                },
+                "transactionPassword": {
+                  "example": "any"
+                },
+                "confirmPassword": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
