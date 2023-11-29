@@ -16,6 +16,7 @@
     "partnershipNotValid" : "Given partnership not valid",
     "InvalidExposureLimit" : "Given Exposure limit is invalid",
     "betBlockError": "Your are block by admin, Please contact to the administrator.",
-    "userBlockError": "Your bet block by admin, Please contact to the administrator."
+    "userBlockError": "Your bet block by admin, Please contact to the administrator.",
+    "lock/unlockSuccessfully" : "User lock and unlock operation successfull"
   }
 }

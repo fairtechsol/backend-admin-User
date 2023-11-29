@@ -261,8 +261,8 @@ exports.lockUnlockUser = async (req, res) => {
         if (loginUser.betBlock == true && betBlock == false) {
             throw new Error("user.betBlockError");
         }
-        let result = lockUnlockUserService(loginUser, updateUser, userBlock, betBlock);
-        return SuccessResponse({ statusCode: 200, message: { msg: "login" } }, req, res);
+        let result = await lockUnlockUserService(loginUser, updateUser, userBlock, betBlock);
+        return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } }, req, res);
     } catch (err){
         return ErrorResponse(err, req, res);
     }
