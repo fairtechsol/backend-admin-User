@@ -18,6 +18,8 @@
     "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?)",
     "confirmPasswordNotMatch":"Password and confirm password did not match",
     "partnershipNotValid" : "Given partnership not valid",
-    "InvalidExposureLimit" : "Given Exposure limit is invalid"
+    "InvalidExposureLimit" : "Given Exposure limit is invalid",
+    "InvalidHierarchy" : "Invalid user role you given for creation",
+    "userExist" : "User already exist on given user name" 
   }
 }

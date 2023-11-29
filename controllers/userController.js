@@ -1,133 +1,95 @@
-const {
-  userRoleConstant,
-  transType,
-  defaultButtonValue,
-  buttonType,
-  walletDescription,
-} = require("../config/contants");
-const {
-  getUserById,
-  addUser,
-  getUserByUserName,
-  updateUser,
-} = require("../services/userService");
-const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { insertTransactions } = require("../services/transactionService");
-const { insertButton } = require("../services/buttonService");
-const { forceLogoutIfLogin } = require("../services/commonService");
+const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription } = require('../config/contants');
+const { getUserById, addUser, getUserByUserName,updateUser } = require('../services/userService');
+const { ErrorResponse, SuccessResponse } = require('../utils/response')
+const { insertTransactions } = require('../services/transactionService')
+const { insertButton } = require('../services/buttonService')
 const bcrypt = require("bcryptjs");
+const lodash = require('lodash')
+const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
 
 exports.createUser = async (req, res) => {
-  try {
-    let {
-      userName,
-      fullName,
-      password,
-      phoneNumber,
-      city,
-      roleName,
-      myPartnership,
-      createdBy,
-      creditRefrence,
-      exposureLimit,
-      maxBetLimit,
-      minBetLimit,
-    } = req.body;
-    let reqUser = req.user || {};
-    let creator = await getUserById(reqUser.id || createdBy);
-    if (!creator)
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "invalidData" } },
-        req,
-        res
-      );
-    creator.myPartnership = parseInt(myPartnership);
-    userName = userName.toUpperCase();
-    let userExist = await getUserByUserName(userName);
-    if (userExist)
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "userExist" } },
-        req,
-        res
-      );
+    try {
+        let { userName, fullName, password,confirmPassword, phoneNumber, city, roleName, myPartnership, createdBy,creditRefrence,exposureLimit,maxBetLimit,minBetLimit } = req.body;
+        let reqUser = req.user || {}
+        let creator = await getUserById(reqUser.id || createdBy);
+        if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
 
-    if (exposureLimit && exposureLimit > creator.exposureLimit)
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "user.InvalidExposureLimit" } },
-        req,
-        res
-      );
+        if(!checkUserCreationHierarchy(creator,roleName))
+            return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidHierarchy" } }, req, res);
+        creator.myPartnership = parseInt(myPartnership)
+        userName = userName.toUpperCase();
+        let userExist = await getUserByUserName(userName);
+        if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
 
-    let userData = {
-      userName,
-      fullName,
-      password,
-      phoneNumber,
-      city,
-      roleName,
-      userBlock: creator.userBlock,
-      betBlock: creator.betBlock,
-      createBy: creator.id,
-      creditRefrence: creditRefrence ? creditRefrence : creator.creditRefrence,
-      exposureLimit: exposureLimit ? exposureLimit : creator.exposureLimit,
-      maxBetLimit: maxBetLimit ? maxBetLimit : creator.maxBetLimit,
-      minBetLimit: minBetLimit ? minBetLimit : creator.minBetLimit,
-    };
+        if(exposureLimit && exposureLimit > creator.exposureLimit)
+            return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
+            password = await bcrypt.hash(
+                password,
+                process.env.BCRYPTSALT
+              );
+        let userData = {
+            userName,
+            fullName,
+            password,
+            phoneNumber,
+            city,
+            roleName,
+            userBlock: creator.userBlock,
+            betBlock: creator.betBlock,
+            createBy: creator.id,
+            creditRefrence : creditRefrence ? creditRefrence : creator.creditRefrence,
+            exposureLimit : exposureLimit ? exposureLimit : creator.exposureLimit,
+            maxBetLimit : maxBetLimit ? maxBetLimit : creator.maxBetLimit,
+            minBetLimit : minBetLimit ? minBetLimit : creator.minBetLimit
+        }
+        let partnerships = await calculatePartnership(userData, creator)
+        userData = { ...userData, ...partnerships };
+        let insertUser = await addUser(userData);
+        let updateUser = {}
+        if(creditRefrence) {
+            updateUser = await addUser({
+                id : creator.id,
+                downLevelCreditRefrence : creditRefrence + creator.downLevelCreditRefrence
+            })
+        }
+        let walletArray = [{
+            actionBy: insertUser.createBy,
+            searchId: insertUser.createBy,
+            userId: insertUser.id,
+            amount: 0,
+            transType: transType.add,
+            currentAmount: insertUser.creditRefer,
+            description: walletDescription.userCreate
+        }]
+        if (insertUser.createdBy != insertUser.id) {
+            walletArray.push({
+                actionBy: insertUser.createBy,
+                searchId: insertUser.id,
+                userId: insertUser.id,
+                amount: 0,
+                transType: transType.withDraw,
+                currentAmount: insertUser.creditRefer,
+                description: walletDescription.userCreate
+            });
+        }
 
-    let partnerships = await calculatePartnership(userData, creator);
-    userData = { ...userData, ...partnerships };
-    let insertUser = await addUser(userData);
-    let updateUser = {};
-    if (creditRefrence) {
-      updateUser = await addUser({
-        id: creator.id,
-        downLevelCreditRefrence:
-          creditRefrence + creator.downLevelCreditRefrence,
-      });
+        const transactioninserted = await insertTransactions(walletArray);
+        if (insertUser.roleName == userRoleConstant.user) {
+            let buttonValue = [
+                {
+                    type: buttonType.MATCH,
+                    value: defaultButtonValue.buttons,
+                    createBy: insertUser.id
+                }
+            ]
+            let insertedButton = await insertButton(buttonValue)
+        }
+        let response = lodash.omit(insertUser,["password","transPassword"])
+        return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
+    } catch (err) {
+        return ErrorResponse(err, req, res);
     }
-    let walletArray = [
-      {
-        actionBy: insertUser.createBy,
-        searchId: insertUser.createBy,
-        userId: insertUser.id,
-        amount: 0,
-        transType: transType.add,
-        currentAmount: insertUser.creditRefer,
-        description: walletDescription.userCreate,
-      },
-    ];
-    if (insertUser.createdBy != insertUser.id) {
-      walletArray.push({
-        actionBy: insertUser.createBy,
-        searchId: insertUser.id,
-        userId: insertUser.id,
-        amount: 0,
-        transType: transType.withDraw,
-        currentAmount: insertUser.creditRefer,
-        description: walletDescription.userCreate,
-      });
-    }
-
-    const transactioninserted = await insertTransactions(walletArray);
-    if (insertUser.roleName == userRoleConstant.user) {
-      let buttonValue = [
-        {
-          type: buttonType.MATCH,
-          value: defaultButtonValue.buttons,
-          createBy: insertUser.id,
-        },
-      ];
-      let insertedButton = await insertButton(buttonValue);
-    }
-    return SuccessResponse(
-      { statusCode: 200, message: { msg: "login" }, data: insertUser },
-      req,
-      res
-    );
-  } catch (err) {
-    return ErrorResponse(err, req, res);
-  }
 };
 
 const calculatePartnership = async (userData, creator) => {
@@ -285,6 +247,19 @@ const calculatePartnership = async (userData, creator) => {
   };
 };
 
+const checkUserCreationHierarchy =(creator,createUserRoleName) =>{
+    const hierarchyArray = Object.values(userRoleConstant)
+    let creatorIndex = hierarchyArray.indexOf(creator.roleName)
+    if(creatorIndex  == -1) return false
+    let index = hierarchyArray.indexOf(createUserRoleName)
+    if(index == -1) return false
+    if(index < creatorIndex)return false;
+    if(createUserRoleName == userRoleConstant.expert && creator.roleName !== userRoleConstant.fairGameAdmin){
+        return false
+    }
+    return true
+    
+}
 exports.insertWallet = async (req, res) => {
   try {
     let wallet = {
