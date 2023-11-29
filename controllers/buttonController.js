@@ -3,16 +3,22 @@ const buttonService = require('../services/buttonService');
 const {ErrorResponse,SuccessResponse} = require('../utils/response')
 
 
-exports.getAllButtons = async (req, res) => {
+exports.getButton = async (req, res) => {
+try{
+    const {id} = req.user
+    const button = await buttonService.getButtonByUserId(id);
+    if(!button) ErrorResponse({ statusCode: 400, message: { msg: "button.InvalidUser" } }, req, res)
 
-    const button = await buttonService.getButtons();
     return SuccessResponse({statusCode : 200,message :{msg:"login"},data : button},req,res)   
+}catch(err){
+    return ErrorResponse(err, req, res)
+}
   
 };
 
 exports.insertButtons = async (req, res) => {
 try {
-    let {id,type,value} = req.body
+    let {id,type,value} = req.params
     if(req.user.roleName != userRoleConstant.user) {
         return ErrorResponse({ statusCode: 400, message: { msg: "button.InvalidUser" } }, req, res)
     }
