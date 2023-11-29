@@ -45,3 +45,11 @@ module.exports.updateUserValid = Joi.object({
   id: Joi.string().guid({ version: 'uuidv4' }).required(),
   createBy: Joi.string().guid({ version: 'uuidv4' }).required(),
 })
+
+module.exports.setExposureLimitValid = Joi.object({
+  //sessionCommission,matchComissionType,matchCommission,id,createBy
+  amount: Joi.number().required(),
+  transPassword: Joi.string(),
+  userid: Joi.string().guid({ version: 'uuidv4' }).required(),
+  createBy: Joi.string().guid({ version: 'uuidv4' }).required(),
+})

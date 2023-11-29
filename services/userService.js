@@ -43,3 +43,14 @@ exports.getUser = async (where={}, select) => {
     select: select,
   });
 };
+
+exports.getChildUser = async(id)=>{
+  let query = `WITH RECURSIVE p AS (
+    SELECT * FROM "users" WHERE "users"."id" = '${id}'
+    UNION
+    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+  )
+SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
+
+  return await user.query(query)
+}
