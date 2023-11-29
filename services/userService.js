@@ -38,10 +38,24 @@ exports.getUserByUserName = async (userName,select) => {
 };
 
 exports.getUser = async (where={}, select) => {
+  //find list with filter and pagination
   return await user.findOne({
-    where,
-    select: select,
+    where: where,
+    select: select
   });
+  
+};
+
+
+exports.getUsers = async (where={}, select,page,limit) => {
+  //find list with filter and pagination
+  return await user.findAndCount({
+    where: where,
+    select: select,
+    skip: page,
+    take: limit,
+  });
+  
 };
 
 exports.getChildUser = async(id)=>{

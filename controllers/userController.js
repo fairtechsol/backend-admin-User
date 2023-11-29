@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -546,6 +546,66 @@ exports.setExposureLimit = async (req, res, next) => {
           id: user.id,
           exposureLimit: user.exposureLimit
         } },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.userList = async (req,res,next) => {
+  try {
+    let reqUser = req.user || {}
+    let { userName, roleName, page, limit } = req.query
+    let where = {
+      //createBy : reqUser.id
+    }
+    if (userName) where.userName = ILike(`%${userName}%`)
+    if (roleName) where.roleName = roleName
+ 
+    let users = await getUsers(where, ["id", "userName","roleName", "userBlock", "betBlock","exposureLimit","creditRefrence"], page, limit)
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "user.userList" },
+        data: { users },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.userSearchList = async (req,res,next) => {
+  try {
+    let reqUser = req.user || {}
+    let { userName } = req.query
+    if(!userName || userName.length < 0){
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "user.userList" },
+          data: { users:[] },
+        },
+        req,
+        res
+      );
+    }
+    let where = {
+      //createBy : reqUser.id
+    }
+    if (userName) where.userName = ILike(`%${userName}%`)
+    
+    let users = await getUsers(where, ["id", "userName"])
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "user.userList" },
+        data: { users },
       },
       req,
       res
