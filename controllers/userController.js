@@ -448,7 +448,7 @@ exports.changePassword = async (req, res, next) => {
       }
 
       // Update only the password if conditions are not met
-      await updateUser(userId, { password });
+      await updateUser(userId, {loginAt: new Date(), password });
       await forceLogoutUser(userId);
 
       return SuccessResponse(
