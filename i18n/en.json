@@ -4,6 +4,7 @@
   "notFound": "{name} not found",
   "invalid":"Invalid {name}",
   "invalidId": "Given id is invalid",
+  "userNotSelect": "User not selected.",
   "auth": {
     "loginSuccess": "Login successfully",
     "invalidPass": "Invalid {type} password",

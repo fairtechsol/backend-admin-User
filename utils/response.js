@@ -19,7 +19,7 @@ module.exports.SuccessResponse = (resData, req, res) => {
   return res.status(resData.statusCode).json({
     status: resData.status,
     statusCode: resData.statusCode,
-    message: __mf(resData.message.msg, resData.message.keys),
+    message: resData?.message?__mf(resData?.message?.msg, resData?.message?.keys):null,
     data: resData.data,
     meta: resData.meta,
   });
