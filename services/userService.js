@@ -1,7 +1,9 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const bcrypt = require("bcryptjs");
 const userSchema = require("../models/user.entity");
+const userBalanceSchema = require("../models/userBalance.entity");
 const user = AppDataSource.getRepository(userSchema);
+const UserBalance = AppDataSource.getRepository(userBalanceSchema);
 const internalRedis = require("../config/internalRedisConnection");
 const externalRedis = require("../config/externalRedisConnection");
 const publisherService = require("./redis/externalRedisPublisher");
@@ -24,30 +26,30 @@ exports.addUser = async (body) => {
   return insertUser;
 };
 
-exports.updateUser = async (id,body) =>{
-  let updateUser = await user.update(id,body);
+exports.updateUser = async (id, body) => {
+  let updateUser = await user.update(id, body);
   return updateUser;
 }
 
 
-exports.getUserByUserName = async (userName,select) => {
+exports.getUserByUserName = async (userName, select) => {
   return await user.findOne({
-    where: { userName:ILike(userName) },
+    where: { userName: ILike(userName) },
     select: select,
   });
 };
 
-exports.getUser = async (where={}, select) => {
+exports.getUser = async (where = {}, select) => {
   //find list with filter and pagination
   return await user.findOne({
     where: where,
     select: select
   });
-  
+
 };
 
 
-exports.getUsers = async (where={}, select,page,limit) => {
+exports.getUsers = async (where = {}, select, page, limit) => {
   //find list with filter and pagination
   return await user.findAndCount({
     where: where,
@@ -55,10 +57,10 @@ exports.getUsers = async (where={}, select,page,limit) => {
     skip: page,
     take: limit,
   });
-  
+
 };
 
-exports.getChildUser = async(id)=>{
+exports.getChildUser = async (id) => {
   let query = `WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${id}'
     UNION
@@ -68,3 +70,11 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
 
   return await user.query(query)
 }
+
+exports.getFirstLevelChildUser = async(id) => {
+  let query = `SELECT "id","userName" FROM "users" WHERE "users"."createBy" = '${id}' AND "users"."deletedAt" IS NULL;`
+  return await user.query(query)
+
+}
+
+

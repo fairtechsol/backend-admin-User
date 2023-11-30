@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getUserAggregateBalanceData, getFirstLevelChildUser } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -7,6 +7,7 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash')
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
+const { getUserBalanceDataByUserId, getAllchildsCurrentBalanceSum, getAllChildProfitLossSum } = require('../services/userBalanceService');
 
 exports.createUser = async (req, res) => {
   try {
@@ -542,10 +543,12 @@ exports.setExposureLimit = async (req, res, next) => {
       {
         statusCode: 200,
         message: { msg: "user.ExposurelimitSet" },
-        data: { user  : {
-          id: user.id,
-          exposureLimit: user.exposureLimit
-        } },
+        data: {
+          user: {
+            id: user.id,
+            exposureLimit: user.exposureLimit
+          }
+        },
       },
       req,
       res
@@ -555,7 +558,7 @@ exports.setExposureLimit = async (req, res, next) => {
   }
 }
 
-exports.userList = async (req,res,next) => {
+exports.userList = async (req, res, next) => {
   try {
     let reqUser = req.user || {}
     let { userName, roleName, page, limit } = req.query
@@ -564,8 +567,8 @@ exports.userList = async (req,res,next) => {
     }
     if (userName) where.userName = ILike(`%${userName}%`)
     if (roleName) where.roleName = roleName
- 
-    let users = await getUsers(where, ["id", "userName","roleName", "userBlock", "betBlock","exposureLimit","creditRefrence"], page, limit)
+
+    let users = await getUsers(where, ["id", "userName", "roleName", "userBlock", "betBlock", "exposureLimit", "creditRefrence"], page, limit)
     return SuccessResponse(
       {
         statusCode: 200,
@@ -580,16 +583,16 @@ exports.userList = async (req,res,next) => {
   }
 }
 
-exports.userSearchList = async (req,res,next) => {
+exports.userSearchList = async (req, res, next) => {
   try {
     let reqUser = req.user || {}
     let { userName } = req.query
-    if(!userName || userName.length < 0){
+    if (!userName || userName.length < 0) {
       return SuccessResponse(
         {
           statusCode: 200,
           message: { msg: "user.userList" },
-          data: { users:[] },
+          data: { users: [] },
         },
         req,
         res
@@ -599,13 +602,66 @@ exports.userSearchList = async (req,res,next) => {
       //createBy : reqUser.id
     }
     if (userName) where.userName = ILike(`%${userName}%`)
-    
+
     let users = await getUsers(where, ["id", "userName"])
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "user.userList" },
         data: { users },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+}
+
+
+exports.userBalanceDetails = async (req, res, next) => {
+  try {
+    let reqUser = req.user || {}
+    let { id } = req.query
+    let loginUser = await getUserById(id)
+    if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+
+    let firstLevelChildUser = await getFirstLevelChildUser(loginUser.id)
+
+    let firstLevelChildUserIds = await firstLevelChildUser.map(obj => obj.id)
+
+    let childUsers = await getChildUser(loginUser.id)
+
+    let allChildUserIds = childUsers.map(obj => obj.id)
+
+    let userBalanceData = getUserBalanceDataByUserId(loginUser.id, ["id", "currentBalance", "profitLoss"])
+
+    let FirstLevelChildBalanceData = getAllChildProfitLossSum(firstLevelChildUserIds)
+
+    let allChildBalanceData = getAllchildsCurrentBalanceSum(allChildUserIds)
+
+    let AggregateBalanceData = await Promise.all([userBalanceData, FirstLevelChildBalanceData, allChildBalanceData])
+
+    userBalanceData = AggregateBalanceData[0] ? AggregateBalanceData[0] : {};
+    FirstLevelChildBalanceData = AggregateBalanceData[1] ? AggregateBalanceData[1] : {};
+    allChildBalanceData = AggregateBalanceData[2] ? AggregateBalanceData[2] : {};
+
+    let response = {
+      userCreditReference: parseFloat(loginUser.creditRefrence),
+      downLevelOccupyBalance: allChildBalanceData.allchildscurrentbalancesum ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0,
+      downLevelCreditReference: loginUser.downLevelCreditReference,
+      availableBalance: userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0,
+      totalMasterBalance: (userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0) + (allChildBalanceData.allchildscurrentbalancesum ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0),
+      upperLevelBalance: userBalanceData.profitLoss ? userBalanceData.profitLoss : 0,
+      downLevelProfitLoss: FirstLevelChildBalanceData.firstlevelchildsprofitlosssum ? FirstLevelChildBalanceData.firstlevelchildsprofitlosssum : 0,
+      availableBalanceWithProfitLoss: ((userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0) + (allChildBalanceData.allchildscurrentbalancesum ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0)) + (userBalanceData.profitLoss ? userBalanceData.profitLoss : 0),
+      profitLoss: 0
+    };
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "user.UserBalanceFetchSuccessfully" },
+        data: { response },
       },
       req,
       res

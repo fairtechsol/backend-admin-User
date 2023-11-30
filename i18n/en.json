@@ -20,6 +20,7 @@
     "InvalidExposureLimit" : "Given Exposure limit is invalid",
     "InvalidHierarchy" : "Invalid user role you given for creation",
     "userExist" : "User already exist on given user name" ,
-    "ExposurelimitSet" : "Exposure limit set successfully"
+    "ExposurelimitSet" : "Exposure limit set successfully",
+    "UserBalanceFetchSuccessfully" : "User balance fetch successfully"
   }
 }
