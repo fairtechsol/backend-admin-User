@@ -61,8 +61,8 @@ const findUserPartnerShipObj = async (user) => {
   const obj = {};
 
   if (
-    user.userRole == userRoleConstant.user ||
-    user.userRole == userRoleConstant.expert
+    user.roleName == userRoleConstant.user ||
+    user.roleName == userRoleConstant.expert
   ) {
     return JSON.stringify(obj);
   }

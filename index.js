@@ -2,12 +2,15 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const app = express();
+const http = require("http");
+const socketManager = require("./sockets/socketManager.js");
 const route = require("./routes/index.js");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger_output.json");
 const error = require("./utils/error.js");
 const i18n = require("./config/i18n");
 const setI18Language = require("./middleware/setI18Language.js");
+
 /**
  * Enable Cross-Origin Resource Sharing (CORS)
  */
@@ -31,8 +34,14 @@ app.use(setI18Language);
 app.use("/", route);
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use(error);
+
+//connect http
+const server = http.createServer(app);
+
+//Connect socket
+socketManager(server);
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

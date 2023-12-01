@@ -32,8 +32,14 @@ module.exports.CreateUser = Joi.object({
 
     module.exports.ChangePassword=Joi.object({
       oldPassword:Joi.string(),
-      newPassword:Joi.string().required(),
-      transactionPassword:Joi.string().length(6),
-      confirmPassword:Joi.string().required(),
-      userId:Joi.string()
+      newPassword:Joi.string().pattern(passwordRegex).required().label('password').messages({
+        'string.pattern.base': 'user.passwordMatch',
+        'any.required': 'Password is required',
+      }),
+      transactionPassword:Joi.string().length(6).message("Transaction password must be 6 character long"),
+      confirmPassword:Joi.string().required().valid(Joi.ref('newPassword')).label('Confirm Password').messages({
+        'string.base': 'Confirm Password must be a string',
+        'any.required': 'Confirm Password is required',
+        'any.only': 'Confirm Password must match Password',
+      }),
     })
