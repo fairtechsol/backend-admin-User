@@ -2,7 +2,7 @@ const { transType } = require('../config/contants');
 const { getUser, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
-const { getUserBalanceDataByUserIds, updateUserBalanceByUserid, addUserBalance } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserIds, updateUserBalanceByUserid, addUserBalance, getUserBalanceDataByUserId } = require('../services/userBalanceService');
 
 exports.updateUserBalance = async (req, res) => {
     try {
@@ -14,11 +14,12 @@ exports.updateUserBalance = async (req, res) => {
         let user = await getUser({ id: userId, createBy: reqUser.id }, ["id"])
         if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
 
-        let usersBalanceData = await getUserBalanceDataByUserIds([reqUser.id, user.id]);
+        let loginUserBalanceData =  getUserBalanceDataByUserId(reqUser.id);
+        let insertUserBalanceData =  getUserBalanceDataByUserId(user.id);
+        let usersBalanceData = await Promise.all([loginUserBalanceData,insertUserBalanceData])
         if (!usersBalanceData.length)
             return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
-        let loginUserBalanceData = usersBalanceData[0]
-        let updateUserBalanceData = {}
+        loginUserBalanceData = usersBalanceData[0]
         let updatedLoginUserBalanceData = {}
         let updatedUpdateUserBalanceData = {}
         if (transactionType == transType.add) {
@@ -26,14 +27,13 @@ exports.updateUserBalance = async (req, res) => {
             if (amount > loginUserBalanceData.currentBalance)
                 return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
             if (usersBalanceData[1]) {
-                updateUserBalanceData = usersBalanceData[1]
-                updatedUpdateUserBalanceData.currentBalance = parseFloat(updateUserBalanceData.currentBalance) + parseFloat(amount);
-                updatedUpdateUserBalanceData.profitLoss = parseFloat(updateUserBalanceData.profitLoss) + parseFloat(amount)
-                console.log(updatedUpdateUserBalanceData);
+                insertUserBalanceData = usersBalanceData[1]
+                updatedUpdateUserBalanceData.currentBalance = parseFloat(insertUserBalanceData.currentBalance) + parseFloat(amount);
+                updatedUpdateUserBalanceData.profitLoss = parseFloat(insertUserBalanceData.profitLoss) + parseFloat(amount)
                 let newUserBalanceData = await updateUserBalanceByUserid(user.id, updatedUpdateUserBalanceData)
                 updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
             } else {
-                updateUserBalanceData = {
+                insertUserBalanceData = {
                     currentBalance: amount,
                     userId: user.id,
                     profitLoss: amount,
@@ -41,24 +41,23 @@ exports.updateUserBalance = async (req, res) => {
                     downLevelBalance: 0,
                     exposure: 0
                 }
-                updateUserBalanceData = await addUserBalance(updateUserBalanceData)
+                insertUserBalanceData = await addUserBalance(insertUserBalanceData)
                 updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
             }
         } else if (transactionType == transType.withDraw) {
             if (!usersBalanceData[1])
                 return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
-            updateUserBalanceData = usersBalanceData[1]
-            if (amount > updateUserBalanceData.currentBalance)
+            insertUserBalanceData = usersBalanceData[1]
+            if (amount > insertUserBalanceData.currentBalance)
                 return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
-            updatedUpdateUserBalanceData.currentBalance = parseFloat(updateUserBalanceData.currentBalance) - parseFloat(amount);
-            updatedUpdateUserBalanceData.profitLoss = parseFloat(updateUserBalanceData.profitLoss) - parseFloat(amount);
-            updatedUpdateUserBalanceData = await updateUserBalanceByUserid(user.id, updatedUpdateUserBalanceData)
+            updatedUpdateUserBalanceData.currentBalance = parseFloat(insertUserBalanceData.currentBalance) - parseFloat(amount);
+            updatedUpdateUserBalanceData.profitLoss = parseFloat(insertUserBalanceData.profitLoss) - parseFloat(amount);
+            let newUserBalanceData  = await updateUserBalanceByUserid(user.id, updatedUpdateUserBalanceData)
             updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) + parseFloat(amount);
         }else{
             return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
         }
 
-        console.log(updatedLoginUserBalanceData);
         let newLoginUserBalanceData = await updateUserBalanceByUserid(reqUser.id, updatedLoginUserBalanceData)
 
         let walletArray = [{
@@ -67,7 +66,7 @@ exports.updateUserBalance = async (req, res) => {
             userId: user.id,
             amount: transactionType == transType.add ? amount : -amount,
             transType: transactionType,
-            currentAmount: updateUserBalanceData.currentBalance,
+            currentAmount: insertUserBalanceData.currentBalance,
             description: remark
         }, {
             actionBy: reqUser.id,
@@ -94,10 +93,12 @@ exports.updateUserBalance = async (req, res) => {
     }
 }
 
+
+
 exports.addFGWalletBalance = async (req, res) => {
     try {
         let { amount, walletId } = req.body
-        let updateUserBalanceData = {
+        let insertUserBalanceData = {
             currentBalance: amount,
             userId: walletId,
             profitLoss: amount,
@@ -105,7 +106,7 @@ exports.addFGWalletBalance = async (req, res) => {
             downLevelBalance: 0,
             exposure: 0
         }
-        updateUserBalanceData = await addUserBalance(updateUserBalanceData)
+        insertUserBalanceData = await addUserBalance(insertUserBalanceData)
         let walletArray = [{
             actionBy: walletId,
             searchId: walletId,
@@ -121,7 +122,7 @@ exports.addFGWalletBalance = async (req, res) => {
             {
                 statusCode: 200,
                 message: { msg: "userBalance.BalanceAddedSuccessfully" },
-                data: { updateUserBalanceData },
+                data: { insertUserBalanceData },
             },
             req,
             res
