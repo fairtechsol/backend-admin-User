@@ -23,13 +23,13 @@ exports.getAccountStatement = async (req, res) => {
       searchId: userId,
     };
     if (fromDate && toDate) {
-      filters["createAt"] = Between(new Date(fromDate), new Date(toDate));
+      filters["createdAt"] = Between(new Date(fromDate), new Date(toDate));
     } else {
       if (fromDate) {
-        filters["createAt"] = MoreThanOrEqual(new Date(fromDate));
+        filters["createdAt"] = MoreThanOrEqual(new Date(fromDate));
       }
       if (toDate) {
-        filters["createAt"] = LessThanOrEqual(new Date(toDate));
+        filters["createdAt"] = LessThanOrEqual(new Date(toDate));
       }
     }
     if (otherFilter) {
