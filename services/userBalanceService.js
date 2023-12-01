@@ -1,6 +1,8 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const userBalanceSchema = require("../models/userBalance.entity");
+const { In } = require('typeorm');
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
+
 
 exports.getUserBalanceDataByUserId = async(userId,select) =>{
     return await UserBalance.findOne({
@@ -9,6 +11,23 @@ exports.getUserBalanceDataByUserId = async(userId,select) =>{
       })
 }
 
+//get usersbalance data from array of userids
+exports.getUserBalanceDataByUserIds = async(userIds,select) =>{
+    return await UserBalance.find({
+        where: {userId: In(userIds)},
+        select: select
+      })
+}
+
+exports.addUserBalance = async (body) => {
+    let insertUserBalance = await UserBalance.save(body);
+    return insertUserBalance;
+}
+
+exports.updateUserBalanceByUserid = async(userId,body) =>{
+    let updateUserBalance = await UserBalance.update({ userId: userId },body);
+    return updateUserBalance;
+}
 
 exports.getAllChildProfitLossSum = async(childUserIds)=>{
     let queryColumns = 'SUM(userBalance.profitLoss) as firstLevelChildsProfitLossSum';

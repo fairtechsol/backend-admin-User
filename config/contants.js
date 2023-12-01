@@ -43,6 +43,8 @@ module.exports.baseColumnsSchemaPart = {
 module.exports.transType = {
   add: "add",
   withDraw: "withDraw",
+  win : "win",
+  loss : "loss",
 };
 
 module.exports.partnershipPrefixByRole = {

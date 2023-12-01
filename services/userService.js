@@ -1,5 +1,6 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const bcrypt = require("bcryptjs");
+const { In } = require('typeorm');
 const userSchema = require("../models/user.entity");
 const userBalanceSchema = require("../models/userBalance.entity");
 const user = AppDataSource.getRepository(userSchema);
@@ -78,3 +79,9 @@ exports.getFirstLevelChildUser = async(id) => {
 }
 
 
+exports.getUserBalanceDataByUserIds = async(userIds,select) =>{
+  return await UserBalance.find({
+      where: {userId: In(userIds)},
+      select: select
+    })
+}
