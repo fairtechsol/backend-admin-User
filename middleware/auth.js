@@ -4,6 +4,7 @@ const { ErrorResponse } = require("../utils/response");
 const jwt = require("jsonwebtoken");
 
 exports.isAuthenticate = async (req, res, next) => {
+  try{
   const { token } = req.headers;
   if (!token) {
     return ErrorResponse(
@@ -50,5 +51,17 @@ exports.isAuthenticate = async (req, res, next) => {
 
     req.user = decodedUser;
     next();
+  }}
+  catch(err){
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: {
+          msg: "internalServerError"
+        },
+      },
+      req,
+      res
+    );
   }
 };
