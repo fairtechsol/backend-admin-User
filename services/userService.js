@@ -50,17 +50,39 @@ exports.getUser = async (where = {}, select) => {
 };
 
 
-exports.getUsers = async (where = {}, select, page, limit) => {
+exports.getUsers = async (where, select, offset, limit, relations) => {
   //find list with filter and pagination
+  console.log(where, select, offset, limit)
   return await user.findAndCount({
     where: where,
     select: select,
-    skip: page,
+    skip: offset,
     take: limit,
+    relations: relations
   });
 
 };
 
+exports.getUsersWithUserBalance = async (where, select, offset, limit) => {
+  //get all users with user balance according to pagoination
+  if(select.length)
+    select = select.map(item => "user."+item)
+  let Query = user.createQueryBuilder()
+  .select(select)
+  .where(where)
+  .leftJoinAndMapOne("user.userBal","userBalances", "UB","user.id = UB.userId")
+
+  if (offset) {
+    Query = Query.offset(offset);
+  }
+  if (limit) {
+    Query = Query.limit(limit);
+  }
+  console.log(Query.getQueryAndParameters());
+  var result = await Query.getManyAndCount();
+  return result;
+
+}
 exports.getChildUser = async (id) => {
   let query = `WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${id}'
@@ -72,16 +94,16 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
   return await user.query(query)
 }
 
-exports.getFirstLevelChildUser = async(id) => {
+exports.getFirstLevelChildUser = async (id) => {
   let query = `SELECT "id","userName" FROM "users" WHERE "users"."createBy" = '${id}' AND "users"."deletedAt" IS NULL;`
   return await user.query(query)
 
 }
 
 
-exports.getUserBalanceDataByUserIds = async(userIds,select) =>{
+exports.getUserBalanceDataByUserIds = async (userIds, select) => {
   return await UserBalance.find({
-      where: {userId: In(userIds)},
-      select: select
-    })
+    where: { userId: In(userIds) },
+    select: select
+  })
 }

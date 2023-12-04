@@ -294,7 +294,7 @@
             }
           },
           {
-            "name": "page",
+            "name": "offset",
             "in": "query",
             "schema": {
               "type": "string"
@@ -302,25 +302,6 @@
           },
           {
             "name": "limit",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/user/search": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "userName",
             "in": "query",
             "schema": {
               "type": "string"

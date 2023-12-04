@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -557,66 +557,112 @@ exports.setExposureLimit = async (req, res, next) => {
     return ErrorResponse(error, req, res);
   }
 }
-
 exports.userList = async (req, res, next) => {
   try {
-    let reqUser = req.user || {}
-    let { userName, roleName, page, limit } = req.query
+    let reqUser = req.user
+    let { userName, roleName, offset, limit } = req.query
+    // let loginUser = await getUserById(reqUser.id)
+    let userRole = reqUser.roleName
     let where = {
-      //createBy : reqUser.id
+      createBy : reqUser.id
     }
-    if (userName) where.userName = ILike(`%${userName}%`)
-    if (roleName) where.roleName = roleName
+    if (userName) where.userName = ILike(`%${userName}%`);
+    if (roleName) where.roleName = roleName;
 
-    let users = await getUsers(where, ["id", "userName", "roleName", "userBlock", "betBlock", "exposureLimit", "creditRefrence"], page, limit)
+    let relations = ['user']
+    let users = await getUsersWithUserBalance(where, ["id", "userName", "roleName", "userBlock", "betBlock", "exposureLimit", "creditRefrence","totalComission"], offset, limit)
+
+    let response = {
+      count : 0,
+      list : []
+    }
+    if(!users[1]){
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "user.userList" },
-        data: { users },
+        data: response,
       },
       req,
       res
     );
+  }
+  response.count = users[1]
+  let partnershipCol = [];
+        if (userRole == userRoleConstant.master) {
+            partnershipCol = ['mPartnership', 'smPartnership', 'aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+        }
+        if (userRole == userRoleConstant.superMaster) {
+            partnershipCol = ['smPartnership', 'aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+        }
+        if (userRole == userRoleConstant.admin) {
+            partnershipCol = ['aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+        }
+        if (userRole == userRoleConstant.superAdmin) {
+            partnershipCol = ['saPartnership', 'faPartnership', 'fwPartnership'];
+        }
+        if (userRole == userRoleConstant.fairGameAdmin) {
+            partnershipCol = ['faPartnership', 'fwPartnership'];
+        }
+        if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
+            partnershipCol = ['fwPartnership'];
+        }
+
+  let data = await Promise.all(users[0].map(async element => {
+    let d = {}
+    d = {
+      ...element,
+      ...element.userBal
+    };
+
+    delete d.userBal
+    d['percentProfitLoss'] = d['myProfitLoss'];
+    let partner_ships = 100;
+    if (partnershipCol && partnershipCol.length) {
+        partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + d[a], 0);
+        d['percentProfitLoss'] = ((d['profitLoss'] / 100) * partner_ships).toFixed(2);
+    }
+      if (d.roleName != userRoleConstant.user) {
+        d['available_balance'] = Number((d['currentBalance']).toFixed(2));
+        let childUsers = await getChildUser(element.id)
+        let allChildUserIds = childUsers.map(obj => obj.id)
+        let balancesum = 0
+
+        if(allChildUserIds.length){
+        let allChildBalanceData =await getAllchildsCurrentBalanceSum(allChildUserIds)
+        balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;            
+        }
+        
+        d['balance'] =  Number(d['currentBalance'] + balancesum).toFixed(2);
+    } else {
+        d['available_balance'] = Number((d['currentBalance'] - d['exposure']).toFixed(2));
+        d['balance'] = d['currentBalance'];
+    }
+    d['percentProfitLoss'] = d['myProfitLoss'];
+    d['TotalComission'] = d['TotalComission']
+    if (partnershipCol && partnershipCol.length) {
+        let partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + d[a], 0);
+        d['percentProfitLoss'] = ((d['profitLoss'] / 100) * partner_ships).toFixed(2);
+        d['TotalComission'] = ((d['TotalComission'] / 100) * partner_ships).toFixed(2) + '(' + partner_ships + '%)';
+    }
+    return d;
+}))
+
+response.list = data
+return SuccessResponse(
+  {
+    statusCode: 200,
+    message: { msg: "user.userList" },
+    data: response,
+  },
+  req,
+  res
+);
   } catch (error) {
     return ErrorResponse(error, req, res);
   }
 }
 
-exports.userSearchList = async (req, res, next) => {
-  try {
-    let reqUser = req.user || {}
-    let { userName } = req.query
-    if (!userName || userName.length < 0) {
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "user.userList" },
-          data: { users: [] },
-        },
-        req,
-        res
-      );
-    }
-    let where = {
-      //createBy : reqUser.id
-    }
-    if (userName) where.userName = ILike(`%${userName}%`)
-
-    let users = await getUsers(where, ["id", "userName"])
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: { msg: "user.userList" },
-        data: { users },
-      },
-      req,
-      res
-    );
-  } catch (error) {
-    return ErrorResponse(error, req, res);
-  }
-}
 
 
 exports.userBalanceDetails = async (req, res, next) => {
