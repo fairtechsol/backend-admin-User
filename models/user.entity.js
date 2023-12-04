@@ -45,6 +45,14 @@ const userSchema = new EntitySchema({
       nullable: false,
       default: false,
     },
+    userBlockedBy:{
+      type:"uuid",
+      nullable:true
+    },
+    betBlockedBy:{
+      type:"uuid",
+      nullable:true
+    },
     fwPartnership: {
       type: 'int',
       nullable: false,

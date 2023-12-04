@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName,updateUser } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName,updateUser, userBlockUnblock } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -492,3 +492,17 @@ exports.changePassword = async (req, res, next) => {
     );
   }
 };
+
+
+exports.userLock=async (req,res,next)=>{
+    try {
+        const {blockId,block}=req.body;
+        const id=req.user.id;
+
+        const betBlockUnblock=await userBlockUnblock(blockId,id,block);
+        console.log(betBlockUnblock);
+        return res.status(200).json({});
+    } catch (error) {
+        console.log(error);
+    }
+}
