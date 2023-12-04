@@ -492,3 +492,43 @@ exports.changePassword = async (req, res, next) => {
     );
   }
 };
+
+
+
+exports.lockUnlockUser = async (req, res) => {
+  try{
+      const { userId, transPassword, userBlock, betBlock, createBy } = req.body;
+      let reqUserId = req.user?.id || createBy;
+      let loginUser = await getUserById(reqUserId, ["id", "userBlock", "betBlock", "roleName"]);
+      let updateUser = await getUserById(userId, ["id", "userBlock", "betBlock", "roleName"]);
+      console.log(loginUser);
+      console.log(updateUser);
+      
+      if(!loginUser){
+          throw {
+              msg: {
+                code: "notFound",
+                keys: { name: "Login User" },
+              }
+            };            
+      }
+      if(!updateUser){
+          throw {
+              msg: {
+                code: "notFound",
+                keys: { name: "Update User" },
+              }
+            };  
+      }
+      if (loginUser.userBlock == true) {
+          throw new Error("user.userBlockError");
+      }
+      if (loginUser.betBlock == true && betBlock == false) {
+          throw new Error("user.betBlockError");
+      }
+      let result = lockUnlockUserService(loginUser, updateUser, userBlock, betBlock);
+      return SuccessResponse({ statusCode: 200, message: { msg: "login" } }, req, res);
+  } catch (err){
+      return ErrorResponse(err, req, res);
+  }
+}
