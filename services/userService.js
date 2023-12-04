@@ -68,7 +68,7 @@ exports.getUsersWithUserBalance = async (where, select, offset, limit) => {
   if(select.length)
     select = select.map(item => "user."+item)
   let Query = user.createQueryBuilder()
-  .select(select)
+  .select()
   .where(where)
   .leftJoinAndMapOne("user.userBal","userBalances", "UB","user.id = UB.userId")
 

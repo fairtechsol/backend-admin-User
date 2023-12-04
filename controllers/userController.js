@@ -76,6 +76,15 @@ exports.createUser = async (req, res) => {
     }
 
     const transactioninserted = await insertTransactions(walletArray);
+    let insertUserBalanceData = {
+      currentBalance: 0,
+      userId: insertUser.id,
+      profitLoss: 0,
+      myProfitLoss: 0,
+      downLevelBalance: 0,
+      exposure: 0
+    }
+    insertUserBalanceData = await addUserBalance(insertUserBalanceData)
     if (insertUser.roleName == userRoleConstant.user) {
       let buttonValue = [
         {
@@ -570,7 +579,7 @@ exports.userList = async (req, res, next) => {
     if (roleName) where.roleName = roleName;
 
     let relations = ['user']
-    let users = await getUsersWithUserBalance(where, ["id", "userName", "roleName", "userBlock", "betBlock", "exposureLimit", "creditRefrence","totalComission"], offset, limit)
+    let users = await getUsersWithUserBalance(where, [], offset, limit)
 
     let response = {
       count : 0,

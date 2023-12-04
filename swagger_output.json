@@ -280,6 +280,13 @@
         "description": "",
         "parameters": [
           {
+            "name": "token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "userName",
             "in": "query",
             "schema": {
