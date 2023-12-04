@@ -5,6 +5,7 @@
   "invalid":"Invalid {name}",
   "invalidId": "Given id is invalid",
   "userNotSelect": "User not selected.",
+  "updated":"{name} updated successfully",
   "auth": {
     "loginSuccess": "Login successfully",
     "invalidPass": "Invalid {type} password",

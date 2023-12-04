@@ -351,21 +351,8 @@ exports.changePassword = async (req, res, next) => {
     const {
       oldPassword,
       newPassword,
-      transactionPassword,
-      confirmPassword,
+      transactionPassword
     } = req.body;
-
-    // Check if the new password matches the confirmed password
-    if (newPassword !== confirmPassword) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "user.confirmPasswordNotMatch" },
-        },
-        req,
-        res
-      );
-    }
 
     // Hash the new password
     const password = bcrypt.hashSync(newPassword, 10);
@@ -492,3 +479,27 @@ exports.changePassword = async (req, res, next) => {
     );
   }
 };
+
+exports.generateTransactionPassword=async (req,res)=>{
+
+const {id}=req.user;
+const {transPassword}=req.body;
+
+
+    const encryptTransPass=bcrypt.hashSync(transPassword,10);
+    await updateUser(id,{
+        transPassword:encryptTransPass
+    })
+
+    return SuccessResponse(
+        {
+            statusCode: 200,
+            message:{
+                msg:"updated",
+                keys:{name:"Transaction Password"}
+            }
+          },
+          req,
+          res
+    )
+}

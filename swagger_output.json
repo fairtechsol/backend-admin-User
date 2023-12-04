@@ -195,8 +195,38 @@
                   },
                   "transactionPassword": {
                     "example": "any"
-                  },
-                  "confirmPassword": {
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/generateTransactionPassword": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transPassword": {
                     "example": "any"
                   }
                 }
@@ -254,7 +284,16 @@
             "name": "userId",
             "in": "path",
             "required": true,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
