@@ -41,19 +41,20 @@ exports.getUserByUserName = async (userName, select) => {
 };
 
 exports.lockUnlockUserService = async (loginUser, updateUser, userBlock, betBlock) => {
+  try{
   let userId = updateUser.id;
   let createBy = loginUser.userId;
   let findChildQuery = `WITH RECURSIVE p AS (
-    SELECT * FROM "user" WHERE "users"."id" = '${userId}'
+    SELECT * FROM "users" WHERE "users"."id" = '${userId}'
     UNION
-    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"::"text"
+    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
   )
 SELECT "id", "userName" FROM p where "deletedAt" IS NULL;`;
   if (loginUser.roleName == userRoleConstant.fairGameWallet && loginUser.id == updateUser.id) {
     findChildQuery = `WITH RECURSIVE p AS (
         SELECT * FROM "user" WHERE "users"."id" = '${userId}'
         UNION
-        SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"::"text"
+        SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
       )
     SELECT "id", "userName" FROM p where "deletedAt" IS NULL and "id" != '${userId}';`
   }
@@ -63,10 +64,10 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL;`;
     if (userBlock == 1 || betBlock == 1) {
       let blockUser = await userBlockRepo.findOne({ where: { userId: child.id, createBy: createBy } });
       if (!blockUser) {
-        let block = new userBlockSchema();
+        let block = {};
         block.userBlock = userBlock;
         block.betBlock = betBlock;
-        block.createdBy = createdBy;
+        block.createBy = loginUser.id;
         block.userId = child.id;
         await userBlockRepo.save(block);
       } else if (blockUser.userBlock != userBlock || blockUser.betBlock != betBlock) {
@@ -74,11 +75,11 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL;`;
         blockUser.betBlock = betBlock;
         userBlockRepo.save(blockUser);
       }
-      if (bet_blocked == 1 && all_blocked == 1) {
+      if (betBlock == 1 && userBlock == 1) {
         childUser.userBlock = userBlock;
         childUser.betBlock = betBlock;
       }
-      if (bet_blocked == 0 && all_blocked == 1) {
+      if (betBlock == 0 && userBlock == 1) {
         childUser.betBlock = betBlock;
         let blockByOtherUser = await userBlockRepo.findOne({ where: { userId: child.id, createBy: Not(createBy), betBlock: true } });
         if (blockByOtherUser) {
@@ -127,5 +128,9 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL;`;
 
     // will add the token expire and force logout if user is all block
   });
-  return user.update({ id: updateUser.id }, { betBlock: childUser.betBlock, userBlock: childUser.userBlock });
+  return user.update({ id: updateUser.id }, { betBlock: updateUser.betBlock, userBlock: updateUser.userBlock });
+  }
+  catch(err){
+    throw err;
+  }
 }
