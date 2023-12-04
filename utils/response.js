@@ -3,12 +3,12 @@ const { __mf } = require("i18n");
 module.exports.ErrorResponse = (errorData, req, res) => {
   errorData.statusCode = errorData.statusCode || 500;
   errorData.status = "error";
-  const errorMessage = errorData.msg || "Internal Server Error";
+  const errorMessage = errorData.message || "Internal Server Error";
   
   // Extracting message code and keys
-  const { code, keys } = errorMessage;
+  const { msg, keys } = errorMessage;
 
-  let i18Code = code ? code : errorData.message.msg || errorData.message;
+  let i18Code = msg ? msg : errorData?.message?.msg || errorData.message;
 
   const errorObj = {
     status: errorData.status,

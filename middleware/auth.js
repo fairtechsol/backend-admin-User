@@ -1,7 +1,5 @@
-const internalRedis = require("../config/internalRedisConnection");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const { ErrorResponse } = require("../utils/response");
-const jwt = require("jsonwebtoken");
 
 exports.isAuthenticate = async (req, res, next) => {
   try{
@@ -40,8 +38,7 @@ exports.isAuthenticate = async (req, res, next) => {
         {
           statusCode: 401,
           message: {
-            msg: "invalid",
-            keys: { name: "token" },
+            msg: "auth.unauthorize",
           },
         },
         req,

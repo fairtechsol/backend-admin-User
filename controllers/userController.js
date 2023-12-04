@@ -302,15 +302,6 @@ const generateTransactionPass = () => {
   return `${randomNumber}`;
 };
 
-// Function to handle user not found error response
-const handleUserNotFound = () => ({
-  error: true,
-  message: {
-    msg: "notFound",
-    keys: { name: "User" },
-  },
-  statusCode: 404,
-});
 
 // Check old password against the stored password
 const checkOldPassword = async (userId, oldPassword) => {
@@ -318,7 +309,10 @@ const checkOldPassword = async (userId, oldPassword) => {
   const user = await getUserById(userId, ["password"]);
   if (!user) {
     // User not found, return error response
-    return handleUserNotFound();
+    throw {
+          msg: "notFound",
+          keys: { name: "User" },
+      };
   }
   // Compare old password with the stored password
   return bcrypt.compareSync(oldPassword, user.password);
@@ -330,7 +324,10 @@ const checkTransactionPassword = async (userId, oldTransactionPass) => {
   const user = await getUserById(userId, ["transPassword", "id"]);
   if (!user) {
     // User not found, return error response
-    return handleUserNotFound();
+    throw {
+          msg: "notFound",
+          keys: { name: "User" },
+      };
   }
   // Compare old transaction password with the stored transaction password
   return bcrypt.compareSync(oldTransactionPass, user.transPassword);
@@ -363,17 +360,6 @@ exports.changePassword = async (req, res, next) => {
       const userId = req.user.id;
       const isPasswordMatch = await checkOldPassword(userId, oldPassword);
 
-      // Handle error if user not found or old password is incorrect
-      if (isPasswordMatch?.error) {
-        return ErrorResponse(
-          {
-            statusCode: isPasswordMatch.statusCode,
-            message: isPasswordMatch.message,
-          },
-          req,
-          res
-        );
-      }
 
       if (!isPasswordMatch) {
         return ErrorResponse(
@@ -429,17 +415,7 @@ exports.changePassword = async (req, res, next) => {
       transactionPassword
     );
 
-    // Handle error if user not found or transaction password is incorrect
-    if (isPasswordMatch?.error) {
-      return ErrorResponse(
-        {
-          statusCode: isPasswordMatch.statusCode,
-          message: isPasswordMatch.message,
-        },
-        req,
-        res
-      );
-    }
+   
 
     if (!isPasswordMatch) {
       return ErrorResponse(
@@ -512,16 +488,16 @@ exports.lockUnlockUser = async (req, res) => {
 
     if (!loginUser) {
       throw {
-        msg: {
-          code: "notFound",
+        message: {
+          msg: "notFound",
           keys: { name: "Login User" },
         }
       };
     }
     if (!updateUser) {
       throw {
-        msg: {
-          code: "notFound",
+        message: {
+          msg: "notFound",
           keys: { name: "Update User" },
         }
       };

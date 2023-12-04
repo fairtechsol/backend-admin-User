@@ -6,13 +6,15 @@
   "invalidId": "Given id is invalid",
   "userNotSelect": "User not selected.",
   "updated":"{name} updated successfully",
+  
   "auth": {
     "loginSuccess": "Login successfully",
     "invalidPass": "Invalid {type} password",
     "authFailed": "Please login into your account",
     "roleNotCorrectLogin": "Please login with correct user",
     "logoutSuccess":"Logout successfully",
-    "passwordChanged":"Password changed successfully"
+    "passwordChanged":"Password changed successfully",
+    "unauthorize":"Unauthorized user"
   },
   "user" : {
     "blocked": "There is something wrong with your account. Please contact your administrator.",
