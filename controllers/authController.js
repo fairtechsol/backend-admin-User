@@ -1,34 +1,41 @@
-const { userRoleConstant, redisTimeOut, partnershipPrefixByRole, differLoginTypeByRoles } = require("../config/contants");
+const {
+  userRoleConstant,
+  redisTimeOut,
+  partnershipPrefixByRole,
+  differLoginTypeByRoles,
+} = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { getUserById, getUserByUserName } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
+const { forceLogoutIfLogin } = require("../services/commonService");
 
+// Function to validate a user by username and password
 const validateUser = async (userName, password) => {
   // Find user by username and select specific fields
   const user = await getUserByUserName(userName);
+
+  // Check if the user is found
   if (user) {
+    // Check if the provided password matches the hashed password in the database
     if (bcrypt.compareSync(password, user.password)) {
+      // If the passwords match, create a result object without the password field
       const { password, ...result } = user;
       return result;
     }
+
+    // If the passwords don't match, return an error object
     return {
       error: true,
-      message: "auth.invalidPass",
+      message: { msg: "auth.invalidPass", keys: { type: "user" } },
       statusCode: 403,
     };
   }
-  return null;
-};
 
-const CheckAlreadyLogin = async (userId) => {
-  let token = await internalRedis.hget(userId,"token");
-  
-    if (token) {
-      // function to force logout
-    }
+  // If the user is not found, return null
+  return null;
 };
 
 const setUserDetailsRedis = async (user) => {
@@ -96,9 +103,7 @@ exports.login = async (req, res) => {
       return ErrorResponse(
         {
           statusCode: 404,
-          message: {
-            msg: user.message
-          },
+          message: user.message,
         },
         req,
         res
@@ -153,36 +158,37 @@ exports.login = async (req, res) => {
         break;
 
       case userRoleConstant.admin:
-        
         if (!differLoginTypeByRoles.admin.includes(roleName)) {
           return throwUserNotCorrectError();
         }
         break;
 
       case "wallet":
-        
         if (!differLoginTypeByRoles.wallet.includes(roleName)) {
           return throwUserNotCorrectError();
         }
         break;
+      default:
+        return throwUserNotCorrectError();
     }
 
     // force logout user if already login on another device
-    await CheckAlreadyLogin(user.id);
+    await forceLogoutIfLogin(user.id);
 
-    
     setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, role: user.roleName, userName: user.userName },
-      process.env.JWT_SECRET||"secret"
+      process.env.JWT_SECRET || "secret"
     );
 
     // checking transition password
-    const isTransPasswordCreated = Boolean(user.transPassword) ;
+    const isTransPasswordCreated = Boolean(user.transPassword);
     const forceChangePassword = !Boolean(user.loginAt);
-    userLoginAtUpdate(user.id);
-    
+
+    if (!forceChangePassword) {
+      userLoginAtUpdate(user.id);
+    }
     // setting token in redis for checking if user already loggedin
     await internalRedis.hmset(user.id, { token: token });
 
@@ -196,7 +202,7 @@ exports.login = async (req, res) => {
           token,
           isTransPasswordCreated: isTransPasswordCreated,
           role: roleName,
-          forceChangePassword
+          forceChangePassword,
         },
       },
       req,
@@ -214,14 +220,39 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.signup = async (req, res) => {
-  const { email, password } = req.body;
-  const users = await createUser(email, password);
-  return SuccessResponse(
-    { statusCode: 200, message: { msg: "signup" }, data: users },
-    req,
-    res
-  );
+// Function to handle user logout
+exports.logout = async (req, res) => {
+  try {
+    // Get the user from the request object
+    const user = req.user;
+
+    // If the user is an expert, remove their ID from the "expertLoginIds" set in Redis
+    if (user.roleName === userRoleConstant.expert) {
+      await internalRedis.srem("expertLoginIds", user.id);
+    }
+
+    // Remove the user's token from Redis using their ID as the key
+    await internalRedis.hdel(user.id, "token");
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "auth.logoutSuccess" },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    // If an error occurs during the logout process, return an error response
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
 };
 
 exports.dummyFunction = async (req, res) => {

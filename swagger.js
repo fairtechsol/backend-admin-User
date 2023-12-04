@@ -1,5 +1,5 @@
 
-const swaggerAutogen = require('swagger-autogen')()
+const swaggerAutogen = require('swagger-autogen')({openapi: '3.0.0'})
 const fs= require('fs')
 const outputFile = './swagger_output.json'
 
@@ -10,7 +10,20 @@ const doc = {
       description: 'bet Fair APIs Description',
       version: '1.0.0',
     },
-    host: 'localhost:5000',
+    servers: [
+      {
+        url: 'http://localhost:5000', 
+        description: 'local host url ' 
+      },
+      {
+        url: 'http://development.com', 
+        description: 'development url ' 
+      },
+      {
+        url: 'https://production.com', 
+        description: 'production url ' 
+      }
+    ],
     basePath: '/', 
     schemes: ['http','https'],
   };
