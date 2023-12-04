@@ -45,6 +45,7 @@ module.exports.transType = {
   withDraw: "withDraw",
   win : "win",
   loss : "loss",
+  creditRefer : "creditReference"
 };
 
 module.exports.partnershipPrefixByRole = {
