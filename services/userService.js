@@ -52,7 +52,7 @@ exports.getUser = async (where = {}, select) => {
 
 exports.getUsers = async (where, select, offset, limit, relations) => {
   //find list with filter and pagination
-  console.log(where, select, offset, limit)
+  
   return await user.findAndCount({
     where: where,
     select: select,
@@ -63,22 +63,21 @@ exports.getUsers = async (where, select, offset, limit, relations) => {
 
 };
 
-exports.getUsersWithUserBalance = async (where, select, offset, limit) => {
+exports.getUsersWithUserBalance = async (where, offset, limit) => {
   //get all users with user balance according to pagoination
-  if(select.length)
-    select = select.map(item => "user."+item)
+
   let Query = user.createQueryBuilder()
   .select()
   .where(where)
   .leftJoinAndMapOne("user.userBal","userBalances", "UB","user.id = UB.userId")
 
   if (offset) {
-    Query = Query.offset(offset);
+    Query = Query.offset(parseInt(offset));
   }
   if (limit) {
-    Query = Query.limit(limit);
+    Query = Query.limit(parseInt(limit));
   }
-  console.log(Query.getQueryAndParameters());
+
   var result = await Query.getManyAndCount();
   return result;
 

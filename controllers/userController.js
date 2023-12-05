@@ -22,9 +22,10 @@ exports.createUser = async (req, res) => {
     userName = userName.toUpperCase();
     let userExist = await getUserByUserName(userName);
     if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
-
+    if(creator.roleName != userRoleConstant.fairGameWallet){
     if (exposureLimit && exposureLimit > creator.exposureLimit)
       return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
+    }
     password = await bcrypt.hash(
       password,
       process.env.BCRYPTSALT
@@ -120,160 +121,305 @@ exports.updateUser = async (req, res) => {
 };
 
 
-const calculatePartnership = async (userData, creator) => {
-  let {
+// const calculatePartnership = async (userData, creator) => {
+//   let {
+//     fwPartnership,
+//     faPartnership,
+//     saPartnership,
+//     aPartnership,
+//     smPartnership,
+//     mPartnership,
+//   } = creator;
+
+//   if (userData.roleName == userRoleConstant.user) {
+//     return {
+//       fwPartnership,
+//       faPartnership,
+//       saPartnership,
+//       aPartnership,
+//       smPartnership,
+//       mPartnership,
+//     };
+//   }
+
+//   let setPartnership = {
+//     [userRoleConstant.fairGameWallet]: () => {
+//       fwPartnership = creator.myPartnership;
+//     },
+//     [userRoleConstant.fairGameAdmin]: () => {
+//       faPartnership = creator.myPartnership;
+//     },
+//     [userRoleConstant.superAdmin]: () => {
+//       saPartnership = creator.myPartnership;
+//     },
+//     [userRoleConstant.admin]: () => {
+//       aPartnership = creator.myPartnership;
+//     },
+//     [userRoleConstant.superMaster]: () => {
+//       smPartnership = creator.myPartnership;
+//     },
+//     [userRoleConstant.master]: () => {
+//       mPartnership = creator.myPartnership;
+//     },
+//     default: () => {
+//       return;
+//     },
+//   }
+//   if (typeof setPartnership[creator.roleName] == "function")
+//     setPartnership[creator.roleName]();
+//   else setPartnership["default"]();
+
+//   let calculatePartnershipPartnership = {
+//     [userRoleConstant.fairGameWallet]: {
+//       [userRoleConstant.fairGameAdmin]: () => {
+//         faPartnership = 100 - parseInt(creator.myPartnership);
+//       },
+//       [userRoleConstant.superAdmin]: () => {
+//         saPartnership = 100 - parseInt(creator.myPartnership);
+//       },
+//       [userRoleConstant.admin]: () => {
+//         aPartnership = 100 - parseInt(creator.myPartnership);
+//       },
+//       [userRoleConstant.superMaster]: () => {
+//         smPartnership = 100 - parseInt(creator.myPartnership);
+//       },
+//       [userRoleConstant.master]: () => {
+//         mPartnership = 100 - parseInt(creator.myPartnership);
+//       },
+//     },
+//     [userRoleConstant.fairGameAdmin]: {
+//       [userRoleConstant.superAdmin]: () => {
+//         saPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+//       },
+//       [userRoleConstant.admin]: () => {
+//         aPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+//       },
+//       [userRoleConstant.superMaster]: () => {
+//         smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+//       },
+//       [userRoleConstant.master]: () => {
+//         mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+//       },
+//     },
+//     [userRoleConstant.superAdmin]: {
+//       [userRoleConstant.admin]: () => {
+//         aPartnership =
+//           100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+//       },
+//       [userRoleConstant.superMaster]: () => {
+//         smPartnership =
+//           100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+//       },
+//       [userRoleConstant.master]: () => {
+//         mPartnership =
+//           100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+//       },
+//     },
+//     [userRoleConstant.admin]: {
+//       [userRoleConstant.superMaster]: () => {
+//         smPartnership =
+//           100 -
+//           parseInt(
+//             creator.myPartnership +
+//             fwPartnership +
+//             faPartnership +
+//             saPartnership
+//           );
+//       },
+//       [userRoleConstant.master]: () => {
+//         mPartnership =
+//           100 -
+//           parseInt(
+//             creator.myPartnership +
+//             fwPartnership +
+//             faPartnership +
+//             saPartnership
+//           );
+//       },
+//     },
+//     [userRoleConstant.superMaster]: {
+//       [userRoleConstant.master]: () => {
+//         mPartnership =
+//           100 -
+//           parseInt(
+//             creator.myPartnership +
+//             fwPartnership +
+//             faPartnership +
+//             saPartnership +
+//             aPartnership
+//           );
+//       },
+//     },
+//     default: () => {
+//       return;
+//     },
+//   };
+//   if (typeof calculatePartnershipPartnership[creator.roleName][userData.roleName] == "function")
+//   calculatePartnershipPartnership[creator.roleName][userData.roleName]();
+//   else calculatePartnershipPartnership["default"]();
+
+//   if (
+//     userData.roleName != userRoleConstant.expert &&
+//     fwPartnership +
+//     faPartnership +
+//     saPartnership +
+//     aPartnership +
+//     smPartnership +
+//     mPartnership !=
+//     100
+//   ) {
+//     throw new Error("user.partnershipNotValid");
+//   }
+//   return {
+//     fwPartnership,
+//     faPartnership,
+//     saPartnership,
+//     aPartnership,
+//     smPartnership,
+//     mPartnership,
+//   };
+// };
+
+const calculatePartnership = async (userData,creator) =>{
+  if (userData.roleName == userRoleConstant.fairGameWallet) {
+    return {};
+}
+
+// user created by fairgame wallet
+let fwPartnership = creator.fwPartnership;
+let faPartnership = creator.faPartnership;
+let saPartnership = creator.saPartnership;
+let aPartnership = creator.aPartnership;
+let smPartnership = creator.smPartnership;
+let mPartnership = creator.mPartnership;
+
+switch (creator.role) {
+    case (userRoleConstant.fairGameWallet): {
+        fwPartnership = creator.myPartnership;
+        break;
+    }
+    case (userRoleConstant.fairGameAdmin): {
+        faPartnership = creator.myPartnership;
+        break;
+    }
+    case (userRoleConstant.superAdmin): {
+        saPartnership = creator.myPartnership;
+        break;
+    }
+    case (userRoleConstant.admin): {
+        aPartnership = creator.myPartnership;
+        break;
+    }
+    case (userRoleConstant.superMaster): {
+        smPartnership = creator.myPartnership;
+        break;
+    }
+    case (userRoleConstant.master): {
+        mPartnership = creator.myPartnership;
+        break;
+    }
+}
+
+switch (creator.role) {
+    case (userRoleConstant.fairGameWallet): {
+        switch (userData.roleName) {
+            case (userRoleConstant.fairGameAdmin): {
+                faPartnership = 100 - parseInt(creator.myPartnership);
+                break;
+            }
+            case (userRoleConstant.superAdmin): {
+                saPartnership = 100 - parseInt(creator.myPartnership);
+                break;
+            }
+            case (userRoleConstant.admin): {
+                aPartnership = 100 - parseInt(creator.myPartnership);
+                break;
+            }
+            case (userRoleConstant.superMaster): {
+                smPartnership = 100 - parseInt(creator.myPartnership);
+                break;
+            }
+            case (userRoleConstant.master): {
+                mPartnership = 100 - parseInt(creator.myPartnership);
+                break;
+            }
+        }
+    }
+        break;
+    case (userRoleConstant.fairGameAdmin): {
+        switch (userData.roleName) {
+            case (userRoleConstant.superAdmin): {
+                saPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+                break;
+            }
+            case (userRoleConstant.admin): {
+                aPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+                break;
+            }
+            case (userRoleConstant.superMaster): {
+                smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+                break;
+            }
+            case (userRoleConstant.master): {
+                mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+                break;
+            }
+        }
+    }
+        break;
+    case (userRoleConstant.superAdmin): {
+        switch (userData.roleName) {
+            case (userRoleConstant.admin): {
+                aPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+                break;
+            }
+            case (userRoleConstant.superMaster): {
+                smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+                break;
+            }
+            case (userRoleConstant.master): {
+                mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+                break;
+            }
+        }
+    }
+        break;
+    case (userRoleConstant.admin): {
+        switch (userData.roleName) {
+            case (userRoleConstant.superMaster): {
+                smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
+                break;
+            }
+            case (userRoleConstant.master): {
+                mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
+                break;
+            }
+        }
+    }
+        break;
+    case (userRoleConstant.superMaster): {
+        switch (userData.roleName) {
+            case (userRoleConstant.master): {
+                mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership + aPartnership);
+                break;
+            }
+        }
+    }
+        break;
+}
+
+if (userData.roleName != userRoleConstant.expert && fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership + mPartnership != 100) {
+  throw new Error("user.partnershipNotValid");
+}
+return {
     fwPartnership,
     faPartnership,
     saPartnership,
     aPartnership,
     smPartnership,
-    mPartnership,
-  } = creator;
-
-  if (userData.roleName == userRoleConstant.user) {
-    return {
-      fwPartnership,
-      faPartnership,
-      saPartnership,
-      aPartnership,
-      smPartnership,
-      mPartnership,
-    };
-  }
-
-  let setPartnership = {
-    [userRoleConstant.fairGameWallet]: () => {
-      fwPartnership = creator.myPartnership;
-    },
-    [userRoleConstant.fairGameAdmin]: () => {
-      faPartnership = creator.myPartnership;
-    },
-    [userRoleConstant.superAdmin]: () => {
-      saPartnership = creator.myPartnership;
-    },
-    [userRoleConstant.admin]: () => {
-      aPartnership = creator.myPartnership;
-    },
-    [userRoleConstant.superMaster]: () => {
-      smPartnership = creator.myPartnership;
-    },
-    [userRoleConstant.master]: () => {
-      mPartnership = creator.myPartnership;
-    },
-    default: () => {
-      return;
-    },
-  }(setPartnership[creator.roleName] || setPartnership["default"])();
-  setPartnership = {
-    [userRoleConstant.fairGameWallet]: {
-      [userRoleConstant.fairGameAdmin]: () => {
-        faPartnership = 100 - parseInt(creator.myPartnership);
-      },
-      [userRoleConstant.superAdmin]: () => {
-        saPartnership = 100 - parseInt(creator.myPartnership);
-      },
-      [userRoleConstant.admin]: () => {
-        aPartnership = 100 - parseInt(creator.myPartnership);
-      },
-      [userRoleConstant.superMaster]: () => {
-        smPartnership = 100 - parseInt(creator.myPartnership);
-      },
-      [userRoleConstant.master]: () => {
-        mPartnership = 100 - parseInt(creator.myPartnership);
-      },
-    },
-    [userRoleConstant.fairGameAdmin]: {
-      [userRoleConstant.superAdmin]: () => {
-        saPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
-      },
-      [userRoleConstant.admin]: () => {
-        aPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
-      },
-      [userRoleConstant.superMaster]: () => {
-        smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
-      },
-      [userRoleConstant.master]: () => {
-        mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
-      },
-    },
-    [userRoleConstant.superAdmin]: {
-      [userRoleConstant.admin]: () => {
-        aPartnership =
-          100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
-      },
-      [userRoleConstant.superMaster]: () => {
-        smPartnership =
-          100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
-      },
-      [userRoleConstant.master]: () => {
-        mPartnership =
-          100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
-      },
-    },
-    [userRoleConstant.admin]: {
-      [userRoleConstant.superMaster]: () => {
-        smPartnership =
-          100 -
-          parseInt(
-            creator.myPartnership +
-            fwPartnership +
-            faPartnership +
-            saPartnership
-          );
-      },
-      [userRoleConstant.master]: () => {
-        mPartnership =
-          100 -
-          parseInt(
-            creator.myPartnership +
-            fwPartnership +
-            faPartnership +
-            saPartnership
-          );
-      },
-    },
-    [userRoleConstant.superMaster]: {
-      [userRoleConstant.master]: () => {
-        mPartnership =
-          100 -
-          parseInt(
-            creator.myPartnership +
-            fwPartnership +
-            faPartnership +
-            saPartnership +
-            aPartnership
-          );
-      },
-    },
-    default: () => {
-      return;
-    },
-  };
-  if (typeof setPartnership[creator.roleName][userData.roleName] == "function")
-    setPartnership[creator.roleName][userData.roleName]();
-  else setPartnership["default"]();
-
-  if (
-    userData.roleName != userRoleConstant.expert &&
-    fwPartnership +
-    faPartnership +
-    saPartnership +
-    aPartnership +
-    smPartnership +
-    mPartnership !=
-    100
-  ) {
-    throw new Error("user.partnershipNotValid");
-  }
-  return {
-    fwPartnership,
-    faPartnership,
-    saPartnership,
-    aPartnership,
-    smPartnership,
-    mPartnership,
-  };
-};
+    mPartnership
+}
+}
 
 const checkUserCreationHierarchy = (creator, createUserRoleName) => {
   const hierarchyArray = Object.values(userRoleConstant)
@@ -291,9 +437,9 @@ const checkUserCreationHierarchy = (creator, createUserRoleName) => {
 exports.insertWallet = async (req, res) => {
   try {
     let wallet = {
-      userName: "fgWallet",
+      userName: "FGWALLET",
       fullName: "fair game wallet",
-      password: "123456",
+      password: "FGwallet@123",
       phoneNumber: "1234567890",
       city: "india",
       roleName: userRoleConstant.fairGameWallet,
@@ -314,7 +460,21 @@ exports.insertWallet = async (req, res) => {
         req,
         res
       );
+
+      wallet.password = await bcrypt.hash(
+        wallet.password,
+        process.env.BCRYPTSALT
+      );
     let insertUser = await addUser(wallet);
+    let insertUserBalanceData = {
+      currentBalance: 0,
+      userId: insertUser.id,
+      profitLoss: 0,
+      myProfitLoss: 0,
+      downLevelBalance: 0,
+      exposure: 0
+    }
+    insertUserBalanceData = await addUserBalance(insertUserBalanceData)
     return SuccessResponse(
       { statusCode: 200, message: { msg: "login" }, data: insertUser },
       req,
@@ -538,7 +698,6 @@ exports.setExposureLimit = async (req, res, next) => {
     user.exposureLimit = amount
     let childUsers = await getChildUser(user.id)
 
-    console.log(childUsers);
 
     childUsers.map(async childObj => {
       let childUser = await getUserById(childObj.id);
@@ -579,7 +738,7 @@ exports.userList = async (req, res, next) => {
     if (roleName) where.roleName = roleName;
 
     let relations = ['user']
-    let users = await getUsersWithUserBalance(where, [], offset, limit)
+    let users = await getUsersWithUserBalance(where, offset, limit)
 
     let response = {
       count : 0,
@@ -618,21 +777,22 @@ exports.userList = async (req, res, next) => {
         }
 
   let data = await Promise.all(users[0].map(async element => {
-    let d = {}
-    d = {
+    let elementData = {}
+    elementData = {
       ...element,
       ...element.userBal
     };
 
-    delete d.userBal
-    d['percentProfitLoss'] = d['myProfitLoss'];
+    delete elementData.userBal
+
+    elementData['percentProfitLoss'] = elementData['myProfitLoss'];
     let partner_ships = 100;
     if (partnershipCol && partnershipCol.length) {
-        partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + d[a], 0);
-        d['percentProfitLoss'] = ((d['profitLoss'] / 100) * partner_ships).toFixed(2);
+        partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + elementData[a], 0);
+        elementData['percentProfitLoss'] = ((elementData['profitLoss'] / 100) * partner_ships).toFixed(2);
     }
-      if (d.roleName != userRoleConstant.user) {
-        d['available_balance'] = Number((d['currentBalance']).toFixed(2));
+      if (elementData.roleName != userRoleConstant.user) {
+        elementData['available_balance'] = Number((parseFloat(elementData['currentBalance'])).toFixed(2));
         let childUsers = await getChildUser(element.id)
         let allChildUserIds = childUsers.map(obj => obj.id)
         let balancesum = 0
@@ -642,19 +802,19 @@ exports.userList = async (req, res, next) => {
         balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;            
         }
         
-        d['balance'] =  Number(d['currentBalance'] + balancesum).toFixed(2);
+        elementData['balance'] =  Number(parseFloat(d['currentBalance']) + balancesum).toFixed(2);
     } else {
-        d['available_balance'] = Number((d['currentBalance'] - d['exposure']).toFixed(2));
-        d['balance'] = d['currentBalance'];
+      elementData['available_balance'] = Number((parseFloat(elementData['currentBalance']) - elementData['exposure']).toFixed(2));
+      elementData['balance'] = elementData['currentBalance'];
     }
-    d['percentProfitLoss'] = d['myProfitLoss'];
-    d['TotalComission'] = d['TotalComission']
+    elementData['percentProfitLoss'] = elementData['myProfitLoss'];
+    elementData['TotalComission'] =elementData['TotalComission']
     if (partnershipCol && partnershipCol.length) {
-        let partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + d[a], 0);
-        d['percentProfitLoss'] = ((d['profitLoss'] / 100) * partner_ships).toFixed(2);
-        d['TotalComission'] = ((d['TotalComission'] / 100) * partner_ships).toFixed(2) + '(' + partner_ships + '%)';
+        let partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + elementData[a], 0);
+        elementData['percentProfitLoss'] = ((elementData['profitLoss'] / 100) * partner_ships).toFixed(2);
+        elementData['TotalComission'] = ((elementData['TotalComission'] / 100) * partner_ships).toFixed(2) + '(' + partner_ships + '%)';
     }
-    return d;
+    return elementData;
 }))
 
 response.list = data
@@ -672,6 +832,40 @@ return SuccessResponse(
   }
 }
 
+
+exports.userSearchList = async (req, res, next) => {
+  try {
+    let { userName,createdBy } = req.query
+    if (!userName || userName.length < 0) {
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "user.userList" },
+          data: { users: [] },
+        },
+        req,
+        res
+      );
+    }
+    let where = {
+    }
+    if (userName) where.userName = ILike(`%${userName}%`)
+    if (createdBy) where.createdBy = createdBy
+
+    let users = await getUsers(where, ["id", "userName"])
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "user.userList" },
+        data: { users },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+}
 
 
 exports.userBalanceDetails = async (req, res, next) => {
