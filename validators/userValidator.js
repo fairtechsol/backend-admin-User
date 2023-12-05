@@ -54,7 +54,7 @@ module.exports.setExposureLimitValid = Joi.object({
   transPassword: Joi.string(),
   userid: Joi.string().guid({ version: 'uuidv4' }).required(),
   createBy: Joi.string().guid({ version: 'uuidv4' }).required(),
-
+})
 
 module.exports.ChangePassword = Joi.object({
   oldPassword: Joi.string(),
