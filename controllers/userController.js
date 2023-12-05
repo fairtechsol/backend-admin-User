@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName,updateUser, userBlockUnblock } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName,updateUser, userBlockUnblock ,lockUnlockUserService} = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -9,87 +9,87 @@ const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
 
 exports.createUser = async (req, res) => {
-    try {
-        let { userName, fullName, password,confirmPassword, phoneNumber, city, roleName, myPartnership, createdBy,creditRefrence,exposureLimit,maxBetLimit,minBetLimit } = req.body;
-        let reqUser = req.user || {}
-        let creator = await getUserById(reqUser.id || createdBy);
-        if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+  try {
+    let { userName, fullName, password, confirmPassword, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
+    let reqUser = req.user || {}
+    let creator = await getUserById(reqUser.id || createdBy);
+    if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
 
-        if(!checkUserCreationHierarchy(creator,roleName))
-            return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidHierarchy" } }, req, res);
-        creator.myPartnership = parseInt(myPartnership)
-        userName = userName.toUpperCase();
-        let userExist = await getUserByUserName(userName);
-        if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
+    if (!checkUserCreationHierarchy(creator, roleName))
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidHierarchy" } }, req, res);
+    creator.myPartnership = parseInt(myPartnership)
+    userName = userName.toUpperCase();
+    let userExist = await getUserByUserName(userName);
+    if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
 
-        if(exposureLimit && exposureLimit > creator.exposureLimit)
-            return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
-            password = await bcrypt.hash(
-                password,
-                process.env.BCRYPTSALT
-              );
-        let userData = {
-            userName,
-            fullName,
-            password,
-            phoneNumber,
-            city,
-            roleName,
-            userBlock: creator.userBlock,
-            betBlock: creator.betBlock,
-            createBy: creator.id,
-            creditRefrence : creditRefrence ? creditRefrence : creator.creditRefrence,
-            exposureLimit : exposureLimit ? exposureLimit : creator.exposureLimit,
-            maxBetLimit : maxBetLimit ? maxBetLimit : creator.maxBetLimit,
-            minBetLimit : minBetLimit ? minBetLimit : creator.minBetLimit
-        }
-        let partnerships = await calculatePartnership(userData, creator)
-        userData = { ...userData, ...partnerships };
-        let insertUser = await addUser(userData);
-        let updateUser = {}
-        if(creditRefrence) {
-            updateUser = await addUser({
-                id : creator.id,
-                downLevelCreditRefrence : creditRefrence + creator.downLevelCreditRefrence
-            })
-        }
-        let walletArray = [{
-            actionBy: insertUser.createBy,
-            searchId: insertUser.createBy,
-            userId: insertUser.id,
-            amount: 0,
-            transType: transType.add,
-            currentAmount: insertUser.creditRefer,
-            description: walletDescription.userCreate
-        }]
-        if (insertUser.createdBy != insertUser.id) {
-            walletArray.push({
-                actionBy: insertUser.createBy,
-                searchId: insertUser.id,
-                userId: insertUser.id,
-                amount: 0,
-                transType: transType.withDraw,
-                currentAmount: insertUser.creditRefer,
-                description: walletDescription.userCreate
-            });
-        }
-
-        const transactioninserted = await insertTransactions(walletArray);
-        if (insertUser.roleName == userRoleConstant.user) {
-            let buttonValue = [
-                {
-                    type: buttonType.MATCH,
-                    value: defaultButtonValue.buttons,
-                    createBy: insertUser.id
-                }
-            ]
-            let insertedButton = await insertButton(buttonValue)
-        }
-        let response = lodash.omit(insertUser,["password","transPassword"])
-        return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
-    } catch (err) {
-        return ErrorResponse(err, req, res);
+    if (exposureLimit && exposureLimit > creator.exposureLimit)
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
+    password = await bcrypt.hash(
+      password,
+      process.env.BCRYPTSALT
+    );
+    let userData = {
+      userName,
+      fullName,
+      password,
+      phoneNumber,
+      city,
+      roleName,
+      userBlock: creator.userBlock,
+      betBlock: creator.betBlock,
+      createBy: creator.id,
+      creditRefrence: creditRefrence ? creditRefrence : creator.creditRefrence,
+      exposureLimit: exposureLimit ? exposureLimit : creator.exposureLimit,
+      maxBetLimit: maxBetLimit ? maxBetLimit : creator.maxBetLimit,
+      minBetLimit: minBetLimit ? minBetLimit : creator.minBetLimit
     }
+    let partnerships = await calculatePartnership(userData, creator)
+    userData = { ...userData, ...partnerships };
+    let insertUser = await addUser(userData);
+    let updateUser = {}
+    if (creditRefrence) {
+      updateUser = await addUser({
+        id: creator.id,
+        downLevelCreditRefrence: creditRefrence + creator.downLevelCreditRefrence
+      })
+    }
+    let walletArray = [{
+      actionBy: insertUser.createBy,
+      searchId: insertUser.createBy,
+      userId: insertUser.id,
+      amount: 0,
+      transType: transType.add,
+      currentAmount: insertUser.creditRefer,
+      description: walletDescription.userCreate
+    }]
+    if (insertUser.createdBy != insertUser.id) {
+      walletArray.push({
+        actionBy: insertUser.createBy,
+        searchId: insertUser.id,
+        userId: insertUser.id,
+        amount: 0,
+        transType: transType.withDraw,
+        currentAmount: insertUser.creditRefer,
+        description: walletDescription.userCreate
+      });
+    }
+
+    const transactioninserted = await insertTransactions(walletArray);
+    if (insertUser.roleName == userRoleConstant.user) {
+      let buttonValue = [
+        {
+          type: buttonType.MATCH,
+          value: defaultButtonValue.buttons,
+          createBy: insertUser.id
+        }
+      ]
+      let insertedButton = await insertButton(buttonValue)
+    }
+    let response = lodash.omit(insertUser, ["password", "transPassword"])
+    return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
 };
 
 const calculatePartnership = async (userData, creator) => {
@@ -188,9 +188,9 @@ const calculatePartnership = async (userData, creator) => {
           100 -
           parseInt(
             creator.myPartnership +
-              fwPartnership +
-              faPartnership +
-              saPartnership
+            fwPartnership +
+            faPartnership +
+            saPartnership
           );
       },
       [userRoleConstant.master]: () => {
@@ -198,9 +198,9 @@ const calculatePartnership = async (userData, creator) => {
           100 -
           parseInt(
             creator.myPartnership +
-              fwPartnership +
-              faPartnership +
-              saPartnership
+            fwPartnership +
+            faPartnership +
+            saPartnership
           );
       },
     },
@@ -210,10 +210,10 @@ const calculatePartnership = async (userData, creator) => {
           100 -
           parseInt(
             creator.myPartnership +
-              fwPartnership +
-              faPartnership +
-              saPartnership +
-              aPartnership
+            fwPartnership +
+            faPartnership +
+            saPartnership +
+            aPartnership
           );
       },
     },
@@ -228,12 +228,12 @@ const calculatePartnership = async (userData, creator) => {
   if (
     userData.roleName != userRoleConstant.expert &&
     fwPartnership +
-      faPartnership +
-      saPartnership +
-      aPartnership +
-      smPartnership +
-      mPartnership !=
-      100
+    faPartnership +
+    saPartnership +
+    aPartnership +
+    smPartnership +
+    mPartnership !=
+    100
   ) {
     throw new Error("user.partnershipNotValid");
   }
@@ -247,18 +247,18 @@ const calculatePartnership = async (userData, creator) => {
   };
 };
 
-const checkUserCreationHierarchy =(creator,createUserRoleName) =>{
-    const hierarchyArray = Object.values(userRoleConstant)
-    let creatorIndex = hierarchyArray.indexOf(creator.roleName)
-    if(creatorIndex  == -1) return false
-    let index = hierarchyArray.indexOf(createUserRoleName)
-    if(index == -1) return false
-    if(index < creatorIndex)return false;
-    if(createUserRoleName == userRoleConstant.expert && creator.roleName !== userRoleConstant.fairGameAdmin){
-        return false
-    }
-    return true
-    
+const checkUserCreationHierarchy = (creator, createUserRoleName) => {
+  const hierarchyArray = Object.values(userRoleConstant)
+  let creatorIndex = hierarchyArray.indexOf(creator.roleName)
+  if (creatorIndex == -1) return false
+  let index = hierarchyArray.indexOf(createUserRoleName)
+  if (index == -1) return false
+  if (index < creatorIndex) return false;
+  if (createUserRoleName == userRoleConstant.expert && creator.roleName !== userRoleConstant.fairGameAdmin) {
+    return false
+  }
+  return true
+
 }
 exports.insertWallet = async (req, res) => {
   try {
@@ -302,15 +302,6 @@ const generateTransactionPass = () => {
   return `${randomNumber}`;
 };
 
-// Function to handle user not found error response
-const handleUserNotFound = () => ({
-  error: true,
-  message: {
-    msg: "notFound",
-    keys: { name: "User" },
-  },
-  statusCode: 404,
-});
 
 // Check old password against the stored password
 const checkOldPassword = async (userId, oldPassword) => {
@@ -318,7 +309,10 @@ const checkOldPassword = async (userId, oldPassword) => {
   const user = await getUserById(userId, ["password"]);
   if (!user) {
     // User not found, return error response
-    return handleUserNotFound();
+    throw {
+          msg: "notFound",
+          keys: { name: "User" },
+      };
   }
   // Compare old password with the stored password
   return bcrypt.compareSync(oldPassword, user.password);
@@ -327,10 +321,13 @@ const checkOldPassword = async (userId, oldPassword) => {
 // Check old transaction password against the stored transaction password
 const checkTransactionPassword = async (userId, oldTransactionPass) => {
   // Retrieve user's transaction password from the database
-  const user = await getUserById(userId, ["transPassword","id"]);
+  const user = await getUserById(userId, ["transPassword", "id"]);
   if (!user) {
     // User not found, return error response
-    return handleUserNotFound();
+    throw {
+          msg: "notFound",
+          keys: { name: "User" },
+      };
   }
   // Compare old transaction password with the stored transaction password
   return bcrypt.compareSync(oldTransactionPass, user.transPassword);
@@ -351,21 +348,8 @@ exports.changePassword = async (req, res, next) => {
     const {
       oldPassword,
       newPassword,
-      transactionPassword,
-      confirmPassword,
+      transactionPassword
     } = req.body;
-
-    // Check if the new password matches the confirmed password
-    if (newPassword !== confirmPassword) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "user.confirmPasswordNotMatch" },
-        },
-        req,
-        res
-      );
-    }
 
     // Hash the new password
     const password = bcrypt.hashSync(newPassword, 10);
@@ -376,17 +360,6 @@ exports.changePassword = async (req, res, next) => {
       const userId = req.user.id;
       const isPasswordMatch = await checkOldPassword(userId, oldPassword);
 
-      // Handle error if user not found or old password is incorrect
-      if (isPasswordMatch?.error) {
-        return ErrorResponse(
-          {
-            statusCode: isPasswordMatch.statusCode,
-            message: isPasswordMatch.message,
-          },
-          req,
-          res
-        );
-      }
 
       if (!isPasswordMatch) {
         return ErrorResponse(
@@ -423,7 +396,7 @@ exports.changePassword = async (req, res, next) => {
       }
 
       // Update only the password if conditions are not met
-      await updateUser(userId, {loginAt: new Date(), password });
+      await updateUser(userId, { loginAt: new Date(), password });
       await forceLogoutUser(userId);
 
       return SuccessResponse(
@@ -442,17 +415,7 @@ exports.changePassword = async (req, res, next) => {
       transactionPassword
     );
 
-    // Handle error if user not found or transaction password is incorrect
-    if (isPasswordMatch?.error) {
-      return ErrorResponse(
-        {
-          statusCode: isPasswordMatch.statusCode,
-          message: isPasswordMatch.message,
-        },
-        req,
-        res
-      );
-    }
+   
 
     if (!isPasswordMatch) {
       return ErrorResponse(
@@ -505,4 +468,62 @@ exports.userLock=async (req,res,next)=>{
     } catch (error) {
         console.log(error);
     }
+}
+exports.generateTransactionPassword=async (req,res)=>{
+
+const {id}=req.user;
+const {transPassword}=req.body;
+
+
+    const encryptTransPass=bcrypt.hashSync(transPassword,10);
+    await updateUser(id,{
+        transPassword:encryptTransPass
+    })
+
+    return SuccessResponse(
+        {
+            statusCode: 200,
+            message:{
+                msg:"updated",
+                keys:{name:"Transaction Password"}
+            }
+          },
+          req,
+          res
+    )
+        }
+exports.lockUnlockUser = async (req, res) => {
+  try {
+    const { userId, transPassword, userBlock, betBlock, createBy } = req.body;
+    let reqUserId = req.user?.id || createBy;
+    let loginUser = await getUserById(reqUserId, ["id", "userBlock", "betBlock", "roleName"]);
+    let updateUser = await getUserById(userId, ["id", "userBlock", "betBlock", "roleName"]);
+
+    if (!loginUser) {
+      throw {
+        message: {
+          msg: "notFound",
+          keys: { name: "Login User" },
+        }
+      };
+    }
+    if (!updateUser) {
+      throw {
+        message: {
+          msg: "notFound",
+          keys: { name: "Update User" },
+        }
+      };
+    }
+    if (loginUser.userBlock == true) {
+      throw new Error("user.userBlockError");
+    }
+    if (loginUser.betBlock == true && betBlock == false) {
+      throw new Error("user.betBlockError");
+    }
+    let result = await lockUnlockUserService(loginUser, updateUser, userBlock, betBlock);
+    return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } }, req, res);
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
 }

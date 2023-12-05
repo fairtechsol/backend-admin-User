@@ -1,5 +1,6 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const transactionSchema = require("../models/transaction.entity");
+const ApiFeature = require("../utils/apiFeatures");
 const Transaction = AppDataSource.getRepository(transactionSchema);
 
 // this is the dummy function to test the functionality
@@ -33,16 +34,11 @@ exports.insertTransactions = async (transactions) => {
 exports.getTransactions = async (
   filters,
   select,
-  searchBy,
-  keyword,
-  orderBy,
-  order,
-  skip,
-  limit
+  query
 ) => {
   try {
     // Start building the query
-    let transactionQuery = Transaction.createQueryBuilder()
+    let transactionQuery = new ApiFeature(Transaction.createQueryBuilder()
       .where(filters)
       .leftJoinAndMapOne(
         "transaction.user",
@@ -56,20 +52,13 @@ exports.getTransactions = async (
         "actionByUser",
         "transaction.actionBy = actionByUser.id"
       )
-      .andWhere(`${searchBy} like '%${keyword||""}%'`)
       .select(select)
-      .orderBy(orderBy, order);
+      ,query).search().filter().sort().paginate().getResult();
 
-    // Apply optional skip and limit
-    if (skip) {
-      transactionQuery = transactionQuery.offset(skip);
-    }
-    if (limit) {
-      transactionQuery = transactionQuery.limit(limit);
-    }
+    
 
     // Execute the query and get the result along with count
-    const [transactions, count] = await transactionQuery.getManyAndCount();
+    const [transactions, count] = await transactionQuery;
 
     return { transactions, count };
   } catch (error) {
