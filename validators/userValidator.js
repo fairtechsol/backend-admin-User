@@ -16,7 +16,7 @@ module.exports.CreateUser = Joi.object({
   city: Joi.string().max(255),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)).required(),
   myPartnership: Joi.number().required(),
-  createdBy: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+  createdBy: Joi.string().guid({ version: 'uuidv4' }).messages({
     'string.pattern.base': 'invalidId',
   }),
   creditRefrence: Joi.number(),

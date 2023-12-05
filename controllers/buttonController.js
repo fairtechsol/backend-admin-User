@@ -19,7 +19,7 @@ exports.getButton = async (req, res) => {
 exports.insertButtons = async (req, res) => {
     try {
         let { id, type, value } = req.body;
-        if (req.user.role != userRoleConstant.user) {
+        if (req.user.roleName != userRoleConstant.user) {
             return ErrorResponse({ statusCode: 400, message: { msg: "button.InvalidUser" } }, req, res);
         }
         value = JSON.stringify(value);

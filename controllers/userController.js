@@ -23,9 +23,9 @@ exports.createUser = async (req, res) => {
     userName = userName.toUpperCase();
     let userExist = await getUserByUserName(userName);
     if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
-    if(creator.roleName != userRoleConstant.fairGameWallet){
-    if (exposureLimit && exposureLimit > creator.exposureLimit)
-      return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
+    if (creator.roleName != userRoleConstant.fairGameWallet) {
+      if (exposureLimit && exposureLimit > creator.exposureLimit)
+        return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
     }
     password = await bcrypt.hash(
       password,
@@ -122,145 +122,145 @@ exports.updateUser = async (req, res) => {
 };
 
 
-const calculatePartnership = async (userData,creator) =>{
+const calculatePartnership = async (userData, creator) => {
   if (userData.roleName == userRoleConstant.fairGameWallet) {
     return {};
-}
+  }
 
-// user created by fairgame wallet
-let fwPartnership = creator.fwPartnership;
-let faPartnership = creator.faPartnership;
-let saPartnership = creator.saPartnership;
-let aPartnership = creator.aPartnership;
-let smPartnership = creator.smPartnership;
-let mPartnership = creator.mPartnership;
+  // user created by fairgame wallet
+  let fwPartnership = creator.fwPartnership;
+  let faPartnership = creator.faPartnership;
+  let saPartnership = creator.saPartnership;
+  let aPartnership = creator.aPartnership;
+  let smPartnership = creator.smPartnership;
+  let mPartnership = creator.mPartnership;
 
-switch (creator.role) {
+  switch (creator.roleName) {
     case (userRoleConstant.fairGameWallet): {
-        fwPartnership = creator.myPartnership;
-        break;
+      fwPartnership = creator.myPartnership;
+      break;
     }
     case (userRoleConstant.fairGameAdmin): {
-        faPartnership = creator.myPartnership;
-        break;
+      faPartnership = creator.myPartnership;
+      break;
     }
     case (userRoleConstant.superAdmin): {
-        saPartnership = creator.myPartnership;
-        break;
+      saPartnership = creator.myPartnership;
+      break;
     }
     case (userRoleConstant.admin): {
-        aPartnership = creator.myPartnership;
-        break;
+      aPartnership = creator.myPartnership;
+      break;
     }
     case (userRoleConstant.superMaster): {
-        smPartnership = creator.myPartnership;
-        break;
+      smPartnership = creator.myPartnership;
+      break;
     }
     case (userRoleConstant.master): {
-        mPartnership = creator.myPartnership;
-        break;
+      mPartnership = creator.myPartnership;
+      break;
     }
-}
+  }
 
-switch (creator.role) {
+  switch (creator.roleName) {
     case (userRoleConstant.fairGameWallet): {
-        switch (userData.roleName) {
-            case (userRoleConstant.fairGameAdmin): {
-                faPartnership = 100 - parseInt(creator.myPartnership);
-                break;
-            }
-            case (userRoleConstant.superAdmin): {
-                saPartnership = 100 - parseInt(creator.myPartnership);
-                break;
-            }
-            case (userRoleConstant.admin): {
-                aPartnership = 100 - parseInt(creator.myPartnership);
-                break;
-            }
-            case (userRoleConstant.superMaster): {
-                smPartnership = 100 - parseInt(creator.myPartnership);
-                break;
-            }
-            case (userRoleConstant.master): {
-                mPartnership = 100 - parseInt(creator.myPartnership);
-                break;
-            }
+      switch (userData.roleName) {
+        case (userRoleConstant.fairGameAdmin): {
+          faPartnership = 100 - parseInt(creator.myPartnership);
+          break;
         }
+        case (userRoleConstant.superAdmin): {
+          saPartnership = 100 - parseInt(creator.myPartnership);
+          break;
+        }
+        case (userRoleConstant.admin): {
+          aPartnership = 100 - parseInt(creator.myPartnership);
+          break;
+        }
+        case (userRoleConstant.superMaster): {
+          smPartnership = 100 - parseInt(creator.myPartnership);
+          break;
+        }
+        case (userRoleConstant.master): {
+          mPartnership = 100 - parseInt(creator.myPartnership);
+          break;
+        }
+      }
     }
-        break;
+      break;
     case (userRoleConstant.fairGameAdmin): {
-        switch (userData.roleName) {
-            case (userRoleConstant.superAdmin): {
-                saPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
-                break;
-            }
-            case (userRoleConstant.admin): {
-                aPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
-                break;
-            }
-            case (userRoleConstant.superMaster): {
-                smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
-                break;
-            }
-            case (userRoleConstant.master): {
-                mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
-                break;
-            }
+      switch (userData.roleName) {
+        case (userRoleConstant.superAdmin): {
+          saPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+          break;
         }
+        case (userRoleConstant.admin): {
+          aPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+          break;
+        }
+        case (userRoleConstant.superMaster): {
+          smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+          break;
+        }
+        case (userRoleConstant.master): {
+          mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+          break;
+        }
+      }
     }
-        break;
+      break;
     case (userRoleConstant.superAdmin): {
-        switch (userData.roleName) {
-            case (userRoleConstant.admin): {
-                aPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
-                break;
-            }
-            case (userRoleConstant.superMaster): {
-                smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
-                break;
-            }
-            case (userRoleConstant.master): {
-                mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
-                break;
-            }
+      switch (userData.roleName) {
+        case (userRoleConstant.admin): {
+          aPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+          break;
         }
+        case (userRoleConstant.superMaster): {
+          smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+          break;
+        }
+        case (userRoleConstant.master): {
+          mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+          break;
+        }
+      }
     }
-        break;
+      break;
     case (userRoleConstant.admin): {
-        switch (userData.roleName) {
-            case (userRoleConstant.superMaster): {
-                smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
-                break;
-            }
-            case (userRoleConstant.master): {
-                mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
-                break;
-            }
+      switch (userData.roleName) {
+        case (userRoleConstant.superMaster): {
+          smPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
+          break;
         }
+        case (userRoleConstant.master): {
+          mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
+          break;
+        }
+      }
     }
-        break;
+      break;
     case (userRoleConstant.superMaster): {
-        switch (userData.roleName) {
-            case (userRoleConstant.master): {
-                mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership + aPartnership);
-                break;
-            }
+      switch (userData.roleName) {
+        case (userRoleConstant.master): {
+          mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership + aPartnership);
+          break;
         }
+      }
     }
-        break;
-}
+      break;
+  }
 
-if (userData.roleName != userRoleConstant.expert && fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership + mPartnership != 100) {
-  throw new Error("user.partnershipNotValid");
-}
-return {
+  if (userData.roleName != userRoleConstant.expert && fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership + mPartnership != 100) {
+    throw new Error("user.partnershipNotValid");
+  }
+  return {
     fwPartnership,
     faPartnership,
     saPartnership,
     aPartnership,
     smPartnership,
     mPartnership
-}
+  }
 }
 
 const checkUserCreationHierarchy = (creator, createUserRoleName) => {
@@ -303,10 +303,10 @@ exports.insertWallet = async (req, res) => {
         res
       );
 
-      wallet.password = await bcrypt.hash(
-        wallet.password,
-        process.env.BCRYPTSALT
-      );
+    wallet.password = await bcrypt.hash(
+      wallet.password,
+      process.env.BCRYPTSALT
+    );
     let insertUser = await addUser(wallet);
     let insertUserBalanceData = {
       currentBalance: 0,
@@ -574,7 +574,7 @@ exports.userList = async (req, res, next) => {
     // let loginUser = await getUserById(reqUser.id)
     let userRole = reqUser.roleName
     let where = {
-      createBy : reqUser.id
+      createBy: reqUser.id
     }
     if (userName) where.userName = ILike(`%${userName}%`);
     if (roleName) where.roleName = roleName;
@@ -583,10 +583,83 @@ exports.userList = async (req, res, next) => {
     let users = await getUsersWithUserBalance(where, offset, limit)
 
     let response = {
-      count : 0,
-      list : []
+      count: 0,
+      list: []
     }
-    if(!users[1]){
+    if (!users[1]) {
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "user.userList" },
+          data: response,
+        },
+        req,
+        res
+      );
+    }
+    response.count = users[1]
+    let partnershipCol = [];
+    if (userRole == userRoleConstant.master) {
+      partnershipCol = ['mPartnership', 'smPartnership', 'aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+    }
+    if (userRole == userRoleConstant.superMaster) {
+      partnershipCol = ['smPartnership', 'aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+    }
+    if (userRole == userRoleConstant.admin) {
+      partnershipCol = ['aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+    }
+    if (userRole == userRoleConstant.superAdmin) {
+      partnershipCol = ['saPartnership', 'faPartnership', 'fwPartnership'];
+    }
+    if (userRole == userRoleConstant.fairGameAdmin) {
+      partnershipCol = ['faPartnership', 'fwPartnership'];
+    }
+    if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
+      partnershipCol = ['fwPartnership'];
+    }
+
+    let data = await Promise.all(users[0].map(async element => {
+      let elementData = {}
+      elementData = {
+        ...element,
+        ...element.userBal
+      };
+
+      delete elementData.userBal
+
+      elementData['percentProfitLoss'] = elementData['myProfitLoss'];
+      let partner_ships = 100;
+      if (partnershipCol && partnershipCol.length) {
+        partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + elementData[a], 0);
+        elementData['percentProfitLoss'] = ((elementData['profitLoss'] / 100) * partner_ships).toFixed(2);
+      }
+      if (elementData.roleName != userRoleConstant.user) {
+        elementData['available_balance'] = Number((parseFloat(elementData['currentBalance'])).toFixed(2));
+        let childUsers = await getChildUser(element.id)
+        let allChildUserIds = childUsers.map(obj => obj.id)
+        let balancesum = 0
+
+        if (allChildUserIds.length) {
+          let allChildBalanceData = await getAllchildsCurrentBalanceSum(allChildUserIds)
+          balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
+        }
+
+        elementData['balance'] = Number(parseFloat(d['currentBalance']) + balancesum).toFixed(2);
+      } else {
+        elementData['available_balance'] = Number((parseFloat(elementData['currentBalance']) - elementData['exposure']).toFixed(2));
+        elementData['balance'] = elementData['currentBalance'];
+      }
+      elementData['percentProfitLoss'] = elementData['myProfitLoss'];
+      elementData['TotalComission'] = elementData['TotalComission']
+      if (partnershipCol && partnershipCol.length) {
+        let partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + elementData[a], 0);
+        elementData['percentProfitLoss'] = ((elementData['profitLoss'] / 100) * partner_ships).toFixed(2);
+        elementData['TotalComission'] = ((elementData['TotalComission'] / 100) * partner_ships).toFixed(2) + '(' + partner_ships + '%)';
+      }
+      return elementData;
+    }))
+
+    response.list = data
     return SuccessResponse(
       {
         statusCode: 200,
@@ -596,79 +669,6 @@ exports.userList = async (req, res, next) => {
       req,
       res
     );
-  }
-  response.count = users[1]
-  let partnershipCol = [];
-        if (userRole == userRoleConstant.master) {
-            partnershipCol = ['mPartnership', 'smPartnership', 'aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
-        }
-        if (userRole == userRoleConstant.superMaster) {
-            partnershipCol = ['smPartnership', 'aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
-        }
-        if (userRole == userRoleConstant.admin) {
-            partnershipCol = ['aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
-        }
-        if (userRole == userRoleConstant.superAdmin) {
-            partnershipCol = ['saPartnership', 'faPartnership', 'fwPartnership'];
-        }
-        if (userRole == userRoleConstant.fairGameAdmin) {
-            partnershipCol = ['faPartnership', 'fwPartnership'];
-        }
-        if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
-            partnershipCol = ['fwPartnership'];
-        }
-
-  let data = await Promise.all(users[0].map(async element => {
-    let elementData = {}
-    elementData = {
-      ...element,
-      ...element.userBal
-    };
-
-    delete elementData.userBal
-
-    elementData['percentProfitLoss'] = elementData['myProfitLoss'];
-    let partner_ships = 100;
-    if (partnershipCol && partnershipCol.length) {
-        partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + elementData[a], 0);
-        elementData['percentProfitLoss'] = ((elementData['profitLoss'] / 100) * partner_ships).toFixed(2);
-    }
-      if (elementData.roleName != userRoleConstant.user) {
-        elementData['available_balance'] = Number((parseFloat(elementData['currentBalance'])).toFixed(2));
-        let childUsers = await getChildUser(element.id)
-        let allChildUserIds = childUsers.map(obj => obj.id)
-        let balancesum = 0
-
-        if(allChildUserIds.length){
-        let allChildBalanceData =await getAllchildsCurrentBalanceSum(allChildUserIds)
-        balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;            
-        }
-        
-        elementData['balance'] =  Number(parseFloat(d['currentBalance']) + balancesum).toFixed(2);
-    } else {
-      elementData['available_balance'] = Number((parseFloat(elementData['currentBalance']) - elementData['exposure']).toFixed(2));
-      elementData['balance'] = elementData['currentBalance'];
-    }
-    elementData['percentProfitLoss'] = elementData['myProfitLoss'];
-    elementData['TotalComission'] =elementData['TotalComission']
-    if (partnershipCol && partnershipCol.length) {
-        let partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + elementData[a], 0);
-        elementData['percentProfitLoss'] = ((elementData['profitLoss'] / 100) * partner_ships).toFixed(2);
-        elementData['TotalComission'] = ((elementData['TotalComission'] / 100) * partner_ships).toFixed(2) + '(' + partner_ships + '%)';
-    }
-    return elementData;
-}))
-
-response.list = data
-return SuccessResponse(
-  {
-    statusCode: 200,
-    message: { msg: "user.userList" },
-    data: response,
-  },
-  req,
-  res
-);
   } catch (error) {
     return ErrorResponse(error, req, res);
   }
@@ -677,7 +677,7 @@ return SuccessResponse(
 
 exports.userSearchList = async (req, res, next) => {
   try {
-    let { userName,createdBy } = req.query
+    let { userName, createdBy } = req.query
     if (!userName || userName.length < 0) {
       return SuccessResponse(
         {
@@ -812,10 +812,10 @@ exports.setCreditReferrence = async (req, res, next) => {
     let updateData = {
       creditRefrence: amount
     }
-    
+
     if (userBalance) {
       let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
-      let newUserBalanceData = await updateUserBalanceByUserid(user.id, {profitLoss})
+      let newUserBalanceData = await updateUserBalanceByUserid(user.id, { profitLoss })
     } else {
       insertUserBalanceData = {
         currentBalance: 0,
@@ -828,7 +828,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       insertUserBalanceData = await addUserBalance(insertUserBalanceData)
 
     }
-    
+
     let walletArray = [{
       actionBy: reqUser.id,
       searchId: user.id,
