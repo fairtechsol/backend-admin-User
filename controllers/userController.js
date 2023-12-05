@@ -8,6 +8,7 @@ const lodash = require('lodash')
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
 const { getUserBalanceDataByUserId, getAllchildsCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserid, addUserBalance } = require('../services/userBalanceService');
+const { ILike } = require('typeorm');
 
 exports.createUser = async (req, res) => {
   try {
@@ -847,9 +848,8 @@ exports.userSearchList = async (req, res, next) => {
         res
       );
     }
-    let where = {
-    }
-    if (userName) where.userName = ILike(`%${userName}%`)
+    let where = {};
+    if (userName) where.userName = ILike(`%${userName}%`);
     if (createdBy) where.createdBy = createdBy
 
     let users = await getUsers(where, ["id", "userName"])

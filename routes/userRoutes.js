@@ -14,8 +14,8 @@ router.post('/updateUser',validator(updateUserValid),updateUser);
 router.post('/insert/wallet',insertWallet)
 router.post('/changePassword',isAuthenticate,validator(ChangePassword),changePassword);
 router.post("/update/exposurelimit",validator(setExposureLimitValid),setExposureLimit)
-router.post("/list",isAuthenticate,userList)
-router.post("/searchlist",isAuthenticate,userSearchList)
+router.get("/list",isAuthenticate,userList)
+router.get("/searchlist",isAuthenticate,userSearchList)
 router.get("/balance",userBalanceDetails)
 router.post("/update/creditreferrence",setCreditReferrence)
 module.exports = router;
