@@ -30,7 +30,7 @@ const handleConnection = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId, role } = decodedUser;
+    const { id: userId, roleName } = decodedUser;
 
     // Retrieve the user's token from Redis
     const userTokenRedis = await getUserTokenFromRedis(userId);
@@ -45,11 +45,11 @@ const handleConnection = async (client) => {
     client.join(userId);
 
     // Handle additional logic based on the user's role
-    if (role === userRoleConstant.expert) {
+    if (roleName === userRoleConstant.expert) {
       // If the user is an expert, add their ID to the "expertLoginIds" set and join the room
       internalRedis.sadd("expertLoginIds", userId);
       client.join("expertUserCountRoom");
-    } else if (role === userRoleConstant.user) {
+    } else if (roleName === userRoleConstant.user) {
       const userCount = parseInt(await internalRedis.get("loginUserCount"));
 
       // If the user is a regular user, manage user login count
@@ -97,18 +97,18 @@ const handleDisconnect = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId, role } = decodedUser;
+    const { id: userId, roleName } = decodedUser;
 
     // Leave the room with the user's ID
     client.leave(userId);
 
     // Handle additional logic based on the user's role
-    if (role === userRoleConstant.expert) {
+    if (roleName === userRoleConstant.expert) {
       // If the user is an expert, remove their ID from the "expertLoginIds" set
       internalRedis.srem("expertLoginIds", userId);
       // Leave the "expertUserCountRoom" room
       client.leave("expertUserCountRoom");
-    } else if (role === userRoleConstant.user) {
+    } else if (roleName === userRoleConstant.user) {
       const userCount = parseInt(await internalRedis.get("loginUserCount"));
       // If the user is a regular user, manage user login count
       const decrementCount = async () => {

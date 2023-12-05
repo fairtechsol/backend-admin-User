@@ -178,7 +178,7 @@ exports.login = async (req, res) => {
     setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, role: user.roleName, userName: user.userName },
+      { id: user.id, roleName: user.roleName, userName: user.userName },
       process.env.JWT_SECRET || "secret"
     );
 
@@ -201,7 +201,7 @@ exports.login = async (req, res) => {
         data: {
           token,
           isTransPasswordCreated: isTransPasswordCreated,
-          role: roleName,
+          roleName: roleName,
           forceChangePassword,
         },
       },
