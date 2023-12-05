@@ -2,6 +2,7 @@ const Joi = require('joi')
 const { userRoleConstant, matchComissionTypeConstant } = require('../config/contants')
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{6,30}$/;
+
 module.exports.CreateUser = Joi.object({
   userName: Joi.string().trim().required(),
   fullName: Joi.string().min(3).max(255),
@@ -15,7 +16,7 @@ module.exports.CreateUser = Joi.object({
   city: Joi.string().max(255),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)).required(),
   myPartnership: Joi.number().required(),
-  createdBy: Joi.string().guid({ version: 'uuidv4' }).messages({
+  createdBy: Joi.string().guid({ version: 'uuidv4' }).required().messages({
     'string.pattern.base': 'invalidId',
   }),
   creditRefrence: Joi.number(),
@@ -28,6 +29,7 @@ module.exports.CreateUser = Joi.object({
     'any.only': 'Confirm Password must match Password',
   }),
 })
+
 
 module.exports.ChangePassword = Joi.object({
   oldPassword: Joi.string(),
@@ -52,4 +54,25 @@ module.exports.setExposureLimitValid = Joi.object({
   transPassword: Joi.string(),
   userid: Joi.string().guid({ version: 'uuidv4' }).required(),
   createBy: Joi.string().guid({ version: 'uuidv4' }).required(),
+
+
+module.exports.ChangePassword = Joi.object({
+  oldPassword: Joi.string(),
+  newPassword: Joi.string().required(),
+  transactionPassword: Joi.string().length(6),
+  confirmPassword: Joi.string().required(),
+  userId: Joi.string()
+})
+
+module.exports.LockUnlockUser = Joi.object({
+  userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  transPassword: Joi.string().required().messages({
+    'string.base': '"Transaction Password" must be a string',
+    'any.required': '"Transaction Password" is required',
+    'string.empty': '"Transaction Password" can not be empty.'
+  }),
+  userBlock: Joi.boolean().required(),
+  betBlock: Joi.boolean().required(),
+  createBy: Joi.string().guid({ version: 'uuidv4' })
+
 })
