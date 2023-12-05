@@ -3,7 +3,7 @@ const router = express.Router();
 const {createUser,insertWallet, changePassword, updateUser,setExposureLimit, userList, userSearchList,userBalanceDetails, setCreditReferrence} = require('../controllers/userController');
 
 const validator = require('../middleware/joi.validator')
-const {CreateUser, ChangePassword,updateUserValid,setExposureLimitValid} = require('../validators/userValidator');
+const {CreateUser,lockUnlockUser, ChangePassword,updateUserValid,setExposureLimitValid} = require('../validators/userValidator');
 const { isAuthenticate } = require('../middleware/auth');
 
 
