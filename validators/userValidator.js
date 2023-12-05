@@ -1,5 +1,5 @@
 const Joi = require('joi')
-const { userRoleConstant } = require('../config/contants')
+const { userRoleConstant, blockType } = require('../config/contants')
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{6,30}$/;
 
@@ -70,6 +70,18 @@ module.exports.generateTransactionPass = Joi.object({
     }),
 });
 
+// module.exports.LockUnlockUser = Joi.object({
+//   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+//   transPassword: Joi.string().required().messages({
+//     'string.base': '"Transaction Password" must be a string',
+//     'any.required': '"Transaction Password" is required',
+//     'string.empty': '"Transaction Password" can not be empty.'
+//   }),
+//   userBlock: Joi.boolean().required(),
+//   betBlock: Joi.boolean().required(),
+//   createBy: Joi.string().guid({ version: 'uuidv4' })
+// })
+
 module.exports.LockUnlockUser = Joi.object({
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
   transPassword: Joi.string().required().messages({
@@ -77,7 +89,6 @@ module.exports.LockUnlockUser = Joi.object({
     'any.required': '"Transaction Password" is required',
     'string.empty': '"Transaction Password" can not be empty.'
   }),
-  userBlock: Joi.boolean().required(),
-  betBlock: Joi.boolean().required(),
-  createBy: Joi.string().guid({ version: 'uuidv4' })
+  block: Joi.boolean().required(),
+  type: Joi.string().valid(...Object.values(blockType)).required()
 })

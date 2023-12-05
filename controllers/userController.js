@@ -54,13 +54,13 @@ exports.createUser = async (req, res) => {
       })
     }
     let walletArray = [{
-      actionBy: insertUser.createBy,
-      searchId: insertUser.createBy,
-      userId: insertUser.id,
-      amount: 0,
-      transType: transType.add,
-      currentAmount: insertUser.creditRefer,
-      description: walletDescription.userCreate
+        actionBy: insertUser.createBy,
+        searchId: insertUser.createBy,
+        userId: insertUser.id,
+        amount: 0,
+        transType: transType.add,
+        currentAmount: insertUser.creditRefer,
+        description: walletDescription.userCreate
     }]
     if (insertUser.createdBy != insertUser.id) {
       walletArray.push({
@@ -188,9 +188,9 @@ const calculatePartnership = async (userData, creator) => {
           100 -
           parseInt(
             creator.myPartnership +
-            fwPartnership +
-            faPartnership +
-            saPartnership
+              fwPartnership +
+              faPartnership +
+              saPartnership
           );
       },
       [userRoleConstant.master]: () => {
@@ -198,9 +198,9 @@ const calculatePartnership = async (userData, creator) => {
           100 -
           parseInt(
             creator.myPartnership +
-            fwPartnership +
-            faPartnership +
-            saPartnership
+              fwPartnership +
+              faPartnership +
+              saPartnership
           );
       },
     },
@@ -210,10 +210,10 @@ const calculatePartnership = async (userData, creator) => {
           100 -
           parseInt(
             creator.myPartnership +
-            fwPartnership +
-            faPartnership +
-            saPartnership +
-            aPartnership
+              fwPartnership +
+              faPartnership +
+              saPartnership +
+              aPartnership
           );
       },
     },
@@ -228,12 +228,12 @@ const calculatePartnership = async (userData, creator) => {
   if (
     userData.roleName != userRoleConstant.expert &&
     fwPartnership +
-    faPartnership +
-    saPartnership +
-    aPartnership +
-    smPartnership +
-    mPartnership !=
-    100
+      faPartnership +
+      saPartnership +
+      aPartnership +
+      smPartnership +
+      mPartnership !=
+      100
   ) {
     throw new Error("user.partnershipNotValid");
   }
@@ -310,9 +310,9 @@ const checkOldPassword = async (userId, oldPassword) => {
   if (!user) {
     // User not found, return error response
     throw {
-          msg: "notFound",
-          keys: { name: "User" },
-      };
+      msg: "notFound",
+      keys: { name: "User" },
+    };
   }
   // Compare old password with the stored password
   return bcrypt.compareSync(oldPassword, user.password);
@@ -325,9 +325,9 @@ const checkTransactionPassword = async (userId, oldTransactionPass) => {
   if (!user) {
     // User not found, return error response
     throw {
-          msg: "notFound",
-          keys: { name: "User" },
-      };
+      msg: "notFound",
+      keys: { name: "User" },
+    };
   }
   // Compare old transaction password with the stored transaction password
   return bcrypt.compareSync(oldTransactionPass, user.transPassword);
@@ -456,74 +456,197 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
-
-exports.userLock=async (req,res,next)=>{
+// Controller function for locking/unlocking a user
+exports.lockUnlockUser = async (req, res, next) => {
     try {
-        const {blockId,block}=req.body;
-        const id=req.user.id;
+      // Extract relevant data from the request body and user object
+      const { userId, block, type,transPassword } = req.body;
+      const { id } = req.user;
 
-        const betBlockUnblock=await userBlockUnblock(blockId,id,block);
-        console.log(betBlockUnblock);
-        return res.status(200).json({});
-    } catch (error) {
-        console.log(error);
-    }
-}
-exports.generateTransactionPassword=async (req,res)=>{
-
-const {id}=req.user;
-const {transPassword}=req.body;
-
-
-    const encryptTransPass=bcrypt.hashSync(transPassword,10);
-    await updateUser(id,{
-        transPassword:encryptTransPass
-    })
-
-    return SuccessResponse(
-        {
-            statusCode: 200,
-            message:{
-                msg:"updated",
-                keys:{name:"Transaction Password"}
-            }
+      const isPasswordMatch = await checkTransactionPassword(
+        id,
+        transPassword
+      );
+  
+      if (!isPasswordMatch) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: { msg: "auth.invalidPass", keys: { type: "transaction" } },
           },
           req,
           res
-    )
-        }
-exports.lockUnlockUser = async (req, res) => {
-  try {
-    const { userId, transPassword, userBlock, betBlock, createBy } = req.body;
-    let reqUserId = req.user?.id || createBy;
-    let loginUser = await getUserById(reqUserId, ["id", "userBlock", "betBlock", "roleName"]);
-    let updateUser = await getUserById(userId, ["id", "userBlock", "betBlock", "roleName"]);
+        );
+      }
+  
+      // Fetch user details of the current user, including block information
+      const userDetails = await getUserById(id, ["userBlock", "betBlock"]);
+  
+      // Fetch details of the user who is performing the block/unblock operation,
+      // including the hierarchy and block information
+      const blockingUserDetail = await getUserById(userId, [
+        "createBy",
+        "userBlock",
+        "betBlock",
+      ]);
+  
+      // Check if the current user is already blocked
+      if (userDetails?.userBlock) {
+        throw new Error("user.userBlockError");
+      }
+  
+      // Check if the block type is 'betBlock' and the user is already bet-blocked
+      if (type == blockType.betBlock && userDetails?.betBlock) {
+        throw new Error("user.betBlockError");
+      }
+  
+      // Check if the user performing the block/unblock operation has the right access
+      if (blockingUserDetail?.createBy != id) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: { msg: "user.blockCantAccess" },
+          },
+          req,
+          res
+        );
+      }
+  
+      // Check if the user is already blocked or unblocked (prevent redundant operations)
+      if (
+        blockingUserDetail?.userBlock === block &&
+        type === blockType.userBlock
+      ) {
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "user.alreadyBlocked",
+              keys: {
+                name: "User",
+                type: block ? "blocked" : "unblocked",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
+  
+      // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
+      if (
+        blockingUserDetail?.betBlock === block &&
+        type === blockType.betBlock
+      ) {
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "user.alreadyBlocked",
+              keys: {
+                name: "Bet",
+                type: block ? "blocked" : "unblocked",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
+  
+      // Perform the user block/unblock operation
+      await userBlockUnblock(userId, id, block, type);
+  
+      // Return success response
+      return SuccessResponse(
+        { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
+        req,
+        res
+      );
+    } catch (error) {
+        return ErrorResponse(
+            {
+              statusCode: 500,
+              message: error.message,
+            },
+            req,
+            res
+          );
+    }
+  };
+  
+exports.generateTransactionPassword = async (req, res) => {
+  const { id } = req.user;
+  const { transPassword } = req.body;
 
-    if (!loginUser) {
-      throw {
-        message: {
-          msg: "notFound",
-          keys: { name: "Login User" },
-        }
-      };
-    }
-    if (!updateUser) {
-      throw {
-        message: {
-          msg: "notFound",
-          keys: { name: "Update User" },
-        }
-      };
-    }
-    if (loginUser.userBlock == true) {
-      throw new Error("user.userBlockError");
-    }
-    if (loginUser.betBlock == true && betBlock == false) {
-      throw new Error("user.betBlockError");
-    }
-    let result = await lockUnlockUserService(loginUser, updateUser, userBlock, betBlock);
-    return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } }, req, res);
-  } catch (err) {
-    return ErrorResponse(err, req, res);
-  }
-}
+  const encryptTransPass = bcrypt.hashSync(transPassword, 10);
+  await updateUser(id, {
+    transPassword: encryptTransPass,
+  });
+
+  return SuccessResponse(
+    {
+      statusCode: 200,
+      message: {
+        msg: "updated",
+        keys: { name: "Transaction Password" },
+      },
+    },
+    req,
+    res
+  );
+};
+// exports.lockUnlockUser = async (req, res) => {
+//   try {
+//     const { userId, transPassword, userBlock, betBlock, createBy } = req.body;
+//     let reqUserId = req.user?.id || createBy;
+//     let loginUser = await getUserById(reqUserId, [
+//       "id",
+//       "userBlock",
+//       "betBlock",
+//       "roleName",
+//     ]);
+//     let updateUser = await getUserById(userId, [
+//       "id",
+//       "userBlock",
+//       "betBlock",
+//       "roleName",
+//     ]);
+
+//     if (!loginUser) {
+//       throw {
+//         message: {
+//           msg: "notFound",
+//           keys: { name: "Login User" },
+//         },
+//       };
+//     }
+//     if (!updateUser) {
+//       throw {
+//         message: {
+//           msg: "notFound",
+//           keys: { name: "Update User" },
+//         },
+//       };
+//     }
+//     if (loginUser.userBlock == true) {
+//       throw new Error("user.userBlockError");
+//     }
+//     if (loginUser.betBlock == true && betBlock == false) {
+//       throw new Error("user.betBlockError");
+//     }
+//     let result = await lockUnlockUserService(
+//       loginUser,
+//       updateUser,
+//       userBlock,
+//       betBlock
+//     );
+//     return SuccessResponse(
+//       { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
+//       req,
+//       res
+//     );
+//   } catch (err) {
+//     return ErrorResponse(err, req, res);
+//   }
+// };

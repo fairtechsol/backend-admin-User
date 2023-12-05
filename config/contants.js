@@ -9,6 +9,11 @@ module.exports.userRoleConstant = {
   user: "user",
 };
 
+module.exports.blockType={
+    userBlock:"userBlock",
+    betBlock:"betBlock"
+}
+
 module.exports.redisTimeOut = 24 * 60 * 60;
 
 module.exports.matchComissionTypeConstant = {
