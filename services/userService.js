@@ -97,8 +97,7 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
 }
 
 exports.getFirstLevelChildUser = async (id) => {
-  let query = `SELECT "id","userName" FROM "users" WHERE "users"."createBy" = '${id}' AND "users"."deletedAt" IS NULL;`
-  return await user.query(query)
+  return await user.find({ where : { createBy: id}, select: { id: true, userName:true }})
 
 }
 

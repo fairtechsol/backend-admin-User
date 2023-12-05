@@ -56,7 +56,7 @@ exports.createUser = async (req, res) => {
         downLevelCreditRefrence: parseInt(creditRefrence) + parseInt(creator.downLevelCreditRefrence)
       })
     }
-    let walletArray = [{
+    let transactionArray = [{
       actionBy: insertUser.createBy,
       searchId: insertUser.createBy,
       userId: insertUser.id,
@@ -66,7 +66,7 @@ exports.createUser = async (req, res) => {
       description: walletDescription.userCreate
     }]
     if (insertUser.createdBy != insertUser.id) {
-      walletArray.push({
+      transactionArray.push({
         actionBy: insertUser.createBy,
         searchId: insertUser.id,
         userId: insertUser.id,
@@ -77,7 +77,7 @@ exports.createUser = async (req, res) => {
       });
     }
 
-    const transactioninserted = await insertTransactions(walletArray);
+    const transactioninserted = await insertTransactions(transactionArray);
     let insertUserBalanceData = {
       currentBalance: 0,
       userId: insertUser.id,
@@ -808,28 +808,17 @@ exports.setCreditReferrence = async (req, res, next) => {
     if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
 
     let userBalance = await getUserBalanceDataByUserId(user.id);
+    if(!userBalance)
+    return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
     let previousCreditReference = user.creditRefrence
     let updateData = {
       creditRefrence: amount
     }
 
-    if (userBalance) {
-      let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
-      let newUserBalanceData = await updateUserBalanceByUserid(user.id, { profitLoss })
-    } else {
-      insertUserBalanceData = {
-        currentBalance: 0,
-        userId: user.id,
-        profitLoss: previousCreditReference - amount,
-        myProfitLoss: 0,
-        downLevelBalance: 0,
-        exposure: 0
-      }
-      insertUserBalanceData = await addUserBalance(insertUserBalanceData)
-
-    }
-
-    let walletArray = [{
+    let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
+    let newUserBalanceData = await updateUserBalanceByUserid(user.id, { profitLoss })
+    
+    let transactionArray = [{
       actionBy: reqUser.id,
       searchId: user.id,
       userId: user.id,
@@ -847,7 +836,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       description: "CREDIT REFRENCE " + remark
     }]
 
-    const transactioninserted = await insertTransactions(walletArray);
+    const transactioninserted = await insertTransactions(transactionArray);
     await updateUser(user.id, updateData);
     return SuccessResponse(
       {

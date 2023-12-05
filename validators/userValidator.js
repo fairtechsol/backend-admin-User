@@ -16,9 +16,6 @@ module.exports.CreateUser = Joi.object({
   city: Joi.string().max(255),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)).required(),
   myPartnership: Joi.number().required(),
-  createdBy: Joi.string().guid({ version: 'uuidv4' }).messages({
-    'string.pattern.base': 'invalidId',
-  }),
   creditRefrence: Joi.number(),
   exposureLimit: Joi.number(),
   maxBetLimit: Joi.number(),
@@ -33,9 +30,16 @@ module.exports.CreateUser = Joi.object({
 
 module.exports.ChangePassword = Joi.object({
   oldPassword: Joi.string(),
-  newPassword: Joi.string().required(),
-  transactionPassword: Joi.string().length(6),
-  confirmPassword: Joi.string().required(),
+  newPassword: Joi.string().pattern(passwordRegex).required().label('password').messages({
+    'string.pattern.base': 'user.passwordMatch',
+    'any.required': 'Password is required',
+  }),
+  transactionPassword: Joi.string(),
+  confirmPassword: Joi.string().required().valid(Joi.ref('password')).label('Confirm Password').messages({
+    'string.base': 'Confirm Password must be a string',
+    'any.required': 'Confirm Password is required',
+    'any.only': 'Confirm Password must match Password',
+  }),
   userId: Joi.string().guid({ version: 'uuidv4' })
 })
 
@@ -44,8 +48,7 @@ module.exports.updateUserValid = Joi.object({
   sessionCommission: Joi.number(),
   matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)),
   matchCommission: Joi.number(),
-  id: Joi.string().guid({ version: 'uuidv4' }).required(),
-  createBy: Joi.string().guid({ version: 'uuidv4' }).required(),
+  id: Joi.string().guid({ version: 'uuidv4' }).required()
 })
 
 module.exports.setExposureLimitValid = Joi.object({
@@ -53,7 +56,6 @@ module.exports.setExposureLimitValid = Joi.object({
   amount: Joi.number().required(),
   transPassword: Joi.string(),
   userid: Joi.string().guid({ version: 'uuidv4' }).required(),
-  createBy: Joi.string().guid({ version: 'uuidv4' }).required(),
 })
 
 module.exports.ChangePassword = Joi.object({

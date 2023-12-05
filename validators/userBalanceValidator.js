@@ -7,5 +7,5 @@ module.exports.SetUserBalance = Joi.object({
     amount : Joi.number().required(),
     remark: Joi.string().trim(),
     createBy: Joi.string().guid({ version: 'uuidv4' }),
-    transactionPassword: Joi.string().trim(),
+    transactionPassword: Joi.string(),
 })
