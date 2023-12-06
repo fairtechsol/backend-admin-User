@@ -11,7 +11,7 @@ const subscribeService = require("./redis/externalRedisSubscriber");
 const internalRedisSubscribe = require("./redis/internalRedisSubscriber");
 const internalRedisPublisher = require("./redis/internalRedisPublisher");
 const { ILike, In, IsNull, LessThanOrEqual, MoreThanOrEqual, Not } = require("typeorm");
-const { userRoleConstant } = require("../config/contants");
+const { userRoleConstant, blockType } = require("../config/contants");
 
 // id is required and select is optional parameter is an type or array
 
