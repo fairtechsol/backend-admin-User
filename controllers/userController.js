@@ -1,4 +1,4 @@
-const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription } = require('../config/contants');
+const { userRoleConstant, transType, defaultButtonValue, sessiontButtonValue, buttonType, walletDescription, blockType } = require('../config/contants');
 const { getUserById, addUser, getUserByUserName,updateUser, userBlockUnblock ,lockUnlockUserService} = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
@@ -334,11 +334,12 @@ const checkTransactionPassword = async (userId, oldTransactionPass) => {
 };
 
 const forceLogoutUser = async (userId, stopForceLogout) => {
-  await internalRedis.hdel(userId, "token");
 
   if (!stopForceLogout) {
     await forceLogoutIfLogin(userId);
   }
+  await internalRedis.hdel(userId, "token");
+
 };
 
 // API endpoint for changing password
@@ -555,7 +556,15 @@ exports.lockUnlockUser = async (req, res, next) => {
       }
   
       // Perform the user block/unblock operation
-      await userBlockUnblock(userId, id, block, type);
+      const blockedUsers=await userBlockUnblock(userId, id, block, type);
+
+
+    //   if blocktype is user and its block then user would be logout by socket
+      if(type==blockType.userBlock&&block){
+        blockedUsers?.[0]?.forEach((item)=>{
+            forceLogoutUser(item?.id);
+        })
+      }
   
       // Return success response
       return SuccessResponse(

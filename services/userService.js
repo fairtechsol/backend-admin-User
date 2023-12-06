@@ -74,18 +74,17 @@ exports.userBlockUnblock = async (userId, blockBy, block, type) => {
 ${getUserChild}
   UPDATE users
   SET "${blockingType}" = true, "${blockByType}" = '${blockBy}'
-  WHERE id IN (SELECT id FROM RoleHierarchy) AND "${blockByType}" IS NULL;
+  WHERE id IN (SELECT id FROM RoleHierarchy) AND "${blockByType}" IS NULL RETURNING id;;
 `
     : `
 ${getUserChild}
     UPDATE users
     SET "${blockingType}" = false, "${blockByType}" = NULL
-    WHERE id IN (SELECT id FROM RoleHierarchy) AND "${blockByType}" = '${blockBy}';
+    WHERE id IN (SELECT id FROM RoleHierarchy) AND "${blockByType}" = '${blockBy}' RETURNING id;;
     `;
 
   // Execute the constructed query using the 'user.query' method
   let query = await user.query(userBlockUnBlockQuery);
-
   // Return the result of the query
   return query;
 };
