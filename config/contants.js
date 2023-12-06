@@ -48,6 +48,9 @@ module.exports.baseColumnsSchemaPart = {
 module.exports.transType = {
   add: "add",
   withDraw: "withDraw",
+  win : "win",
+  loss : "loss",
+  creditRefer : "creditReference"
 };
 
 module.exports.partnershipPrefixByRole = {

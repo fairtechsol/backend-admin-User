@@ -1,5 +1,5 @@
 const Joi = require('joi')
-const { userRoleConstant, blockType } = require('../config/contants')
+const { userRoleConstant, blockType ,matchComissionTypeConstant} = require('../config/contants')
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{6,30}$/;
 
@@ -16,9 +16,6 @@ module.exports.CreateUser = Joi.object({
   city: Joi.string().max(255),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)).required(),
   myPartnership: Joi.number().required(),
-  createdBy: Joi.string().guid({ version: 'uuidv4' }).required().messages({
-    'string.pattern.base': 'invalidId',
-  }),
   creditRefrence: Joi.number(),
   exposureLimit: Joi.number(),
   maxBetLimit: Joi.number(),
@@ -36,7 +33,7 @@ module.exports.ChangePassword=Joi.object({
       'string.pattern.base': 'user.passwordMatch',
         'any.required': 'Password is required',
     }),
-    userId:Joi.string(),
+    userId:Joi.string().guid({ version: 'uuidv4' }).required(),
   transactionPassword: Joi.string()
     .length(6)
     .message("Transaction password must be 6 character long"),
@@ -81,6 +78,24 @@ module.exports.generateTransactionPass = Joi.object({
 //   betBlock: Joi.boolean().required(),
 //   createBy: Joi.string().guid({ version: 'uuidv4' })
 // })
+
+
+
+module.exports.updateUserValid = Joi.object({
+  //sessionCommission,matchComissionType,matchCommission,id,createBy
+  sessionCommission: Joi.number(),
+  matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)),
+  matchCommission: Joi.number(),
+  id: Joi.string().guid({ version: 'uuidv4' }).required()
+})
+
+module.exports.setExposureLimitValid = Joi.object({
+  //sessionCommission,matchComissionType,matchCommission,id,createBy
+  amount: Joi.number().required(),
+  transPassword: Joi.string(),
+  userid: Joi.string().guid({ version: 'uuidv4' }).required(),
+})
+
 
 module.exports.LockUnlockUser = Joi.object({
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
