@@ -6,7 +6,7 @@ const { ErrorResponse, SuccessResponse } = require('../utils/response')
 exports.getButton = async (req, res) => {
     try {
         const { id } = req.user
-        const button = await buttonService.getButtonByUserId(id);
+        const button = await buttonService.getButtonByUserId(id,["id","type","value"]);
         if (!button) ErrorResponse({ statusCode: 400, message: { msg: "button.InvalidUser" } }, req, res)
 
         return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: button }, req, res)

@@ -25,5 +25,12 @@
     "userExist" : "User already exist on given user name" ,
     "ExposurelimitSet" : "Exposure limit set successfully",
     "UserBalanceFetchSuccessfully" : "User balance fetch successfully"
+  },
+  "button" : {
+    "InvalidUser" : "User is invalid"
+  },
+  "userBalance" : {
+    "insufficientBalance" : "balance is insufficient to take this action",
+    "BalanceAddedSuccessfully" : "Balance Updated successfully"
   }
 }

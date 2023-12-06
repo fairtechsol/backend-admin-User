@@ -7,7 +7,7 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash')
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
-const { getUserBalanceDataByUserId, getAllchildsCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserid, addUserBalance } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, getAllchildsCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserid, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
 
 exports.createUser = async (req, res) => {
@@ -86,7 +86,7 @@ exports.createUser = async (req, res) => {
       downLevelBalance: 0,
       exposure: 0
     }
-    insertUserBalanceData = await addUserBalance(insertUserBalanceData)
+    insertUserBalanceData = await addInitialUserBalance(insertUserBalanceData)
     if (insertUser.roleName == userRoleConstant.user) {
       let buttonValue = [
         {
@@ -316,7 +316,7 @@ exports.insertWallet = async (req, res) => {
       downLevelBalance: 0,
       exposure: 0
     }
-    insertUserBalanceData = await addUserBalance(insertUserBalanceData)
+    insertUserBalanceData = await addInitialUserBalance(insertUserBalanceData)
     return SuccessResponse(
       { statusCode: 200, message: { msg: "login" }, data: insertUser },
       req,
@@ -683,7 +683,7 @@ exports.userSearchList = async (req, res, next) => {
         {
           statusCode: 200,
           message: { msg: "user.userList" },
-          data: { users: [] },
+          data: { users: [],count : 0 },
         },
         req,
         res
@@ -694,11 +694,15 @@ exports.userSearchList = async (req, res, next) => {
     if (createdBy) where.createdBy = createdBy
 
     let users = await getUsers(where, ["id", "userName"])
+    let response = {
+      users: users[0],
+      count : users[1]
+    }
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "user.userList" },
-        data: { users },
+        data: response,
       },
       req,
       res

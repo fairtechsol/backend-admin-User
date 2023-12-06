@@ -30,7 +30,7 @@ module.exports.CreateUser = Joi.object({
 
 module.exports.ChangePassword = Joi.object({
   oldPassword: Joi.string(),
-  newPassword: Joi.string().pattern(passwordRegex).required().label('password').messages({
+  newPassword: Joi.string().required().label('password').messages({
     'string.pattern.base': 'user.passwordMatch',
     'any.required': 'Password is required',
   }),
@@ -61,7 +61,7 @@ module.exports.setExposureLimitValid = Joi.object({
 module.exports.ChangePassword = Joi.object({
   oldPassword: Joi.string(),
   newPassword: Joi.string().required(),
-  transactionPassword: Joi.string().length(6),
+  transactionPassword: Joi.string(),
   confirmPassword: Joi.string().required(),
   userId: Joi.string()
 })
