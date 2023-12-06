@@ -33,7 +33,7 @@ module.exports.ChangePassword=Joi.object({
       'string.pattern.base': 'user.passwordMatch',
         'any.required': 'Password is required',
     }),
-    userId:Joi.string().guid({ version: 'uuidv4' }).required(),
+    userId:Joi.string().guid({ version: 'uuidv4' }),
   transactionPassword: Joi.string()
     .length(6)
     .message("Transaction password must be 6 character long"),
