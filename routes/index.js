@@ -5,8 +5,10 @@ const router = express.Router();
 const authRoutes = require('./authRoutes');
 const userRoutes = require('./userRoutes')
 const buttonRoutes = require('./buttonRoutes')
+const userBalanceRoutes = require('./userBalanceRoutes')
 // Define routes
 router.use('/auth', authRoutes);
 router.use('/user',userRoutes)
 router.use('/button',buttonRoutes)
+router.use('/balance',userBalanceRoutes)
 module.exports = router;

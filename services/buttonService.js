@@ -4,14 +4,25 @@ const Button = AppDataSource.getRepository(buttonSchema);
 
 // this is the dummy function to test the functionality
 
-exports.getButtonById = async(id) =>{
-    return await Button.findOne({id})
+exports.getButtonById = async(id,select) =>{
+    return await Button.findOne({
+        where: { id },
+        select: select,
+      });
+}
+exports.getButtonByUserId = async(id,select) =>{
+    return await Button.findOne({
+        where: { createBy : id },
+        select: select,
+      });
 }
 
-exports.getButtons = async(id) =>{
-    return await Button.find()
-}
-
+exports.getButtons = async (where={}, select) => {
+    return await Button.find({
+      where,
+      select: select,
+    });
+  };
 exports.addButton = async(body) =>{
         let insertUser = await Button.save(body);
         return insertUser;
