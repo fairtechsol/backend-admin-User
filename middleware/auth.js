@@ -1,8 +1,8 @@
-const internalRedis = require("../config/internalRedisConnection");
+const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const { ErrorResponse } = require("../utils/response");
-const jwt = require("jsonwebtoken");
 
 exports.isAuthenticate = async (req, res, next) => {
+  try{
   const { token } = req.headers;
   if (!token) {
     return ErrorResponse(
@@ -18,7 +18,7 @@ exports.isAuthenticate = async (req, res, next) => {
   }
 
   if (token) {
-    const decodedUser = jwt.verify(token, process.env.JWT_SECRET || "secret");
+    const decodedUser = verifyToken(token);
     if (!decodedUser) {
       return ErrorResponse(
         {
@@ -32,14 +32,13 @@ exports.isAuthenticate = async (req, res, next) => {
         res
       );
     }
-    const userTokenRedis = await internalRedis.hget(decodedUser.id, "token");
+    const userTokenRedis = await getUserTokenFromRedis(decodedUser.id);
     if (userTokenRedis != token) {
       return ErrorResponse(
         {
           statusCode: 401,
           message: {
-            msg: "invalid",
-            keys: { name: "token" },
+            msg: "auth.unauthorize",
           },
         },
         req,
@@ -49,5 +48,17 @@ exports.isAuthenticate = async (req, res, next) => {
 
     req.user = decodedUser;
     next();
+  }}
+  catch(err){
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: {
+          msg: "internalServerError"
+        },
+      },
+      req,
+      res
+    );
   }
 };

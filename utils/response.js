@@ -3,12 +3,12 @@ const { __mf } = require("i18n");
 module.exports.ErrorResponse = (errorData, req, res) => {
   errorData.statusCode = errorData.statusCode || 500;
   errorData.status = "error";
-  const errorMessage = errorData.msg || "Internal Server Error";
+  const errorMessage = errorData.message || "Internal Server Error";
   
   // Extracting message code and keys
-  const { code, keys } = errorMessage;
+  const { msg, keys } = errorMessage;
 
-  let i18Code = code ? code : errorData.message.msg || errorData.message;
+  let i18Code = msg ? msg : errorData?.message?.msg || errorData.message;
 
   const errorObj = {
     status: errorData.status,
@@ -27,7 +27,7 @@ module.exports.SuccessResponse = (resData, req, res) => {
   return res.status(resData.statusCode).json({
     status: resData.status,
     statusCode: resData.statusCode,
-    message: __mf(resData.message.msg, resData.message.keys),
+    message: resData?.message?__mf(resData?.message?.msg, resData?.message?.keys):null,
     data: resData.data,
     meta: resData.meta,
   });

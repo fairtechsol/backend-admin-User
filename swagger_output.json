@@ -204,16 +204,13 @@
                   "userId": {
                     "example": "any"
                   },
+                  "block": {
+                    "example": "any"
+                  },
+                  "type": {
+                    "example": "any"
+                  },
                   "transPassword": {
-                    "example": "any"
-                  },
-                  "userBlock": {
-                    "example": "any"
-                  },
-                  "betBlock": {
-                    "example": "any"
-                  },
-                  "createBy": {
                     "example": "any"
                   }
                 }
@@ -266,9 +263,6 @@
                     "example": "any"
                   },
                   "transactionPassword": {
-                    "example": "any"
-                  },
-                  "confirmPassword": {
                     "example": "any"
                   }
                 }
@@ -453,6 +447,39 @@
         }
       }
     },
+    "/user/generateTransactionPassword": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "transPassword": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/button/": {
       "get": {
         "description": "",
@@ -507,6 +534,33 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/transaction/get/{userId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }

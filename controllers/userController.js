@@ -1,5 +1,5 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance } = require('../services/userService');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription,blockType } = require('../config/contants');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance ,userBlockUnblock} = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -332,15 +332,6 @@ const generateTransactionPass = () => {
   return `${randomNumber}`;
 };
 
-// Function to handle user not found error response
-const handleUserNotFound = () => ({
-  error: true,
-  message: {
-    msg: "notFound",
-    keys: { name: "User" },
-  },
-  statusCode: 404,
-});
 
 // Check old password against the stored password
 const checkOldPassword = async (userId, oldPassword) => {
@@ -348,7 +339,10 @@ const checkOldPassword = async (userId, oldPassword) => {
   const user = await getUserById(userId, ["password"]);
   if (!user) {
     // User not found, return error response
-    return handleUserNotFound();
+    throw {
+      msg: "notFound",
+      keys: { name: "User" },
+    };
   }
   // Compare old password with the stored password
   return bcrypt.compareSync(oldPassword, user.password);
@@ -360,18 +354,22 @@ const checkTransactionPassword = async (userId, oldTransactionPass) => {
   const user = await getUserById(userId, ["transPassword", "id"]);
   if (!user) {
     // User not found, return error response
-    return handleUserNotFound();
+    throw {
+      msg: "notFound",
+      keys: { name: "User" },
+    };
   }
   // Compare old transaction password with the stored transaction password
   return bcrypt.compareSync(oldTransactionPass, user.transPassword);
 };
 
 const forceLogoutUser = async (userId, stopForceLogout) => {
-  await internalRedis.hdel(userId, "token");
 
   if (!stopForceLogout) {
     await forceLogoutIfLogin(userId);
   }
+  await internalRedis.hdel(userId, "token");
+
 };
 
 // API endpoint for changing password
@@ -381,21 +379,8 @@ exports.changePassword = async (req, res, next) => {
     const {
       oldPassword,
       newPassword,
-      transactionPassword,
-      confirmPassword,
+      transactionPassword
     } = req.body;
-
-    // Check if the new password matches the confirmed password
-    if (newPassword !== confirmPassword) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "user.confirmPasswordNotMatch" },
-        },
-        req,
-        res
-      );
-    }
 
     // Hash the new password
     const password = bcrypt.hashSync(newPassword, 10);
@@ -406,17 +391,6 @@ exports.changePassword = async (req, res, next) => {
       const userId = req.user.id;
       const isPasswordMatch = await checkOldPassword(userId, oldPassword);
 
-      // Handle error if user not found or old password is incorrect
-      if (isPasswordMatch?.error) {
-        return ErrorResponse(
-          {
-            statusCode: isPasswordMatch.statusCode,
-            message: isPasswordMatch.message,
-          },
-          req,
-          res
-        );
-      }
 
       if (!isPasswordMatch) {
         return ErrorResponse(
@@ -472,17 +446,7 @@ exports.changePassword = async (req, res, next) => {
       transactionPassword
     );
 
-    // Handle error if user not found or transaction password is incorrect
-    if (isPasswordMatch?.error) {
-      return ErrorResponse(
-        {
-          statusCode: isPasswordMatch.statusCode,
-          message: isPasswordMatch.message,
-        },
-        req,
-        res
-      );
-    }
+   
 
     if (!isPasswordMatch) {
       return ErrorResponse(
@@ -522,6 +486,7 @@ exports.changePassword = async (req, res, next) => {
     );
   }
 };
+
 
 exports.setExposureLimit = async (req, res, next) => {
   try {
@@ -765,95 +730,212 @@ exports.userBalanceDetails = async (req, res, next) => {
   }
 }
 
-exports.lockUnlockUser = async (req, res) => {
-  try {
-    const { userId, transPassword, userBlock, betBlock, createBy } = req.body;
-    let reqUserId = req.user?.id || createBy;
-    let loginUser = await getUserById(reqUserId, ["id", "userBlock", "betBlock", "roleName"]);
-    let updateUser = await getUserById(userId, ["id", "userBlock", "betBlock", "roleName"]);
-
-    if (!loginUser) {
-      throw {
-        msg: {
-          code: "notFound",
-          keys: { name: "Login User" },
-        }
-      };
-    }
-    if (!updateUser) {
-      throw {
-        msg: {
-          code: "notFound",
-          keys: { name: "Update User" },
-        }
-      };
-    }
-    if (loginUser.userBlock == true) {
-      throw new Error("user.userBlockError");
-    }
-    if (loginUser.betBlock == true && betBlock == false) {
-      throw new Error("user.betBlockError");
-    }
-    let result = await lockUnlockUserService(loginUser, updateUser, userBlock, betBlock);
-    return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } }, req, res);
-  } catch (err) {
-    return ErrorResponse(err, req, res);
-  }
-}
 exports.setCreditReferrence = async (req, res, next) => {
-  try {
-
-    let { userId, amount, transactionPassword, remark, createBy } = req.body;
-    let reqUser = req.user || { id: createBy };
-    amount = parseFloat(amount);
-
-    let loginUser = await getUserById(reqUser.id, ["id", "creditRefrence", "roleName"]);
-    let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "creditRefrence", "roleName"]);
-    if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
-
-    let userBalance = await getUserBalanceDataByUserId(user.id);
-    if(!userBalance)
-    return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
-    let previousCreditReference = user.creditRefrence
-    let updateData = {
-      creditRefrence: amount
+    try {
+  
+      let { userId, amount, transactionPassword, remark, createBy } = req.body;
+      let reqUser = req.user || { id: createBy };
+      amount = parseFloat(amount);
+  
+      let loginUser = await getUserById(reqUser.id, ["id", "creditRefrence", "roleName"]);
+      let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "creditRefrence", "roleName"]);
+      if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+  
+      let userBalance = await getUserBalanceDataByUserId(user.id);
+      if(!userBalance)
+      return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+      let previousCreditReference = user.creditRefrence
+      let updateData = {
+        creditRefrence: amount
+      }
+  
+      let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
+      let newUserBalanceData = await updateUserBalanceByUserid(user.id, { profitLoss })
+      
+      let transactionArray = [{
+        actionBy: reqUser.id,
+        searchId: user.id,
+        userId: user.id,
+        amount: previousCreditReference,
+        transType: transType.creditRefer,
+        currentAmount: user.creditRefrence,
+        description: "CREDIT REFRENCE " + remark
+      }, {
+        actionBy: reqUser.id,
+        searchId: reqUser.id,
+        userId: user.id,
+        amount: previousCreditReference,
+        transType: transType.creditRefer,
+        currentAmount: user.creditRefrence,
+        description: "CREDIT REFRENCE " + remark
+      }]
+  
+      const transactioninserted = await insertTransactions(transactionArray);
+      await updateUser(user.id, updateData);
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "userBalance.BalanceAddedSuccessfully" },
+          data: { user },
+        },
+        req,
+        res
+      );
+  
+    } catch (error) {
+      return ErrorResponse(error, req, res);
     }
-
-    let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
-    let newUserBalanceData = await updateUserBalanceByUserid(user.id, { profitLoss })
-    
-    let transactionArray = [{
-      actionBy: reqUser.id,
-      searchId: user.id,
-      userId: user.id,
-      amount: previousCreditReference,
-      transType: transType.creditRefer,
-      currentAmount: user.creditRefrence,
-      description: "CREDIT REFRENCE " + remark
-    }, {
-      actionBy: reqUser.id,
-      searchId: reqUser.id,
-      userId: user.id,
-      amount: previousCreditReference,
-      transType: transType.creditRefer,
-      currentAmount: user.creditRefrence,
-      description: "CREDIT REFRENCE " + remark
-    }]
-
-    const transactioninserted = await insertTransactions(transactionArray);
-    await updateUser(user.id, updateData);
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: { msg: "userBalance.BalanceAddedSuccessfully" },
-        data: { user },
-      },
-      req,
-      res
-    );
-
-  } catch (error) {
-    return ErrorResponse(error, req, res);
+  
   }
 
-}
+// Controller function for locking/unlocking a user
+exports.lockUnlockUser = async (req, res, next) => {
+    try {
+      // Extract relevant data from the request body and user object
+      const { userId, block, type,transPassword } = req.body;
+      const { id:loginId } = req.user;
+
+      const isPasswordMatch = await checkTransactionPassword(
+        loginId,
+        transPassword
+      );
+  
+      if (!isPasswordMatch) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: { msg: "auth.invalidPass", keys: { type: "transaction" } },
+          },
+          req,
+          res
+        );
+      }
+  
+      // Fetch user details of the current user, including block information
+      const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);
+  
+      // Fetch details of the user who is performing the block/unblock operation,
+      // including the hierarchy and block information
+      const blockingUserDetail = await getUserById(userId, [
+        "createBy",
+        "userBlock",
+        "betBlock",
+      ]);
+  
+      // Check if the current user is already blocked
+      if (userDetails?.userBlock) {
+        throw new Error("user.userBlockError");
+      }
+  
+      // Check if the block type is 'betBlock' and the user is already bet-blocked
+      if (type == blockType.betBlock && userDetails?.betBlock) {
+        throw new Error("user.betBlockError");
+      }
+  
+      // Check if the user performing the block/unblock operation has the right access
+      if (blockingUserDetail?.createBy != loginId) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: { msg: "user.blockCantAccess" },
+          },
+          req,
+          res
+        );
+      }
+  
+      // Check if the user is already blocked or unblocked (prevent redundant operations)
+      if (
+        blockingUserDetail?.userBlock === block &&
+        type === blockType.userBlock
+      ) {
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "user.alreadyBlocked",
+              keys: {
+                name: "User",
+                type: block ? "blocked" : "unblocked",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
+  
+      // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
+      if (
+        blockingUserDetail?.betBlock === block &&
+        type === blockType.betBlock
+      ) {
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "user.alreadyBlocked",
+              keys: {
+                name: "Bet",
+                type: block ? "blocked" : "unblocked",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
+  
+      // Perform the user block/unblock operation
+      const blockedUsers=await userBlockUnblock(userId, loginId, block, type);
+
+
+    //   if blocktype is user and its block then user would be logout by socket
+      if(type==blockType.userBlock&&block){
+        blockedUsers?.[0]?.forEach((item)=>{
+            forceLogoutUser(item?.id);
+        })
+      }
+  
+      // Return success response
+      return SuccessResponse(
+        { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
+        req,
+        res
+      );
+    } catch (error) {
+        return ErrorResponse(
+            {
+              statusCode: 500,
+              message: error.message,
+            },
+            req,
+            res
+          );
+    }
+  };
+  
+exports.generateTransactionPassword = async (req, res) => {
+  const { id } = req.user;
+  const { transPassword } = req.body;
+
+  const encryptTransPass = bcrypt.hashSync(transPassword, 10);
+  await updateUser(id, {
+    transPassword: encryptTransPass,
+  });
+
+  return SuccessResponse(
+    {
+      statusCode: 200,
+      message: {
+        msg: "updated",
+        keys: { name: "Transaction Password" },
+      },
+    },
+    req,
+    res
+  );
+};
+
+ 
+
