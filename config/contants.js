@@ -14,6 +14,11 @@ module.exports.blockType={
     betBlock:"betBlock"
 }
 
+module.exports.fileType = {
+  pdf: "pdf",
+  excel: "excel",
+};
+
 module.exports.redisTimeOut = 24 * 60 * 60;
 
 module.exports.matchComissionTypeConstant = {

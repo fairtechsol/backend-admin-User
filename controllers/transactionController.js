@@ -4,7 +4,17 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 exports.getAccountStatement = async (req, res) => {
   try {
     const userId = req?.params?.userId;
-    const { query } = req;
+
+    /** query format
+     * @keyword : key for searching,
+     * @searchBy : name of fields on which searching would be apply separated by , like first_name,last_name
+     * @sort : name of the fields on which sorting is apply like createdBy:ASC,name:DESC->ASC for ascending and DESC for descending 
+     * @page : number of page you are on for pagination
+     * @limit : number of row you want on single page
+     * @filters : for filters you need to give the filters like the key value pair like ->
+     * if you want query like username=="client" then give the filter like username : eqclient
+     *   **/
+    const { query } = req; 
     if (!userId) {
       return ErrorResponse(
         {

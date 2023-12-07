@@ -1,6 +1,7 @@
 const XLSX = require("xlsx");
-import * as pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+import * as pdfMake from "pdfmake/build/pdfmake";
+import * as pdfFonts from "pdfmake/build/vfs_fonts";
+import { fileType } from "../config/contants";
 
 /**
  * A class for generating PDF and Excel reports.
@@ -21,11 +22,11 @@ class FileGenerate {
    * @param {Array<Object>} formattedData - An array of objects representing report data.
    * @returns {Promise<string>} - The generated report file name.
    */
-  async generateReport( formattedData) {
+  async generateReport(formattedData) {
     switch (this.reportType) {
-      case "pdf":
+      case fileType.pdf:
         return this.generatePdf(formattedData);
-      case "excel":
+      case fileType.excel:
         return this.generateExcel(formattedData);
       default:
         throw new Error("Unsupported report type");
@@ -47,43 +48,40 @@ class FileGenerate {
         Object.values(row)?.map((item) => (item === null ? "" : item))
       );
 
-      var docDefinition = 
-       
+      var docDefinition = {
+        pageSize: "A3",
+        pageOrientation: "landscape",
+        content: [
           {
-            pageSize: 'A3',
-            pageOrientation: 'landscape',
-            content: [
-                {
-                    table: {
-                        headerRows: 1,
-                        body: [
-                            headers,
-                            ...rows,
-                        ],
-                    },
-                    layout: {
-                        fillColor: function (rowIndex) {
-                            return rowIndex % 2 === 0 ? '#CCCCCC' : null; // Alternate row colors for better readability
-                        },
-                    },
-                },
-            ],
-          };
+            table: {
+              headerRows: 1,
+              body: [headers, ...rows],
+            },
+            layout: {
+              fillColor: function (rowIndex) {
+                return rowIndex % 2 === 0 ? "#CCCCCC" : null; // Alternate row colors for better readability
+              },
+            },
+          },
+        ],
+      };
 
       const pdfDocGenerator = pdfMake.createPdf(docDefinition);
 
-      const pdfBuffer = await new Promise<Buffer>((resolve, reject) => {
+      const pdfBuffer =
+        (await new Promise()) <
+        Buffer >
+        ((resolve, reject) => {
           pdfDocGenerator.getBuffer((buffer) => {
-              resolve(buffer);
+            resolve(buffer);
           });
-      });
+        });
 
-      const base64PDF = pdfBuffer.toString('base64');
-      return Buffer.from(base64PDF, 'base64');
+      const base64PDF = pdfBuffer.toString("base64");
+      return Buffer.from(base64PDF, "base64");
     }
   }
 
- 
   /**
    * Generate an Excel report.
    *
@@ -92,7 +90,6 @@ class FileGenerate {
    * @returns {Promise<string>} - The generated Excel file name.
    */
   async generateExcel(formattedData) {
-
     const excelWs = XLSX.utils.json_to_sheet(formattedData);
     const excelWb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(excelWb, excelWs, fileName);
