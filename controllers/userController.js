@@ -1,4 +1,4 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription,blockType } = require('../config/contants');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription,blockType, fileType } = require('../config/contants');
 const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance ,userBlockUnblock} = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
@@ -7,8 +7,9 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash')
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
-const { getUserBalanceDataByUserId, getAllchildsCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserid, addInitialUserBalance } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserid, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
+const FileGenerate=require("../utils/generateFile");
 
 exports.createUser = async (req, res) => {
   try {
@@ -534,23 +535,23 @@ exports.setExposureLimit = async (req, res, next) => {
 }
 exports.userList = async (req, res, next) => {
   try {
-    let reqUser = req.user
-    let { userName, roleName, offset, limit } = req.query
+    let reqUser = req.user;
+    let { userName, roleName, offset, limit, type } = req.query;
     // let loginUser = await getUserById(reqUser.id)
-    let userRole = reqUser.roleName
+    let userRole = reqUser.roleName;
     let where = {
-      createBy: reqUser.id
-    }
+      createBy: reqUser.id,
+    };
     if (userName) where.userName = ILike(`%${userName}%`);
     if (roleName) where.roleName = roleName;
 
-    let relations = ['user']
-    let users = await getUsersWithUserBalance(where, offset, limit)
+    let relations = ["user"];
+    let users = await getUsersWithUserBalance(where, offset, limit);
 
     let response = {
       count: 0,
-      list: []
-    }
+      list: [],
+    };
     if (!users[1]) {
       return SuccessResponse(
         {
@@ -562,69 +563,177 @@ exports.userList = async (req, res, next) => {
         res
       );
     }
-    response.count = users[1]
+    response.count = users[1];
     let partnershipCol = [];
     if (userRole == userRoleConstant.master) {
-      partnershipCol = ['mPartnership', 'smPartnership', 'aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+      partnershipCol = [
+        "mPartnership",
+        "smPartnership",
+        "aPartnership",
+        "saPartnership",
+        "faPartnership",
+        "fwPartnership",
+      ];
     }
     if (userRole == userRoleConstant.superMaster) {
-      partnershipCol = ['smPartnership', 'aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+      partnershipCol = [
+        "smPartnership",
+        "aPartnership",
+        "saPartnership",
+        "faPartnership",
+        "fwPartnership",
+      ];
     }
     if (userRole == userRoleConstant.admin) {
-      partnershipCol = ['aPartnership', 'saPartnership', 'faPartnership', 'fwPartnership'];
+      partnershipCol = [
+        "aPartnership",
+        "saPartnership",
+        "faPartnership",
+        "fwPartnership",
+      ];
     }
     if (userRole == userRoleConstant.superAdmin) {
-      partnershipCol = ['saPartnership', 'faPartnership', 'fwPartnership'];
+      partnershipCol = ["saPartnership", "faPartnership", "fwPartnership"];
     }
     if (userRole == userRoleConstant.fairGameAdmin) {
-      partnershipCol = ['faPartnership', 'fwPartnership'];
+      partnershipCol = ["faPartnership", "fwPartnership"];
     }
-    if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
-      partnershipCol = ['fwPartnership'];
+    if (
+      userRole == userRoleConstant.fairGameWallet ||
+      userRole == userRoleConstant.expert
+    ) {
+      partnershipCol = ["fwPartnership"];
     }
 
-    let data = await Promise.all(users[0].map(async element => {
-      let elementData = {}
-      elementData = {
-        ...element,
-        ...element.userBal
-      };
+    let data = await Promise.all(
+      users[0].map(async (element) => {
+        let elementData = {};
+        elementData = {
+          ...element,
+          ...element.userBal,
+        };
 
-      delete elementData.userBal
+        delete elementData.userBal;
 
-      elementData['percentProfitLoss'] = elementData['myProfitLoss'];
-      let partner_ships = 100;
-      if (partnershipCol && partnershipCol.length) {
-        partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + elementData[a], 0);
-        elementData['percentProfitLoss'] = ((elementData['profitLoss'] / 100) * partner_ships).toFixed(2);
-      }
-      if (elementData.roleName != userRoleConstant.user) {
-        elementData['available_balance'] = Number((parseFloat(elementData['currentBalance'])).toFixed(2));
-        let childUsers = await getChildUser(element.id)
-        let allChildUserIds = childUsers.map(obj => obj.id)
-        let balancesum = 0
-
-        if (allChildUserIds.length) {
-          let allChildBalanceData = await getAllchildsCurrentBalanceSum(allChildUserIds)
-          balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
+        elementData["percentProfitLoss"] = elementData["myProfitLoss"];
+        let partner_ships = 100;
+        if (partnershipCol && partnershipCol.length) {
+          partner_ships = partnershipCol.reduce(
+            (partialSum, a) => partialSum + elementData[a],
+            0
+          );
+          elementData["percentProfitLoss"] = (
+            (elementData["profitLoss"] / 100) *
+            partner_ships
+          ).toFixed(2);
         }
+        if (elementData.roleName != userRoleConstant.user) {
+          elementData["availableBalance"] = Number(
+            parseFloat(elementData["currentBalance"]).toFixed(2)
+          );
+          let childUsers = await getChildUser(element.id);
+          let allChildUserIds = childUsers.map((obj) => obj.id);
+          let balancesum = 0;
 
-        elementData['balance'] = Number(parseFloat(d['currentBalance']) + balancesum).toFixed(2);
-      } else {
-        elementData['available_balance'] = Number((parseFloat(elementData['currentBalance']) - elementData['exposure']).toFixed(2));
-        elementData['balance'] = elementData['currentBalance'];
-      }
-      elementData['percentProfitLoss'] = elementData['myProfitLoss'];
-      elementData['TotalComission'] = elementData['TotalComission']
-      if (partnershipCol && partnershipCol.length) {
-        let partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + elementData[a], 0);
-        elementData['percentProfitLoss'] = ((elementData['profitLoss'] / 100) * partner_ships).toFixed(2);
-        elementData['TotalComission'] = ((elementData['TotalComission'] / 100) * partner_ships).toFixed(2) + '(' + partner_ships + '%)';
-      }
-      return elementData;
-    }))
+          if (allChildUserIds.length) {
+            let allChildBalanceData = await getAllChildCurrentBalanceSum(
+              allChildUserIds
+            );
+            balancesum = parseFloat(
+              allChildBalanceData.allchildscurrentbalancesum
+            )
+              ? parseFloat(allChildBalanceData.allchildscurrentbalancesum)
+              : 0;
+          }
 
-    response.list = data
+          elementData["balance"] = Number(
+            parseFloat(elementData["currentBalance"]) + balancesum
+          ).toFixed(2);
+        } else {
+          elementData["availableBalance"] = Number(
+            (
+              parseFloat(elementData["currentBalance"]) -
+              elementData["exposure"]
+            ).toFixed(2)
+          );
+          elementData["balance"] = elementData["currentBalance"];
+        }
+        elementData["percentProfitLoss"] = elementData["myProfitLoss"];
+        elementData["TotalComission"] = elementData["TotalComission"];
+        if (partnershipCol && partnershipCol.length) {
+          let partner_ships = partnershipCol.reduce(
+            (partialSum, a) => partialSum + elementData[a],
+            0
+          );
+          elementData["percentProfitLoss"] = (
+            (elementData["profitLoss"] / 100) *
+            partner_ships
+          ).toFixed(2);
+          elementData["TotalComission"] =
+            ((elementData["TotalComission"] / 100) * partner_ships).toFixed(2) +
+            "(" +
+            partner_ships +
+            "%)";
+        }
+        return elementData;
+      })
+    );
+
+    if (type) {
+      const header = [
+        { excelHeader: "User Name", dbKey: "userName" },
+        { excelHeader: "Role", dbKey: "roleName" },
+        { excelHeader: "Credit Ref", dbKey: "creditRefrence" },
+        { excelHeader: "Balance", dbKey: "balance" },
+        { excelHeader: "Client P/L", dbKey: "profit_loss" },
+        { excelHeader: "% P/L", dbKey: "percentProfitLoss" },
+        { excelHeader: "Comission", dbKey: "TotalComission" },
+        { excelHeader: "Exposure", dbKey: "exposure" },
+        { excelHeader: "Available Balance", dbKey: "availableBalance" },
+        { excelHeader: "UL", dbKey: "userBlock" },
+        { excelHeader: "BL", dbKey: "betBlock" },
+        { excelHeader: "S Com %", dbKey: "sessionCommission" },
+        { excelHeader: "Match Com Type", dbKey: "matchComissionType" },
+        { excelHeader: "M Com %", dbKey: "matchCommission" },
+        { excelHeader: "Exposure Limit", dbKey: "exposureLimit" },
+        ...(type == fileType.excel
+          ? [
+              {
+                excelHeader: "FairGameWallet Partnership",
+                dbKey: "fwPartnership",
+              },
+              {
+                excelHeader: "FairGameAdmin Partnership",
+                dbKey: "faPartnership",
+              },
+              { excelHeader: "SuperAdmin Partnership", dbKey: "saPartnership" },
+              { excelHeader: "Admin Partnership", dbKey: "aPartnership" },
+              {
+                excelHeader: "SuperMaster Partnership",
+                dbKey: "smPartnership",
+              },
+              { excelHeader: "Master Partnership", dbKey: "mPartnership" },
+              { excelHeader: "Full Name", dbKey: "fullName" },
+              { excelHeader: "City", dbKey: "city" },
+              { excelHeader: "Phone Number", dbKey: "phoneNumber" },
+            ]
+          : []),
+      ];
+
+      const fileGenerate = new FileGenerate(type);
+      const file = await fileGenerate.generateReport(data, header);
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "user.userList" },
+          data: file,
+        },
+        req,
+        res
+      );
+    }
+
+    response.list = data;
     return SuccessResponse(
       {
         statusCode: 200,
@@ -635,6 +744,7 @@ exports.userList = async (req, res, next) => {
       res
     );
   } catch (error) {
+    console.log(error);
     return ErrorResponse(error, req, res);
   }
 }
