@@ -35,8 +35,7 @@ module.exports.ChangePassword=Joi.object({
     }),
     userId:Joi.string().guid({ version: 'uuidv4' }),
   transactionPassword: Joi.string()
-    .length(6)
-    .message("Transaction password must be 6 character long"),
+    ,
   confirmPassword: Joi.string()
     .required()
     .valid(Joi.ref("newPassword"))
@@ -58,26 +57,13 @@ module.exports.generateTransactionPass = Joi.object({
     .required()
     .valid(Joi.ref("transPassword"))
     .label("Confirm transaction password")
-    .length(6)
     .messages({
       "string.base": "Confirm transaction Password must be a string",
       "any.required": "Confirm transaction password is required",
       "any.only": "Confirm Transaction Password must match transaction password",
-      "string.length.base": "Confirm transaction password must be 6 characters long",
     }),
 });
 
-// module.exports.LockUnlockUser = Joi.object({
-//   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
-//   transPassword: Joi.string().required().messages({
-//     'string.base': '"Transaction Password" must be a string',
-//     'any.required': '"Transaction Password" is required',
-//     'string.empty': '"Transaction Password" can not be empty.'
-//   }),
-//   userBlock: Joi.boolean().required(),
-//   betBlock: Joi.boolean().required(),
-//   createBy: Joi.string().guid({ version: 'uuidv4' })
-// })
 
 
 
