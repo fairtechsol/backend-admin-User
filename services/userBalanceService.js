@@ -42,7 +42,7 @@ exports.getAllChildProfitLossSum = async(childUserIds)=>{
     
 }
 
-exports.getAllchildsCurrentBalanceSum = async (childUserIds) => {
+exports.getAllChildCurrentBalanceSum = async (childUserIds) => {
      queryColumns = 'SUM(userBalance.currentBalance) as allChildsCurrentBalanceSum';
   
      let childUserData = await UserBalance

@@ -1,7 +1,7 @@
 const XLSX = require("xlsx");
-import * as pdfMake from "pdfmake/build/pdfmake";
-import * as pdfFonts from "pdfmake/build/vfs_fonts";
-import { fileType } from "../config/contants";
+const pdfMake = require("pdfmake/build/pdfmake");
+const pdfFonts = require("pdfmake/build/vfs_fonts");
+const { fileType } = require("../config/contants");
 
 /**
  * A class for generating PDF and Excel reports.
@@ -22,12 +22,12 @@ class FileGenerate {
    * @param {Array<Object>} formattedData - An array of objects representing report data.
    * @returns {Promise<string>} - The generated report file name.
    */
-  async generateReport(formattedData) {
+  async generateReport(formattedData, header) {
     switch (this.reportType) {
       case fileType.pdf:
-        return this.generatePdf(formattedData);
+        return this.generatePdf(formattedData, header);
       case fileType.excel:
-        return this.generateExcel(formattedData);
+        return this.generateExcel(formattedData, header);
       default:
         throw new Error("Unsupported report type");
     }
@@ -39,13 +39,17 @@ class FileGenerate {
    * @param {Array<Object>} formattedData - An array of objects representing report data.
    * @returns {Promise<string>} - The generated PDF file name.
    */
-  async generatePdf(formattedData) {
+  async generatePdf(formattedData, headers) {
     pdfMake.vfs = pdfFonts.pdfMake.vfs;
+    const pdfHeaders = headers.map((item) => {
+      return item.excelHeader;
+    });
 
-    if (formattedData && formattedData.length > 0) {
-      const headers = Object.keys(formattedData[0]);
+    if (formattedData && formattedData?.length > 0) {
       const rows = formattedData.map((row) =>
-        Object.values(row)?.map((item) => (item === null ? "" : item))
+        headers.map((item) => {
+          return (row[item.dbKey]??"");
+        })
       );
 
       var docDefinition = {
@@ -55,7 +59,7 @@ class FileGenerate {
           {
             table: {
               headerRows: 1,
-              body: [headers, ...rows],
+              body: [pdfHeaders, ...rows],
             },
             layout: {
               fillColor: function (rowIndex) {
@@ -68,17 +72,15 @@ class FileGenerate {
 
       const pdfDocGenerator = pdfMake.createPdf(docDefinition);
 
-      const pdfBuffer =
-        (await new Promise()) <
-        Buffer >
-        ((resolve, reject) => {
-          pdfDocGenerator.getBuffer((buffer) => {
-            resolve(buffer);
-          });
+      const pdfBuffer = await new Promise((resolve, reject) => {
+        pdfDocGenerator.getBuffer((buffer) => {
+            
+                resolve(buffer);
         });
+    });
 
       const base64PDF = pdfBuffer.toString("base64");
-      return Buffer.from(base64PDF, "base64");
+      return base64PDF;
     }
   }
 
@@ -89,21 +91,34 @@ class FileGenerate {
    * @param {Array<Object>} formattedData - An array of objects representing report data.
    * @returns {Promise<string>} - The generated Excel file name.
    */
-  async generateExcel(formattedData) {
-    const excelWs = XLSX.utils.json_to_sheet(formattedData);
-    const excelWb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(excelWb, excelWs, fileName);
-    const excelBuffer = XLSX.write(excelWb, {
-      bookType: "csv",
-      type: "array",
+  async generateExcel(formattedData, headers) {
+    const excelHeaders = headers.map((item) => {
+      return item.excelHeader;
     });
-    // Convert the Uint8Array to a Buffer
-    const excelBufferData = Buffer.from(excelBuffer);
 
-    // Encode the Buffer to base64
-    const excelBase64 = excelBufferData.toString("base64");
+    if (formattedData && formattedData?.length > 0) {
+      const rows = formattedData.map((row) =>
+        headers.map((item) => {
+          return row[item.dbKey];
+        })
+      );
 
-    return excelBase64;
+      rows.unshift(excelHeaders);
+      const excelWs = XLSX.utils.aoa_to_sheet(rows);
+      const excelWb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(excelWb, excelWs, "excel");
+      const excelBuffer = XLSX.write(excelWb, {
+        bookType: "csv",
+        type: "array",
+      });
+      // Convert the Uint8Array to a Buffer
+      const excelBufferData = Buffer.from(excelBuffer);
+
+      // Encode the Buffer to base64
+      const excelBase64 = excelBufferData.toString("base64");
+
+      return excelBase64;
+    }
   }
 }
 

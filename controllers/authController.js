@@ -232,7 +232,7 @@ exports.logout = async (req, res) => {
     }
 
     // Remove the user's token from Redis using their ID as the key
-    await internalRedis.hdel(user.id, "token");
+    await internalRedis.del(user.id);
 
     return SuccessResponse(
       {
