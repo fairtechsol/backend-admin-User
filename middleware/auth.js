@@ -3,7 +3,9 @@ const { ErrorResponse } = require("../utils/response");
 
 exports.isAuthenticate = async (req, res, next) => {
   try{
-  const { token } = req.headers;
+  let token = req.headers.authorization;
+  token = token.split(' ')[1];
+
   if (!token) {
     return ErrorResponse(
       {

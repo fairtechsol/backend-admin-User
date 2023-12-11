@@ -11,6 +11,15 @@ const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildPro
 const { ILike } = require('typeorm');
 const FileGenerate=require("../utils/generateFile");
 
+exports.getProfile = async (req, res) => {
+  let reqUser = req.user || {}
+  let where = {
+    id: reqUser.id,
+  };
+  let user = await getUsersWithUserBalance(where);
+  return SuccessResponse({ statusCode: 200, message: { msg: "user.profile" }, data: user }, req, res)
+}
+
 exports.createUser = async (req, res) => {
   try {
     let { userName, fullName, password, confirmPassword, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
@@ -99,7 +108,7 @@ exports.createUser = async (req, res) => {
       let insertedButton = await insertButton(buttonValue)
     }
     let response = lodash.omit(insertUser, ["password", "transPassword"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "create", keys: "User" }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -116,7 +125,7 @@ exports.updateUser = async (req, res) => {
     updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
     updateUser = await addUser(updateUser);
     let response = lodash.pick(updateUser, ["sessionCommission", "matchCommission", "matchComissionType"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: "User" }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }

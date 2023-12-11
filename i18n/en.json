@@ -6,6 +6,7 @@
   "invalidId": "Given id is invalid",
   "userNotSelect": "User not selected.",
   "updated":"{name} updated successfully",
+  "create": "{type} create successfully.",
   
   "auth": {
     "loginSuccess": "Login successfully",
@@ -27,10 +28,11 @@
     "lock/unlockSuccessfully" : "User lock and unlock operation successfull",
     "InvalidHierarchy" : "Invalid user role you given for creation",
     "userExist" : "User already exist on given user name" ,
-    "blockCantAccess":"You can not block this user",
-  "alreadyBlocked":"{name} is already {type}",
-    "ExposurelimitSet" : "Exposure limit set successfully",
-    "UserBalanceFetchSuccessfully" : "User balance fetch successfully"
+    "blockCantAccess":"You can not block this user.",
+    "alreadyBlocked":"{name} is already {type}.",
+    "ExposurelimitSet" : "Exposure limit set successfully.",
+    "UserBalanceFetchSuccessfully" : "User balance fetch successfully.",
+    "profile": "Profile get successfully."
   },
   "button" : {
     "InvalidUser" : "User is invalid"
