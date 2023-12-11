@@ -47,17 +47,10 @@ exports.getUserByUserName = async (userName, select) => {
  * @param {string} userId - The ID of the user to be blocked or unblocked.
  * @param {string} blockBy - The ID of the user performing the block or unblock action.
  * @param {boolean} block - A boolean indicating whether to block or unblock the user.
- * @param {string} type - The type of blocking (user or bet) as a string.
  * @returns {Promise<object>} - A Promise that resolves to the result of the database query.
  */
-exports.userBlockUnblock = async (userId, blockBy, block, type) => {
-  // Determine the block type based on the provided 'type' and set the corresponding constant values
-  const blockByType =
-    type == blockType.betBlock ? "betBlockedBy" : "userBlockedBy";
+exports.userBlockUnblock = async (userId, blockBy, block) => {
 
-  // Determine the blocking type based on the provided 'type' and set the corresponding constant values
-  const blockingType =
-    type == blockType.betBlock ? "betBlock" : "userBlock";
 
   // Define a recursive SQL query to fetch user hierarchy for the given 'userId'
   const getUserChild = `WITH RECURSIVE RoleHierarchy AS (
@@ -75,14 +68,14 @@ exports.userBlockUnblock = async (userId, blockBy, block, type) => {
     ? `
 ${getUserChild}
   UPDATE users
-  SET "${blockingType}" = true, "${blockByType}" = '${blockBy}'
-  WHERE id IN (SELECT id FROM RoleHierarchy) AND "${blockByType}" IS NULL RETURNING id;;
+  SET "userBlock" = true, "userBlockedBy" = '${blockBy}'
+  WHERE id IN (SELECT id FROM RoleHierarchy) AND "userBlockedBy" IS NULL RETURNING id;;
 `
     : `
 ${getUserChild}
     UPDATE users
-    SET "${blockingType}" = false, "${blockByType}" = NULL
-    WHERE id IN (SELECT id FROM RoleHierarchy) AND "${blockByType}" = '${blockBy}' RETURNING id;;
+    SET "userBlock" = false, "userBlockedBy" = NULL
+    WHERE id IN (SELECT id FROM RoleHierarchy) AND "userBlockedBy" = '${blockBy}' RETURNING id;;
     `;
 
   // Execute the constructed query using the 'user.query' method
@@ -91,6 +84,40 @@ ${getUserChild}
   return query;
 };
 
+exports.betBlockUnblock = async (userId, blockBy, block) => {
+
+
+  // Define a recursive SQL query to fetch user hierarchy for the given 'userId'
+  const getUserChild = `WITH RECURSIVE RoleHierarchy AS (
+            SELECT id, "roleName", "createBy"
+            FROM public.users
+            WHERE id = '${userId}'
+            UNION
+            SELECT ur.id, ur."roleName", ur."createBy"
+            FROM public.users ur
+            JOIN RoleHierarchy rh ON ur."createBy" = rh.id
+            )`;
+
+  // Construct the SQL query for blocking or unblocking users based on the 'block' parameter
+  const userBlockUnBlockQuery = block
+    ? `
+${getUserChild}
+  UPDATE users
+  SET "betBlock" = true, "betBlockedBy" = '${blockBy}'
+  WHERE id IN (SELECT id FROM RoleHierarchy) AND "betBlockedBy" IS NULL RETURNING id;;
+`
+    : `
+${getUserChild}
+    UPDATE users
+    SET "betBlock" = false, "betBlockedBy" = NULL
+    WHERE id IN (SELECT id FROM RoleHierarchy) AND "betBlockedBy" = '${blockBy}' RETURNING id;;
+    `;
+
+  // Execute the constructed query using the 'user.query' method
+  let query = await user.query(userBlockUnBlockQuery);
+  // Return the result of the query
+  return query;
+};
 
 exports.getUser = async (where = {}, select) => {
   //find list with filter and pagination

@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription,blockType, fileType } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance ,userBlockUnblock} = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance ,userBlockUnblock, betBlockUnblock} = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
@@ -902,14 +902,14 @@ exports.setCreditReferrence = async (req, res, next) => {
 exports.lockUnlockUser = async (req, res, next) => {
     try {
       // Extract relevant data from the request body and user object
-      const { userId, block, type,transPassword } = req.body;
-      const { id:loginId } = req.user;
+      const { userId, betBlock, userBlock, transPassword } = req.body;
+      const { id: loginId } = req.user;
 
       const isPasswordMatch = await checkTransactionPassword(
         loginId,
         transPassword
       );
-  
+
       if (!isPasswordMatch) {
         return ErrorResponse(
           {
@@ -920,10 +920,10 @@ exports.lockUnlockUser = async (req, res, next) => {
           res
         );
       }
-  
+
       // Fetch user details of the current user, including block information
       const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);
-  
+
       // Fetch details of the user who is performing the block/unblock operation,
       // including the hierarchy and block information
       const blockingUserDetail = await getUserById(userId, [
@@ -931,17 +931,17 @@ exports.lockUnlockUser = async (req, res, next) => {
         "userBlock",
         "betBlock",
       ]);
-  
+
       // Check if the current user is already blocked
       if (userDetails?.userBlock) {
         throw new Error("user.userBlockError");
       }
-  
+
       // Check if the block type is 'betBlock' and the user is already bet-blocked
-      if (type == blockType.betBlock && userDetails?.betBlock) {
+      if (!betBlock && userDetails?.betBlock) {
         throw new Error("user.betBlockError");
       }
-  
+
       // Check if the user performing the block/unblock operation has the right access
       if (blockingUserDetail?.createBy != loginId) {
         return ErrorResponse(
@@ -953,60 +953,27 @@ exports.lockUnlockUser = async (req, res, next) => {
           res
         );
       }
-  
+
       // Check if the user is already blocked or unblocked (prevent redundant operations)
-      if (
-        blockingUserDetail?.userBlock === block &&
-        type === blockType.userBlock
-      ) {
-        return ErrorResponse(
-          {
-            statusCode: 400,
-            message: {
-              msg: "user.alreadyBlocked",
-              keys: {
-                name: "User",
-                type: block ? "blocked" : "unblocked",
-              },
-            },
-          },
-          req,
-          res
-        );
-      }
-  
-      // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
-      if (
-        blockingUserDetail?.betBlock === block &&
-        type === blockType.betBlock
-      ) {
-        return ErrorResponse(
-          {
-            statusCode: 400,
-            message: {
-              msg: "user.alreadyBlocked",
-              keys: {
-                name: "Bet",
-                type: block ? "blocked" : "unblocked",
-              },
-            },
-          },
-          req,
-          res
-        );
-      }
-  
-      // Perform the user block/unblock operation
-      const blockedUsers=await userBlockUnblock(userId, loginId, block, type);
-
-
-    //   if blocktype is user and its block then user would be logout by socket
-      if(type==blockType.userBlock&&block){
-        blockedUsers?.[0]?.forEach((item)=>{
+      if (blockingUserDetail?.userBlock != userBlock) {
+        // Perform the user block/unblock operation
+        console.log(userBlock);
+        const blockedUsers = await userBlockUnblock(userId, loginId, userBlock);
+        //   if blocktype is user and its block then user would be logout by socket
+        if (userBlock) {
+          blockedUsers?.[0]?.forEach((item) => {
             forceLogoutUser(item?.id);
-        })
+          });
+        }
       }
-  
+
+      // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
+      if (blockingUserDetail?.betBlock != betBlock) {
+        // Perform the bet block/unblock operation
+
+        await betBlockUnblock(userId, loginId, betBlock);
+      }
+
       // Return success response
       return SuccessResponse(
         { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },

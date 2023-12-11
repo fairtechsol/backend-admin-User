@@ -3,8 +3,8 @@ const { ErrorResponse } = require("../utils/response");
 
 exports.isAuthenticate = async (req, res, next) => {
   try{
-  const { token } = req.headers;
-  if (!token) {
+  const { authorization } = req.headers;
+  if (!authorization) {
     return ErrorResponse(
       {
         statusCode: 401,
@@ -16,6 +16,8 @@ exports.isAuthenticate = async (req, res, next) => {
       res
     );
   }
+
+  const token=authorization?.split(" ")[1];
 
   if (token) {
     const decodedUser = verifyToken(token);

@@ -32,15 +32,35 @@ module.exports.CreateSuperAdmin = Joi.object({
 
 module.exports.UpdateSuperAdmin = Joi.object({
   id: Joi.string().guid({ version: "uuidv4" }).required(),
-  logo: Joi.string(),
-  sidebarColor: Joi.string(),
-  headerColor: Joi.string(),
-  footerColor: Joi.string(),
+  domain: Joi.object({
+    logo: Joi.string(),
+    sidebarColor: Joi.string(),
+    headerColor: Joi.string(),
+    footerColor: Joi.string(),
+  }),
 });
 
-module.exports.SuperAdminBalance= Joi.object({
+module.exports.SuperAdminBalance = Joi.object({
   userId: Joi.string().guid({ version: "uuidv4" }).required(),
   transactionType: Joi.string().valid(...Object.values(transType)),
   amount: Joi.number(),
   remark: Joi.string(),
 });
+
+module.exports.SuperAdminExposureLimit = Joi.object({
+  id: Joi.string().guid({ version: "uuidv4" }).required(),
+  exposureLimit: Joi.number(),
+});
+
+module.exports.SuperAdminCreditReference = Joi.object({
+  userId: Joi.string().guid({ version: "uuidv4" }).required(),
+  amount: Joi.number(),
+  remark: Joi.string(),
+});
+
+module.exports.SuperAdminLockUnlock = Joi.object({
+    userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  betBlock: Joi.boolean().required(),
+  userBlock:  Joi.boolean().required()
+  });
+  

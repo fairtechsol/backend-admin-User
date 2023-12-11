@@ -11,6 +11,14 @@ exports.getDomainDataById = async (id, select) => {
   return await domain.findOne({ where: { id }, select: select });
 };
 
+exports.getDomainDataByDomain = async (domainName, select) => {
+    return await domain.findOne({ where: { domain:domainName }, select: select });
+  };
+  
+  exports.getDomainDataByUserId = async (userId, select) => {
+    return await domain.findOne({ where: { userId }, select: select });
+  };
+
 exports.updateDomainData = async (id, body) => {
   let domainData = await domain.update(id, body);
   return domainData;

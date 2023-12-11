@@ -55,7 +55,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -87,7 +87,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -184,6 +184,15 @@
     "/user/lockUnlockUser": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -198,10 +207,10 @@
                   "userId": {
                     "example": "any"
                   },
-                  "block": {
+                  "betBlock": {
                     "example": "any"
                   },
-                  "type": {
+                  "userBlock": {
                     "example": "any"
                   },
                   "transPassword": {
@@ -229,7 +238,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -304,7 +313,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -358,7 +367,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -391,7 +400,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -453,7 +462,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -486,7 +495,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -505,7 +514,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -552,7 +561,7 @@
             }
           },
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -571,7 +580,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -709,16 +718,7 @@
                   "id": {
                     "example": "any"
                   },
-                  "logo": {
-                    "example": "any"
-                  },
-                  "sidebarColor": {
-                    "example": "any"
-                  },
-                  "headerColor": {
-                    "example": "any"
-                  },
-                  "footerColor": {
+                  "domain": {
                     "example": "any"
                   }
                 }
@@ -746,6 +746,63 @@
                     "example": "any"
                   },
                   "transactionType": {
+                    "example": "any"
+                  },
+                  "amount": {
+                    "example": "any"
+                  },
+                  "remark": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/update/exposure": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "exposureLimit": {
+                    "example": "any"
+                  },
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/update/creditReference": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
                     "example": "any"
                   },
                   "amount": {
