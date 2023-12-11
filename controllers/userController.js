@@ -17,7 +17,8 @@ exports.getProfile = async (req, res) => {
     id: reqUser.id,
   };
   let user = await getUsersWithUserBalance(where);
-  return SuccessResponse({ statusCode: 200, message: { msg: "user.profile" }, data: user }, req, res)
+  let response = lodash.omit(user, ["password", "transPassword"])
+  return SuccessResponse({ statusCode: 200, message: { msg: "user.profile" }, data: response }, req, res)
 }
 
 exports.createUser = async (req, res) => {
