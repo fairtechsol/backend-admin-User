@@ -13,7 +13,7 @@ const FileGenerate=require("../utils/generateFile");
 
 exports.createUser = async (req, res) => {
   try {
-    let { userName, fullName, password, confirmPassword, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
+    let { userName, fullName, password,  phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
     let reqUser = req.user || {}
     let creator = await getUserById(reqUser.id || createdBy);
     if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
@@ -107,9 +107,9 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    let { sessionCommission, matchComissionType, matchCommission, id, createBy } = req.body;
+    let { sessionCommission, matchComissionType, matchCommission, id } = req.body;
     let reqUser = req.user || {}
-    let updateUser = await getUser({ id, createBy }, ["id", "createBy", "sessionCommission", "matchComissionType", "matchCommission"])
+    let updateUser = await getUser({ id, createBy :reqUser.id}, ["id", "createBy", "sessionCommission", "matchComissionType", "matchCommission"])
     if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
     updateUser.sessionCommission = sessionCommission ?? updateUser.sessionCommission;
     updateUser.matchCommission = matchCommission ?? updateUser.matchCommission;

@@ -114,9 +114,6 @@
                   "password": {
                     "example": "any"
                   },
-                  "confirmPassword": {
-                    "example": "any"
-                  },
                   "phoneNumber": {
                     "example": "any"
                   },
@@ -175,9 +172,6 @@
                     "example": "any"
                   },
                   "id": {
-                    "example": "any"
-                  },
-                  "createBy": {
                     "example": "any"
                   }
                 }
@@ -605,6 +599,156 @@
                     "example": "any"
                   },
                   "transactionPassword": {
+                    "example": "any"
+                  },
+                  "remark": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/add/user": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userName": {
+                    "example": "any"
+                  },
+                  "fullName": {
+                    "example": "any"
+                  },
+                  "password": {
+                    "example": "any"
+                  },
+                  "phoneNumber": {
+                    "example": "any"
+                  },
+                  "city": {
+                    "example": "any"
+                  },
+                  "betBlock": {
+                    "example": "any"
+                  },
+                  "userBlock": {
+                    "example": "any"
+                  },
+                  "roleName": {
+                    "example": "any"
+                  },
+                  "fwPartnership": {
+                    "example": "any"
+                  },
+                  "faPartnership": {
+                    "example": "any"
+                  },
+                  "saPartnership": {
+                    "example": "any"
+                  },
+                  "aPartnership": {
+                    "example": "any"
+                  },
+                  "smPartnership": {
+                    "example": "any"
+                  },
+                  "mPartnership": {
+                    "example": "any"
+                  },
+                  "id": {
+                    "example": "any"
+                  },
+                  "creditRefrence": {
+                    "example": "any"
+                  },
+                  "exposureLimit": {
+                    "example": "any"
+                  },
+                  "maxBetLimit": {
+                    "example": "any"
+                  },
+                  "minBetLimit": {
+                    "example": "any"
+                  },
+                  "domain": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/update/user": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  },
+                  "logo": {
+                    "example": "any"
+                  },
+                  "sidebarColor": {
+                    "example": "any"
+                  },
+                  "headerColor": {
+                    "example": "any"
+                  },
+                  "footerColor": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/update/balance": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "example": "any"
+                  },
+                  "transactionType": {
+                    "example": "any"
+                  },
+                  "amount": {
                     "example": "any"
                   },
                   "remark": {
