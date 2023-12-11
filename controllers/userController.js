@@ -12,9 +12,13 @@ const { ILike } = require('typeorm');
 const FileGenerate=require("../utils/generateFile");
 
 exports.getProfile = async (req, res) => {
-  let reqUser = req.user || {}
+  let reqUser = req.user || {};
+  let userId = reqUser?.id
+  if(req.query?.userId){
+    userId = req.query.userId;
+  }
   let where = {
-    id: reqUser.id,
+    id: userId,
   };
   let user = await getUsersWithUserBalance(where);
   let response = lodash.omit(user, ["password", "transPassword"])
@@ -287,6 +291,7 @@ const checkUserCreationHierarchy = (creator, createUserRoleName) => {
   return true
 
 }
+
 exports.insertWallet = async (req, res) => {
   try {
     let wallet = {
@@ -342,7 +347,6 @@ const generateTransactionPass = () => {
   const randomNumber = Math.floor(100000 + Math.random() * 900000);
   return `${randomNumber}`;
 };
-
 
 // Check old password against the stored password
 const checkOldPassword = async (userId, oldPassword) => {
@@ -498,7 +502,6 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
-
 exports.setExposureLimit = async (req, res, next) => {
   try {
     let { amount, userid, transPassword, createBy } = req.body
@@ -543,6 +546,7 @@ exports.setExposureLimit = async (req, res, next) => {
     return ErrorResponse(error, req, res);
   }
 }
+
 exports.userList = async (req, res, next) => {
   try {
     let reqUser = req.user;
