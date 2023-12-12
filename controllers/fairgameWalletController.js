@@ -173,7 +173,7 @@ exports.createSuperAdmin = async (req, res) => {
 
 exports.updateSuperAdmin = async (req, res) => {
   try {
-    let { id, domain } = req.body;
+    let { user, domain,id } = req.body;
     let isDomainData = await getDomainDataByUserId(id, ["id"]);
     if (!isDomainData) {
       return ErrorResponse(
@@ -184,6 +184,7 @@ exports.updateSuperAdmin = async (req, res) => {
     }
 
     await updateDomainData(id, domain);
+    await updateUser(id, {user});
 
     return SuccessResponse(
       {
