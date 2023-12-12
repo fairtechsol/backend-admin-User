@@ -2,7 +2,6 @@
 
 module.exports = function (err, req, res, next) {
 
-    console.log(err)
   res.errorMessage = err.errorMessage;
   res.status(500).send({
     statusCode: 500,

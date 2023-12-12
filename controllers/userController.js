@@ -751,7 +751,7 @@ exports.userList = async (req, res, next) => {
       res
     );
   } catch (error) {
-    console.log(error);
+    
     return ErrorResponse(error, req, res);
   }
 }
