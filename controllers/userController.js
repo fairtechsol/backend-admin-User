@@ -7,7 +7,7 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash')
 const { forceLogoutIfLogin } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
-const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserid, addInitialUserBalance } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
 const FileGenerate=require("../utils/generateFile");
 
@@ -860,7 +860,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       }
   
       let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
-      let newUserBalanceData = await updateUserBalanceByUserid(user.id, { profitLoss })
+      let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss })
       
       let transactionArray = [{
         actionBy: reqUser.id,
@@ -957,7 +957,6 @@ exports.lockUnlockUser = async (req, res, next) => {
       // Check if the user is already blocked or unblocked (prevent redundant operations)
       if (blockingUserDetail?.userBlock != userBlock) {
         // Perform the user block/unblock operation
-        console.log(userBlock);
         const blockedUsers = await userBlockUnblock(userId, loginId, userBlock);
         //   if blocktype is user and its block then user would be logout by socket
         if (userBlock) {

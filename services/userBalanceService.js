@@ -24,7 +24,7 @@ exports.addInitialUserBalance = async (body) => {
     return insertUserBalance;
 }
 
-exports.updateUserBalanceByUserid = async(userId,body) =>{
+exports.updateUserBalanceByUserId = async(userId,body) =>{
     let updateUserBalance = await UserBalance.update({ userId: userId },body);
     return updateUserBalance;
 }

@@ -16,7 +16,7 @@ const { insertTransactions } = require("../services/transactionService");
 const {
   addInitialUserBalance,
   getUserBalanceDataByUserId,
-  updateUserBalanceByUserid,
+  updateUserBalanceByUserId,
 } = require("../services/userBalanceService");
 const {
   addUser,
@@ -153,7 +153,6 @@ exports.createSuperAdmin = async (req, res) => {
     };
     insertUserBalanceData = await addInitialUserBalance(insertUserBalanceData);
 
-    let response = lodash.omit(insertUser, ["password", "transPassword"]);
     return SuccessResponse(
       {
         statusCode: 200,
@@ -174,7 +173,6 @@ exports.createSuperAdmin = async (req, res) => {
 
 exports.updateSuperAdmin = async (req, res) => {
   try {
-    console.log(req.body);
     let { id, domain } = req.body;
     let isDomainData = await getDomainDataByUserId(id, ["id"]);
     if (!isDomainData) {
@@ -228,7 +226,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
       );
 
     if (transactionType == transType.add) {
-      await updateUserBalanceByUserid(user.id, {
+      await updateUserBalanceByUserId(user.id, {
         currentBalance:
           parseFloat(userBalanceData.currentBalance) + parseFloat(amount),
         profitLoss: parseFloat(userBalanceData.profitLoss) + parseFloat(amount),
@@ -244,7 +242,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
           res
         );
 
-      await updateUserBalanceByUserid(user.id, {
+      await updateUserBalanceByUserId(user.id, {
         currentBalance:
           parseFloat(userBalanceData.currentBalance) - parseFloat(amount),
         profitLoss: parseFloat(userBalanceData.profitLoss) - parseFloat(amount),
@@ -356,7 +354,7 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
     };
 
     let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
-    await updateUserBalanceByUserid(user.id, { profitLoss });
+    await updateUserBalanceByUserId(user.id, { profitLoss });
 
     let transactionArray = [
       {
