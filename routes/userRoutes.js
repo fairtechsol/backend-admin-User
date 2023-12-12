@@ -3,14 +3,13 @@ const router = express.Router();
 
 const validator = require('../middleware/joi.validator')
 const {CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser,updateUserValid,setExposureLimitValid} = require('../validators/userValidator');
-const {createUser,lockUnlockUser,insertWallet,generateTransactionPassword, changePassword, updateUser,setExposureLimit, userList, userSearchList,userBalanceDetails, setCreditReferrence} = require('../controllers/userController');
+const {createUser,lockUnlockUser,insertWallet,generateTransactionPassword, changePassword, updateUser,setExposureLimit, userList, userSearchList,userBalanceDetails, setCreditReferrence, getProfile} = require('../controllers/userController');
 
 const { isAuthenticate } = require('../middleware/auth');
 
 
-
-
 router.post('/add',isAuthenticate,validator(CreateUser),createUser);
+router.get('/profile',isAuthenticate, getProfile);
 router.post('/updateUser',validator(updateUserValid),updateUser);
 router.post('/lockUnlockUser',isAuthenticate, validator(LockUnlockUser), lockUnlockUser);
 router.post('/insert/wallet',insertWallet)

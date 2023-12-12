@@ -11,6 +11,20 @@ const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildPro
 const { ILike } = require('typeorm');
 const FileGenerate=require("../utils/generateFile");
 
+exports.getProfile = async (req, res) => {
+  let reqUser = req.user || {};
+  let userId = reqUser?.id
+  if(req.query?.userId){
+    userId = req.query.userId;
+  }
+  let where = {
+    id: userId,
+  };
+  let user = await getUsersWithUserBalance(where);
+  let response = lodash.omit(user, ["password", "transPassword"])
+  return SuccessResponse({ statusCode: 200, message: { msg: "user.profile" }, data: response }, req, res)
+}
+
 exports.createUser = async (req, res) => {
   try {
     let { userName, fullName, password,  phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
@@ -99,7 +113,7 @@ exports.createUser = async (req, res) => {
       let insertedButton = await insertButton(buttonValue)
     }
     let response = lodash.omit(insertUser, ["password", "transPassword"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: "User" }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -116,7 +130,7 @@ exports.updateUser = async (req, res) => {
     updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
     updateUser = await addUser(updateUser);
     let response = lodash.pick(updateUser, ["sessionCommission", "matchCommission", "matchComissionType"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: "User" }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -277,6 +291,7 @@ const checkUserCreationHierarchy = (creator, createUserRoleName) => {
   return true
 
 }
+
 exports.insertWallet = async (req, res) => {
   try {
     let wallet = {
@@ -332,7 +347,6 @@ const generateTransactionPass = () => {
   const randomNumber = Math.floor(100000 + Math.random() * 900000);
   return `${randomNumber}`;
 };
-
 
 // Check old password against the stored password
 const checkOldPassword = async (userId, oldPassword) => {
@@ -481,7 +495,6 @@ exports.changePassword = async (req, res, next) => {
   }
 };
 
-
 exports.setExposureLimit = async (req, res, next) => {
   try {
     let { amount, userid, transPassword, createBy } = req.body
@@ -526,6 +539,7 @@ exports.setExposureLimit = async (req, res, next) => {
     return ErrorResponse(error, req, res);
   }
 }
+
 exports.userList = async (req, res, next) => {
   try {
     let reqUser = req.user;
