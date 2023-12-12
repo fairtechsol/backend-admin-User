@@ -69,3 +69,9 @@ module.exports.SuperAdminLockUnlock = Joi.object({
   betBlock: Joi.boolean().required(),
   userBlock: Joi.boolean().required(),
 });
+
+module.exports.SuperAdminChangePassword = Joi.object({
+    userId: Joi.string().guid({ version: "uuidv4" }).required(),
+    password:Joi.string().required()
+  });
+  

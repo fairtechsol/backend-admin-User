@@ -4,7 +4,10 @@ const {
   userRoleConstant,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
-const { forceLogoutIfLogin } = require("../services/commonService");
+const {
+  forceLogoutIfLogin,
+  forceLogoutUser,
+} = require("../services/commonService");
 const {
   getDomainDataById,
   updateDomainData,
@@ -173,7 +176,7 @@ exports.createSuperAdmin = async (req, res) => {
 
 exports.updateSuperAdmin = async (req, res) => {
   try {
-    let { user, domain,id } = req.body;
+    let { user, domain, id } = req.body;
     let isDomainData = await getDomainDataByUserId(id, ["id"]);
     if (!isDomainData) {
       return ErrorResponse(
@@ -388,7 +391,7 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
 exports.lockUnlockSuperAdmin = async (req, res, next) => {
   try {
     // Extract relevant data from the request body and user object
-    const { userId, betBlock, userBlock,loginId } = req.body;
+    const { userId, betBlock, userBlock, loginId } = req.body;
 
     // Fetch details of the user who is performing the block/unblock operation,
     // including the hierarchy and block information
@@ -398,6 +401,20 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
       "betBlock",
     ]);
 
+    if (!blockingUserDetail) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: { name: "User" },
+          },
+        },
+        req,
+        res
+      );
+    }
+
     // Check if the user is already blocked or unblocked (prevent redundant operations)
     if (blockingUserDetail?.userBlock != userBlock) {
       // Perform the user block/unblock operation
@@ -405,8 +422,7 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
       //   if blocktype is user and its block then user would be logout by socket
       if (userBlock) {
         blockedUsers?.[0]?.forEach(async (item) => {
-          await forceLogoutIfLogin(userId);
-          await internalRedis.hdel(userId, "token");
+          await forceLogoutUser(item?.id);
         });
       }
     }
@@ -425,6 +441,58 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
       res
     );
   } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+};
+
+// API endpoint for changing password
+exports.changePasswordSuperAdmin = async (req, res, next) => {
+  try {
+    // Destructure request body
+    const { userId, password } = req.body;
+
+    const userDetail = await getUserById(userId, ["id"]);
+
+    if (!userDetail) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "notFound",
+            keys: { name: "User" },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    // Update loginAt, password, and reset transactionPassword
+    await updateUser(userId, {
+      loginAt: null,
+      password,
+      transPassword: null,
+    });
+
+    // deleting token for logout
+    await forceLogoutUser(userId);
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "auth.passwordChanged" },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    // Log any errors that occur
     return ErrorResponse(
       {
         statusCode: 500,

@@ -9,3 +9,13 @@ exports.forceLogoutIfLogin = async (userId) => {
       sendMessageToUser(userId,"logoutUserForce",null)
     }
   };
+
+
+  exports.forceLogoutUser = async (userId, stopForceLogout) => {
+
+    if (!stopForceLogout) {
+      await this.forceLogoutIfLogin(userId);
+    }
+    await internalRedis.hdel(userId, "token");
+  
+  };

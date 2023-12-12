@@ -5,7 +5,7 @@ const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash')
-const { forceLogoutIfLogin } = require("../services/commonService");
+const { forceLogoutIfLogin, forceLogoutUser } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
@@ -364,14 +364,7 @@ const checkTransactionPassword = async (userId, oldTransactionPass) => {
   return bcrypt.compareSync(oldTransactionPass, user.transPassword);
 };
 
-const forceLogoutUser = async (userId, stopForceLogout) => {
 
-  if (!stopForceLogout) {
-    await forceLogoutIfLogin(userId);
-  }
-  await internalRedis.hdel(userId, "token");
-
-};
 
 // API endpoint for changing password
 exports.changePassword = async (req, res, next) => {
