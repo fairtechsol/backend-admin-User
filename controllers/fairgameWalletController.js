@@ -184,7 +184,7 @@ exports.updateSuperAdmin = async (req, res) => {
     }
 
     await updateDomainData(id, domain);
-    await updateUser(id, {user});
+    await updateUser(id, user);
 
     return SuccessResponse(
       {
@@ -217,7 +217,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
         res
       );
 
-    let userBalanceData = getUserBalanceDataByUserId(user.id);
+    let userBalanceData = await getUserBalanceDataByUserId(user.id);
 
     if (!userBalanceData)
       return ErrorResponse(
@@ -388,7 +388,7 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
 exports.lockUnlockSuperAdmin = async (req, res, next) => {
   try {
     // Extract relevant data from the request body and user object
-    const { userId, betBlock, userBlock } = req.body;
+    const { userId, betBlock, userBlock,loginId } = req.body;
 
     // Fetch details of the user who is performing the block/unblock operation,
     // including the hierarchy and block information
