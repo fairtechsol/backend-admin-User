@@ -69,17 +69,17 @@ module.exports.generateTransactionPass = Joi.object({
 
 module.exports.updateUserValid = Joi.object({
   //sessionCommission,matchComissionType,matchCommission,id,createBy
-  sessionCommission: Joi.number(),
-  matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)),
-  matchCommission: Joi.number(),
+  fullName: Joi.string(),
+  city: Joi.string(),
+  phoneNumber: Joi.string(),
   id: Joi.string().guid({ version: 'uuidv4' }).required()
 })
 
 module.exports.setExposureLimitValid = Joi.object({
   //sessionCommission,matchComissionType,matchCommission,id,createBy
   amount: Joi.number().required(),
-  transPassword: Joi.string(),
-  userid: Joi.string().guid({ version: 'uuidv4' }).required(),
+  transactionPassword: Joi.string(),
+  userId: Joi.string().guid({ version: 'uuidv4' }).required(),
 })
 
 
@@ -92,4 +92,12 @@ module.exports.LockUnlockUser = Joi.object({
   }),
   betBlock: Joi.boolean().required(),
   userBlock:  Joi.boolean().required()
+})
+
+module.exports.setCreditRefValidate = Joi.object({
+  //sessionCommission,matchComissionType,matchCommission,id,createBy
+  amount: Joi.number().required(),
+  transactionPassword: Joi.string(),
+  userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  remark : Joi.string().allow("")
 })
