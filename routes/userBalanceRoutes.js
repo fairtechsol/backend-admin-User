@@ -4,7 +4,7 @@ const {updateUserBalance} = require('../controllers/userBalanceController');
 
 const validator = require('../middleware/joi.validator')
 const {SetUserBalance} = require('../validators/userBalanceValidator');
-const { isAuthenticate } = require('../middleware/auth');
+const { isAuthenticate,checkTransactionPassword } = require('../middleware/auth');
 
-router.post("/update",isAuthenticate,validator(SetUserBalance),updateUserBalance)
+router.post("/update",isAuthenticate,checkTransactionPassword,validator(SetUserBalance),updateUserBalance)
 module.exports = router;

@@ -30,7 +30,7 @@ exports.createUser = async (req, res) => {
     let { userName, fullName, password,  phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
     let reqUser = req.user || {}
     let creator = await getUserById(reqUser.id || createdBy);
-    if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+    if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "Login user"} } }, req, res);
 
     if (!checkUserCreationHierarchy(creator, roleName))
       return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidHierarchy" } }, req, res);
@@ -46,6 +46,11 @@ exports.createUser = async (req, res) => {
       password,
       process.env.BCRYPTSALT
     );
+
+    creditRefrence = creditRefrence ? parseFloat(creditRefrence) : 0;
+    exposureLimit = exposureLimit ? exposureLimit : creator.exposureLimit;
+    creditRefrence = maxBetLimit ? maxBetLimit : creator.maxBetLimit;
+    creditRefrence = maxBetLimit ? maxBetLimit : creator.maxBetLimit;
     let userData = {
       userName,
       fullName,
@@ -56,10 +61,10 @@ exports.createUser = async (req, res) => {
       userBlock: creator.userBlock,
       betBlock: creator.betBlock,
       createBy: creator.id,
-      creditRefrence: creditRefrence ? creditRefrence : creator.creditRefrence,
-      exposureLimit: exposureLimit ? exposureLimit : creator.exposureLimit,
-      maxBetLimit: maxBetLimit ? maxBetLimit : creator.maxBetLimit,
-      minBetLimit: minBetLimit ? minBetLimit : creator.minBetLimit
+      creditRefrence: creditRefrence ,
+      exposureLimit: exposureLimit ,
+      maxBetLimit: maxBetLimit ,
+      minBetLimit: minBetLimit 
     }
     let partnerships = await calculatePartnership(userData, creator)
     userData = { ...userData, ...partnerships };
@@ -68,7 +73,7 @@ exports.createUser = async (req, res) => {
     if (creditRefrence) {
       updateUser = await addUser({
         id: creator.id,
-        downLevelCreditRefrence: parseInt(creditRefrence) + parseInt(creator.downLevelCreditRefrence)
+        downLevelCreditRefrence: creditRefrence + parseInt(creator.downLevelCreditRefrence)
       })
     }
     let transactionArray = [{
@@ -96,7 +101,7 @@ exports.createUser = async (req, res) => {
     let insertUserBalanceData = {
       currentBalance: 0,
       userId: insertUser.id,
-      profitLoss: 0,
+      profitLoss: -creditRefrence,
       myProfitLoss: 0,
       downLevelBalance: 0,
       exposure: 0
@@ -121,15 +126,17 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    let { sessionCommission, matchComissionType, matchCommission, id } = req.body;
+    let { fullName, phoneNumber, city, id } = req.body;
     let reqUser = req.user || {}
-    let updateUser = await getUser({ id, createBy :reqUser.id}, ["id", "createBy", "sessionCommission", "matchComissionType", "matchCommission"])
-    if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
-    updateUser.sessionCommission = sessionCommission ?? updateUser.sessionCommission;
-    updateUser.matchCommission = matchCommission ?? updateUser.matchCommission;
-    updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
+    let updateUser = await getUser({ id, createBy :reqUser.id}, ["id", "createBy", "fullName", "phoneNumber", "city" ])
+    if (!updateUser) return ErrorResponse({ statusCode: 400, message:{ msg: "notFound",keys :{name : "User"} }}, req, res);
+
+    updateUser.fullName = fullName ?? updateUser.fullName;
+    updateUser.phoneNumber = phoneNumber ?? updateUser.phoneNumber;
+    updateUser.city = city || updateUser.city;
     updateUser = await addUser(updateUser);
-    let response = lodash.pick(updateUser, ["sessionCommission", "matchCommission", "matchComissionType"])
+
+    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city" ])
     return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: "User" }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
@@ -378,8 +385,6 @@ const checkTransactionPassword = async (userId, oldTransactionPass) => {
   return bcrypt.compareSync(oldTransactionPass, user.transPassword);
 };
 
-
-
 // API endpoint for changing password
 exports.changePassword = async (req, res, next) => {
   try {
@@ -497,15 +502,16 @@ exports.changePassword = async (req, res, next) => {
 
 exports.setExposureLimit = async (req, res, next) => {
   try {
-    let { amount, userid, transPassword, createBy } = req.body
+    let { amount, userId, transPassword } = req.body
 
     let reqUser = req.user || {}
-    let loginUser = await getUserById(createBy, ["id", "exposureLimit", "roleName"])
-    let user = await getUser({ id: userid, createBy }, ["id", "exposureLimit", "roleName"])
+    let loginUser = await getUserById(reqUser.id, ["id", "exposureLimit", "roleName"]);
+    if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "Login user"} }}, req, res);
 
-    if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+    let user = await getUser({ id: userId, createBy:reqUser.id }, ["id", "exposureLimit", "roleName"]);
+    if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "User"} }}, req, res);
 
-    if (loginUser.exposureLimit < amount && loginUser.roleName != userRoleConstant.fairGameWallet) {
+    if (loginUser.exposureLimit < amount) {
       return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
     }
     amount = parseInt(amount);
@@ -614,75 +620,36 @@ exports.userList = async (req, res, next) => {
 
     let data = await Promise.all(
       users[0].map(async (element) => {
-        let elementData = {};
-        elementData = {
-          ...element,
-          ...element.userBal,
-        };
-
-        delete elementData.userBal;
-
-        elementData["percentProfitLoss"] = elementData["myProfitLoss"];
+        element['percentProfitLoss'] = element.userBal['myProfitLoss'];
         let partner_ships = 100;
         if (partnershipCol && partnershipCol.length) {
-          partner_ships = partnershipCol.reduce(
-            (partialSum, a) => partialSum + elementData[a],
-            0
-          );
-          elementData["percentProfitLoss"] = (
-            (elementData["profitLoss"] / 100) *
-            partner_ships
-          ).toFixed(2);
+          partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
+          element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partner_ships).toFixed(2);
         }
-        if (elementData.roleName != userRoleConstant.user) {
-          elementData["availableBalance"] = Number(
-            parseFloat(elementData["currentBalance"]).toFixed(2)
-          );
-          let childUsers = await getChildUser(element.id);
-          let allChildUserIds = childUsers.map((obj) => obj.id);
-          let balancesum = 0;
-
+        if (element.roleName != userRoleConstant.user) {
+          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2));
+          let childUsers = await getChildUser(element.id)
+          let allChildUserIds = childUsers.map(obj => obj.id)
+          let balancesum = 0
+  
           if (allChildUserIds.length) {
-            let allChildBalanceData = await getAllChildCurrentBalanceSum(
-              allChildUserIds
-            );
-            balancesum = parseFloat(
-              allChildBalanceData.allchildscurrentbalancesum
-            )
-              ? parseFloat(allChildBalanceData.allchildscurrentbalancesum)
-              : 0;
+            let allChildBalanceData = await getAllChildCurrentBalanceSum(allChildUserIds)
+            balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
           }
-
-          elementData["balance"] = Number(
-            parseFloat(elementData["currentBalance"]) + balancesum
-          ).toFixed(2);
+  
+          element['balance'] = Number(parseFloat(element.userBal['currentBalance']) + balancesum).toFixed(2);
         } else {
-          elementData["availableBalance"] = Number(
-            (
-              parseFloat(elementData["currentBalance"]) -
-              elementData["exposure"]
-            ).toFixed(2)
-          );
-          elementData["balance"] = elementData["currentBalance"];
+          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
+          element['balance'] = element.userBal['currentBalance'];
         }
-        elementData["percentProfitLoss"] = elementData["myProfitLoss"];
-        elementData["TotalComission"] = elementData["TotalComission"];
+        element['percentProfitLoss'] = element.userBal['myProfitLoss'];
+        element['totalComission'] = element['totalComission']
         if (partnershipCol && partnershipCol.length) {
-          let partner_ships = partnershipCol.reduce(
-            (partialSum, a) => partialSum + elementData[a],
-            0
-          );
-          elementData["percentProfitLoss"] = (
-            (elementData["profitLoss"] / 100) *
-            partner_ships
-          ).toFixed(2);
-          elementData["TotalComission"] =
-            ((elementData["TotalComission"] / 100) * partner_ships).toFixed(2) +
-            "(" +
-            partner_ships +
-            "%)";
+          let partnerShips = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
+          element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partnerShips).toFixed(2);
+          element['totalComission'] = ((element['totalComission'] / 100) * partnerShips).toFixed(2) + '(' + partnerShips + '%)';
         }
-        return elementData;
+        return element;
       })
     );
 
@@ -814,7 +781,7 @@ exports.userBalanceDetails = async (req, res, next) => {
 
     let FirstLevelChildBalanceData = getAllChildProfitLossSum(firstLevelChildUserIds)
 
-    let allChildBalanceData = getAllchildsCurrentBalanceSum(allChildUserIds)
+    let allChildBalanceData = getAllChildCurrentBalanceSum(allChildUserIds)
 
     let AggregateBalanceData = await Promise.all([userBalanceData, FirstLevelChildBalanceData, allChildBalanceData])
 
@@ -825,7 +792,7 @@ exports.userBalanceDetails = async (req, res, next) => {
     let response = {
       userCreditReference: parseFloat(loginUser.creditRefrence),
       downLevelOccupyBalance: allChildBalanceData.allchildscurrentbalancesum ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0,
-      downLevelCreditReference: loginUser.downLevelCreditReference,
+      downLevelCreditReference: loginUser.downLevelCreditRefrence,
       availableBalance: userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0,
       totalMasterBalance: (userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0) + (allChildBalanceData.allchildscurrentbalancesum ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0),
       upperLevelBalance: userBalanceData.profitLoss ? userBalanceData.profitLoss : 0,
@@ -850,23 +817,25 @@ exports.userBalanceDetails = async (req, res, next) => {
 exports.setCreditReferrence = async (req, res, next) => {
     try {
   
-      let { userId, amount, transactionPassword, remark, createBy } = req.body;
-      let reqUser = req.user || { id: createBy };
+      let { userId, amount, transactionPassword, remark} = req.body;
+      let reqUser = req.user;
       amount = parseFloat(amount);
   
-      let loginUser = await getUserById(reqUser.id, ["id", "creditRefrence", "roleName"]);
+      let loginUser = await getUserById(reqUser.id, ["id", "creditRefrence","downLevelCreditRefrence", "roleName"]);
+      if (!loginUser) return ErrorResponse({ statusCode: 400, message:  { msg: "notFound",keys :{name : "Login user"} } }, req, res);
+
       let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "creditRefrence", "roleName"]);
-      if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+      if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "User"} } }, req, res);
   
       let userBalance = await getUserBalanceDataByUserId(user.id);
       if(!userBalance)
-      return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
-      let previousCreditReference = user.creditRefrence
+      return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "User balance"} } }, req, res);
+      let previousCreditReference = parseFloat(user.creditRefrence)
       let updateData = {
         creditRefrence: amount
       }
   
-      let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
+      let profitLoss = parseFloat(userBalance.profitLoss) + previousCreditReference - amount;
       let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss })
       
       let transactionArray = [{
@@ -875,7 +844,7 @@ exports.setCreditReferrence = async (req, res, next) => {
         userId: user.id,
         amount: previousCreditReference,
         transType: transType.creditRefer,
-        currentAmount: user.creditRefrence,
+        currentAmount: amount,
         description: "CREDIT REFRENCE " + remark
       }, {
         actionBy: reqUser.id,
@@ -883,17 +852,22 @@ exports.setCreditReferrence = async (req, res, next) => {
         userId: user.id,
         amount: previousCreditReference,
         transType: transType.creditRefer,
-        currentAmount: user.creditRefrence,
+        currentAmount: amount,
         description: "CREDIT REFRENCE " + remark
       }]
   
       const transactioninserted = await insertTransactions(transactionArray);
-      await updateUser(user.id, updateData);
+      let updateLoginUser = {
+        downLevelCreditRefrence: parseInt(loginUser.downLevelCreditRefrence) - previousCreditReference + amount
+      }
+      await updateUser(user.id, updateData);      
+      await updateUser(loginUser.id, updateLoginUser);
+      updateData["id"] = user.id
       return SuccessResponse(
         {
           statusCode: 200,
-          message: { msg: "userBalance.BalanceAddedSuccessfully" },
-          data: { user },
+          message: { msg: "updated" , keys : { name : "Credit reference"}},
+          data: updateData,
         },
         req,
         res
@@ -1000,9 +974,9 @@ exports.lockUnlockUser = async (req, res, next) => {
   
 exports.generateTransactionPassword = async (req, res) => {
   const { id } = req.user;
-  const { transPassword } = req.body;
+  const { transactionPassword } = req.body;
 
-  const encryptTransPass = bcrypt.hashSync(transPassword, 10);
+  const encryptTransPass = bcrypt.hashSync(transactionPassword, 10);
   await updateUser(id, {
     transPassword: encryptTransPass,
   });

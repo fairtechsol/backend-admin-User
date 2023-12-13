@@ -1,25 +1,15 @@
 const { AppDataSource } = require("../config/postGresConnection");
-const bcrypt = require("bcryptjs");
 const userSchema = require("../models/user.entity");
 const userBalanceSchema = require("../models/userBalance.entity");
 const user = AppDataSource.getRepository(userSchema);
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
-const userBlockSchema = require("../models/userBlock.entity");
-const userBlockRepo = AppDataSource.getRepository(userBlockSchema);
-const internalRedis = require("../config/internalRedisConnection");
-const externalRedis = require("../config/externalRedisConnection");
-const publisherService = require("./redis/externalRedisPublisher");
-const subscribeService = require("./redis/externalRedisSubscriber");
-const internalRedisSubscribe = require("./redis/internalRedisSubscriber");
-const internalRedisPublisher = require("./redis/internalRedisPublisher");
-const { ILike, In, IsNull, LessThanOrEqual, MoreThanOrEqual, Not } = require("typeorm");
-const { userRoleConstant, blockType } = require("../config/contants");
+const { ILike, In } = require("typeorm");
 
 // id is required and select is optional parameter is an type or array
 
 exports.getUserById = async (id, select) => {
   return await user.findOne({
-    where: { id },
+    where: { id:id },
     select: select,
   });
 };
