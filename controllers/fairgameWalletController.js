@@ -95,7 +95,7 @@ exports.createSuperAdmin = async (req, res) => {
         {
           statusCode: 403,
           message: {
-            msg: "invalidData",
+            msg: "auth.unauthorizeRole",
           },
         },
         req,

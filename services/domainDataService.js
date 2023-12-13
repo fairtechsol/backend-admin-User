@@ -8,7 +8,7 @@ exports.addDomainData = async (body) => {
 };
 
 exports.getDomainDataById = async (id, select) => {
-  return await domain.findOne({ where: { id }, select: select });
+  return await domain.findOne({ where: { id : id }, select: select });
 };
 
 exports.getDomainDataByDomain = async (domainName, select) => {
@@ -16,7 +16,7 @@ exports.getDomainDataByDomain = async (domainName, select) => {
   };
   
   exports.getDomainDataByUserId = async (userId, select) => {
-    return await domain.findOne({ where: { userId }, select: select });
+    return await domain.findOne({ where: { userId : userId }, select: select });
   };
 
 exports.updateDomainData = async (id, body) => {

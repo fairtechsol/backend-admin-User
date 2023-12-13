@@ -16,7 +16,8 @@
     "roleNotCorrectLogin": "Please login with correct user.",
     "logoutSuccess":"Logout successfully.",
     "passwordChanged":"Password changed successfully.",
-    "unauthorize":"Unauthorized user."
+    "unauthorize":"Unauthorized user.",
+    "unauthorizeRole" : "You are not autorize to take this action"
   },
   "user" : {
     "blocked": "There is something wrong with your account. Please contact your administrator.",
