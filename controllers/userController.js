@@ -1,13 +1,13 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription,blockType, fileType } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance ,userBlockUnblock} = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance ,userBlockUnblock, betBlockUnblock} = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash')
-const { forceLogoutIfLogin } = require("../services/commonService");
+const { forceLogoutIfLogin, forceLogoutUser } = require("../services/commonService");
 const internalRedis = require("../config/internalRedisConnection");
-const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserid, addInitialUserBalance } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
 const FileGenerate=require("../utils/generateFile");
 
@@ -27,7 +27,7 @@ exports.getProfile = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    let { userName, fullName, password, confirmPassword, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
+    let { userName, fullName, password,  phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
     let reqUser = req.user || {}
     let creator = await getUserById(reqUser.id || createdBy);
     if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
@@ -113,7 +113,7 @@ exports.createUser = async (req, res) => {
       let insertedButton = await insertButton(buttonValue)
     }
     let response = lodash.omit(insertUser, ["password", "transPassword"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "create", keys: "User" }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: "User" }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -121,9 +121,9 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    let { sessionCommission, matchComissionType, matchCommission, id, createBy } = req.body;
+    let { sessionCommission, matchComissionType, matchCommission, id } = req.body;
     let reqUser = req.user || {}
-    let updateUser = await getUser({ id, createBy }, ["id", "createBy", "sessionCommission", "matchComissionType", "matchCommission"])
+    let updateUser = await getUser({ id, createBy :reqUser.id}, ["id", "createBy", "sessionCommission", "matchComissionType", "matchCommission"])
     if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
     updateUser.sessionCommission = sessionCommission ?? updateUser.sessionCommission;
     updateUser.matchCommission = matchCommission ?? updateUser.matchCommission;
@@ -378,14 +378,7 @@ const checkTransactionPassword = async (userId, oldTransactionPass) => {
   return bcrypt.compareSync(oldTransactionPass, user.transPassword);
 };
 
-const forceLogoutUser = async (userId, stopForceLogout) => {
 
-  if (!stopForceLogout) {
-    await forceLogoutIfLogin(userId);
-  }
-  await internalRedis.hdel(userId, "token");
-
-};
 
 // API endpoint for changing password
 exports.changePassword = async (req, res, next) => {
@@ -758,7 +751,7 @@ exports.userList = async (req, res, next) => {
       res
     );
   } catch (error) {
-    console.log(error);
+    
     return ErrorResponse(error, req, res);
   }
 }
@@ -874,7 +867,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       }
   
       let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
-      let newUserBalanceData = await updateUserBalanceByUserid(user.id, { profitLoss })
+      let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss })
       
       let transactionArray = [{
         actionBy: reqUser.id,
@@ -916,14 +909,14 @@ exports.setCreditReferrence = async (req, res, next) => {
 exports.lockUnlockUser = async (req, res, next) => {
     try {
       // Extract relevant data from the request body and user object
-      const { userId, block, type,transPassword } = req.body;
-      const { id:loginId } = req.user;
+      const { userId, betBlock, userBlock, transPassword } = req.body;
+      const { id: loginId } = req.user;
 
       const isPasswordMatch = await checkTransactionPassword(
         loginId,
         transPassword
       );
-  
+
       if (!isPasswordMatch) {
         return ErrorResponse(
           {
@@ -934,10 +927,10 @@ exports.lockUnlockUser = async (req, res, next) => {
           res
         );
       }
-  
+
       // Fetch user details of the current user, including block information
       const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);
-  
+
       // Fetch details of the user who is performing the block/unblock operation,
       // including the hierarchy and block information
       const blockingUserDetail = await getUserById(userId, [
@@ -945,17 +938,17 @@ exports.lockUnlockUser = async (req, res, next) => {
         "userBlock",
         "betBlock",
       ]);
-  
+
       // Check if the current user is already blocked
       if (userDetails?.userBlock) {
         throw new Error("user.userBlockError");
       }
-  
+
       // Check if the block type is 'betBlock' and the user is already bet-blocked
-      if (type == blockType.betBlock && userDetails?.betBlock) {
+      if (!betBlock && userDetails?.betBlock) {
         throw new Error("user.betBlockError");
       }
-  
+
       // Check if the user performing the block/unblock operation has the right access
       if (blockingUserDetail?.createBy != loginId) {
         return ErrorResponse(
@@ -967,60 +960,26 @@ exports.lockUnlockUser = async (req, res, next) => {
           res
         );
       }
-  
+
       // Check if the user is already blocked or unblocked (prevent redundant operations)
-      if (
-        blockingUserDetail?.userBlock === block &&
-        type === blockType.userBlock
-      ) {
-        return ErrorResponse(
-          {
-            statusCode: 400,
-            message: {
-              msg: "user.alreadyBlocked",
-              keys: {
-                name: "User",
-                type: block ? "blocked" : "unblocked",
-              },
-            },
-          },
-          req,
-          res
-        );
-      }
-  
-      // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
-      if (
-        blockingUserDetail?.betBlock === block &&
-        type === blockType.betBlock
-      ) {
-        return ErrorResponse(
-          {
-            statusCode: 400,
-            message: {
-              msg: "user.alreadyBlocked",
-              keys: {
-                name: "Bet",
-                type: block ? "blocked" : "unblocked",
-              },
-            },
-          },
-          req,
-          res
-        );
-      }
-  
-      // Perform the user block/unblock operation
-      const blockedUsers=await userBlockUnblock(userId, loginId, block, type);
-
-
-    //   if blocktype is user and its block then user would be logout by socket
-      if(type==blockType.userBlock&&block){
-        blockedUsers?.[0]?.forEach((item)=>{
+      if (blockingUserDetail?.userBlock != userBlock) {
+        // Perform the user block/unblock operation
+        const blockedUsers = await userBlockUnblock(userId, loginId, userBlock);
+        //   if blocktype is user and its block then user would be logout by socket
+        if (userBlock) {
+          blockedUsers?.[0]?.forEach((item) => {
             forceLogoutUser(item?.id);
-        })
+          });
+        }
       }
-  
+
+      // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
+      if (blockingUserDetail?.betBlock != betBlock) {
+        // Perform the bet block/unblock operation
+
+        await betBlockUnblock(userId, loginId, betBlock);
+      }
+
       // Return success response
       return SuccessResponse(
         { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },

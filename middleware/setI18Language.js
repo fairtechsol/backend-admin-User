@@ -1,4 +1,5 @@
 const i18n = require("../config/i18n");
+const { ErrorResponse } = require("../utils/response");
 
 const setI18Language = async (req, res, next) => {
   try {
@@ -12,7 +13,16 @@ const setI18Language = async (req, res, next) => {
 
     next();
   } catch (error) {
-    console.log(error);
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: {
+          msg: "internalServerError",
+        },
+      },
+      req,
+      res
+    );
   }
 };
 

@@ -55,7 +55,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -87,7 +87,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -112,9 +112,6 @@
                     "example": "any"
                   },
                   "password": {
-                    "example": "any"
-                  },
-                  "confirmPassword": {
                     "example": "any"
                   },
                   "phoneNumber": {
@@ -176,9 +173,6 @@
                   },
                   "id": {
                     "example": "any"
-                  },
-                  "createBy": {
-                    "example": "any"
                   }
                 }
               }
@@ -190,6 +184,15 @@
     "/user/lockUnlockUser": {
       "post": {
         "description": "",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "default": {
             "description": ""
@@ -204,10 +207,10 @@
                   "userId": {
                     "example": "any"
                   },
-                  "block": {
+                  "betBlock": {
                     "example": "any"
                   },
-                  "type": {
+                  "userBlock": {
                     "example": "any"
                   },
                   "transPassword": {
@@ -235,7 +238,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -310,7 +313,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -364,7 +367,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -397,7 +400,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -459,7 +462,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -492,7 +495,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -511,7 +514,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -558,7 +561,7 @@
             }
           },
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -577,7 +580,7 @@
         "description": "",
         "parameters": [
           {
-            "name": "token",
+            "name": "authorization",
             "in": "header",
             "schema": {
               "type": "string"
@@ -605,6 +608,204 @@
                     "example": "any"
                   },
                   "transactionPassword": {
+                    "example": "any"
+                  },
+                  "remark": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/add/user": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userName": {
+                    "example": "any"
+                  },
+                  "fullName": {
+                    "example": "any"
+                  },
+                  "password": {
+                    "example": "any"
+                  },
+                  "phoneNumber": {
+                    "example": "any"
+                  },
+                  "city": {
+                    "example": "any"
+                  },
+                  "betBlock": {
+                    "example": "any"
+                  },
+                  "userBlock": {
+                    "example": "any"
+                  },
+                  "roleName": {
+                    "example": "any"
+                  },
+                  "fwPartnership": {
+                    "example": "any"
+                  },
+                  "faPartnership": {
+                    "example": "any"
+                  },
+                  "saPartnership": {
+                    "example": "any"
+                  },
+                  "aPartnership": {
+                    "example": "any"
+                  },
+                  "smPartnership": {
+                    "example": "any"
+                  },
+                  "mPartnership": {
+                    "example": "any"
+                  },
+                  "id": {
+                    "example": "any"
+                  },
+                  "creditRefrence": {
+                    "example": "any"
+                  },
+                  "exposureLimit": {
+                    "example": "any"
+                  },
+                  "maxBetLimit": {
+                    "example": "any"
+                  },
+                  "minBetLimit": {
+                    "example": "any"
+                  },
+                  "domain": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/update/user": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "example": "any"
+                  },
+                  "domain": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/update/balance": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "example": "any"
+                  },
+                  "transactionType": {
+                    "example": "any"
+                  },
+                  "amount": {
+                    "example": "any"
+                  },
+                  "remark": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/update/exposure": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "exposureLimit": {
+                    "example": "any"
+                  },
+                  "id": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/update/creditReference": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "example": "any"
+                  },
+                  "amount": {
                     "example": "any"
                   },
                   "remark": {
