@@ -10,6 +10,8 @@ const internalRedis = require("../config/internalRedisConnection");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
 const FileGenerate=require("../utils/generateFile");
+const fs = require('fs');
+const path = require('path');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -705,39 +707,59 @@ exports.userList = async (req, res, next) => {
         { excelHeader: "Exposure Limit", dbKey: "exposureLimit" },
         ...(type == fileType.excel
           ? [
-              {
-                excelHeader: "FairGameWallet Partnership",
-                dbKey: "fwPartnership",
-              },
-              {
-                excelHeader: "FairGameAdmin Partnership",
-                dbKey: "faPartnership",
-              },
-              { excelHeader: "SuperAdmin Partnership", dbKey: "saPartnership" },
-              { excelHeader: "Admin Partnership", dbKey: "aPartnership" },
-              {
-                excelHeader: "SuperMaster Partnership",
-                dbKey: "smPartnership",
-              },
-              { excelHeader: "Master Partnership", dbKey: "mPartnership" },
-              { excelHeader: "Full Name", dbKey: "fullName" },
-              { excelHeader: "City", dbKey: "city" },
-              { excelHeader: "Phone Number", dbKey: "phoneNumber" },
-            ]
+            {
+              excelHeader: "FairGameWallet Partnership",
+              dbKey: "fwPartnership",
+            },
+            {
+              excelHeader: "FairGameAdmin Partnership",
+              dbKey: "faPartnership",
+            },
+            { excelHeader: "SuperAdmin Partnership", dbKey: "saPartnership" },
+            { excelHeader: "Admin Partnership", dbKey: "aPartnership" },
+            {
+              excelHeader: "SuperMaster Partnership",
+              dbKey: "smPartnership",
+            },
+            { excelHeader: "Master Partnership", dbKey: "mPartnership" },
+            { excelHeader: "Full Name", dbKey: "fullName" },
+            { excelHeader: "City", dbKey: "city" },
+            { excelHeader: "Phone Number", dbKey: "phoneNumber" },
+          ]
           : []),
       ];
 
       const fileGenerate = new FileGenerate(type);
       const file = await fileGenerate.generateReport(data, header);
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "user.userList" },
-          data: file,
-        },
-        req,
-        res
-      );
+      // Write the buffer content to a file
+      let fileName = fileType.excel == type ? 'tempFile.xlsx' : 'tempFile.pdf';
+      const filePath = path.join(__dirname, '', fileName); // Temporarily storing the file
+
+      return fs.writeFile(filePath, Buffer.from(file, 'base64'), (err) => {
+        if (err) {
+          console.error('Error writing file:', err);
+          res.status(500).send('Internal Server Error');
+          return;
+        }
+
+        // Send the file using res.sendFile()
+        res.sendFile(filePath, (err) => {
+          if (err) {
+            console.error('Error sending file:', err);
+            res.status(err.status || 500).send('Internal Server Error');
+          } else {
+            console.log('File sent successfully');
+            // Optionally, delete the temporary file after it's sent
+            fs.unlink(filePath, (err) => {
+              if (err) {
+                console.error('Error deleting file:', err);
+              } else {
+                console.log('Temporary file deleted');
+              }
+            });
+          }
+        });
+      })
     }
 
     response.list = data;
