@@ -11,6 +11,7 @@ const jwt = require("jsonwebtoken");
 const { getUserById, getUserByUserName } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
+const { logger } = require("../config/logger");
 
 // Function to validate a user by username and password
 const validateUser = async (userName, password) => {
@@ -135,8 +136,8 @@ exports.login = async (req, res) => {
       );
     }
     const { roleName } = user;
-
     const throwUserNotCorrectError = () => {
+      logger.error("role is not correct for login");
       return ErrorResponse(
         {
           statusCode: 404,

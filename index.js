@@ -10,7 +10,7 @@ const swaggerDocument = require("./swagger_output.json");
 const error = require("./utils/error.js");
 const i18n = require("./config/i18n");
 const setI18Language = require("./middleware/setI18Language.js");
-const { LOGGER } = require("./config/logger.js");
+const { logger } = require("./config/logger.js");
 
 /**
  * Enable Cross-Origin Resource Sharing (CORS)
@@ -36,7 +36,7 @@ app.use((req, res, next) => {
   const body = JSON.stringify(req.body);
   const query = JSON.stringify(req.query);
   const params = JSON.stringify(req.params);
-  LOGGER.debug(`Request [From:${ip}] ${req.path} ||  ${req.method} || query : ${query} || params : ${params} || body : ${body}`);
+  logger.debug(`Request [From:${ip}] ${req.path} ||  ${req.method} || query : ${query} || params : ${params} || body : ${body}`);
   next();
 });
 // Routes
