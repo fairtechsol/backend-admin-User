@@ -30,11 +30,11 @@ const combineTransport = new DailyRotateFile({
   maxFiles: '20d'
 });
 
+
 // Create a logger and add transports
 const infoLogger = winston.createLogger({
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console(),
     infoTransport,
     combineTransport
   ]
@@ -43,7 +43,6 @@ const infoLogger = winston.createLogger({
 const errorLogger = winston.createLogger({
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console(),
     errorTransport,
     combineTransport
   ]
@@ -52,11 +51,16 @@ const errorLogger = winston.createLogger({
 const debugLogger = winston.createLogger({
   format: winston.format.combine(winston.format.timestamp(), winston.format.json()),
   transports: [
-    new winston.transports.Console(),
     debugTransport,
     combineTransport
   ]
 });
+
+if (process.env.NODE_ENV != 'prod') {
+  infoLogger.add(new winston.transports.Console());
+  errorLogger.add(new winston.transports.Console());
+  debugLogger.add(new winston.transports.Console());
+}
 
 const logger = {
   info: (params) => {
@@ -71,8 +75,3 @@ const logger = {
 };
 
 exports.logger = logger
-
-logger.info("info 1");      // Will go to info.log
-logger.error("error 1");    // Will go to error.log 
-logger.info("info 2");      // Will go to info.log
-logger.error("error 2 ");   // Will go to error.log
