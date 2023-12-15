@@ -698,35 +698,17 @@ exports.userList = async (req, res, next) => {
 
       const fileGenerate = new FileGenerate(type);
       const file = await fileGenerate.generateReport(data, header);
-      // Write the buffer content to a file
-      let fileName = fileType.excel == type ? 'tempFile.xlsx' : 'tempFile.pdf';
-      const filePath = path.join(__dirname, '', fileName); // Temporarily storing the file
-
-      return fs.writeFile(filePath, Buffer.from(file, 'base64'), (err) => {
-        if (err) {
-          console.error('Error writing file:', err);
-          res.status(500).send('Internal Server Error');
-          return;
-        }
-
-        // Send the file using res.sendFile()
-        res.sendFile(filePath, (err) => {
-          if (err) {
-            console.error('Error sending file:', err);
-            res.status(err.status || 500).send('Internal Server Error');
-          } else {
-            console.log('File sent successfully');
-            // Optionally, delete the temporary file after it's sent
-            fs.unlink(filePath, (err) => {
-              if (err) {
-                console.error('Error deleting file:', err);
-              } else {
-                console.log('Temporary file deleted');
-              }
-            });
-          }
-        });
-      })
+      const fileName=`accountList_${new Date()}`
+      
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "user.userList" },
+          data: {file:file,fileName:fileName},
+        },
+        req,
+        res
+      );
     }
 
     response.list = data;
