@@ -108,7 +108,7 @@ class FileGenerate {
       const excelWb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(excelWb, excelWs, "excel");
       const excelBuffer = XLSX.write(excelWb, {
-        bookType: "csv",
+        bookType: "xlsx",
         type: "array",
       });
       // Convert the Uint8Array to a Buffer
