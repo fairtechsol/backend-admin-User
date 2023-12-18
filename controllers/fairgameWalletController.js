@@ -416,7 +416,7 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
     }
 
     // Check if the user is already blocked or unblocked (prevent redundant operations)
-    if (blockingUserDetail?.userBlock != userBlock) {
+    if (blockingUserDetail?.userBlock != userBlock&&userBlock!=null) {
       // Perform the user block/unblock operation
       const blockedUsers = await userBlockUnblock(userId, loginId, userBlock);
       //   if blocktype is user and its block then user would be logout by socket
@@ -428,7 +428,7 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
     }
 
     // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
-    if (blockingUserDetail?.betBlock != betBlock) {
+    if (blockingUserDetail?.betBlock != betBlock&&betBlock!=null) {
       // Perform the bet block/unblock operation
 
       await betBlockUnblock(userId, loginId, betBlock);
