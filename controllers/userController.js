@@ -1,18 +1,14 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription,blockType, fileType } = require('../config/contants');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType } = require('../config/contants');
 const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance ,userBlockUnblock, betBlockUnblock} = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { insertButton } = require('../services/buttonService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash')
-const { forceLogoutIfLogin, forceLogoutUser } = require("../services/commonService");
-const internalRedis = require("../config/internalRedisConnection");
+const {  forceLogoutUser } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
 const FileGenerate=require("../utils/generateFile");
-const fs = require('fs');
-const path = require('path');
-
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
   let userId = reqUser?.id
@@ -887,24 +883,10 @@ exports.setCreditReferrence = async (req, res, next) => {
 exports.lockUnlockUser = async (req, res, next) => {
     try {
       // Extract relevant data from the request body and user object
-      const { userId, betBlock, userBlock, transPassword } = req.body;
+      const { userId, betBlock, userBlock } = req.body;
       const { id: loginId } = req.user;
 
-      const isPasswordMatch = await checkTransactionPassword(
-        loginId,
-        transPassword
-      );
-
-      if (!isPasswordMatch) {
-        return ErrorResponse(
-          {
-            statusCode: 403,
-            message: { msg: "auth.invalidPass", keys: { type: "transaction" } },
-          },
-          req,
-          res
-        );
-      }
+      
 
       // Fetch user details of the current user, including block information
       const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);

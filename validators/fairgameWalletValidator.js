@@ -66,8 +66,9 @@ module.exports.SuperAdminCreditReference = Joi.object({
 module.exports.SuperAdminLockUnlock = Joi.object({
   userId: Joi.string().guid({ version: "uuidv4" }).required(),
   loginId: Joi.string().guid({ version: "uuidv4" }).required(),
-  betBlock: Joi.boolean().required(),
-  userBlock: Joi.boolean().required(),
+  
+  betBlock: Joi.boolean().allow(null),
+  userBlock:  Joi.boolean().allow(null)
 });
 
 module.exports.SuperAdminChangePassword = Joi.object({

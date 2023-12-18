@@ -85,7 +85,7 @@ module.exports.setExposureLimitValid = Joi.object({
 
 module.exports.LockUnlockUser = Joi.object({
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
-  transPassword: Joi.string().required().messages({
+  transactionPassword: Joi.string().required().messages({
     'string.base': '"Transaction Password" must be a string',
     'any.required': '"Transaction Password" is required',
     'string.empty': '"Transaction Password" can not be empty.'
