@@ -57,7 +57,7 @@ exports.isAuthenticate = async (req, res, next) => {
       {
         statusCode: 401,
         message: {
-          msg: "internalServerError",
+          msg: "auth.unauthorize",
         },
       },
       req,
