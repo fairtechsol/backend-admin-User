@@ -14,7 +14,7 @@ exports.getAccountStatement = async (req, res) => {
      * @filters : for filters you need to give the filters like the key value pair like ->
      * if you want query like username=="client" then give the filter like username : eqclient
      *   **/
-    const { query } = req; 
+    const { query } = req;
     if (!userId) {
       return ErrorResponse(
         {

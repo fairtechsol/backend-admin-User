@@ -1,18 +1,19 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance ,userBlockUnblock, betBlockUnblock} = require('../services/userService');
-const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { insertTransactions } = require('../services/transactionService')
-const { insertButton } = require('../services/buttonService')
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock } = require('../services/userService');
+const { ErrorResponse, SuccessResponse } = require('../utils/response');
+const { insertTransactions } = require('../services/transactionService');
+const { insertButton } = require('../services/buttonService');
 const bcrypt = require("bcryptjs");
-const lodash = require('lodash')
-const {  forceLogoutUser } = require("../services/commonService");
+const lodash = require('lodash');
+const { forceLogoutUser } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
-const FileGenerate=require("../utils/generateFile");
+const FileGenerate = require("../utils/generateFile");
+
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
   let userId = reqUser?.id
-  if(req.query?.userId){
+  if (req.query?.userId) {
     userId = req.query.userId;
   }
   let where = {
@@ -25,10 +26,10 @@ exports.getProfile = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    let { userName, fullName, password,  phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
+    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
     let reqUser = req.user || {}
     let creator = await getUserById(reqUser.id || createdBy);
-    if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "Login user"} } }, req, res);
+    if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
 
     if (!checkUserCreationHierarchy(creator, roleName))
       return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidHierarchy" } }, req, res);
@@ -59,10 +60,10 @@ exports.createUser = async (req, res) => {
       userBlock: creator.userBlock,
       betBlock: creator.betBlock,
       createBy: creator.id,
-      creditRefrence: creditRefrence ,
-      exposureLimit: exposureLimit ,
-      maxBetLimit: maxBetLimit ,
-      minBetLimit: minBetLimit 
+      creditRefrence: creditRefrence,
+      exposureLimit: exposureLimit,
+      maxBetLimit: maxBetLimit,
+      minBetLimit: minBetLimit
     }
     let partnerships = await calculatePartnership(userData, creator)
     userData = { ...userData, ...partnerships };
@@ -126,21 +127,20 @@ exports.updateUser = async (req, res) => {
   try {
     let { fullName, phoneNumber, city, id } = req.body;
     let reqUser = req.user || {}
-    let updateUser = await getUser({ id, createBy :reqUser.id}, ["id", "createBy", "fullName", "phoneNumber", "city" ])
-    if (!updateUser) return ErrorResponse({ statusCode: 400, message:{ msg: "notFound",keys :{name : "User"} }}, req, res);
+    let updateUser = await getUser({ id, createBy: reqUser.id }, ["id", "createBy", "fullName", "phoneNumber", "city"])
+    if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
 
     updateUser.fullName = fullName ?? updateUser.fullName;
     updateUser.phoneNumber = phoneNumber ?? updateUser.phoneNumber;
     updateUser.city = city || updateUser.city;
     updateUser = await addUser(updateUser);
 
-    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city" ])
+    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city"])
     return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: "User" }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
 };
-
 
 const calculatePartnership = async (userData, creator) => {
   if (userData.roleName == userRoleConstant.fairGameWallet) {
@@ -457,7 +457,7 @@ exports.changePassword = async (req, res, next) => {
       transactionPassword
     );
 
-   
+
 
     if (!isPasswordMatch) {
       return ErrorResponse(
@@ -504,10 +504,10 @@ exports.setExposureLimit = async (req, res, next) => {
 
     let reqUser = req.user || {}
     let loginUser = await getUserById(reqUser.id, ["id", "exposureLimit", "roleName"]);
-    if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "Login user"} }}, req, res);
+    if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
 
-    let user = await getUser({ id: userId, createBy:reqUser.id }, ["id", "exposureLimit", "roleName"]);
-    if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "User"} }}, req, res);
+    let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "exposureLimit", "roleName"]);
+    if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
 
     if (loginUser.exposureLimit < amount) {
       return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
@@ -629,12 +629,12 @@ exports.userList = async (req, res, next) => {
           let childUsers = await getChildUser(element.id)
           let allChildUserIds = childUsers.map(obj => obj.id)
           let balancesum = 0
-  
+
           if (allChildUserIds.length) {
             let allChildBalanceData = await getAllChildCurrentBalanceSum(allChildUserIds)
             balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
           }
-  
+
           element['balance'] = Number(parseFloat(element.userBal['currentBalance']) + balancesum).toFixed(2);
         } else {
           element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
@@ -694,13 +694,13 @@ exports.userList = async (req, res, next) => {
 
       const fileGenerate = new FileGenerate(type);
       const file = await fileGenerate.generateReport(data, header);
-      const fileName=`accountList_${new Date()}`
-      
+      const fileName = `accountList_${new Date()}`
+
       return SuccessResponse(
         {
           statusCode: 200,
           message: { msg: "user.userList" },
-          data: {file:file,fileName:fileName},
+          data: { file: file, fileName: fileName },
         },
         req,
         res
@@ -718,11 +718,10 @@ exports.userList = async (req, res, next) => {
       res
     );
   } catch (error) {
-    
+
     return ErrorResponse(error, req, res);
   }
 }
-
 
 exports.userSearchList = async (req, res, next) => {
   try {
@@ -732,7 +731,7 @@ exports.userSearchList = async (req, res, next) => {
         {
           statusCode: 200,
           message: { msg: "user.userList" },
-          data: { users: [],count : 0 },
+          data: { users: [], count: 0 },
         },
         req,
         res
@@ -745,7 +744,7 @@ exports.userSearchList = async (req, res, next) => {
     let users = await getUsers(where, ["id", "userName"])
     let response = {
       users: users[0],
-      count : users[1]
+      count: users[1]
     }
     return SuccessResponse(
       {
@@ -760,7 +759,6 @@ exports.userSearchList = async (req, res, next) => {
     return ErrorResponse(error, req, res);
   }
 }
-
 
 exports.userBalanceDetails = async (req, res, next) => {
   try {
@@ -815,149 +813,149 @@ exports.userBalanceDetails = async (req, res, next) => {
 }
 
 exports.setCreditReferrence = async (req, res, next) => {
-    try {
-  
-      let { userId, amount, transactionPassword, remark} = req.body;
-      let reqUser = req.user;
-      amount = parseFloat(amount);
-  
-      let loginUser = await getUserById(reqUser.id, ["id", "creditRefrence","downLevelCreditRefrence", "roleName"]);
-      if (!loginUser) return ErrorResponse({ statusCode: 400, message:  { msg: "notFound",keys :{name : "Login user"} } }, req, res);
+  try {
 
-      let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "creditRefrence", "roleName"]);
-      if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "User"} } }, req, res);
-  
-      let userBalance = await getUserBalanceDataByUserId(user.id);
-      if(!userBalance)
-      return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys :{name : "User balance"} } }, req, res);
-      let previousCreditReference = parseFloat(user.creditRefrence)
-      let updateData = {
-        creditRefrence: amount
-      }
-  
-      let profitLoss = parseFloat(userBalance.profitLoss) + previousCreditReference - amount;
-      let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss })
-      
-      let transactionArray = [{
-        actionBy: reqUser.id,
-        searchId: user.id,
-        userId: user.id,
-        amount: previousCreditReference,
-        transType: transType.creditRefer,
-        currentAmount: amount,
-        description: "CREDIT REFRENCE " + remark
-      }, {
-        actionBy: reqUser.id,
-        searchId: reqUser.id,
-        userId: user.id,
-        amount: previousCreditReference,
-        transType: transType.creditRefer,
-        currentAmount: amount,
-        description: "CREDIT REFRENCE " + remark
-      }]
-  
-      const transactioninserted = await insertTransactions(transactionArray);
-      let updateLoginUser = {
-        downLevelCreditRefrence: parseInt(loginUser.downLevelCreditRefrence) - previousCreditReference + amount
-      }
-      await updateUser(user.id, updateData);      
-      await updateUser(loginUser.id, updateLoginUser);
-      updateData["id"] = user.id
-      return SuccessResponse(
+    let { userId, amount, transactionPassword, remark } = req.body;
+    let reqUser = req.user;
+    amount = parseFloat(amount);
+
+    let loginUser = await getUserById(reqUser.id, ["id", "creditRefrence", "downLevelCreditRefrence", "roleName"]);
+    if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
+
+    let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "creditRefrence", "roleName"]);
+    if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
+
+    let userBalance = await getUserBalanceDataByUserId(user.id);
+    if (!userBalance)
+      return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User balance" } } }, req, res);
+    let previousCreditReference = parseFloat(user.creditRefrence)
+    let updateData = {
+      creditRefrence: amount
+    }
+
+    let profitLoss = parseFloat(userBalance.profitLoss) + previousCreditReference - amount;
+    let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss })
+
+    let transactionArray = [{
+      actionBy: reqUser.id,
+      searchId: user.id,
+      userId: user.id,
+      amount: previousCreditReference,
+      transType: transType.creditRefer,
+      currentAmount: amount,
+      description: "CREDIT REFRENCE " + remark
+    }, {
+      actionBy: reqUser.id,
+      searchId: reqUser.id,
+      userId: user.id,
+      amount: previousCreditReference,
+      transType: transType.creditRefer,
+      currentAmount: amount,
+      description: "CREDIT REFRENCE " + remark
+    }]
+
+    const transactioninserted = await insertTransactions(transactionArray);
+    let updateLoginUser = {
+      downLevelCreditRefrence: parseInt(loginUser.downLevelCreditRefrence) - previousCreditReference + amount
+    }
+    await updateUser(user.id, updateData);
+    await updateUser(loginUser.id, updateLoginUser);
+    updateData["id"] = user.id
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "updated", keys: { name: "Credit reference" } },
+        data: updateData,
+      },
+      req,
+      res
+    );
+
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+
+}
+
+// Controller function for locking/unlocking a user
+exports.lockUnlockUser = async (req, res, next) => {
+  try {
+    // Extract relevant data from the request body and user object
+    const { userId, betBlock, userBlock } = req.body;
+    const { id: loginId } = req.user;
+
+
+
+    // Fetch user details of the current user, including block information
+    const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);
+
+    // Fetch details of the user who is performing the block/unblock operation,
+    // including the hierarchy and block information
+    const blockingUserDetail = await getUserById(userId, [
+      "createBy",
+      "userBlock",
+      "betBlock",
+    ]);
+
+    // Check if the current user is already blocked
+    if (userDetails?.userBlock) {
+      throw new Error("user.userBlockError");
+    }
+
+    // Check if the block type is 'betBlock' and the user is already bet-blocked
+    if (!betBlock && userDetails?.betBlock) {
+      throw new Error("user.betBlockError");
+    }
+
+    // Check if the user performing the block/unblock operation has the right access
+    if (blockingUserDetail?.createBy != loginId) {
+      return ErrorResponse(
         {
-          statusCode: 200,
-          message: { msg: "updated" , keys : { name : "Credit reference"}},
-          data: updateData,
+          statusCode: 403,
+          message: { msg: "user.blockCantAccess" },
         },
         req,
         res
       );
-  
-    } catch (error) {
-      return ErrorResponse(error, req, res);
     }
-  
+
+    // Check if the user is already blocked or unblocked (prevent redundant operations)
+    if (blockingUserDetail?.userBlock != userBlock) {
+      // Perform the user block/unblock operation
+      const blockedUsers = await userBlockUnblock(userId, loginId, userBlock);
+      //   if blocktype is user and its block then user would be logout by socket
+      if (userBlock) {
+        blockedUsers?.[0]?.forEach((item) => {
+          forceLogoutUser(item?.id);
+        });
+      }
+    }
+
+    // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
+    if (blockingUserDetail?.betBlock != betBlock) {
+      // Perform the bet block/unblock operation
+
+      await betBlockUnblock(userId, loginId, betBlock);
+    }
+
+    // Return success response
+    return SuccessResponse(
+      { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
   }
+};
 
-// Controller function for locking/unlocking a user
-exports.lockUnlockUser = async (req, res, next) => {
-    try {
-      // Extract relevant data from the request body and user object
-      const { userId, betBlock, userBlock } = req.body;
-      const { id: loginId } = req.user;
-
-      
-
-      // Fetch user details of the current user, including block information
-      const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);
-
-      // Fetch details of the user who is performing the block/unblock operation,
-      // including the hierarchy and block information
-      const blockingUserDetail = await getUserById(userId, [
-        "createBy",
-        "userBlock",
-        "betBlock",
-      ]);
-
-      // Check if the current user is already blocked
-      if (userDetails?.userBlock) {
-        throw new Error("user.userBlockError");
-      }
-
-      // Check if the block type is 'betBlock' and the user is already bet-blocked
-      if (!betBlock && userDetails?.betBlock) {
-        throw new Error("user.betBlockError");
-      }
-
-      // Check if the user performing the block/unblock operation has the right access
-      if (blockingUserDetail?.createBy != loginId) {
-        return ErrorResponse(
-          {
-            statusCode: 403,
-            message: { msg: "user.blockCantAccess" },
-          },
-          req,
-          res
-        );
-      }
-
-      // Check if the user is already blocked or unblocked (prevent redundant operations)
-      if (blockingUserDetail?.userBlock != userBlock) {
-        // Perform the user block/unblock operation
-        const blockedUsers = await userBlockUnblock(userId, loginId, userBlock);
-        //   if blocktype is user and its block then user would be logout by socket
-        if (userBlock) {
-          blockedUsers?.[0]?.forEach((item) => {
-            forceLogoutUser(item?.id);
-          });
-        }
-      }
-
-      // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
-      if (blockingUserDetail?.betBlock != betBlock) {
-        // Perform the bet block/unblock operation
-
-        await betBlockUnblock(userId, loginId, betBlock);
-      }
-
-      // Return success response
-      return SuccessResponse(
-        { statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } },
-        req,
-        res
-      );
-    } catch (error) {
-        return ErrorResponse(
-            {
-              statusCode: 500,
-              message: error.message,
-            },
-            req,
-            res
-          );
-    }
-  };
-  
 exports.generateTransactionPassword = async (req, res) => {
   const { id } = req.user;
   const { transactionPassword } = req.body;
@@ -979,6 +977,3 @@ exports.generateTransactionPassword = async (req, res) => {
     res
   );
 };
-
- 
-
