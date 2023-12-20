@@ -765,7 +765,7 @@ exports.userSearchList = async (req, res, next) => {
 exports.userBalanceDetails = async (req, res, next) => {
   try {
     let reqUser = req.user || {}
-    let { id } = req.query
+    let { id } = req.query || reqUser.id;
     let loginUser = await getUserById(id)
     if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
 
