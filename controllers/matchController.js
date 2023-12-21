@@ -9,7 +9,6 @@ exports.matchDetails = async(req, res) => {
             apiResponse = await apiCall(apiMethod.get, domain + allApiRoutes.MATCHES.matchDetails + req.params.id);
 
         } catch (error) {
-            console.log('Error in fetching match details: ', error);
             throw error?.response?.data;
         }
         return SuccessResponse({ statusCode: 200, message: { msg: "match details", keys: { name: "Match" } }, data: apiResponse.data }, req, res
