@@ -8,8 +8,15 @@ exports.apiMethod = {
   delete: "delete"
 };
 
-exports.apiCall = async (method, url, data, headers) => {
+exports.apiCall = async (method, url, data, headers, ReqQuery) => {
   try {
+    let query = ''
+    if (ReqQuery && Object.keys(ReqQuery).length) {
+      query = Object.keys(ReqQuery)
+        .map(key => `${key}=${ReqQuery[key]}`)
+        .join('&');
+      url = url + '?' + query
+    }
     let response = await axios({
       method: method,
       url: url,
@@ -24,8 +31,8 @@ exports.apiCall = async (method, url, data, headers) => {
 
 exports.allApiRoutes = {
   notification: "/general/notification",
-  MATCHES : {
-    matchDetails : "/superAdmin/match/",
-    matchList : "/superAdmin/match/list"
+  MATCHES: {
+    matchDetails: "/superAdmin/match/",
+    matchList: "/superAdmin/match/list"
   }
 }
