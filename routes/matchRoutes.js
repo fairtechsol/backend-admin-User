@@ -7,7 +7,7 @@ const { matchDetails, listMatch } = require('../controllers/matchController');
 
 
 
-router.get('/list',listMatch);
+router.get('/list',isAuthenticate,listMatch);
 router.get('/:id',isAuthenticate,matchDetails);
 
 module.exports = router;
