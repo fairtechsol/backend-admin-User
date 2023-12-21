@@ -25,7 +25,7 @@ exports.apiCall = async (method, url, data, headers) => {
 exports.allApiRoutes = {
   notification: "/general/notification",
   MATCHES : {
-    matchDetails : "/match/",
+    matchDetails : "/superAdmin/match/",
     matchList : "/superAdmin/match/list"
   }
 }
