@@ -1,22 +1,32 @@
 const { __mf } = require("i18n");
+const { logger } = require("../config/logger");
 
 module.exports.ErrorResponse = (errorData, req, res) => {
-  errorData.statusCode = errorData.statusCode || 500;
-  errorData.status = "error";
-  const errorMessage = errorData.message || "Internal Server Error";
-  
-  // Extracting message code and keys
-  const { msg, keys } = errorMessage;
+  try {
+    errorData.statusCode = errorData.statusCode || 500;
+    errorData.status = "error";
+    const errorMessage = errorData.message || "Internal Server Error";
 
-  let i18Code = msg ? msg : errorData?.message?.msg || errorData.message;
+    // Extracting message code and keys
+    const { msg, keys } = errorMessage;
 
-  const errorObj = {
-    status: errorData.status,
-    statusCode: errorData.statusCode,
-    message: __mf(i18Code, keys || undefined), // Using i18n to get the translated message
-    stack: errorData.stack,
-  };
-  res.status(errorData.statusCode).json(errorObj);
+    let i18Code = msg ? msg : errorData?.message?.msg || errorData.message;
+
+    const errorObj = {
+      status: errorData.status,
+      statusCode: errorData.statusCode,
+      message: __mf(i18Code, keys || undefined), // Using i18n to get the translated message
+      stack: errorData.stack,
+    };
+    res.status(errorData.statusCode).json(errorObj);
+  } catch (err) {
+    logger.error({
+      message:"Error at error response.",
+      stack: err.stack,
+      message: err.message,
+    });
+    res.status(500).json({ message: "Internal server error" });
+  }
 
 };
 
