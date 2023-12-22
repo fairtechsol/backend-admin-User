@@ -1,7 +1,7 @@
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
-let expertDomain = process.env.EXPERT_DOMAIN_URL || 'http://localhost:8000'
+let expertDomain = process.env.EXPERT_DOMAIN_URL || 'http://localhost:6060'
 
 exports.getNotification = async (req, res) => {
     try {
