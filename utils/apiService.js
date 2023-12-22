@@ -23,5 +23,8 @@ exports.apiCall = async (method, url, data, headers) => {
 };
 
 exports.allApiRoutes = {
-  notification: "/general/notification"
+  notification: "/general/notification",
+  getCompetitionList:"/match/competitionList",
+  getDatesByCompetition:"/match/competition/dates",
+  getMatchByCompetitionAndDate:"/match/competition/getMatch",
 }
