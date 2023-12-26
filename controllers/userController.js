@@ -9,6 +9,7 @@ const { forceLogoutUser } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
+const { sendMessageToUser } = require('../sockets/socketManager');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -935,7 +936,13 @@ exports.lockUnlockUser = async (req, res, next) => {
     if (blockingUserDetail?.betBlock != betBlock) {
       // Perform the bet block/unblock operation
 
-      await betBlockUnblock(userId, loginId, betBlock);
+      const blockedBets = await betBlockUnblock(userId, loginId, betBlock);
+
+      blockedBets?.[0]?.filter((item)=>item?.roleName==userRoleConstant.user)?.forEach((item) => {
+        sendMessageToUser(item?.id, "userBetBlock", {
+          betBlock: betBlock,
+        });
+      });
     }
 
     // Return success response

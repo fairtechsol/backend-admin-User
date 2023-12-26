@@ -431,7 +431,13 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
     if (blockingUserDetail?.betBlock != betBlock&&betBlock!=null) {
       // Perform the bet block/unblock operation
 
-      await betBlockUnblock(userId, loginId, betBlock);
+      const blockedBets = await betBlockUnblock(userId, loginId, betBlock);
+
+      blockedBets?.[0]?.filter((item)=>item?.roleName==userRoleConstant.user)?.forEach((item) => {
+        sendMessageToUser(item?.id, "userBetBlock", {
+          betBlock: betBlock,
+        });
+      });
     }
 
     // Return success response
