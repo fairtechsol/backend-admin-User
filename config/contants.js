@@ -93,5 +93,6 @@ module.exports.walletDescription = {
 
 module.exports.socketData ={
   userBalanceUpdateEvent : "userBalanceUpdate",
-  logoutUserForceEvent : "logoutUserForce"
+  logoutUserForceEvent : "logoutUserForce",
+  betBlockEvent : "userBetBlock",
 };
