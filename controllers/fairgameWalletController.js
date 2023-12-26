@@ -31,6 +31,7 @@ const {
   userBlockUnblock,
   betBlockUnblock,
 } = require("../services/userService");
+const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const lodash = require("lodash");
 
@@ -228,13 +229,13 @@ exports.updateSuperAdminBalance = async (req, res) => {
         req,
         res
       );
-
+        let updateData = {}
     if (transactionType == transType.add) {
-      await updateUserBalanceByUserId(user.id, {
-        currentBalance:
-          parseFloat(userBalanceData.currentBalance) + parseFloat(amount),
+      updateData = {
+        currentBalance: parseFloat(userBalanceData.currentBalance) + parseFloat(amount),
         profitLoss: parseFloat(userBalanceData.profitLoss) + parseFloat(amount),
-      });
+      }
+      await updateUserBalanceByUserId(user.id, updateData);
     } else if (transactionType == transType.withDraw) {
       if (amount > userBalanceData.currentBalance)
         return ErrorResponse(
@@ -245,12 +246,11 @@ exports.updateSuperAdminBalance = async (req, res) => {
           req,
           res
         );
-
-      await updateUserBalanceByUserId(user.id, {
-        currentBalance:
-          parseFloat(userBalanceData.currentBalance) - parseFloat(amount),
+      updateData = {
+        currentBalance: parseFloat(userBalanceData.currentBalance) - parseFloat(amount),
         profitLoss: parseFloat(userBalanceData.profitLoss) - parseFloat(amount),
-      });
+      }
+      await updateUserBalanceByUserId(user.id,updateData );
     } else {
       return ErrorResponse(
         { statusCode: 400, message: { msg: "invalidData" } },
@@ -272,6 +272,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
     ];
 
     await insertTransactions(transactionArray);
+    sendMessageToUser(userId,socketData.userBalanceUpdateEvent,updateData);
     return SuccessResponse(
       {
         statusCode: 200,

@@ -1,3 +1,4 @@
+const { socketData } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 
@@ -6,7 +7,7 @@ exports.forceLogoutIfLogin = async (userId) => {
   
     if (token) {
       // function to force logout
-      sendMessageToUser(userId,"logoutUserForce",null)
+      sendMessageToUser(userId,socketData.logoutUserForceEvent,null)
     }
   };
 

@@ -43,29 +43,7 @@ const handleConnection = async (client) => {
 
     // Join the room with the user's ID
     client.join(userId);
-
-    // Handle additional logic based on the user's role
-    if (roleName === userRoleConstant.expert) {
-      // If the user is an expert, add their ID to the "expertLoginIds" set and join the room
-      internalRedis.sadd("expertLoginIds", userId);
-      client.join("expertUserCountRoom");
-    } else if (roleName === userRoleConstant.user) {
-      const userCount = parseInt(await internalRedis.get("loginUserCount"));
-
-      // If the user is a regular user, manage user login count
-      const incrementCount = async () => {
-        const count = await internalRedis.incr("loginUserCount");
-        io.to("expertUserCountRoom").emit("loginUserCount", { count });
-      };
-
-      // Increment and emit the login user count if greater than 0; otherwise, set it to 1
-      if (userCount > 0) {
-        incrementCount();
-      } else {
-        internalRedis.set("loginUserCount", 1);
-        io.to("expertUserCountRoom").emit("loginUserCount", { count: 1 });
-      }
-    }
+   
   } catch (err) {
     // Handle any errors by disconnecting the client
     console.error(err);
