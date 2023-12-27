@@ -1,8 +1,9 @@
-const { transType } = require('../config/contants');
+const { transType, socketData } = require('../config/contants');
 const { getUser, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { getUserBalanceDataByUserIds, updateUserBalanceByUserId, addInitialUserBalance, getUserBalanceDataByUserId } = require('../services/userBalanceService');
+const { sendMessageToUser } = require('../sockets/socketManager');
 
 exports.updateUserBalance = async (req, res) => {
     try {
@@ -64,11 +65,12 @@ exports.updateUserBalance = async (req, res) => {
         }]
 
         const transactioninserted = await insertTransactions(transactionArray);
+        sendMessageToUser(userId,socketData.userBalanceUpdateEvent,updatedUpdateUserBalanceData);
         return SuccessResponse(
             {
                 statusCode: 200,
                 message: { msg: "updated",keys : {name : "User Balance"} },
-                data: { user },
+                data: updatedUpdateUserBalanceData,
             },
             req,
             res

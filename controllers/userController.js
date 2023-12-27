@@ -379,6 +379,12 @@ const checkTransactionPassword = async (userId, oldTransactionPass) => {
       keys: { name: "User" },
     };
   }
+  if (!user.transPassword) {
+    // User not found, return error response
+    throw {
+      msg: "TransactionPasswordNotExist"
+    };
+  }
   // Compare old transaction password with the stored transaction password
   return bcrypt.compareSync(oldTransactionPass, user.transPassword);
 };
