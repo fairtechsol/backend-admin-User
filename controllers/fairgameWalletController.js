@@ -2,6 +2,7 @@ const {
   transType,
   walletDescription,
   userRoleConstant,
+  socketData,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const {
@@ -435,7 +436,7 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
       const blockedBets = await betBlockUnblock(userId, loginId, betBlock);
 
       blockedBets?.[0]?.filter((item)=>item?.roleName==userRoleConstant.user)?.forEach((item) => {
-        sendMessageToUser(item?.id, "userBetBlock", {
+        sendMessageToUser(item?.id, socketData.betBlockEvent, {
           betBlock: betBlock,
         });
       });

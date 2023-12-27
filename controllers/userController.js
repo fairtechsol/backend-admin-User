@@ -1,4 +1,4 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType } = require('../config/contants');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData } = require('../config/contants');
 const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
@@ -945,7 +945,7 @@ exports.lockUnlockUser = async (req, res, next) => {
       const blockedBets = await betBlockUnblock(userId, loginId, betBlock);
 
       blockedBets?.[0]?.filter((item)=>item?.roleName==userRoleConstant.user)?.forEach((item) => {
-        sendMessageToUser(item?.id, "userBetBlock", {
+        sendMessageToUser(item?.id, socketData.betBlockEvent, {
           betBlock: betBlock,
         });
       });
