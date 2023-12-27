@@ -90,3 +90,9 @@ module.exports.buttonType = {
 module.exports.walletDescription = {
     userCreate : "CREDIT REFRENCE as user create",
 }
+
+module.exports.socketData ={
+  userBalanceUpdateEvent : "userBalanceUpdate",
+  logoutUserForceEvent : "logoutUserForce",
+  betBlockEvent : "userBetBlock",
+};
