@@ -96,3 +96,26 @@ module.exports.socketData ={
   logoutUserForceEvent : "logoutUserForce",
   betBlockEvent : "userBetBlock",
 };
+
+module.exports.betTypeForMatch = {
+  yes: "yes",
+  no: "no",
+  back: "back",
+  lay: "lay",
+};
+
+module.exports.betStatusType = {
+  save: "save",
+  live: "live",
+  result: "result",
+  close: "close",
+};
+
+module.exports.teamStatus = {
+  suspended: "suspended",
+  active: "active",
+  closed: "closed",
+  ballStart: "ball start",
+  ballStop: "ball stop",
+  ballRunning: "ball running",
+};

@@ -26,8 +26,8 @@
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
     "partnershipNotValid" : "Given partnership not valid.",
     "InvalidExposureLimit" : "Given Exposure limit is invalid.",
-    "betBlockError": "Your are block by admin, Please contact to the administrator.",
-    "userBlockError": "Your bet block by admin, Please contact to the administrator.",
+    "betBlockError": "Your bet are block by admin, Please contact to the administrator.",
+    "userBlockError": "Your block by admin, Please contact to the administrator.",
     "lock/unlockSuccessfully" : "User lock and unlock operation successfull.",
     "InvalidHierarchy" : "Invalid user role you given for creation.",
     "userExist" : "User already exist on given user name." ,
@@ -44,6 +44,12 @@
   "userBalance" : {
     "insufficientBalance" : "balance is insufficient to take this action.",
     "BalanceAddedSuccessfully" : "Balance Updated successfully.",
-    "InvalidTransactionType" : "Invalid transaction type"
+    "InvalidTransactionType" : "Invalid transaction type."
+  },
+  "bet":{
+    "notLive": "Bet Is currently not live.",
+    "minAmountViolate": "Amount less then minimun amount.",
+    "maxAmountViolate": "Amount More then maximum amount.",
+    "marketRateChanged": "{marketType} rate has been changed."
   }
 }
