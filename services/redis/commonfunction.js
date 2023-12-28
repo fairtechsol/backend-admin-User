@@ -12,3 +12,12 @@ exports.getUserRedisData = async (userId)=>{
   // Return the user data as an object or null if no data is found
   return Object.keys(userData)?.length == 0 ? null : userData;
 }
+
+
+exports.updateUserDataRedis = async (userId, value) => {
+  await internalRedis.hmset(userId, value);
+};
+
+exports.hasUserInCache = async (userId) => {
+  return await internalRedis.exists(userId);
+}

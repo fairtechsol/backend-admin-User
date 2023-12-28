@@ -8,15 +8,16 @@ const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { getUserById, getUserByUserName } = require("../services/userService");
+const { getUserById, getUserWithUserBalance } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
+const { logger } = require("../config/logger");
+const { updateUserDataRedis } = require("../services/redis/commonfunction");
 
 // Function to validate a user by username and password
 const validateUser = async (userName, password) => {
   // Find user by username and select specific fields
-  const user = await getUserByUserName(userName);
-
+  const user = await getUserWithUserBalance(userName);
   // Check if the user is found
   if (user) {
     // Check if the provided password matches the hashed password in the database
@@ -39,6 +40,10 @@ const validateUser = async (userName, password) => {
 };
 
 const setUserDetailsRedis = async (user) => {
+
+  await settingUserExposure(user);
+
+
   const redisUserPartnerShip = await internalRedis.hget(
     user.id,
     "partnerShips"
@@ -55,6 +60,21 @@ const setUserDetailsRedis = async (user) => {
   };
   await internalRedis.hmset(user.id, userPartnerShipData);
   await internalRedis.expire(user.id, redisTimeOut);
+};
+
+
+
+const settingUserExposure = async (user) => {
+  logger.info({ message: "Setting exposure at login time.", data: user });
+  await updateUserDataRedis(user.id, {
+    exposure: user?.userBal?.exposure || 0,
+    totalComission: user?.totalComission || 0,
+    profitLoss: user?.userBal?.profitLoss || 0,
+    myProfitLoss: user?.userBal?.myProfitLoss || 0,
+    userName: user.userName,
+    currentBalance: user?.userBal?.currentBalance || 0,
+  });
+
 };
 
 const findUserPartnerShipObj = async (user) => {
@@ -254,12 +274,3 @@ exports.logout = async (req, res) => {
   }
 };
 
-exports.dummyFunction = async (req, res) => {
-  try {
-    console.log("at the controller");
-    const users = await dummyFunction();
-    res.json(users);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};

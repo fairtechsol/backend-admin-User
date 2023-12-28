@@ -112,21 +112,35 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     
     let betPlaceObject = {
-        winAmount,
-        loseAmount,
-        betPlacedData:{
-            userName: user.userName,
-            odds: odds,
-            betType: betType,
-            stake: stake,
-            matchId: matchId,
-            betId: betId,
-            rate: ratePercent,
-        },
-        userBalance: userData?.currentBalance
+      winAmount,
+      loseAmount,
+      betPlacedData: {
+        userName: user.userName,
+        odds: odds,
+        betType: betType,
+        stake: stake,
+        matchId: matchId,
+        betId: betId,
+        rate: ratePercent,
+      },
+      userBalance: userData?.currentBalance || 0,
     };
 
-    const totalExposure = userData?.exposure;
+    const totalExposure = userData?.exposure || 0;
+
+    logger.info({
+      message: "Exposure and balance of user before calculation: ",
+      userBalance: userData?.currentBalance || 0,
+      totalExposure: userData?.exposure || 0,
+    });
+
+    let sessionProfitLossData=userData[`${betId}_profitLoss`];
+
+    if (sessionProfitLossData) {
+        sessionProfitLossData = JSON.parse(sessionProfitLossData);
+        oldMaxLoss = parseFloat(oldPartnerShipData['max_loss']);
+    }
+
 
 
   } catch (error) {
