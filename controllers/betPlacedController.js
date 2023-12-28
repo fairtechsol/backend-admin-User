@@ -1,51 +1,128 @@
 const betPlacedService = require('../services/betPlacedService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betType } = require("../config/constants");
-const { betStatusType, teamStatus } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType,betType, marketType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
+const { matchDetails } = require('./matchController');
+
+// Default expert domain URL, fallback to localhost if not provided
+let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 
 exports.getBet = async (req, res) => {
-    try {
-        const { id } = req.user
-        if(req.query.id){
-            const bets = await betPlacedService.getBetById(req.query.id);
-            if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys : {name : "Bet"} } }, req, res)
-            return SuccessResponse({ statusCode: 200, message: { msg: "fetched" ,keys : {name : "Bet"} }, data: bets }, req, res)
-        }
-        const bets = await betPlacedService.getBetByUserId(id);
-        if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys : {name : "Bet"} } }, req, res)
-        return SuccessResponse({ statusCode: 200, message: { msg: "fetched" ,keys : {name : "Bet"} }, data: bets }, req, res)
-    } catch (err) {
-        return ErrorResponse(err, req, res)
+  try {
+    const { id } = req.user
+    if (req.query.id) {
+      const bets = await betPlacedService.getBetById(req.query.id);
+      if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Bet" } } }, req, res)
+      return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { name: "Bet" } }, data: bets }, req, res)
     }
+    const bets = await betPlacedService.getBetByUserId(id);
+    if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Bet" } } }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { name: "Bet" } }, data: bets }, req, res)
+  } catch (err) {
+    return ErrorResponse(err, req, res)
+  }
 
 };
 
 
-exports.matchBettingBetPlaced = async (req,res) => {
-    try {
-        logger.info({
-            info: `match betting bet placed`,
-            data: req.body
-          }); 
-          
-    } catch (error) {
-        logger.error({
-            error: `Error at match betting bet placed.`,
-            stack: error.stack,
-            message: error.message,
-          });        
-        return ErrorResponse(err, req, res)
+exports.matchBettingBetPlaced = async (req, res) => {
+  try {
+    logger.info({
+      info: `match betting bet placed`,
+      data: req.body
+    });
+    let reqUser = req.user;
+    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId,betOnTeam,ipAddress,browserDetail } = req.body;
+
+    let user = await getUserById(reqUser.id);
+    if (user?.userBlock) {
+      logger.info({
+        info: `user is blocked for login id ${reqUser.id}`,
+        data: req.body
+      })
+      return ErrorResponse({statusCode: 403,message: {msg: "user.blocked"}}, req, res);
     }
+    if (user?.betBlock) {
+      logger.info({
+        info: `user is blocked for betting id ${reqUser.id}`,
+        data: req.body
+      })
+      return ErrorResponse({statusCode: 403,message: {msg: "user.betBlockError"}}, req, res);
+    }
+    let newCalculateOdd =odd;(CalculateOdds / 100) + 1;
+    let winAmount= 0 , lossAmount = 0;
+    if(matchBetType == matchBettingType.matchOdd){
+      newCalculateOdd = (newCalculateOdd -1 ) * 100;
+    }
+
+    if(bettingType == betType.BACK){
+      winAmount = (stake * newCalculateOdd )/100;
+      lossAmount = stake;
+    }
+    else if(bettingType == betType.LAY){
+      winAmount = stake;
+      lossAmount = (stake * newCalculateOdd )/100;
+    }
+    else{
+      logger({
+        info: `Get invalid betting type`,
+        data: req.body
+      });
+      return ErrorResponse({statusCode: 400,message: {msg: "invalid",keys : {name : "Bet type"}}}, req, res);
+    }
+
+    winAmount = Number(winAmount.toFixed(2));
+    lossAmount = Number(lossAmount.toFixed(2));
+
+    //fetched match details from expert
+    let apiResponse = {};
+
+    try {
+        apiResponse = await apiCall(apiMethod.get, expertDomain + allApiRoutes.MATCHES.matchDetails + req.params.id);
+    } catch (error) {
+      logger({
+        info: `Error at get match details.`,
+        data: req.body
+      });
+        throw error?.response?.data;
+    }
+
+    let betPlacedObj = {
+      matchId : matchId,
+      betId : betId,
+      winAmount,
+      lossAmount,
+      result : "PEMDING",
+      teamName : betOnTeam,
+      amount : stake,
+      odds : odd,
+      betType : bettingType,
+      rate : 0,
+      createBy : reqUser.id,
+      marketType : marketType.MATCHBETTING,
+      ipAddress,
+      browserDetail,
+      
+    }
+    await validateMatchBettingDetails(apiResponse,betPlacedObj,matchBetType,{teamA,teamB,teamC});
+
+    // let userCurrentBalance = 
+
+  } catch (error) {
+    logger.error({
+      error: `Error at match betting bet placed.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(err, req, res)
+  }
 }
 
 
 
-// Default expert domain URL, fallback to localhost if not provided
-let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 
 /**
  * Handle the user's session bet placement.
@@ -60,7 +137,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     const { id } = req.user;
 
     // Fetch user details by ID
-    let user = await getUserById(id, ["userBlock", "betBlock","userName"]);
+    let user = await getUserById(id, ["userBlock", "betBlock", "userName"]);
 
     // Check if the user is blocked
     if (user?.userBlock) {
@@ -148,7 +225,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       sessionExp
     });
 
-    
+
     let betPlaceObject = {
       winAmount,
       loseAmount,
@@ -172,11 +249,11 @@ exports.sessionBetPlace = async (req, res, next) => {
       totalExposure: userData?.exposure || 0,
     });
 
-    let sessionProfitLossData=userData[`${betId}_profitLoss`];
-    let maxSessionLoss=0.0;
+    let sessionProfitLossData = userData[`${betId}_profitLoss`];
+    let maxSessionLoss = 0.0;
     if (sessionProfitLossData) {
-        sessionProfitLossData = JSON.parse(sessionProfitLossData);
-        maxSessionLoss = parseFloat(sessionProfitLossData['maxLoss']);
+      sessionProfitLossData = JSON.parse(sessionProfitLossData);
+      maxSessionLoss = parseFloat(sessionProfitLossData['maxLoss']);
     }
 
 
@@ -188,7 +265,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       stack: error.stack,
       message: error.message,
     });
-    
+
     // Handle any errors and return an error response
     return ErrorResponse(error, req, res);
   }
@@ -196,70 +273,142 @@ exports.sessionBetPlace = async (req, res, next) => {
 
 
 
-const validateSessionBet=async (apiBetData,betDetails)=>{
-    if(apiBetData.activeStatus != betStatusType.live){
-        throw {
-            message:{
-                msg:"bet.notLive"
-            }
-        };
-    }
+const validateSessionBet = async (apiBetData, betDetails) => {
+  if (apiBetData.activeStatus != betStatusType.live) {
+    throw {
+      message: {
+        msg: "bet.notLive"
+      }
+    };
+  }
 
-    if (betDetails.stake < apiBetData.minBet) {
-        throw {
-            statusCode:400,
-            message:{
-                msg:"bet.minAmountViolate"
-            }
-        };
-    }
-    if (betDetails.stake > apiBetData.maxBet) {
-        throw {
-            statusCode:400,
-            message:{
-                msg:"bet.maxAmountViolate"
-            }
-        };
-    }
-    if (apiBetData?.selectionId && apiBetData?.selectionId != "") {
+  if (betDetails.stake < apiBetData.minBet) {
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.minAmountViolate"
+      }
+    };
+  }
+  if (betDetails.stake > apiBetData.maxBet) {
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.maxAmountViolate"
+      }
+    };
+  }
+  if (apiBetData?.selectionId && apiBetData?.selectionId != "") {
 
-        if(!apiBetData.apiSessionActive){
-            throw {
-                statusCode:400,
-                message:{
-                    msg:"bet.notLive"
-                }
-            };
+    if (!apiBetData.apiSessionActive) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.notLive"
         }
-        else {
-            // check the rates of third party api
-        }
+      };
     }
     else {
-        if(!apiBetData.manualSessionActive){
-            throw {
-                statusCode:400,
-                message:{
-                    msg:"bet.notLive"
-                }
-            };
-        }
-        if (
-          (betDetails.sessionBetType == betType.no &&
-            betDetails.odds != apiBetData.noRate) ||
-          (betDetails.sessionBetType == betType.yes &&
-            betDetails.odds != apiBetData.yesRate) ||
-          (apiBetData.status != null && apiBetData.status != teamStatus.active)
-        ) {
-          throw {
-            statusCode: 400,
-            message: {
-              msg: "marketRateChanged",
-              keys: {
-                marketType: "Session",
-              },
-            },
-          };
-        }
+      // check the rates of third party api
     }
+  }
+  else {
+    if (!apiBetData.manualSessionActive) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.notLive"
+        }
+      };
+    }
+    if (
+      (betDetails.sessionBetType == betType.no &&
+        betDetails.odds != apiBetData.noRate) ||
+      (betDetails.sessionBetType == betType.yes &&
+        betDetails.odds != apiBetData.yesRate) ||
+      (apiBetData.status != null && apiBetData.status != teamStatus.active)
+    ) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "marketRateChanged",
+          keys: {
+            marketType: "Session",
+          },
+        },
+      };
+    }
+  }
+}
+
+
+const validateMatchBettingDetails = async (matchDetail,betObj,matchBetType,teams) => {
+  if(matchBetType == matchBettingType.bookmaker){
+    let bookmaker = matchDetail[matchBetType];
+    if(!bookmaker){
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.notLive"
+        }
+      };
+    }
+      if(bookmaker.activeStatus != betStatusType.live){
+        throw {
+          statusCode: 400,
+          message: {
+            msg: "bet.notLive"
+          }
+        };
+    }
+    else if(betObj.stack < bookmaker.minBet){
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.minAmountViolate"
+        }
+      };
+    }
+    else if(betObj.stack > bookmaker.maxBet){
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.maxAmountViolate"
+        }
+      };
+    }
+    else{
+      let isRateChange = await checkRate(matchDetail,bookmaker,betObj,teams);
+      if(isRateChange){
+        throw {
+          statusCode: 400,
+          message: {
+            msg: "marketRateChanged",
+            keys: {
+              marketType: "Match betting",
+            },
+          },
+        };
+      }
+    }
+
+  }
+}
+
+const checkRate = async (matchDetails,bookmaker,betObj,teams) => {
+  if(betObj.betType == betType.BACK && teams.teamA == matchDetails.teamA && bookmaker.backTeamA != betObj.odds){
+    return true;
+  }
+  else if(betObj.betType == betType.BACK && teams.teamB == matchDetails.teamB && bookmaker.backTeamB != betObj.odds){
+    return true;
+  }
+  else if(betObj.betType == betType.LAY && teams.teamA == matchDetails.teamA && bookmaker.layTeamA != betObj.odds){
+    return true;
+  }
+  else if(betObj.betType == betType.LAY && teams.teamB == matchDetails.teamB && bookmaker.layTeamB != betObj.odds){
+    return true;
+  }
+  else {
+    return false;
+  }
 }
