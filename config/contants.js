@@ -96,3 +96,15 @@ module.exports.socketData ={
   logoutUserForceEvent : "logoutUserForce",
   betBlockEvent : "userBetBlock",
 };
+
+module.exports.betType = {
+  YES : "YES",
+  NO : "NO",
+  BACK : "BACK",
+  LAY : "LAY"
+}
+
+module.exports.marketType = {
+  SESSION : "SESSION",
+  MATCHBETTING : "MATCHBETTING"
+}

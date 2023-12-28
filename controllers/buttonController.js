@@ -9,7 +9,7 @@ exports.getButton = async (req, res) => {
         const button = await buttonService.getButtonByUserId(id,["id","type","value"]);
         if (!button) ErrorResponse({ statusCode: 400, message: { msg: "button.InvalidUser" } }, req, res)
 
-        return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: button }, req, res)
+        return SuccessResponse({ statusCode: 200, message: { msg: "fetched",keys : {name : "Button"} }, data: button }, req, res)
     } catch (err) {
         return ErrorResponse(err, req, res)
     }
@@ -34,7 +34,7 @@ exports.insertButtons = async (req, res) => {
         }
 
         const button = await buttonService.addButton(buttonData);
-        return SuccessResponse({ statusCode: 200, message: { msg: "login" }, data: button }, req, res);
+        return SuccessResponse({ statusCode: 200, message: { msg: "created",keys : { name : "Button"} }, data: button }, req, res);
     } catch (error) {
         return ErrorResponse(error, req, res);
     }
