@@ -173,10 +173,10 @@ exports.sessionBetPlace = async (req, res, next) => {
     });
 
     let sessionProfitLossData=userData[`${betId}_profitLoss`];
-
+    let maxSessionLoss=0.0;
     if (sessionProfitLossData) {
         sessionProfitLossData = JSON.parse(sessionProfitLossData);
-        oldMaxLoss = parseFloat(oldPartnerShipData['max_loss']);
+        maxSessionLoss = parseFloat(sessionProfitLossData['maxLoss']);
     }
 
 
