@@ -41,7 +41,15 @@ const validateUser = async (userName, password) => {
 
 const setUserDetailsRedis = async (user) => {
 
-  await settingUserExposure(user);
+  logger.info({ message: "Setting exposure at login time.", data: user });
+  await updateUserDataRedis(user.id, {
+    exposure: user?.userBal?.exposure || 0,
+    totalComission: user?.totalComission || 0,
+    profitLoss: user?.userBal?.profitLoss || 0,
+    myProfitLoss: user?.userBal?.myProfitLoss || 0,
+    userName: user.userName,
+    currentBalance: user?.userBal?.currentBalance || 0,
+  });
 
 
   const redisUserPartnerShip = await internalRedis.hget(
@@ -64,18 +72,6 @@ const setUserDetailsRedis = async (user) => {
 
 
 
-const settingUserExposure = async (user) => {
-  logger.info({ message: "Setting exposure at login time.", data: user });
-  await updateUserDataRedis(user.id, {
-    exposure: user?.userBal?.exposure || 0,
-    totalComission: user?.totalComission || 0,
-    profitLoss: user?.userBal?.profitLoss || 0,
-    myProfitLoss: user?.userBal?.myProfitLoss || 0,
-    userName: user.userName,
-    currentBalance: user?.userBal?.currentBalance || 0,
-  });
-
-};
 
 const findUserPartnerShipObj = async (user) => {
   const obj = {};

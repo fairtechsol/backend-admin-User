@@ -97,12 +97,17 @@ module.exports.socketData ={
   betBlockEvent : "userBetBlock",
 };
 
-module.exports.betTypeForMatch = {
-  yes: "yes",
-  no: "no",
-  back: "back",
-  lay: "lay",
-};
+module.exports.betType = {
+  YES : "YES",
+  NO : "NO",
+  BACK : "BACK",
+  LAY : "LAY"
+}
+
+module.exports.marketType = {
+  SESSION : "SESSION",
+  MATCHBETTING : "MATCHBETTING"
+}
 
 module.exports.betStatusType = {
   save: "save",

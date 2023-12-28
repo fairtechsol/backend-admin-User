@@ -1,10 +1,48 @@
-const { betTypeForMatch } = require("../config/constants");
+const betPlacedService = require('../services/betPlacedService');
+const { ErrorResponse, SuccessResponse } = require('../utils/response')
+const { betType } = require("../config/constants");
 const { betStatusType, teamStatus } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { ErrorResponse } = require("../utils/response");
+
+exports.getBet = async (req, res) => {
+    try {
+        const { id } = req.user
+        if(req.query.id){
+            const bets = await betPlacedService.getBetById(req.query.id);
+            if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys : {name : "Bet"} } }, req, res)
+            return SuccessResponse({ statusCode: 200, message: { msg: "fetched" ,keys : {name : "Bet"} }, data: bets }, req, res)
+        }
+        const bets = await betPlacedService.getBetByUserId(id);
+        if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys : {name : "Bet"} } }, req, res)
+        return SuccessResponse({ statusCode: 200, message: { msg: "fetched" ,keys : {name : "Bet"} }, data: bets }, req, res)
+    } catch (err) {
+        return ErrorResponse(err, req, res)
+    }
+
+};
+
+
+exports.matchBettingBetPlaced = async (req,res) => {
+    try {
+        logger.info({
+            info: `match betting bet placed`,
+            data: req.body
+          }); 
+          
+    } catch (error) {
+        logger.error({
+            error: `Error at match betting bet placed.`,
+            stack: error.stack,
+            message: error.message,
+          });        
+        return ErrorResponse(err, req, res)
+    }
+}
+
+
 
 // Default expert domain URL, fallback to localhost if not provided
 let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
@@ -18,7 +56,7 @@ let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 exports.sessionBetPlace = async (req, res, next) => {
   try {
     // Destructure relevant data from the request body and user object
-    const { betId, betType, country, matchId, ipAddress, odds, ratePercent, stake } = req.body;
+    const { betId, betType: sessionBetType, country, matchId, ipAddress, odds, ratePercent, stake } = req.body;
     const { id } = req.user;
 
     // Fetch user details by ID
@@ -79,10 +117,10 @@ exports.sessionBetPlace = async (req, res, next) => {
       loseAmount = 0;
 
     // Calculate win and lose amounts based on the bet type
-    if (betType == betTypeForMatch.yes) {
+    if (sessionBetType == betType.yes) {
       winAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
       loseAmount = stake;
-    } else if (betType == betTypeForMatch.no) {
+    } else if (sessionBetType == betType.no) {
       winAmount = stake;
       loseAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
     } else {
@@ -117,7 +155,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       betPlacedData: {
         userName: user.userName,
         odds: odds,
-        betType: betType,
+        betType: sessionBetType,
         stake: stake,
         matchId: matchId,
         betId: betId,
@@ -207,9 +245,9 @@ const validateSessionBet=async (apiBetData,betDetails)=>{
             };
         }
         if (
-          (betDetails.betType == betTypeForMatch.no &&
+          (betDetails.sessionBetType == betType.no &&
             betDetails.odds != apiBetData.noRate) ||
-          (betDetails.betType == betTypeForMatch.yes &&
+          (betDetails.sessionBetType == betType.yes &&
             betDetails.odds != apiBetData.yesRate) ||
           (apiBetData.status != null && apiBetData.status != teamStatus.active)
         ) {

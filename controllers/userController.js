@@ -119,7 +119,7 @@ exports.createUser = async (req, res) => {
       let insertedButton = await insertButton(buttonValue)
     }
     let response = lodash.omit(insertUser, ["password", "transPassword"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: "User" }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { name: "User" }  }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -138,7 +138,7 @@ exports.updateUser = async (req, res) => {
     updateUser = await addUser(updateUser);
 
     let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: "User" }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "User" }  }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -207,6 +207,10 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership);
           break;
         }
+        default : {
+          fwPartnership : parseInt(creator.fwPartnership);
+          break;
+        }
       }
     }
       break;
@@ -228,6 +232,9 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
           break;
         }
+        default : {
+          faPartnership : parseInt(creator.faPartnership);
+        }
       }
     }
       break;
@@ -245,6 +252,9 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
           break;
         }
+        default: {
+          saPartnership : parseInt(creator.saPartnership);
+          }
       }
     }
       break;
@@ -258,6 +268,9 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
           break;
         }
+        default: {
+          aPartnership : parseInt(creator.aPartnership);
+          }
       }
     }
       break;
@@ -266,6 +279,9 @@ const calculatePartnership = async (userData, creator) => {
         case (userRoleConstant.master): {
           mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership + aPartnership);
           break;
+        }
+        default : {
+          smPartnership : parseInt(creator.smPartnership);
         }
       }
     }

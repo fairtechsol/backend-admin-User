@@ -8,7 +8,7 @@
   "updated":"{name} updated successfully.",
   "created": "{type} created successfully.",
   "alreadyExist":"{name} already exist.",
-  
+  "fetched": "{type} fetch successfully.",  
   "auth": {
     "loginSuccess": "Login successfully.",
     "invalidPass": "Invalid {type} password.",
