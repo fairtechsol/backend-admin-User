@@ -110,7 +110,7 @@ exports.updateUserBalance = async (req, res) => {
 
     if(parentUserExistRedis){
 
-        await updateUserDataRedis(userId, updatedUpdateUserBalanceData);
+        await updateUserDataRedis(reqUser.id, updatedLoginUserBalanceData);
       }
 
     let transactionArray = [
