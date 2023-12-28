@@ -108,3 +108,19 @@ module.exports.marketType = {
   SESSION : "SESSION",
   MATCHBETTING : "MATCHBETTING"
 }
+
+module.exports.betStatusType = {
+  save: "save",
+  live: "live",
+  result: "result",
+  close: "close",
+};
+
+module.exports.teamStatus = {
+  suspended: "suspended",
+  active: "active",
+  closed: "closed",
+  ballStart: "ball start",
+  ballStop: "ball stop",
+  ballRunning: "ball running",
+};

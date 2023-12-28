@@ -11,12 +11,6 @@ const { isAuthenticate } = require('../middleware/auth');
 router.post('/login',validator(Login), authController.login);
 router.post('/logout',isAuthenticate, authController.logout);
 
-// const subscribeService = require("../services/redis/externalRedisSubscriber");
-
-router.post('/dummyFunction', authController.dummyFunction);
-
-// Start listening for messages
-// subscribeService.receiveMessages();
 
 
 module.exports = router;

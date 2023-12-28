@@ -10,6 +10,7 @@ const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildPro
 const { ILike } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
+const { hasUserInCache, updateUserDataRedis } = require('../services/redis/commonfunction');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -857,7 +858,13 @@ exports.setCreditReferrence = async (req, res, next) => {
     }
 
     let profitLoss = parseFloat(userBalance.profitLoss) + previousCreditReference - amount;
-    let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss })
+    let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss });
+    const userExistRedis=await hasUserInCache(user.id);
+
+    if(userExistRedis){
+
+      await updateUserDataRedis(user.id, { profitLoss });
+    }
 
     let transactionArray = [{
       actionBy: reqUser.id,

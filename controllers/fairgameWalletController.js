@@ -16,6 +16,7 @@ const {
   getDomainDataByDomain,
   getDomainDataByUserId,
 } = require("../services/domainDataService");
+const { updateUserDataRedis, hasUserInCache } = require("../services/redis/commonfunction");
 const { insertTransactions } = require("../services/transactionService");
 const {
   addInitialUserBalance,
@@ -215,6 +216,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
     amount = parseFloat(amount);
 
     let user = await getUser({ id: userId }, ["id"]);
+    const userExistRedis=await hasUserInCache(user.id);
     if (!user)
       return ErrorResponse(
         { statusCode: 400, message: { msg: "invalidData" } },
@@ -237,6 +239,10 @@ exports.updateSuperAdminBalance = async (req, res) => {
         profitLoss: parseFloat(userBalanceData.profitLoss) + parseFloat(amount),
       }
       await updateUserBalanceByUserId(user.id, updateData);
+      if(userExistRedis){
+
+        await updateUserDataRedis(user.id, updateData);
+      }
     } else if (transactionType == transType.withDraw) {
       if (amount > userBalanceData.currentBalance)
         return ErrorResponse(
@@ -252,6 +258,10 @@ exports.updateSuperAdminBalance = async (req, res) => {
         profitLoss: parseFloat(userBalanceData.profitLoss) - parseFloat(amount),
       }
       await updateUserBalanceByUserId(user.id,updateData );
+      if(userExistRedis){
+
+        await updateUserDataRedis(user.id, updateData);
+      }
     } else {
       return ErrorResponse(
         { statusCode: 400, message: { msg: "invalidData" } },
@@ -361,6 +371,12 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
 
     let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
     await updateUserBalanceByUserId(user.id, { profitLoss });
+    const userExistRedis=await hasUserInCache(user.id);
+
+    if(userExistRedis){
+
+      await updateUserDataRedis(user.id, { profitLoss });
+    }
 
     let transactionArray = [
       {
