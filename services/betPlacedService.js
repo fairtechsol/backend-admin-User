@@ -16,3 +16,4 @@ exports.getBetByUserId = async(id,select) =>{
         select: select,
       });
 }
+

@@ -179,6 +179,8 @@ exports.sessionBetPlace = async (req, res, next) => {
         maxSessionLoss = parseFloat(sessionProfitLossData['maxLoss']);
     }
 
+    
+
 
 
   } catch (error) {
@@ -193,6 +195,15 @@ exports.sessionBetPlace = async (req, res, next) => {
     return ErrorResponse(error, req, res);
   }
 };
+
+
+const calculateProfitLossSession = async (redisProfitLoss,betData)=>{
+    const lowerLimit =
+      redisProfitLoss?.lowerLimitOdds || betData?.odds - 5 < 0
+        ? 0
+        : betData?.odds - 5;
+    const upperLimit = redisProfitLoss?.upperLimitOdds || betData?.odds + 5;
+}
 
 
 

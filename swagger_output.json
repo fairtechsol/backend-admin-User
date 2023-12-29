@@ -85,28 +85,6 @@
         }
       }
     },
-    "/auth/dummyFunction": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "x-forwarded-for",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
     "/user/add": {
       "post": {
         "description": "",
@@ -127,8 +105,20 @@
           }
         ],
         "responses": {
-          "default": {
+          "0": {
             "description": ""
+          },
+          "1": {
+            "description": ""
+          },
+          "2": {
+            "description": ""
+          },
+          "4": {
+            "description": ""
+          },
+          "200": {
+            "description": "OK"
           }
         },
         "requestBody": {
@@ -137,6 +127,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "transactionPassword": {
+                    "example": "any"
+                  },
                   "userName": {
                     "example": "any"
                   },

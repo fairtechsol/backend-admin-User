@@ -45,7 +45,7 @@ exports.createUser = async (req, res) => {
     }
     password = await bcrypt.hash(
       password,
-      process.env.BCRYPTSALT
+      process.env.BCRYPTSALT||10
     );
 
     creditRefrence = creditRefrence ? parseFloat(creditRefrence) : 0;
