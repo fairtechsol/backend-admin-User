@@ -208,7 +208,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default : {
-          fwPartnership : parseInt(creator.fwPartnership);
+          fwPartnership = parseInt(creator.fwPartnership);
           break;
         }
       }
@@ -233,7 +233,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default : {
-          faPartnership : parseInt(creator.faPartnership);
+          faPartnership = parseInt(creator.faPartnership);
         }
       }
     }
@@ -253,7 +253,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default: {
-          saPartnership : parseInt(creator.saPartnership);
+          saPartnership = parseInt(creator.saPartnership);
           }
       }
     }
@@ -269,7 +269,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default: {
-          aPartnership : parseInt(creator.aPartnership);
+          aPartnership = parseInt(creator.aPartnership);
           }
       }
     }
@@ -281,7 +281,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default : {
-          smPartnership : parseInt(creator.smPartnership);
+          smPartnership = parseInt(creator.smPartnership);
         }
       }
     }

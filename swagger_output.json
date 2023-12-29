@@ -85,28 +85,6 @@
         }
       }
     },
-    "/auth/dummyFunction": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "x-forwarded-for",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          },
-          "500": {
-            "description": "Internal Server Error"
-          }
-        }
-      }
-    },
     "/user/add": {
       "post": {
         "description": "",

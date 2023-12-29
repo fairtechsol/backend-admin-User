@@ -135,3 +135,13 @@ module.exports.matchBettingType = {
   tiedMatch2: "tiedMatch2",
   completeMatch : "completeMatch"
 };
+
+
+module.exports.redisKeys = {
+  userAllExposure : "allExposure",
+  userMatchExposure : "matchExposure_",
+  userSessionExposure : "sessionExposure_",
+  userTeamARate : "teamARate_",
+  userTeamBRate : "teamBRate_",
+  userTeamCRate : "teamCRate_",
+}

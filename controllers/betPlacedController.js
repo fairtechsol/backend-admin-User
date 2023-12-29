@@ -1,8 +1,9 @@
 const betPlacedService = require('../services/betPlacedService');
+const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType,betType, marketType } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, marketType, redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getUserRedisData } = require("../services/redis/commonfunction");
+const { getUserRedisData, updateUserDataRedis, updateSessionExposure, updateMatchExposure } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { matchDetails } = require('./matchController');
@@ -18,8 +19,10 @@ exports.getBet = async (req, res) => {
       if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Bet" } } }, req, res)
       return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { name: "Bet" } }, data: bets }, req, res)
     }
-    const bets = await betPlacedService.getBetByUserId(id);
+    // const bets = await betPlacedService.getBetByUserId(id);
+    const bets = await userService.getUserWithUserBalanceData({ userId: id });
     if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Bet" } } }, req, res)
+    console.log(typeof (bets.currentBalance));
     return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { name: "Bet" } }, data: bets }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res)
@@ -35,43 +38,52 @@ exports.matchBettingBetPlaced = async (req, res) => {
       data: req.body
     });
     let reqUser = req.user;
-    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId,betOnTeam,ipAddress,browserDetail } = req.body;
+    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail,placeIndex } = req.body;
 
-    let user = await getUserById(reqUser.id);
+    let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
+    if (!userBalanceData || userBalanceData.user) {
+      logger.info({
+        info: `user not found for login id ${reqUser.id}`,
+        data: req.body
+      })
+      return ErrorResponse({ statusCode: 403, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
+    }
+
+    let user = userBalanceData.user;
     if (user?.userBlock) {
       logger.info({
         info: `user is blocked for login id ${reqUser.id}`,
         data: req.body
       })
-      return ErrorResponse({statusCode: 403,message: {msg: "user.blocked"}}, req, res);
+      return ErrorResponse({ statusCode: 403, message: { msg: "user.blocked" } }, req, res);
     }
     if (user?.betBlock) {
       logger.info({
         info: `user is blocked for betting id ${reqUser.id}`,
         data: req.body
       })
-      return ErrorResponse({statusCode: 403,message: {msg: "user.betBlockError"}}, req, res);
+      return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
-    let newCalculateOdd =odd;(CalculateOdds / 100) + 1;
-    let winAmount= 0 , lossAmount = 0;
-    if(matchBetType == matchBettingType.matchOdd){
-      newCalculateOdd = (newCalculateOdd -1 ) * 100;
+    let newCalculateOdd = odd; (CalculateOdds / 100) + 1;
+    let winAmount = 0, lossAmount = 0;
+    if (matchBetType == matchBettingType.matchOdd) {
+      newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
 
-    if(bettingType == betType.BACK){
-      winAmount = (stake * newCalculateOdd )/100;
+    if (bettingType == betType.BACK) {
+      winAmount = (stake * newCalculateOdd) / 100;
       lossAmount = stake;
     }
-    else if(bettingType == betType.LAY){
+    else if (bettingType == betType.LAY) {
       winAmount = stake;
-      lossAmount = (stake * newCalculateOdd )/100;
+      lossAmount = (stake * newCalculateOdd) / 100;
     }
-    else{
-      logger({
+    else {
+      logger.info({
         info: `Get invalid betting type`,
         data: req.body
       });
-      return ErrorResponse({statusCode: 400,message: {msg: "invalid",keys : {name : "Bet type"}}}, req, res);
+      return ErrorResponse({ statusCode: 400, message: { msg: "invalid", keys: { name: "Bet type" } } }, req, res);
     }
 
     winAmount = Number(winAmount.toFixed(2));
@@ -81,35 +93,95 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let apiResponse = {};
 
     try {
-        apiResponse = await apiCall(apiMethod.get, expertDomain + allApiRoutes.MATCHES.matchDetails + req.params.id);
+      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + req.params.id + "/?type=" + matchBetType;
+      apiResponse = await apiCall(apiMethod.get, url);
     } catch (error) {
-      logger({
+      logger.info({
         info: `Error at get match details.`,
         data: req.body
       });
-        throw error?.response?.data;
+      throw error?.response?.data;
     }
-
+    let { match, matchBetting } = apiResponse;
     let betPlacedObj = {
-      matchId : matchId,
-      betId : betId,
+      matchId: matchId,
+      betId: betId,
       winAmount,
       lossAmount,
-      result : "PEMDING",
-      teamName : betOnTeam,
-      amount : stake,
-      odds : odd,
-      betType : bettingType,
-      rate : 0,
-      createBy : reqUser.id,
-      marketType : marketType.MATCHBETTING,
+      result: "PEMDING",
+      teamName: betOnTeam,
+      amount: stake,
+      odds: odd,
+      betType: bettingType,
+      rate: 0,
+      createBy: reqUser.id,
+      marketType: marketType.MATCHBETTING,
       ipAddress,
       browserDetail,
-      
-    }
-    await validateMatchBettingDetails(apiResponse,betPlacedObj,matchBetType,{teamA,teamB,teamC});
 
-    // let userCurrentBalance = 
+    }
+    await validateMatchBettingDetails(match, matchBetting, betPlacedObj, { teamA, teamB, teamC,placeIndex });
+
+    let userCurrentBalance = userData.currentBalance;
+    let userRedisData = await getUserRedisData(reqUser.id);
+    let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ?? 0.0;
+    let sessionExposure = userRedisData[redisKeys.userSessionExposure + matchId] ?? 0.0;
+    let userTotalExposure = matchExposure + sessionExposure;
+    let teamRates = {
+      teamA: userRedisData[redisKeys.userTeamARate + matchId] ?? 0.0,
+      teamB: userRedisData[redisKeys.userTeamBRate + matchId] ?? 0.0,
+      teamC: userRedisData[redisKeys.userTeamCRate + matchId] ?? 0.0
+    }
+    let userPreviousExposure = userRedisData[redisKeys.userAllExposure] ?? 0.0;
+    let userOtherMatchExposure = userPreviousExposure - userTotalExposure;
+
+    logger.info({
+      info: `User's match and session exposure and teams rate in redis with userId ${reqUser.id} `,
+      userCurrentBalance,
+      matchExposure,
+      sessionExposure,
+      userTotalExposure,
+      teamRates,
+      userPreviousExposure,
+      userOtherMatchExposure
+    });
+
+    let newTeamRateData = await calculateRate(teamRates, { teamA, teamB, teamC, winAmount, lossAmount, bettingType, betOnTeam }, 100)
+    let maximumLoss = 0;
+    if (teamC && teamC != '') {
+      maximumLoss = Math.min(newTeamRateData.teamA, newTeamRateData.teamB, newTeamRateData.teamC);
+    } else {
+      maximumLoss = Math.min(newTeamRateData.teamA, newTeamRateData.teamB);
+    }
+    if (maximumLoss > 0) {
+      maximumLoss = 0;
+    }
+    matchExposure = maximumLoss;
+    userCurrentBalance = userCurrentBalance - (userOtherMatchExposure + matchExposure + sessionExposure);
+    if (userCurrentBalance < 0) {
+      logger.info({
+        info: `user exposure balance insufficient to place this bet user id is ${reqUser.id}`,
+        betId,
+        matchId,
+        userCurrentBalance,
+        maximumLoss
+      })
+      return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
+    }
+    logger.info({
+      info: `updating user exposure balance in redis for user id is ${reqUser.id}`,
+      betId,
+      matchId,
+      userCurrentBalance,
+      matchExposure, maximumLoss
+    })
+    await updateMatchExposure(reqUser.id, matchExposure);
+    let newBet = await betPlacedService.addNewBet(betPlacedObj);
+
+    //add redis queue function
+    
+    return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced"}, data: newBet }, req, res)
+
 
   } catch (error) {
     logger.error({
@@ -342,73 +414,109 @@ const validateSessionBet = async (apiBetData, betDetails) => {
 }
 
 
-const validateMatchBettingDetails = async (matchDetail,betObj,matchBetType,teams) => {
-  if(matchBetType == matchBettingType.bookmaker){
-    let bookmaker = matchDetail[matchBetType];
-    if(!bookmaker){
-      throw {
-        statusCode: 400,
-        message: {
-          msg: "bet.notLive"
-        }
-      };
-    }
-      if(bookmaker.activeStatus != betStatusType.live){
-        throw {
-          statusCode: 400,
-          message: {
-            msg: "bet.notLive"
-          }
-        };
-    }
-    else if(betObj.stack < bookmaker.minBet){
-      throw {
-        statusCode: 400,
-        message: {
-          msg: "bet.minAmountViolate"
-        }
-      };
-    }
-    else if(betObj.stack > bookmaker.maxBet){
-      throw {
-        statusCode: 400,
-        message: {
-          msg: "bet.maxAmountViolate"
-        }
-      };
-    }
-    else{
-      let isRateChange = await checkRate(matchDetail,bookmaker,betObj,teams);
-      if(isRateChange){
-        throw {
-          statusCode: 400,
-          message: {
-            msg: "marketRateChanged",
-            keys: {
-              marketType: "Match betting",
-            },
-          },
-        };
-      }
-    }
+const validateMatchBettingDetails = async (matchDetail, matchBettingDetail, betObj, teams) => {
 
+  if (matchBettingDetail.activeStatus != betStatusType.live) {
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.notLive"
+      }
+    };
   }
+  else if (betObj.stack < matchBettingDetail.minBet) {
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.minAmountViolate"
+      }
+    };
+  }
+  else if (betObj.stack > matchBettingDetail.maxBet) {
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.maxAmountViolate"
+      }
+    };
+  }
+  else {
+    let isRateChange = await checkRate(matchDetail, matchBettingDetail, betObj, teams);
+    if (isRateChange) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "marketRateChanged",
+          keys: {
+            marketType: "Match betting",
+          },
+        },
+      };
+    }
+  }
+
 }
 
-const checkRate = async (matchDetails,bookmaker,betObj,teams) => {
-  if(betObj.betType == betType.BACK && teams.teamA == matchDetails.teamA && bookmaker.backTeamA != betObj.odds){
+const checkRate = async (matchDetails, matchBettingDetail, betObj, teams) => {
+  if (betObj.betType == betType.BACK && teams.teamA == matchDetails.teamA && matchBettingDetail.backTeamA-teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if(betObj.betType == betType.BACK && teams.teamB == matchDetails.teamB && bookmaker.backTeamB != betObj.odds){
+  else if (betObj.betType == betType.BACK && teams.teamB == matchDetails.teamB && matchBettingDetail.backTeamB-teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if(betObj.betType == betType.LAY && teams.teamA == matchDetails.teamA && bookmaker.layTeamA != betObj.odds){
+  else if (betObj.betType == betType.LAY && teams.teamA == matchDetails.teamA && matchBettingDetail.layTeamA+teams.placeIndex!= betObj.odds) {
     return true;
   }
-  else if(betObj.betType == betType.LAY && teams.teamB == matchDetails.teamB && bookmaker.layTeamB != betObj.odds){
+  else if (betObj.betType == betType.LAY && teams.teamB == matchDetails.teamB && matchBettingDetail.layTeamB+teams.placeIndex != betObj.odds) {
     return true;
   }
   else {
     return false;
   }
+}
+
+async function calculateRate(teamRates, data, partnership = 100) {
+  let { teamA, teamB, teamC, winAmount, lossAmount, bettingType, betOnTeam } = data;
+  let newTeamRates = {
+    teamA: 0,
+    teamB: 0,
+    teamC: 0,
+  }
+  if (betOnTeam == teamA && bettingType == betType.BACK) {
+    newTeamRates.teamA = teamRates.teamA + ((winAmount * partnership) / 100);
+    newTeamRates.teamB = teamRates.teamB - ((lossAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC - (teamC ? ((lossAmount * partnership) / 100) : 0);
+  }
+  else if (betOnTeam == teamA && bettingType == betType.LAY) {
+    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
+    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
+  }
+  else if (betOnTeam == teamB && bettingType == betType.BACK) {
+    newTeamRates.teamB = teamRates.teamB + ((winAmount * partnership) / 100);
+    newTeamRates.teamA = teamRates.teamA - ((lossAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC - (teamC ? ((lossAmount * partnership) / 100) : 0);
+  }
+  else if (betOnTeam == teamB && bettingType == betType.LAY) {
+    newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
+    newTeamRates.teamA = teamRates.teamA + ((lossAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
+  }
+  else if (teamC && betOnTeam == teamC && bettingType == betType.BACK) {
+    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
+    newTeamRates.teamB = teamRates.teamB - ((lossAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC + ((lossAmount * partnership) / 100);
+  }
+  else if (teamC && betOnTeam == teamC && bettingType == betType.LAY) {
+    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
+    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC - ((lossAmount * partnership) / 100);
+  }
+
+  newTeamRates = {
+    teamA: Number(newTeamRates.teamA.toFixed(2)),
+    teamB: Number(newTeamRates.teamB.toFixed(2)),
+    teamC: Number(newTeamRates.teamC.toFixed(2))
+  }
+  return newTeamRates;
 }

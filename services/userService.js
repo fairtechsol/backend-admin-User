@@ -189,3 +189,12 @@ exports.getUserWithUserBalance = async (userName) => {
 
   return userData;
 }
+
+exports.getUserWithUserBalanceData = async (where,select) => {
+  const users = await UserBalance.findOne({
+    relations: ["user"],
+    where: where,
+    select : select
+    });
+    return users;
+}

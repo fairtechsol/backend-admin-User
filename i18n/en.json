@@ -9,6 +9,7 @@
   "created": "{type} created successfully.",
   "alreadyExist":"{name} already exist.",
   "fetched": "{type} fetch successfully.",  
+  "betPlaced" : "Your bet placed successfull.",
   "auth": {
     "loginSuccess": "Login successfully.",
     "invalidPass": "Invalid {type} password.",
