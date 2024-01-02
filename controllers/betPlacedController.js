@@ -8,6 +8,7 @@ const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { matchDetails } = require('./matchController');
 const { calculateRate } = require('../services/commonService');
+const { MatchBetQueue } = require('../queue/consumer');
 
 // Default expert domain URL, fallback to localhost if not provided
 let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
@@ -42,7 +43,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail,placeIndex } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
-    if (!userBalanceData || userBalanceData.user) {
+    if (!userBalanceData || !userBalanceData.user) {
       logger.info({
         info: `user not found for login id ${reqUser.id}`,
         data: req.body
@@ -65,7 +66,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       })
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
-    let newCalculateOdd = odd; (CalculateOdds / 100) + 1;
+    let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
     if (matchBetType == matchBettingType.matchOdd) {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
@@ -94,7 +95,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let apiResponse = {};
 
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + req.params.id + "/?type=" + matchBetType;
+      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + matchBetType;
       apiResponse = await apiCall(apiMethod.get, url);
     } catch (error) {
       logger.info({
@@ -103,7 +104,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       });
       throw error?.response?.data;
     }
-    let { match, matchBetting } = apiResponse;
+    let { match, matchBetting } = apiResponse.data;
     let betPlacedObj = {
       matchId: matchId,
       betId: betId,
@@ -125,18 +126,19 @@ exports.matchBettingBetPlaced = async (req, res) => {
     const teamArateRedisKey = redisKeys.userTeamARate + matchId;
     const teamBrateRedisKey = redisKeys.userTeamBRate + matchId;
     const teamCrateRedisKey = redisKeys.userTeamCRate + matchId;
-    let userCurrentBalance = userData.currentBalance;
+    let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
     let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ?? 0.0;
     let sessionExposure = userRedisData[redisKeys.userSessionExposure + matchId] ?? 0.0;
     let userTotalExposure = matchExposure + sessionExposure;
     let teamRates = {
-      teamA: userRedisData[teamArateRedisKey] ?? 0.0,
-      teamB: userRedisData[teamBrateRedisKey] ?? 0.0,
-      teamC: userRedisData[teamCrateRedisKey] ?? 0.0
+      teamA: Number(userRedisData[teamArateRedisKey]) ?? 0.0,
+      teamB: Number(userRedisData[teamBrateRedisKey]) ?? 0.0,
+      teamC: Number(userRedisData[teamCrateRedisKey]) ?? 0.0
     }
-    let userPreviousExposure = userRedisData[redisKeys.userAllExposure] ?? 0.0;
+    let userPreviousExposure = userRedisData[redisKeys.userAllExposure] || 0.0;
     let userOtherMatchExposure = userPreviousExposure - userTotalExposure;
+    let userExposureLimit = userRedisData[redisKeys.userExposureLimit];
 
     logger.info({
       info: `User's match and session exposure and teams rate in redis with userId ${reqUser.id} `,
@@ -149,7 +151,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       userOtherMatchExposure
     });
 
-    let newTeamRateData = await calculateRate(teamRates, { teamA, teamB, teamC, winAmount, lossAmount, bettingType, betOnTeam }, 100)
+    let newTeamRateData = await calculateRate(teamRates, { teamA, teamB, teamC, winAmount, lossAmount, bettingType, betOnTeam }, 100);
     let maximumLoss = 0;
     if (teamC && teamC != '') {
       maximumLoss = Math.min(newTeamRateData.teamA, newTeamRateData.teamB, newTeamRateData.teamC);
@@ -159,7 +161,17 @@ exports.matchBettingBetPlaced = async (req, res) => {
     if (maximumLoss > 0) {
       maximumLoss = 0;
     }
-    matchExposure = maximumLoss;
+    let newUserExposure = calculateUserExposure(userPreviousExposure,teamRates,newTeamRateData,teamC);
+    if(newUserExposure > userExposureLimit){
+      logger.info({
+        info:`User exceeded the limit of total exposure for a day`,
+        user_id : reqUser.id,
+        newUserExposure ,
+        userExposureLimit
+      })
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
+    }
+    matchExposure = Math.abs(maximumLoss);
     userCurrentBalance = userCurrentBalance - (userOtherMatchExposure + matchExposure + sessionExposure);
     if (userCurrentBalance < 0) {
       logger.info({
@@ -178,7 +190,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       userCurrentBalance,
       matchExposure, maximumLoss
     })
-    await updateMatchExposure(reqUser.id, matchExposure);
+    await updateMatchExposure(reqUser.id,matchId, matchExposure);
     let newBet = await betPlacedService.addNewBet(betPlacedObj);
     let jobData = {
       userId: reqUser.id,
@@ -199,7 +211,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       stack: error.stack,
       message: error.message,
     });
-    return ErrorResponse(err, req, res)
+    return ErrorResponse(error, req, res)
   }
 }
 
@@ -445,7 +457,7 @@ const validateMatchBettingDetails = async (matchDetail, matchBettingDetail, betO
       }
     };
   }
-  else if (betObj.stack < matchBettingDetail.minBet) {
+  else if (betObj.amount < matchBettingDetail.minBet) {
     throw {
       statusCode: 400,
       message: {
@@ -453,7 +465,7 @@ const validateMatchBettingDetails = async (matchDetail, matchBettingDetail, betO
       }
     };
   }
-  else if (betObj.stack > matchBettingDetail.maxBet) {
+  else if (betObj.amount > matchBettingDetail.maxBet) {
     throw {
       statusCode: 400,
       message: {
@@ -479,16 +491,16 @@ const validateMatchBettingDetails = async (matchDetail, matchBettingDetail, betO
 }
 
 const checkRate = async (matchDetails, matchBettingDetail, betObj, teams) => {
-  if (betObj.betType == betType.BACK && teams.teamA == matchDetails.teamA && matchBettingDetail.backTeamA-teams.placeIndex != betObj.odds) {
+  if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && matchBettingDetail.backTeamA-teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.BACK && teams.teamB == matchDetails.teamB && matchBettingDetail.backTeamB-teams.placeIndex != betObj.odds) {
+  else if (betObj.betType == betType.BACK && teams.teamB == betObj.teamName && matchBettingDetail.backTeamB-teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.LAY && teams.teamA == matchDetails.teamA && matchBettingDetail.layTeamA+teams.placeIndex!= betObj.odds) {
+  else if (betObj.betType == betType.LAY && teams.teamA == betObj.teamName && matchBettingDetail.layTeamA+teams.placeIndex!= betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.LAY && teams.teamB == matchDetails.teamB && matchBettingDetail.layTeamB+teams.placeIndex != betObj.odds) {
+  else if (betObj.betType == betType.LAY && teams.teamB == betObj.teamName && matchBettingDetail.layTeamB+teams.placeIndex != betObj.odds) {
     return true;
   }
   else {
@@ -496,3 +508,22 @@ const checkRate = async (matchDetails, matchBettingDetail, betObj, teams) => {
   }
 }
 
+let calculateUserExposure = (userOldExposure,oldTeamRate,newTeamRate,teamC) => {
+
+  let minAmountNewRate = 0;
+  let minAmountOldRate = 0;  
+  if(teamC && teamC != ''){
+    minAmountNewRate = Math.min(newTeamRate.teamA,newTeamRate.teamB,newTeamRate.teamC);
+    minAmountOldRate = Math.min(oldTeamRate.teamA,oldTeamRate.teamB,oldTeamRate.teamC);
+  }
+  else{
+    minAmountNewRate = Math.min(newTeamRate.teamA,newTeamRate.teamB);
+    minAmountOldRate = Math.min(oldTeamRate.teamA,oldTeamRate.teamB);
+  }
+  if(minAmountNewRate > 0)
+    minAmountNewRate = 0;
+  if(minAmountOldRate > 0)
+    minAmountOldRate = 0;
+  let newExposure = userOldExposure - Math.abs(minAmountOldRate) + Math.abs(minAmountNewRate);
+  return Number(newExposure.toFixed(2));
+}

@@ -1,4 +1,4 @@
-const { socketData } = require("../config/contants");
+const { socketData, betType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 

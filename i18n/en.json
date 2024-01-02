@@ -37,7 +37,8 @@
     "ExposurelimitSet" : "Exposure limit set successfully.",
     "UserBalanceFetchSuccessfully" : "User balance fetch successfully.",
     "profile": "Profile get successfully.",
-    "userList": "User List Get Success."
+    "userList": "User List Get Success.",
+    "ExposureLimitExceed" : "User exposure is greater than exposure limit"
   },
   "button" : {
     "InvalidUser" : "User is invalid."

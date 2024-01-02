@@ -138,10 +138,11 @@ module.exports.matchBettingType = {
 
 
 module.exports.redisKeys = {
-  userAllExposure : "allExposure",
+  userAllExposure : "exposure",
   userMatchExposure : "matchExposure_",
   userSessionExposure : "sessionExposure_",
   userTeamARate : "teamARate_",
   userTeamBRate : "teamBRate_",
   userTeamCRate : "teamCRate_",
+  userExposureLimit : "exposureLimit"
 }
