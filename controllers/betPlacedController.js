@@ -7,6 +7,7 @@ const { getUserRedisData, updateUserDataRedis, updateSessionExposure, updateMatc
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { matchDetails } = require('./matchController');
+const { calculateRate } = require('../services/commonService');
 
 // Default expert domain URL, fallback to localhost if not provided
 let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
@@ -121,16 +122,18 @@ exports.matchBettingBetPlaced = async (req, res) => {
 
     }
     await validateMatchBettingDetails(match, matchBetting, betPlacedObj, { teamA, teamB, teamC,placeIndex });
-
+    const teamArateRedisKey = redisKeys.userTeamARate + matchId;
+    const teamBrateRedisKey = redisKeys.userTeamBRate + matchId;
+    const teamCrateRedisKey = redisKeys.userTeamCRate + matchId;
     let userCurrentBalance = userData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
     let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ?? 0.0;
     let sessionExposure = userRedisData[redisKeys.userSessionExposure + matchId] ?? 0.0;
     let userTotalExposure = matchExposure + sessionExposure;
     let teamRates = {
-      teamA: userRedisData[redisKeys.userTeamARate + matchId] ?? 0.0,
-      teamB: userRedisData[redisKeys.userTeamBRate + matchId] ?? 0.0,
-      teamC: userRedisData[redisKeys.userTeamCRate + matchId] ?? 0.0
+      teamA: userRedisData[teamArateRedisKey] ?? 0.0,
+      teamB: userRedisData[teamBrateRedisKey] ?? 0.0,
+      teamC: userRedisData[teamCrateRedisKey] ?? 0.0
     }
     let userPreviousExposure = userRedisData[redisKeys.userAllExposure] ?? 0.0;
     let userOtherMatchExposure = userPreviousExposure - userTotalExposure;
@@ -177,9 +180,16 @@ exports.matchBettingBetPlaced = async (req, res) => {
     })
     await updateMatchExposure(reqUser.id, matchExposure);
     let newBet = await betPlacedService.addNewBet(betPlacedObj);
-
+    let jobData = {
+      userId: reqUser.id,
+      teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam,
+      winAmount,
+      lossAmount,
+      userCurrentBalance,teamArateRedisKey,teamBrateRedisKey,teamCrateRedisKey,newTeamRateData
+    }
     //add redis queue function
-    
+    const job = MatchBetQueue.createJob(jobData);
+    job.save();
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced"}, data: newBet }, req, res)
 
 
@@ -475,48 +485,3 @@ const checkRate = async (matchDetails, matchBettingDetail, betObj, teams) => {
   }
 }
 
-async function calculateRate(teamRates, data, partnership = 100) {
-  let { teamA, teamB, teamC, winAmount, lossAmount, bettingType, betOnTeam } = data;
-  let newTeamRates = {
-    teamA: 0,
-    teamB: 0,
-    teamC: 0,
-  }
-  if (betOnTeam == teamA && bettingType == betType.BACK) {
-    newTeamRates.teamA = teamRates.teamA + ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB - ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - (teamC ? ((lossAmount * partnership) / 100) : 0);
-  }
-  else if (betOnTeam == teamA && bettingType == betType.LAY) {
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
-  }
-  else if (betOnTeam == teamB && bettingType == betType.BACK) {
-    newTeamRates.teamB = teamRates.teamB + ((winAmount * partnership) / 100);
-    newTeamRates.teamA = teamRates.teamA - ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - (teamC ? ((lossAmount * partnership) / 100) : 0);
-  }
-  else if (betOnTeam == teamB && bettingType == betType.LAY) {
-    newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
-    newTeamRates.teamA = teamRates.teamA + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
-  }
-  else if (teamC && betOnTeam == teamC && bettingType == betType.BACK) {
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB - ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + ((lossAmount * partnership) / 100);
-  }
-  else if (teamC && betOnTeam == teamC && bettingType == betType.LAY) {
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - ((lossAmount * partnership) / 100);
-  }
-
-  newTeamRates = {
-    teamA: Number(newTeamRates.teamA.toFixed(2)),
-    teamB: Number(newTeamRates.teamB.toFixed(2)),
-    teamC: Number(newTeamRates.teamC.toFixed(2))
-  }
-  return newTeamRates;
-}
