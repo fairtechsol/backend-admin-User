@@ -102,7 +102,9 @@ const findUserPartnerShipObj = async (user) => {
           let response = await apiCall(
             apiMethod.get,
             walletDomain + allApiRoutes.EXPERT.partnershipId + currentUser.id
-          )
+          ).catch((err) => {
+            throw err?.response?.data;
+          });
           await traverseHierarchy(
             response?.data?.find(
               (item) => item?.roleName == userRoleConstant.fairGameAdmin
