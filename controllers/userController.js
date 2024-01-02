@@ -119,7 +119,7 @@ exports.createUser = async (req, res) => {
       let insertedButton = await insertButton(buttonValue)
     }
     let response = lodash.omit(insertUser, ["password", "transPassword"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { name: "User" }  }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { type: "User" }  }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -208,7 +208,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default : {
-          fwPartnership : parseInt(creator.fwPartnership);
+          fwPartnership = parseInt(creator.fwPartnership);
           break;
         }
       }
@@ -233,7 +233,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default : {
-          faPartnership : parseInt(creator.faPartnership);
+          faPartnership = parseInt(creator.faPartnership);
         }
       }
     }
@@ -253,7 +253,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default: {
-          saPartnership : parseInt(creator.saPartnership);
+          saPartnership = parseInt(creator.saPartnership);
           }
       }
     }
@@ -269,7 +269,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default: {
-          aPartnership : parseInt(creator.aPartnership);
+          aPartnership = parseInt(creator.aPartnership);
           }
       }
     }
@@ -281,7 +281,7 @@ const calculatePartnership = async (userData, creator) => {
           break;
         }
         default : {
-          smPartnership : parseInt(creator.smPartnership);
+          smPartnership = parseInt(creator.smPartnership);
         }
       }
     }

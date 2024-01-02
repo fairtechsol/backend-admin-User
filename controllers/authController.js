@@ -8,11 +8,18 @@ const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { getUserById, getUserWithUserBalance } = require("../services/userService");
+const {
+  getUserById,
+  getUserWithUserBalance,
+} = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
+const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
+
+
+let walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
 
 // Function to validate a user by username and password
 const validateUser = async (userName, password) => {
@@ -40,7 +47,6 @@ const validateUser = async (userName, password) => {
 };
 
 const setUserDetailsRedis = async (user) => {
-
   logger.info({ message: "Setting exposure at login time.", data: user });
   await updateUserDataRedis(user.id, {
     exposure: user?.userBal?.exposure || 0,
@@ -50,57 +56,78 @@ const setUserDetailsRedis = async (user) => {
     userName: user.userName,
     currentBalance: user?.userBal?.currentBalance || 0,
   });
+  if (user.roleName == userRoleConstant.user) {
+    const redisUserPartnerShip = await internalRedis.hget(
+      user.id,
+      "partnerShips"
+    );
+    if (redisUserPartnerShip) {
+      internalRedis.expire(user.id, redisTimeOut);
+      return;
+    }
 
-
-  const redisUserPartnerShip = await internalRedis.hget(
-    user.id,
-    "partnerShips"
-  );
-  if (redisUserPartnerShip) {
-    internalRedis.expire(user.id, redisTimeOut);
-    return;
+    let partnerShipObject = await findUserPartnerShipObj(user);
+    const userPartnerShipData = {
+      partnerShips: partnerShipObject,
+      userRole: user.roleName,
+    };
+    await internalRedis.hmset(user.id, userPartnerShipData);
+    await internalRedis.expire(user.id, redisTimeOut);
   }
-
-  let partnerShipObject = await findUserPartnerShipObj(user);
-  const userPartnerShipData = {
-    partnerShips: partnerShipObject,
-    userRole: user.roleName,
-  };
-  await internalRedis.hmset(user.id, userPartnerShipData);
-  await internalRedis.expire(user.id, redisTimeOut);
 };
-
-
-
 
 const findUserPartnerShipObj = async (user) => {
   const obj = {};
-
-  if (
-    user.roleName == userRoleConstant.user ||
-    user.roleName == userRoleConstant.expert
-  ) {
-    return JSON.stringify(obj);
-  }
 
   const updateObj = (prefix, id) => {
     obj[`${prefix}Partnership`] = user[`${prefix}Partnership`];
     obj[`${prefix}PartnershipId`] = id;
   };
 
-  const traverseHierarchy = async (currentUser) => {
+  const traverseHierarchy = async (currentUser,walletPartnerships) => {
     if (!currentUser) {
       return;
     }
 
-    updateObj(partnershipPrefixByRole[currentUser.roleName], currentUser.id);
+    if (currentUser.roleName != userRoleConstant.user) {
+      updateObj(partnershipPrefixByRole[currentUser.roleName], currentUser.id);
+    }
 
-    if (currentUser.createBy) {
-      const createdByUser = await getUserById(
-        currentUser.createBy,
-        ["id", "roleName", "createBy"]
-      );
-      await traverseHierarchy(createdByUser);
+    if (
+      currentUser.createBy ||
+      currentUser?.roleName == userRoleConstant.fairGameAdmin
+    ) {
+      if (currentUser?.roleName == userRoleConstant.superAdmin) {
+        try {
+          let response = await apiCall(
+            apiMethod.get,
+            walletDomain + allApiRoutes.EXPERT.partnershipId + currentUser.id
+          ).catch((err) => {
+            throw err?.response?.data;
+          });
+          await traverseHierarchy(
+            response?.data?.find(
+              (item) => item?.roleName == userRoleConstant.fairGameAdmin
+            ),
+            response?.data
+          );
+        } catch (err) {
+          console.log(err);
+        }
+      } else if (currentUser?.roleName == userRoleConstant.fairGameAdmin) {
+        await traverseHierarchy(
+          walletPartnerships?.find(
+            (item) => item?.roleName == userRoleConstant.fairGameWallet
+          )
+        );
+      } else {
+        const createdByUser = await getUserById(currentUser.createBy, [
+          "id",
+          "roleName",
+          "createBy",
+        ]);
+        await traverseHierarchy(createdByUser);
+      }
     }
   };
 
@@ -269,4 +296,3 @@ exports.logout = async (req, res) => {
     );
   }
 };
-
