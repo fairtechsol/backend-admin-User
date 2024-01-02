@@ -45,7 +45,7 @@ exports.createUser = async (req, res) => {
     }
     password = await bcrypt.hash(
       password,
-      process.env.BCRYPTSALT
+      process.env.BCRYPTSALT||10
     );
 
     creditRefrence = creditRefrence ? parseFloat(creditRefrence) : 0;
@@ -119,7 +119,7 @@ exports.createUser = async (req, res) => {
       let insertedButton = await insertButton(buttonValue)
     }
     let response = lodash.omit(insertUser, ["password", "transPassword"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { name: "User" }  }, data: response }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { type: "User" }  }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
   }

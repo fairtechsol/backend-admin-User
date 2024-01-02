@@ -2,6 +2,8 @@ const socketIO = require("socket.io");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const { userRoleConstant } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
+const redis = require("socket.io-redis");
+require("dotenv").config();
 
 let io;
 /**
@@ -43,7 +45,6 @@ const handleConnection = async (client) => {
 
     // Join the room with the user's ID
     client.join(userId);
-   
   } catch (err) {
     // Handle any errors by disconnecting the client
     console.error(err);
@@ -119,6 +120,14 @@ exports.socketManager = (server) => {
   // Create a Socket.io instance attached to the server
   io = socketIO(server);
 
+  // Use the Redis adapter
+  io.adapter(
+    redis({
+      host: process.env.INTERNAL_REDIS_HOST || "localhost",
+      port: process.env.INTERNAL_REDIS_PORT || 6379,
+    })
+  );
+
   // Event listener for a new socket connection
   io.on("connect", (client) => {
     // Delegate connection handling to a separate function
@@ -155,4 +164,3 @@ exports.sendMessageToUser = (roomId, event, data) => {
 exports.broadcastEvent = (event, data) => {
   io.sockets.emit(event, data);
 };
-

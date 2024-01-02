@@ -105,8 +105,20 @@
           }
         ],
         "responses": {
-          "default": {
+          "0": {
             "description": ""
+          },
+          "1": {
+            "description": ""
+          },
+          "2": {
+            "description": ""
+          },
+          "4": {
+            "description": ""
+          },
+          "200": {
+            "description": "OK"
           }
         },
         "requestBody": {
@@ -115,6 +127,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "transactionPassword": {
+                    "example": "any"
+                  },
                   "userName": {
                     "example": "any"
                   },

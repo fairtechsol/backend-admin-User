@@ -8,7 +8,7 @@ const {createUser,lockUnlockUser,insertWallet,generateTransactionPassword, chang
 const { isAuthenticate,checkTransactionPassword } = require('../middleware/auth');
 
 
-router.post('/add',isAuthenticate,validator(CreateUser),createUser);
+router.post('/add',isAuthenticate,checkTransactionPassword,validator(CreateUser),createUser);
 router.get('/profile',isAuthenticate, getProfile);
 router.post('/updateUser',isAuthenticate,validator(updateUserValid),updateUser);
 router.post('/lockUnlockUser',isAuthenticate,checkTransactionPassword, validator(LockUnlockUser), lockUnlockUser);
