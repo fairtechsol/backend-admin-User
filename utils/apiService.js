@@ -38,5 +38,8 @@ exports.allApiRoutes = {
     matchDetails: "/superAdmin/match/",
     matchList: "/superAdmin/match/list",
     sessionDetail: "/superAdmin/session/"
+  },
+  EXPERT:{
+    partnershipId:"/superAdmin/partnershipId/"
   }
 }
