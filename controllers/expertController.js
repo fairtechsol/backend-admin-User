@@ -1,111 +1,110 @@
+const { logger } = require("../config/logger");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
-let expertDomain = process.env.EXPERT_DOMAIN_URL || 'http://localhost:6060'
+let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 
 exports.getNotification = async (req, res) => {
-    try {
-        let response = await apiCall(
-            apiMethod.get,
-            expertDomain + allApiRoutes.notification
-        );
-        return SuccessResponse(
-            {
-              statusCode: 200,
-              data: response.data
-            },
-            req,
-            res
-          );
-    } catch (err) { 
-        return ErrorResponse(err?.response?.data, req, res);
-    }
+  try {
+    let response = await apiCall(
+      apiMethod.get,
+      expertDomain + allApiRoutes.notification
+    );
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: response.data,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    return ErrorResponse(err?.response?.data, req, res);
+  }
 };
 
-
-
 exports.getMatchCompetitionsByType = async (req, res) => {
-    try {
-      const { type } = req.params;
-  
-      let response = await apiCall(
-        apiMethod.get,
-        expertDomain + allApiRoutes.getCompetitionList+ `/${type}`
+  try {
+    const { type } = req.params;
+
+    let response = await apiCall(
+      apiMethod.get,
+      expertDomain + allApiRoutes.getCompetitionList + `/${type}`
     );
-  
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          data: response.data,
-        },
-        req,
-        res
-      );
-    } catch (err) {
-      logger.error({
-        error: `Error at list competition for the user.`,
-        stack: err.stack,
-        message: err.message,
-      });
-      // Handle any errors and return an error response
-      return ErrorResponse(err?.response?.data, req, res);
-    }
-  };
-  
-  
-  exports.getMatchDatesByCompetitionId = async (req, res) => {
-    try {
-      const { competitionId } = req.params;
-  
-      let response = await apiCall(
-        apiMethod.get,
-        expertDomain + allApiRoutes.getDatesByCompetition+ `/${competitionId}`
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: response.data,
+      },
+      req,
+      res
     );
-  
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          data: response?.data,
-        },
-        req,
-        res
-      );
-    } catch (err) {
-      logger.error({
-        error: `Error at list date for the user.`,
-        stack: err.stack,
-        message: err.message,
-      });
-      // Handle any errors and return an error response
-      return ErrorResponse(err?.response?.data, req, res);
-    }
-  };
-  
-  exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
-    try {
-      const { competitionId,date } = req.params;
-  
-      
-      let response = await apiCall(
-        apiMethod.get,
-        expertDomain + allApiRoutes.getMatchByCompetitionAndDate+ `/${competitionId}/${new Date(date)}`
+  } catch (err) {
+    logger.error({
+      error: `Error at list competition for the user.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err?.response?.data, req, res);
+  }
+};
+
+exports.getMatchDatesByCompetitionId = async (req, res) => {
+  try {
+    const { competitionId } = req.params;
+
+    let response = await apiCall(
+      apiMethod.get,
+      expertDomain + allApiRoutes.getDatesByCompetition + `/${competitionId}`
     );
-  
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          data: response?.data,
-        },
-        req,
-        res
-      );
-    } catch (err) {
-      logger.error({
-        error: `Error at list match for the user.`,
-        stack: err.stack,
-        message: err.message,
-      });
-      // Handle any errors and return an error response
-      return ErrorResponse(err?.response?.data, req, res);
-    }
-  };
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: response?.data,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list date for the user.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err?.response?.data, req, res);
+  }
+};
+
+exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
+  try {
+    const { competitionId, date } = req.params;
+
+    let response = await apiCall(
+      apiMethod.get,
+      expertDomain +
+        allApiRoutes.getMatchByCompetitionAndDate +
+        `/${competitionId}/${new Date(date)}`
+    );
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: response?.data,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    logger.error({
+      error: `Error at list match for the user.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(err?.response?.data, req, res);
+  }
+};
