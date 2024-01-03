@@ -22,9 +22,8 @@ exports.getBet = async (req, res) => {
       return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { name: "Bet" } }, data: bets }, req, res)
     }
     // const bets = await betPlacedService.getBetByUserId(id);
-    const bets = await userService.getUserWithUserBalanceData({ userId: id });
+    const bets = await betPlacedService.getBetByUserId(id);
     if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Bet" } } }, req, res)
-    console.log(typeof (bets.currentBalance));
     return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { name: "Bet" } }, data: bets }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res)

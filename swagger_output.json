@@ -236,6 +236,9 @@
               "schema": {
                 "type": "object",
                 "properties": {
+                  "transactionPassword": {
+                    "example": "any"
+                  },
                   "fullName": {
                     "example": "any"
                   },

@@ -125,7 +125,7 @@ exports.socketManager = (server) => {
     redis({
       host: process.env.INTERNAL_REDIS_HOST || "localhost",
       port: process.env.INTERNAL_REDIS_PORT || 6379,
-      password :  'HlKaGmKyJOdrdvFY3HgryxVt1GDewEDE'
+      password :  process.env.INTERNAL_REDIS_PASSWORD
     })
   );
 
