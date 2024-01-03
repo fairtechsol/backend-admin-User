@@ -9,10 +9,10 @@ module.exports.userRoleConstant = {
   user: "user",
 };
 
-module.exports.blockType={
-    userBlock:"userBlock",
-    betBlock:"betBlock"
-}
+module.exports.blockType = {
+  userBlock: "userBlock",
+  betBlock: "betBlock",
+};
 
 module.exports.fileType = {
   pdf: "pdf",
@@ -53,9 +53,9 @@ module.exports.baseColumnsSchemaPart = {
 module.exports.transType = {
   add: "add",
   withDraw: "withDraw",
-  win : "win",
-  loss : "loss",
-  creditRefer : "creditReference"
+  win: "win",
+  loss: "loss",
+  creditRefer: "creditReference",
 };
 
 module.exports.partnershipPrefixByRole = {
@@ -74,40 +74,45 @@ module.exports.differLoginTypeByRoles = {
     this.userRoleConstant.master,
     this.userRoleConstant.superMaster,
   ],
-  wallet:[
+  wallet: [
     this.userRoleConstant.fairGameAdmin,
     this.userRoleConstant.fairGameWallet,
-  ]
+  ],
 };
-module.exports.defaultButtonValue = {buttons: '{"25000":"25000","50000":"50000","100000":"100000","200000":"200000","300000":"300000","500000":"500000","1000000":"1000000","2500000":"2500000"}'}
-module.exports.sessiontButtonValue = {buttons: '{"5000":"5000","10000":"10000","15000":"15000","25000":"25000","50000":"50000","100000":"100000","200000":"200000","500000":"500000"}'}
+module.exports.defaultButtonValue = {
+  buttons:
+    '{"25000":"25000","50000":"50000","100000":"100000","200000":"200000","300000":"300000","500000":"500000","1000000":"1000000","2500000":"2500000"}',
+};
+module.exports.sessiontButtonValue = {
+  buttons:
+    '{"5000":"5000","10000":"10000","15000":"15000","25000":"25000","50000":"50000","100000":"100000","200000":"200000","500000":"500000"}',
+};
 module.exports.buttonType = {
-    MATCH : 'Match',
-    SESSION : 'Session'
-}
-
+  MATCH: "Match",
+  SESSION: "Session",
+};
 
 module.exports.walletDescription = {
-    userCreate : "CREDIT REFRENCE as user create",
-}
+  userCreate: "CREDIT REFRENCE as user create",
+};
 
-module.exports.socketData ={
-  userBalanceUpdateEvent : "userBalanceUpdate",
-  logoutUserForceEvent : "logoutUserForce",
-  betBlockEvent : "userBetBlock",
+module.exports.socketData = {
+  userBalanceUpdateEvent: "userBalanceUpdate",
+  logoutUserForceEvent: "logoutUserForce",
+  betBlockEvent: "userBetBlock",
 };
 
 module.exports.betType = {
-  YES : "YES",
-  NO : "NO",
-  BACK : "BACK",
-  LAY : "LAY"
-}
+  YES: "YES",
+  NO: "NO",
+  BACK: "BACK",
+  LAY: "LAY",
+};
 
-module.exports.marketBetType = {
-  SESSION : "SESSION",
-  MATCHBETTING : "MATCHBETTING"
-}
+module.exports.marketType = {
+  SESSION: "SESSION",
+  MATCHBETTING: "MATCHBETTING",
+};
 
 module.exports.betStatusType = {
   save: "save",
@@ -125,6 +130,10 @@ module.exports.teamStatus = {
   ballRunning: "ball running",
 };
 
+module.exports.accountStatementType = {
+  game: "game",
+  addWithdraw: "addWithdraw",
+};
 module.exports.matchBettingType = {
   matchOdd: "matchOdd",
   bookmaker: "bookmaker",
@@ -133,9 +142,8 @@ module.exports.matchBettingType = {
   quickbookmaker3: "quickbookmaker3",
   tiedMatch1: "tiedMatch1",
   tiedMatch2: "tiedMatch2",
-  completeMatch : "completeMatch"
+  completeMatch: "completeMatch",
 };
-
 
 module.exports.redisKeys = {
   userAllExposure : "exposure",
@@ -156,5 +164,12 @@ module.exports.betResultStatus = {
 
 module.exports.socketData ={
   expertRoomSocket : "expertRoom",
-  MatchBetPlaced : "userMatchBetPlaced"
+  MatchBetPlaced : "userMatchBetPlaced",
+  userAllExposure: "exposure",
+  userMatchExposure: "matchExposure_",
+  userSessionExposure: "sessionExposure_",
+  userTeamARate: "teamARate_",
+  userTeamBRate: "teamBRate_",
+  userTeamCRate: "teamCRate_",
+  userExposureLimit: "exposureLimit",
 };
