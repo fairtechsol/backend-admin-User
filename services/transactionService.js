@@ -1,3 +1,4 @@
+const { accountStatementType, transType } = require("../config/contants");
 const { AppDataSource } = require("../config/postGresConnection");
 const transactionSchema = require("../models/transaction.entity");
 const ApiFeature = require("../utils/apiFeatures");
@@ -38,22 +39,53 @@ exports.getTransactions = async (
 ) => {
   try {
     // Start building the query
-    let transactionQuery = new ApiFeature(Transaction.createQueryBuilder()
-      .where(filters)
-      .leftJoinAndMapOne(
-        "transaction.user",
-        "user",
-        "user",
-        "transaction.userId = user.id"
-      )
-      .leftJoinAndMapOne(
-        "transaction.actionByUser",
-        "user",
-        "actionByUser",
-        "transaction.actionBy = actionByUser.id"
-      )
-      .select(select)
-      ,query).search().filter().sort().paginate().getResult();
+    let transactionQuery = new ApiFeature(
+      Transaction.createQueryBuilder()
+        .where(filters)
+        .andWhere(
+          query?.statementType == accountStatementType.game
+            ? [
+                {
+                  transType: transType.loss,
+                },
+                {
+                  transType: transType.win,
+                },
+              ]
+            : query?.statementType == accountStatementType.addWithdraw
+            ? [
+                {
+                  transType: transType.add,
+                },
+                {
+                  transType: transType.withDraw,
+                },
+                {
+                  transType: transType.creditRefer,
+                },
+              ]
+            : []
+        )
+        .leftJoinAndMapOne(
+          "transaction.user",
+          "user",
+          "user",
+          "transaction.userId = user.id"
+        )
+        .leftJoinAndMapOne(
+          "transaction.actionByUser",
+          "user",
+          "actionByUser",
+          "transaction.actionBy = actionByUser.id"
+        )
+        .select(select),
+      query
+    )
+      .search()
+      .filter()
+      .sort()
+      .paginate()
+      .getResult();
 
     
 
