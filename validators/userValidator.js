@@ -16,7 +16,9 @@ module.exports.CreateUser = Joi.object({
   myPartnership: Joi.number().required(),
   creditRefrence: Joi.number(),
   exposureLimit: Joi.number(),
-  transactionPassword: Joi.string().required(),
+  transactionPassword: Joi.string().required().messages({
+    'any.required': 'Transaction Password is required'
+  }),
   maxBetLimit: Joi.number(),
   minBetLimit: Joi.number(),
   confirmPassword: Joi.string().required().valid(Joi.ref('password')).label('Confirm Password').messages({
