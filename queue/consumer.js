@@ -102,7 +102,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
     }else {
-      let partnerExpsoure = masterRedisData.exposure - userOldExposure + userCurrentExposure;
+      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
     
       let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
@@ -141,7 +142,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
     }else {
-      let partnerExpsoure = masterRedisData.exposure - userOldExposure + userCurrentExposure;
+      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
     
       let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
@@ -180,7 +182,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
     }else {
-      let partnerExpsoure = masterRedisData.exposure - userOldExposure + userCurrentExposure;
+      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
     
       let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
@@ -219,7 +222,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
     }else {
-      let partnerExpsoure = masterRedisData.exposure - userOldExposure + userCurrentExposure;
+      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
     
       let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
