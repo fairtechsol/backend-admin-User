@@ -47,12 +47,8 @@ let userRedisData = await getUserRedisData(userId);
 });
 
 let calculateRateAmount = async (userRedisData, jobData,userId) => {
-  let userOldExposure = 0.0;
   let roleName = userRedisData.userRole
-  if (userRedisData[redisKeys.userAllExposure]) {
-    userOldExposure = parseFloat(userRedisData[redisKeys.userAllExposure]);
-  }
-  let userCurrentExposure = 0;
+  let userCurrentExposure = jobData.newUserExposure;
   let partnership = JSON.parse(userRedisData.partnerShips);
   let teamRates = {
     teamA: parseFloat(userRedisData[jobData.teamArateRedisKey]) || 0.0,
@@ -75,7 +71,6 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
     betOnTeam : jobData.betOnTeam
   }
   if(roleName == userRoleConstant.user){
-    userCurrentExposure = calculateUserExposure(userOldExposure,teamRates,teamData,jobData.teamC);
     let userRedisObj = {
       [redisKeys.userAllExposure] : userCurrentExposure,
       [jobData.teamArateRedisKey] : teamData.teamA,
@@ -83,12 +78,12 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       [jobData.teamCrateRedisKey] : teamData.teamC
     }
     let setRedis = await updateUserDataRedis(userId,userRedisObj);
-    console.log(userRedisData,userRedisObj,jobData);
     //send socket to user
   }
   if(partnership['mPartnershipId']){
     let mPartenerShipId = partnership['mPartnershipId'];
     let mPartenerShip = partnership['mPartnership'];
+    try{
     let masterRedisData = await getUserRedisData(mPartenerShipId);
     if(lodash.isEmpty(masterRedisData)){
       let partnerUser = await getUserBalanceDataByUserId(mPartenerShipId);
@@ -107,12 +102,26 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       }
       await updateUserDataRedis(mPartenerShipId,userRedisObj);
       let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
+      logger.info({
+        context: "Update User Exposure and Stake",
+        process: `User ID : ${userId} master id ${mPartenerShipId}`,
+        data: `My Stake : ${myStake}`
+      })
       //send Data to socket
     }
+  }catch(error){
+    logger.error({
+      context: "error in master exposure update",
+      process: `User ID : ${userId} and master id ${mPartenerShipId}`,
+      error: error.message,
+      stake : error.stack
+    })
+  }
   } 
   if(partnership['smPartnershipId']){
     let mPartenerShipId = partnership['smPartnershipId'];
     let mPartenerShip = partnership['smPartnership'];
+    try{
     let masterRedisData = await getUserRedisData(mPartenerShipId);
     if(lodash.isEmpty(masterRedisData)){
       let partnerUser = await getUserBalanceDataByUserId(mPartenerShipId);
@@ -131,12 +140,26 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       }
       await updateUserDataRedis(mPartenerShipId,userRedisObj);
       let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
+      logger.info({
+        context: "Update User Exposure and Stake",
+        process: `User ID : ${userId} super master id ${mPartenerShipId}`,
+        data: `My Stake : ${myStake}`
+      })
       //send Data to socket
     }
+  }catch(error){
+    logger.error({
+      context: "error in super master exposure update",
+      process: `User ID : ${userId} and super master id ${mPartenerShipId}`,
+      error: error.message,
+      stake : error.stack
+    })
+  }
   }
   if(partnership['aPartnershipId']){
     let mPartenerShipId = partnership['aPartnershipId'];
     let mPartenerShip = partnership['aPartnership'];
+    try{
     let masterRedisData = await getUserRedisData(mPartenerShipId);
     if(lodash.isEmpty(masterRedisData)){
       let partnerUser = await getUserBalanceDataByUserId(mPartenerShipId);
@@ -155,13 +178,26 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       }
       await updateUserDataRedis(mPartenerShipId,userRedisObj);
       let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
+      logger.info({
+        context: "Update User Exposure and Stake",
+        process: `User ID : ${userId} admin id ${mPartenerShipId}`,
+        data: `My Stake : ${myStake}`
+      })
       //send Data to socket
     }
+  }catch(error){
+    logger.error({
+      context: "error in admin exposure update",
+      process: `User ID : ${userId} and admin id ${mPartenerShipId}`,
+      error: error.message,
+      stake : error.stack
+    })
+  }
   }
   if(partnership['saPartnershipId']){
-    try{
     let mPartenerShipId = partnership['saPartnershipId'];
     let mPartenerShip = partnership['saPartnership'];
+    try{
     let masterRedisData = await getUserRedisData(mPartenerShipId);
     if(lodash.isEmpty(masterRedisData)){
       let partnerUser = await getUserBalanceDataByUserId(mPartenerShipId);
@@ -182,14 +218,18 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
       logger.info({
         context: "Update User Exposure and Stake",
-        process: `Master User ID : ${userId}`,
-        action: 'Adding My Stake To Master',
+        process: `User ID : ${userId} super admin id ${mPartenerShipId}`,
         data: `My Stake : ${myStake}`
       })
       //send Data to socket
     }
   }catch(error){
-    console.log('Error in send data to socket', error);
+    logger.error({
+      context: "error in super admin exposure update",
+      process: `User ID : ${userId} and superAdmin id ${mPartenerShipId}`,
+      error: error.message,
+      stake : error.stack
+    })
   }
   }
   if(partnership['faPartnershipId']){
@@ -200,30 +240,5 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
     //send data to wallet server
   }
 }
-
-let calculateUserExposure = (userOldExposure,oldTeamRate,newTeamRate,teamC) => {
-
-  let minAmountNewRate = 0;
-  let minAmountOldRate = 0;  
-  if(teamC && teamC != ''){
-    minAmountNewRate = Math.min(newTeamRate.teamA,newTeamRate.teamB,newTeamRate.teamC);
-    minAmountOldRate = Math.min(oldTeamRate.teamA,oldTeamRate.teamB,oldTeamRate.teamC);
-  }
-  else{
-    minAmountNewRate = Math.min(newTeamRate.teamA,newTeamRate.teamB);
-    minAmountOldRate = Math.min(oldTeamRate.teamA,oldTeamRate.teamB);
-  }
-  if(minAmountNewRate > 0)
-    minAmountNewRate = 0;
-  if(minAmountOldRate > 0)
-    minAmountOldRate = 0;
-  let newExposure = userOldExposure - Math.abs(minAmountOldRate) + Math.abs(minAmountNewRate);
-  return Number(newExposure.toFixed(2));
-}
-// const job = MatchBetQueue.createJob({x: 2, y: 3});
-// job.save();
-// job.on('succeeded', (result) => {
-//   console.log(`Received result for job ${job.id}: ${result}`);
-// });
 
 module.exports.MatchBetQueue = MatchBetQueue

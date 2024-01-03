@@ -1354,6 +1354,82 @@
           }
         }
       }
+    },
+    "/bet/matchBetting": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "teamA": {
+                    "example": "any"
+                  },
+                  "teamB": {
+                    "example": "any"
+                  },
+                  "teamC": {
+                    "example": "any"
+                  },
+                  "stake": {
+                    "example": "any"
+                  },
+                  "odd": {
+                    "example": "any"
+                  },
+                  "betId": {
+                    "example": "any"
+                  },
+                  "bettingType": {
+                    "example": "any"
+                  },
+                  "matchBetType": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  },
+                  "betOnTeam": {
+                    "example": "any"
+                  },
+                  "ipAddress": {
+                    "example": "any"
+                  },
+                  "browserDetail": {
+                    "example": "any"
+                  },
+                  "placeIndex": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

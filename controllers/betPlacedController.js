@@ -196,7 +196,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       userId: reqUser.id,
       teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam,
       winAmount,
-      lossAmount,
+      lossAmount,newUserExposure,
       userCurrentBalance,teamArateRedisKey,teamBrateRedisKey,teamCrateRedisKey,newTeamRateData
     }
     //add redis queue function
