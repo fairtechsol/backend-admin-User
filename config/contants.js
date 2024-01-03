@@ -173,3 +173,8 @@ module.exports.socketData ={
   userTeamCRate: "teamCRate_",
   userExposureLimit: "exposureLimit",
 };
+
+exports.marketBetType= {
+  SESSION : "SESSION",
+  MATCHBETTING : "MATCHBETTING"
+}
