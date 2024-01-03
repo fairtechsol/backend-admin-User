@@ -7,7 +7,7 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const { forceLogoutUser } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
-const { ILike } = require('typeorm');
+const { ILike, Not } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis } = require('../services/redis/commonfunction');
@@ -576,6 +576,7 @@ exports.userList = async (req, res, next) => {
     let userRole = reqUser.roleName;
     let where = {
       createBy: reqUser.id,
+      roleName: Not(userRole)
     };
     if (userName) where.userName = ILike(`%${userName}%`);
     if (roleName) where.roleName = roleName;
