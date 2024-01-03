@@ -10,15 +10,15 @@ module.exports.CreateUser = Joi.object({
     'string.pattern.base': 'user.passwordMatch',
     'any.required': 'Password is required',
   }),
-  phoneNumber: Joi.string().required().messages({
-    'any.required': 'Phone number is required',
-  }),
+  phoneNumber: Joi.string().allow(""),
   city: Joi.string().max(255).allow(""),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)).required(),
   myPartnership: Joi.number().required(),
   creditRefrence: Joi.number(),
   exposureLimit: Joi.number(),
-  transactionPassword: Joi.string().required(),
+  transactionPassword: Joi.string().required().messages({
+    'any.required': 'Transaction Password is required'
+  }),
   maxBetLimit: Joi.number(),
   minBetLimit: Joi.number(),
   confirmPassword: Joi.string().required().valid(Joi.ref('password')).label('Confirm Password').messages({
