@@ -32,7 +32,14 @@ class ApiFeature {
   }
 
   filter() {
-    const notFilters = ["searchBy", "keyword", "sort", "page", "limit"];
+    const notFilters = [
+      "searchBy",
+      "keyword",
+      "sort",
+      "page",
+      "limit",
+      "statementType",
+    ];
     let filterObject = {};
     Object.keys(this.options)
       ?.filter((item) => !notFilters.includes(item))
@@ -63,11 +70,11 @@ class ApiFeature {
               this.query.andWhere({ [key]: LessThanOrEqual(filterValue) });
               break;
             case "between":
-              if (filterValue?.split(",")?.length === 2) {
+              if (filterValue?.split("|")?.length === 2) {
                 this.query.andWhere({
                   [key]: Between(
-                    filterValue?.split(",")?.[0],
-                    filterValue?.split(",")?.[1]
+                    filterValue?.split("|")?.[0],
+                    filterValue?.split("|")?.[1]
                   ),
                 });
               }
@@ -103,7 +110,7 @@ class ApiFeature {
   }
 
   paginate() {
-    if(this.options.page){
+    if (this.options.page) {
       const page = this.options.page;
       const limit = this.options.limit || 10;
       const skip = parseInt((parseInt(page) - 1) * parseInt(limit));
@@ -121,7 +128,7 @@ class ApiFeature {
 
   parseFilterValue(value) {
     // Parse the filter value to extract operator and actual value
-    const operators = ["eq","gte","lte", "gt", "lt", "between"]; // Add more operators as needed
+    const operators = ["eq", "gte", "lte", "gt", "lt", "between"]; // Add more operators as needed
     const [operator] = operators.filter((op) => value?.startsWith(`${op}`));
 
     if (operator) {

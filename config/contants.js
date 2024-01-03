@@ -124,3 +124,8 @@ module.exports.teamStatus = {
   ballStop: "ball stop",
   ballRunning: "ball running",
 };
+
+module.exports.accountStatementType={
+  game:"game",
+  addWithdraw:"addWithdraw"
+}
