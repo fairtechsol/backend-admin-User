@@ -8,7 +8,7 @@ module.exports = class AddMarketBetType1704261125883 {
         await queryRunner.query(`ALTER TABLE "betPlaceds" ADD "marketBetType" "public"."betPlaceds_marketbettype_enum"`);
         await queryRunner.query(`ALTER TABLE "betPlaceds" DROP COLUMN "marketType"`);
         await queryRunner.query(`DROP TYPE "public"."betPlaceds_markettype_enum"`);
-        await queryRunner.query(`ALTER TABLE "betPlaceds" ADD "marketType" character varying NOT NULL DEFAULT 'quickbookmaker1'`);
+        await queryRunner.query(`ALTER TABLE "betPlaceds" ADD "marketType" character varying NOT NULL`);
     }
 
     async down(queryRunner) {
