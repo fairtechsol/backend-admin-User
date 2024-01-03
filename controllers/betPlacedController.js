@@ -1,14 +1,13 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, marketType, redisKeys } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getUserRedisData, updateUserDataRedis, updateSessionExposure, updateMatchExposure } = require("../services/redis/commonfunction");
+const { getUserRedisData, updateMatchExposure } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { matchDetails } = require('./matchController');
 const { calculateRate } = require('../services/commonService');
-const { MatchBetQueue } = require('../queue/consumer');
+const { MatchBetQueue, WalletMatchBetQueue } = require('../queue/consumer');
 
 // Default expert domain URL, fallback to localhost if not provided
 let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
@@ -109,14 +108,15 @@ exports.matchBettingBetPlaced = async (req, res) => {
       betId: betId,
       winAmount,
       lossAmount,
-      result: "PEMDING",
+      result: betResultStatus.PENDING,
       teamName: betOnTeam,
       amount: stake,
       odds: odd,
       betType: bettingType,
       rate: 0,
       createBy: reqUser.id,
-      marketType: marketType.MATCHBETTING,
+      marketType: matchBetType,
+      marketBetType : marketBetType.MATCHBETTING,
       ipAddress,
       browserDetail,
 
@@ -131,9 +131,9 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let sessionExposure = userRedisData[redisKeys.userSessionExposure + matchId] ?? 0.0;
     let userTotalExposure = matchExposure + sessionExposure;
     let teamRates = {
-      teamA: Number(userRedisData[teamArateRedisKey]) ?? 0.0,
-      teamB: Number(userRedisData[teamBrateRedisKey]) ?? 0.0,
-      teamC: Number(userRedisData[teamCrateRedisKey]) ?? 0.0
+      teamA: Number(userRedisData[teamArateRedisKey]) || 0.0,
+      teamB: Number(userRedisData[teamBrateRedisKey]) || 0.0,
+      teamC: Number(userRedisData[teamCrateRedisKey]) || 0.0
     }
     let userPreviousExposure = userRedisData[redisKeys.userAllExposure] || 0.0;
     let userOtherMatchExposure = userPreviousExposure - userTotalExposure;
@@ -196,11 +196,23 @@ exports.matchBettingBetPlaced = async (req, res) => {
       teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam,
       winAmount,
       lossAmount,newUserExposure,
-      userCurrentBalance,teamArateRedisKey,teamBrateRedisKey,teamCrateRedisKey,newTeamRateData
+      userPreviousExposure,
+      userCurrentBalance,teamArateRedisKey,teamBrateRedisKey,teamCrateRedisKey,newTeamRateData,
+      newBet
+    }
+    let walletJobData = {
+      partnerships : userRedisData.partnerShips,
+      userId : reqUser.id,
+      newUserExposure,userPreviousExposure,
+      winAmount,lossAmount,teamRates,
+      bettingType,betOnTeam,teamA,teamB,teamC,teamArateRedisKey,teamBrateRedisKey,teamCrateRedisKey,newBet
     }
     //add redis queue function
     const job = MatchBetQueue.createJob(jobData);
-    job.save();
+    await job.save();
+
+    const walletJob = WalletMatchBetQueue.createJob(walletJobData);
+    await walletJob.save();
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced"}, data: newBet }, req, res)
 
 

@@ -104,7 +104,7 @@ module.exports.betType = {
   LAY : "LAY"
 }
 
-module.exports.marketType = {
+module.exports.marketBetType = {
   SESSION : "SESSION",
   MATCHBETTING : "MATCHBETTING"
 }
@@ -146,3 +146,15 @@ module.exports.redisKeys = {
   userTeamCRate : "teamCRate_",
   userExposureLimit : "exposureLimit"
 }
+
+module.exports.betResultStatus = {
+  UNDECLARE : "UNDECLARE",
+  PENDING : "PENDING",
+  WIN : "WIN",
+  LOSS : "LOSS",
+}
+
+module.exports.socketData ={
+  expertRoomSocket : "expertRoom",
+  MatchBetPlaced : "userMatchBetPlaced"
+};
