@@ -4,7 +4,7 @@ const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { insertTransactions } = require('../services/transactionService')
 const { getUserBalanceDataByUserIds, updateUserBalanceByUserId, addInitialUserBalance, getUserBalanceDataByUserId } = require('../services/userBalanceService');
 const { sendMessageToUser } = require('../sockets/socketManager');
-const { hasUserInCache } = require('../services/redis/commonfunction');
+const { hasUserInCache, updateUserDataRedis } = require('../services/redis/commonfunction');
 
 exports.updateUserBalance = async (req, res) => {
   try {

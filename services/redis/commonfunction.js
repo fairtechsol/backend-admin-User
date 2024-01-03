@@ -1,7 +1,11 @@
+const { redisKeys } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 
 exports.updateSessionExposure = async (userId, matchId, value) => {
   await internalRedis.hset(userId, `${matchId}_sessionExposure`, value);
+};
+exports.updateMatchExposure = async (userId, matchId, value) => {
+  await internalRedis.hset(userId, redisKeys.userMatchExposure+matchId, value);
 };
 
 exports.getUserRedisData = async (userId)=>{

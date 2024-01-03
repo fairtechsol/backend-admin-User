@@ -37,6 +37,7 @@ exports.allApiRoutes = {
   MATCHES: {
     matchDetails: "/superAdmin/match/",
     matchList: "/superAdmin/match/list",
+    MatchBettingDetail : "/superAdmin/matchBetting/",
     sessionDetail: "/superAdmin/session/"
   },
   EXPERT:{
