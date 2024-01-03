@@ -1,22 +1,32 @@
 const Queue = require('bee-queue');
 const lodash = require('lodash');
 const { getUserRedisData, updateUserDataRedis } = require('../services/redis/commonfunction');
-const { redisKeys, userRoleConstant } = require('../config/contants');
+const { redisKeys, userRoleConstant, socketData } = require('../config/contants');
 const { logger } = require('../config/logger');
-const { getUserById } = require('../services/userService');
 const { getUserBalanceDataByUserId, updateUserBalanceByUserId } = require('../services/userBalanceService');
 const { calculateExpertRate } = require('../services/commonService');
+const { sendMessageToUser } = require('../sockets/socketManager');
 
 const options = {
   removeOnSuccess: true,
   redis: {
-    port: process.env.REDIS_PORT,
-    host: process.env.REDIS_HOST,
-    password: process.env.REDIS_PASSWORD
+    host: process.env.INTERNAL_REDIS_HOST,
+    port: process.env.INTERNAL_REDIS_PORT,
+    password: process.env.INTERNAL_REDIS_PASSWORD
   }
 }
 
 const MatchBetQueue = new Queue('matchBetQueue', options);
+
+const walletRedisOption = {
+  removeOnSuccess: true,
+  redis: {
+    port: process.env.WALLET_REDIS_PORT,
+    host: process.env.WALLET_REDIS_HOST
+  }
+}
+
+const WalletMatchBetQueue = new Queue('walletMatchBetQueue', walletRedisOption);
 
 MatchBetQueue.process(async function (job, done) {
   
@@ -47,7 +57,8 @@ let userRedisData = await getUserRedisData(userId);
 });
 
 let calculateRateAmount = async (userRedisData, jobData,userId) => {
-  let roleName = userRedisData.userRole
+  let roleName = userRedisData.userRole;
+  let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
   let partnership = JSON.parse(userRedisData.partnerShips);
   let teamRates = {
@@ -79,6 +90,7 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
     }
     let setRedis = await updateUserDataRedis(userId,userRedisObj);
     //send socket to user
+    sendMessageToUser(userId,socketData.MatchBetPlaced,{userRedisData,jobData})
   }
   if(partnership['mPartnershipId']){
     let mPartenerShipId = partnership['mPartnershipId'];
@@ -90,7 +102,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
     }else {
-      let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
+      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
     
       let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
@@ -107,7 +120,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
         process: `User ID : ${userId} master id ${mPartenerShipId}`,
         data: `My Stake : ${myStake}`
       })
-      //send Data to socket
+      //send Data to socket      
+    sendMessageToUser(mPartenerShipId,socketData.MatchBetPlaced,{userRedisData,jobData})
     }
   }catch(error){
     logger.error({
@@ -128,7 +142,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
     }else {
-      let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
+      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
     
       let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
@@ -145,6 +160,7 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
         process: `User ID : ${userId} super master id ${mPartenerShipId}`,
         data: `My Stake : ${myStake}`
       })
+      sendMessageToUser(mPartenerShipId,socketData.MatchBetPlaced,{userRedisData,jobData})
       //send Data to socket
     }
   }catch(error){
@@ -166,7 +182,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
     }else {
-      let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
+      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
     
       let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
@@ -184,6 +201,7 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
         data: `My Stake : ${myStake}`
       })
       //send Data to socket
+    sendMessageToUser(mPartenerShipId,socketData.MatchBetPlaced,{userRedisData,jobData})
     }
   }catch(error){
     logger.error({
@@ -204,7 +222,8 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
     }else {
-      let partnerExpsoure = masterRedisData.exposure - userOldExposure + userCurrentExposure;
+      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
       await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
     
       let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
@@ -222,6 +241,7 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
         data: `My Stake : ${myStake}`
       })
       //send Data to socket
+    sendMessageToUser(mPartenerShipId,socketData.MatchBetPlaced,{userRedisData,jobData})
     }
   }catch(error){
     logger.error({
@@ -232,13 +252,9 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
     })
   }
   }
-  if(partnership['faPartnershipId']){
- //send data to wallet server
-
-  }
-  if(partnership['fwPartnershipId']){
-    //send data to wallet server
-  }
 }
 
-module.exports.MatchBetQueue = MatchBetQueue
+module.exports={
+  MatchBetQueue : MatchBetQueue,
+  WalletMatchBetQueue : WalletMatchBetQueue
+};

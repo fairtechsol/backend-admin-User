@@ -1,5 +1,5 @@
 const { EntitySchema } = require('typeorm');
-const { baseColumnsSchemaPart, betType, marketType } = require("../config/contants");
+const { baseColumnsSchemaPart, betType, marketBetType } = require("../config/contants");
 const { ColumnNumericTransformer } = require('../services/dbService');
 
 const betPlacedSchema = new EntitySchema({
@@ -69,10 +69,13 @@ const betPlacedSchema = new EntitySchema({
             transformer : new ColumnNumericTransformer()
         },
         marketType : {
+            type: 'varchar',
+            nullable: false
+        },
+        marketBetType : {
             type: 'enum',
-            enum: Object.values(marketType),
-            nullable: false,
-            default : marketType.MATCHBETTING
+            enum: Object.values(marketBetType),
+            nullable: true
         },
         deleteReason: {
             type: 'varchar',
