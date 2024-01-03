@@ -17,3 +17,8 @@ exports.getBetByUserId = async(id,select) =>{
       });
 }
 
+// add bet in db 
+exports.addNewBet=async (body)=>{
+  let userBet = await BetPlaced.save(body);
+  return userBet;
+  }

@@ -124,3 +124,25 @@ module.exports.teamStatus = {
   ballStop: "ball stop",
   ballRunning: "ball running",
 };
+
+module.exports.matchBettingType = {
+  matchOdd: "matchOdd",
+  bookmaker: "bookmaker",
+  quickbookmaker1: "quickbookmaker1",
+  quickbookmaker2: "quickbookmaker2",
+  quickbookmaker3: "quickbookmaker3",
+  tiedMatch1: "tiedMatch1",
+  tiedMatch2: "tiedMatch2",
+  completeMatch : "completeMatch"
+};
+
+
+module.exports.redisKeys = {
+  userAllExposure : "exposure",
+  userMatchExposure : "matchExposure_",
+  userSessionExposure : "sessionExposure_",
+  userTeamARate : "teamARate_",
+  userTeamBRate : "teamBRate_",
+  userTeamCRate : "teamCRate_",
+  userExposureLimit : "exposureLimit"
+}

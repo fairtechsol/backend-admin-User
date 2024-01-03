@@ -805,7 +805,7 @@ exports.userBalanceDetails = async (req, res, next) => {
 
     let allChildBalanceData = getAllChildCurrentBalanceSum(allChildUserIds)
 
-    let AggregateBalanceData = await Promise.all([userBalanceData, FirstLevelChildBalanceData, allChildBalanceData])
+    let AggregateBalanceData = await Promise.allSettled([userBalanceData, FirstLevelChildBalanceData, allChildBalanceData])
 
     userBalanceData = AggregateBalanceData[0] ? AggregateBalanceData[0] : {};
     FirstLevelChildBalanceData = AggregateBalanceData[1] ? AggregateBalanceData[1] : {};

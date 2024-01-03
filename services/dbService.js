@@ -1,9 +1,14 @@
 class ColumnNumericTransformer {
     to(data) {
-      return data;
+      return Number(parseFloat(data).toFixed(2));
     }
     from(data) {
-      if (data && data != 'NaN') return parseFloat(data).toFixed(2);
+      if (data && data != 'NaN') {
+        let number = parseFloat(data);
+        if(number == 'NaN')
+          return 0;
+        return Number(number.toFixed(2));
+      }
       return 0;
     }
   }
