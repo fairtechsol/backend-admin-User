@@ -787,10 +787,10 @@ exports.userSearchList = async (req, res, next) => {
 
 exports.userBalanceDetails = async (req, res, next) => {
   try {
-    let reqUser = req.user || {}
-    let { id } = req.query || reqUser.id;
-    let loginUser = await getUserById(id)
-    if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+    let reqUser = req.user || {};
+    let id = req.query?.id || reqUser.id;
+    let loginUser = await getUserById(id);
+    if (!loginUser || id != loginUser.id) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys : {name : "User"} } }, req, res);
 
     let firstLevelChildUser = await getFirstLevelChildUser(loginUser.id);
 
