@@ -146,6 +146,26 @@ module.exports.matchBettingType = {
 };
 
 module.exports.redisKeys = {
+  userAllExposure : "exposure",
+  userMatchExposure : "matchExposure_",
+  userSessionExposure : "sessionExposure_",
+  userTeamARate : "teamARate_",
+  userTeamBRate : "teamBRate_",
+  userTeamCRate : "teamCRate_",
+  userExposureLimit : "exposureLimit"
+}
+
+module.exports.betResultStatus = {
+  UNDECLARE : "UNDECLARE",
+  PENDING : "PENDING",
+  WIN : "WIN",
+  LOSS : "LOSS",
+  TIE : "TIE"
+}
+
+module.exports.socketData ={
+  expertRoomSocket : "expertRoom",
+  MatchBetPlaced : "userMatchBetPlaced",
   userAllExposure: "exposure",
   userMatchExposure: "matchExposure_",
   userSessionExposure: "sessionExposure_",

@@ -10,6 +10,7 @@
   "alreadyExist":"{name} already exist.",
   "fetched": "{type} fetch successfully.",  
   "betPlaced" : "Your bet placed successfull.",
+  "required" : "{name} is required",
   "auth": {
     "loginSuccess": "Login successfully.",
     "invalidPass": "Invalid {type} password.",
