@@ -27,7 +27,7 @@
     "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?).",
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
     "partnershipNotValid" : "Given partnership not valid.",
-    "InvalidExposureLimit" : "Given Exposure limit is invalid.",
+    "InvalidExposureLimit" : "Given exposure limit is invalid.",
     "betBlockError": "Your bet are block by admin, Please contact to the administrator.",
     "userBlockError": "Your block by admin, Please contact to the administrator.",
     "lock/unlockSuccessfully" : "User lock and unlock operation successfull.",

@@ -42,5 +42,9 @@ exports.allApiRoutes = {
   },
   EXPERT:{
     partnershipId:"/superAdmin/partnershipId/"
+  },
+  MICROSERVICE : {
+    matchOdd : "/matchOdds/",
+    bookmaker : "/bookmaker/"
   }
 }

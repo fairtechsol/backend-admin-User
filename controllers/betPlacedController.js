@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -17,54 +17,60 @@ let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 exports.getBet = async (req, res) => {
   try {
     const reqUser = req.user
-    let query=req.query;
+    let query = req.query;
     let where = {};
     let result;
     let select = [
-      "betPlaced.id","betPlaced.eventName","betPlaced.teamName","betPlaced.betType","betPlaced.amount","betPlaced.rate","betPlaced.winAmount","betPlaced.lossAmount","betPlaced.createdAt","betPlaced.eventType","betPlaced.marketType","betPlaced.odds","betPlaced.marketBetType","betPlaced.result"
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result"
     ]
 
-    if(query.status && query.status == "MATCHED"){
-       where.result =  In([betResultStatus.LOSS,betResultStatus.TIE,betResultStatus.WIN]); 
-       query = lodash.omit(query,['status']);
+    if (query.status && query.status == "MATCHED") {
+      where.result = In([betResultStatus.LOSS, betResultStatus.TIE, betResultStatus.WIN]);
+      query = lodash.omit(query, ['status']);
     }
-    else if(query.status && query.status == betResultStatus.PENDING){
+    else if (query.status && query.status == betResultStatus.PENDING) {
       where.result = betResultStatus.PENDING;
-      query = lodash.omit(query,['status']);
+      query = lodash.omit(query, ['status']);
     }
-    else if(query.status && query.status == "DELETED"){
+    else if (query.status && query.status == "DELETED") {
       where.deleteReason = Not(null);
       where.result = betResultStatus.UNDECLARE;
-      query = lodash.omit(query,['status']);
-    }else{
-      query = lodash.omit(query,['status']);
+      query = lodash.omit(query, ['status']);
+    } else {
+      query = lodash.omit(query, ['status']);
     }
 
     if (reqUser.roleName == userRoleConstant.user) {
-      where.createBy=  reqUser.id ;
-      result = await betPlacedService.getBet(where,query,reqUser.roleName,select);
-    }else{
+      where.createBy = reqUser.id;
+      result = await betPlacedService.getBet(where, query, reqUser.roleName, select);
+    } else {
       let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
       childsId = childsId.map(item => item.id);
-      if(!childsId.length){
-        return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
-          count: 0,
-          rows: []
-        } }, req, res)
+      if (!childsId.length) {
+        return SuccessResponse({
+          statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
+            count: 0,
+            rows: []
+          }
+        }, req, res)
       }
-      select.push("user.id","user.userName");
+      select.push("user.id", "user.userName");
       where.createBy = In(childsId);
-      result = await betPlacedService.getBet(where,query,reqUser.roleName,select);
+      result = await betPlacedService.getBet(where, query, reqUser.roleName, select);
     }
-    if (!result[1]) return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
-      count: 0,
-      rows: []
-    } }, req, res)
-    
-    return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
-      count : result[1],
-      rows  : result[0]
-    } }, req, res)
+    if (!result[1]) return SuccessResponse({
+      statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
+        count: 0,
+        rows: []
+      }
+    }, req, res)
+
+    return SuccessResponse({
+      statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
+        count: result[1],
+        rows: result[0]
+      }
+    }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res)
   }
@@ -160,10 +166,10 @@ exports.matchBettingBetPlaced = async (req, res) => {
       marketBetType: marketBetType.MATCHBETTING,
       ipAddress,
       browserDetail,
-      eventName : match.title,
-      eventType : match.matchType
+      eventName: match.title,
+      eventType: match.matchType
     }
-    await validateMatchBettingDetails(match, matchBetting, betPlacedObj, { teamA, teamB, teamC, placeIndex });
+    await validateMatchBettingDetails(matchBetting, betPlacedObj, { teamA, teamB, teamC, placeIndex });
     const teamArateRedisKey = redisKeys.userTeamARate + matchId;
     const teamBrateRedisKey = redisKeys.userTeamBRate + matchId;
     const teamCrateRedisKey = redisKeys.userTeamCRate + matchId;
@@ -403,7 +409,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       maxSessionLoss = parseFloat(sessionProfitLossData['maxLoss']);
     }
 
-    
+
 
 
 
@@ -421,12 +427,12 @@ exports.sessionBetPlace = async (req, res, next) => {
 };
 
 
-const calculateProfitLossSession = async (redisProfitLoss,betData)=>{
-    const lowerLimit =
-      redisProfitLoss?.lowerLimitOdds || betData?.odds - 5 < 0
-        ? 0
-        : betData?.odds - 5;
-    const upperLimit = redisProfitLoss?.upperLimitOdds || betData?.odds + 5;
+const calculateProfitLossSession = async (redisProfitLoss, betData) => {
+  const lowerLimit =
+    redisProfitLoss?.lowerLimitOdds || betData?.odds - 5 < 0
+      ? 0
+      : betData?.odds - 5;
+  const upperLimit = redisProfitLoss?.upperLimitOdds || betData?.odds + 5;
 }
 
 
@@ -500,8 +506,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
 }
 
 
-const validateMatchBettingDetails = async (matchDetail, matchBettingDetail, betObj, teams) => {
-
+const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) => {
   if (matchBettingDetail.activeStatus != betStatusType.live) {
     throw {
       statusCode: 400,
@@ -527,7 +532,13 @@ const validateMatchBettingDetails = async (matchDetail, matchBettingDetail, betO
     };
   }
   else {
-    let isRateChange = await checkRate(matchDetail, matchBettingDetail, betObj, teams);
+    let isRateChange = false;
+    let manualBets = Object.values(manualMatchBettingType);
+    if (manualBets.includes(matchBettingDetail.type)) {
+      isRateChange = await checkRate(matchBettingDetail, betObj, teams);
+    } else {
+      isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
+    }
     if (isRateChange) {
       throw {
         statusCode: 400,
@@ -543,7 +554,7 @@ const validateMatchBettingDetails = async (matchDetail, matchBettingDetail, betO
 
 }
 
-const checkRate = async (matchDetails, matchBettingDetail, betObj, teams) => {
+const checkRate = async (matchBettingDetail, betObj, teams) => {
   if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && matchBettingDetail.backTeamA - teams.placeIndex != betObj.odds) {
     return true;
   }
@@ -579,4 +590,40 @@ let calculateUserExposure = (userOldExposure, oldTeamRate, newTeamRate, teamC) =
     minAmountOldRate = 0;
   let newExposure = userOldExposure - Math.abs(minAmountOldRate) + Math.abs(minAmountNewRate);
   return Number(newExposure.toFixed(2));
+}
+
+let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
+  let url = "";
+  const microServiceUrl = process.env.MICROSERVICEURL;
+  try {
+  if (matchBettingDetail.type !== matchBettingType.bookmaker) {
+    url = microServiceUrl + allApiRoutes.MICROSERVICE.matchOdd + matchBettingDetail.marketId
+  }
+  else{
+    url = microServiceUrl + allApiRoutes.MICROSERVICE.bookmaker + matchBettingDetail.marketId
+  }
+      let data = await apiCall(apiMethod.get, url);
+      if (data) {
+        if (data[0]['ex'] && betObj.betType == betType.BACK && teams.teamA == betObj.teamName && data[0]['ex'].availableToBack[teams.placeIndex].price != betObj.odds) {
+          return true;
+        } else if (data[0]['ex'] && betObj.betType == betType.LAY && teams.teamA == betObj.teamName && data[0]['ex'].availableToLay[teams.placeIndex].price != betObj.odds) {
+          return true;
+        } else if (data[1]['ex'] && betObj.betType == betType.BACK && teams.teamB == betObj.teamName && data[1]['ex'].availableToBack[teams.placeIndex].price != betObj.odds) {
+          return true;
+        } else if (data[1]['ex'] && betObj.betType == betType.LAY && teams.teamB == betObj.teamName && data[1]['ex'].availableToLay[teams.placeIndex].price != betObj.odds) {
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return true;
+      }
+  }
+    catch(error){
+      throw{
+        message: {
+          msg: "bet.notLive"
+        }
+      };
+   }
 }
