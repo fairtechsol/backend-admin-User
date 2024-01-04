@@ -299,10 +299,10 @@ exports.sessionBetPlace = async (req, res, next) => {
       loseAmount = 0;
 
     // Calculate win and lose amounts based on the bet type
-    if (sessionBetType == betType.yes) {
+    if (sessionBetType == betType.YES) {
       winAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
       loseAmount = stake;
-    } else if (sessionBetType == betType.no) {
+    } else if (sessionBetType == betType.NO) {
       winAmount = stake;
       loseAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
     } else {
@@ -323,7 +323,8 @@ exports.sessionBetPlace = async (req, res, next) => {
     }
 
     const userData = await getUserRedisData(id);
-    let sessionExp = parseFloat(userData[`${matchId}_sessionExposure`]) || 0.0;
+    let sessionExp = parseFloat(userData[`${redisKeys.userSessionExposure}${matchId}`]) || 0.0;
+    let matchExp = parseFloat(userData[`${redisKeys.userMatchExposure}${matchId}`]) || 0.0;
 
     logger.info({
       message: "Session exposure coming from redis.",
@@ -361,8 +362,37 @@ exports.sessionBetPlace = async (req, res, next) => {
       maxSessionLoss = parseFloat(sessionProfitLossData['maxLoss']);
     }
 
-    
+    let redisData = await calculateProfitLossSession(
+      sessionProfitLossData,
+      betPlaceObject
+    );
 
+    betPlaceObject.maxLoss = Math.abs(redisData.maxLoss - maxSessionLoss);
+    let redisSessionExp = Number(
+      (sessionExp + redisData?.maxLoss - maxSessionLoss).toFixed(2)
+    );
+    let redisObject = {
+      [`${redisKeys.userSessionExposure}${matchId}`]: redisSessionExp,
+    };
+    let newBalance =
+      parseFloat(userData?.currentBalance).toFixed(2) -
+      (totalExposure + redisData?.maxLoss - maxSessionLoss);
+
+    betPlaceObject.diffSessionExp = redisSessionExp - sessionExp;
+
+
+    if (newBalance < 0) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "userBalance.insufficientBalance",
+          },
+        },
+        req,
+        res
+      );
+    }
 
 
   } catch (error) {
@@ -379,13 +409,114 @@ exports.sessionBetPlace = async (req, res, next) => {
 };
 
 
-const calculateProfitLossSession = async (redisProfitLoss,betData)=>{
-    const lowerLimit =
-      redisProfitLoss?.lowerLimitOdds || betData?.odds - 5 < 0
-        ? 0
-        : betData?.odds - 5;
-    const upperLimit = redisProfitLoss?.upperLimitOdds || betData?.odds + 5;
-}
+/**
+ * Calculates the profit or loss for a betting session.
+ * @param {object} redisProfitLoss - Redis data for profit and loss.
+ * @param {object} betData - Data for the current bet.
+ * @returns {object} - Object containing upper and lower limit odds, and the updated bet placed data.
+ */
+const calculateProfitLossSession = async (redisProfitLoss, betData) => {
+  /**
+   * Calculates the profit or loss for a specific bet at given odds.
+   * @param {object} betData - Data for the current bet.
+   * @param {number} odds - Odds for the current bet.
+   * @returns {number} - Profit or loss amount.
+   */
+  let maxLoss=0;
+  const calculateProfitLoss = (betData, odds) => {
+    if (
+      (betData?.betPlacedData?.betType === betType.NO && odds < betData?.betPlacedData?.odds) ||
+      (betData?.betPlacedData?.betType === betType.YES && odds >= betData?.betPlacedData?.odds)
+    ) {
+      return betData?.winAmount;
+    } else if (
+      (betData?.betPlacedData?.betType === betType.NO && odds >= betData?.betPlacedData?.odds) ||
+      (betData?.betPlacedData?.betType === betType.YES && odds < betData?.betPlacedData?.odds)
+    ) {
+      return -betData.loseAmount;
+    }
+    return 0;
+  };
+
+  /**
+   * Gets the lower limit for the current bet data.
+   * @param {object} betData - Data for the current bet.
+   * @returns {number} - Lower limit for the odds.
+   */
+  const getLowerLimitBetData = (betData) => Math.max(0, betData?.betPlacedData?.odds - 5);
+
+  /**
+   * Creates an array of objects representing a range of odds with default profit/loss value.
+   * @param {number} start - Starting value of the range.
+   * @param {number} end - Ending value of the range.
+   * @param {number} defaultValue - Default profit/loss value.
+   * @returns {Array} - Array of objects representing the odds and profit/loss for each entry in the range.
+   */
+  const createRangeObjects = (start, end, defaultValue) => {
+    return Array(Math.abs(end - start))
+      .fill(0)
+      ?.map((_, index) => {
+        if (maxLoss < Math.abs(defaultValue) && defaultValue < 0) {
+          maxLoss = Math.abs(defaultValue);
+        }
+        return {
+          odds: start + index,
+          profitLoss: defaultValue,
+        };
+      });
+  };
+
+  // Calculate lower and upper limits
+  const lowerLimit = getLowerLimitBetData(betData) < (redisProfitLoss?.lowerLimitOdds ?? 0)
+    ? getLowerLimitBetData(betData)
+    : redisProfitLoss?.lowerLimitOdds ?? getLowerLimitBetData(betData);
+
+  const upperLimit = betData?.betPlacedData?.odds + 5 > (redisProfitLoss?.upperLimitOdds ?? betData?.betPlacedData?.odds + 5)
+    ? betData?.betPlacedData?.odds + 5
+    : redisProfitLoss?.upperLimitOdds ?? betData?.betPlacedData?.odds + 5;
+
+  let betProfitloss = redisProfitLoss?.betPlaced ?? [];
+
+  // Adjust betPlaced based on lower limit changes
+  if (redisProfitLoss?.lowerLimitOdds > lowerLimit) {
+    betProfitloss = [
+      ...createRangeObjects(lowerLimit, redisProfitLoss?.lowerLimitOdds ?? 0, betProfitloss[0]?.profit_loss),
+      ...betProfitloss,
+    ];
+  }
+
+  // Adjust betPlaced based on upper limit changes
+  if (upperLimit > redisProfitLoss?.upperLimitOdds) {
+    betProfitloss = [
+      ...betProfitloss,
+      ...createRangeObjects(
+        redisProfitLoss?.upperLimitOdds ?? 0,
+        upperLimit,
+        betProfitloss[betProfitloss?.length - 1]?.profit_loss
+      ),
+    ];
+  }
+
+  // Initialize or update betPlaced if it's empty or not
+  if (!betProfitloss) {
+    betProfitloss = createRangeObjects(lowerLimit, upperLimit, calculateProfitLoss(betData, lowerLimit));
+  } else {
+    betProfitloss = betProfitloss?.map((item) => ({
+      odds: item?.odds,
+      profitLoss: calculateProfitLoss(betData, item?.odds),
+    }));
+  }
+  maxLoss = Number(maxLoss.toFixed(2));
+  // Return the result
+  return {
+    upperLimitOdds: upperLimit,
+    lowerLimitOdds: lowerLimit,
+    betPlaced: redisProfitLoss,
+    maxLoss: maxLoss
+  };
+};
+
+
 
 
 

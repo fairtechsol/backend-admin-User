@@ -146,25 +146,6 @@ module.exports.matchBettingType = {
 };
 
 module.exports.redisKeys = {
-  userAllExposure : "exposure",
-  userMatchExposure : "matchExposure_",
-  userSessionExposure : "sessionExposure_",
-  userTeamARate : "teamARate_",
-  userTeamBRate : "teamBRate_",
-  userTeamCRate : "teamCRate_",
-  userExposureLimit : "exposureLimit"
-}
-
-module.exports.betResultStatus = {
-  UNDECLARE : "UNDECLARE",
-  PENDING : "PENDING",
-  WIN : "WIN",
-  LOSS : "LOSS",
-}
-
-module.exports.socketData ={
-  expertRoomSocket : "expertRoom",
-  MatchBetPlaced : "userMatchBetPlaced",
   userAllExposure: "exposure",
   userMatchExposure: "matchExposure_",
   userSessionExposure: "sessionExposure_",
@@ -174,7 +155,27 @@ module.exports.socketData ={
   userExposureLimit: "exposureLimit",
 };
 
-exports.marketBetType= {
-  SESSION : "SESSION",
-  MATCHBETTING : "MATCHBETTING"
-}
+module.exports.betResultStatus = {
+  UNDECLARE: "UNDECLARE",
+  PENDING: "PENDING",
+  WIN: "WIN",
+  LOSS: "LOSS",
+};
+
+module.exports.socketData = {
+  expertRoomSocket: "expertRoom",
+  MatchBetPlaced: "userMatchBetPlaced",
+  userAllExposure: "exposure",
+  userMatchExposure: "matchExposure_",
+  userSessionExposure: "sessionExposure_",
+  userBalanceUpdateEvent: "updateUserBalance",
+  userTeamARate: "teamARate_",
+  userTeamBRate: "teamBRate_",
+  userTeamCRate: "teamCRate_",
+  userExposureLimit: "exposureLimit",
+};
+
+exports.marketBetType = {
+  SESSION: "SESSION",
+  MATCHBETTING: "MATCHBETTING",
+};
