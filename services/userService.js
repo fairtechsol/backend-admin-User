@@ -5,6 +5,7 @@ const userBalanceSchema = require("../models/userBalance.entity");
 const user = AppDataSource.getRepository(userSchema);
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
 const { ILike, In } = require("typeorm");
+const ApiFeature = require("../utils/apiFeatures");
 
 // id is required and select is optional parameter is an type or array
 
@@ -209,4 +210,15 @@ exports.getUserWithUserBalanceData = async (where,select) => {
     select : select
     });
     return users;
+}
+
+exports.getUsersWithUsersBalanceData = async (where, query) => {
+  //get all users with user balance according to pagoination
+  let transactionQuery = new ApiFeature(user.createQueryBuilder()
+  .where(where)
+  .leftJoinAndMapOne("user.userBal","userBalances", "UB","user.id = UB.userId")
+  ,query).search().filter().sort().paginate().getResult();
+
+    return await transactionQuery;
+
 }

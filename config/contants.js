@@ -179,3 +179,10 @@ exports.marketBetType= {
   SESSION : "SESSION",
   MATCHBETTING : "MATCHBETTING"
 }
+
+module.exports.manualMatchBettingType = [
+  "quickbookmaker1",
+  "quickbookmaker2",
+  "quickbookmaker3",
+  "tiedMatch2",
+];
