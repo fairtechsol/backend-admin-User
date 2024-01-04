@@ -280,7 +280,18 @@ exports.matchBettingBetPlaced = async (req, res) => {
 exports.sessionBetPlace = async (req, res, next) => {
   try {
     // Destructure relevant data from the request body and user object
-    const { betId, betType: sessionBetType, country, matchId, ipAddress, odds, ratePercent, stake } = req.body;
+    const {
+      betId,
+      betType: sessionBetType,
+      browserDetail,
+      eventName,
+      eventType,
+      matchId,
+      ipAddress,
+      odds,
+      ratePercent,
+      stake,
+    } = req.body;
     const { id } = req.user;
 
     // Fetch user details by ID
@@ -366,7 +377,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     const userData = await getUserRedisData(id);
     let sessionExp = parseFloat(userData[`${redisKeys.userSessionExposure}${matchId}`]) || 0.0;
-    let matchExp = parseFloat(userData[`${redisKeys.userMatchExposure}${matchId}`]) || 0.0;
+    
 
     logger.info({
       message: "Session exposure coming from redis.",
@@ -435,6 +446,25 @@ exports.sessionBetPlace = async (req, res, next) => {
         res
       );
     }
+
+    await internalRedis.hset(user.id,redisObject);
+
+    await betPlacedService.addNewBet({
+      matchId:matchId,
+      betId:betId,
+      amount:stake,
+      odds:odds,
+      winAmount:winAmount,
+      lossAmount:loseAmount,
+      betType:sessionBetType,
+      rate:ratePercent,
+      marketType:sessionDetails?.name,
+      marketBetType:marketBetType.SESSION,
+      ipAddress:ipAddress,
+      browserDetail:browserDetail,
+      eventName:eventName,
+      eventType:eventType
+    });
 
 
   } catch (error) {
