@@ -49,7 +49,7 @@ module.exports.SuperAdminBalance = Joi.object({
   userId: Joi.string().guid({ version: "uuidv4" }).required(),
   transactionType: Joi.string().valid(...Object.values(transType)),
   amount: Joi.number(),
-  remark: Joi.string(),
+  remark: Joi.string().allow(""),
 });
 
 module.exports.SuperAdminExposureLimit = Joi.object({
@@ -60,7 +60,7 @@ module.exports.SuperAdminExposureLimit = Joi.object({
 module.exports.SuperAdminCreditReference = Joi.object({
   userId: Joi.string().guid({ version: "uuidv4" }).required(),
   amount: Joi.number(),
-  remark: Joi.string(),
+  remark: Joi.string().allow(""),
 });
 
 module.exports.SuperAdminLockUnlock = Joi.object({

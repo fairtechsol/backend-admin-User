@@ -1,3 +1,4 @@
+const { userRoleConstant } = require("../config/contants");
 const { AppDataSource } = require("../config/postGresConnection");
 const userSchema = require("../models/user.entity");
 const userBalanceSchema = require("../models/userBalance.entity");
@@ -161,6 +162,17 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
 
   return await user.query(query)
 }
+
+exports.getChildsWithOnlyUserRole = async(userId) => {
+  let query = await user.query(`WITH RECURSIVE p AS (
+    SELECT * FROM "users" WHERE "users"."id" = '${userId}'
+    UNION
+    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+  )
+  SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}';`);
+  return query;
+}
+
 
 exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where : { createBy: id}, select: { id: true, userName:true }})

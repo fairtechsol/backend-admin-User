@@ -160,6 +160,7 @@ module.exports.betResultStatus = {
   PENDING : "PENDING",
   WIN : "WIN",
   LOSS : "LOSS",
+  TIE : "TIE"
 }
 
 module.exports.socketData ={
