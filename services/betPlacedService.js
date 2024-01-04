@@ -33,9 +33,9 @@ exports.getBet = async (where, query,roleName, select) => {
       "user",
       "user",
       "betPlaced.createBy = user.id"
-    ).select(select)
+    )
   }
-console.log(await pgQuery.getQueryAndParameters());
+  pgQuery.select(select);
   return await new ApiFeature(
     pgQuery,
     query
