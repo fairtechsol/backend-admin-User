@@ -1,29 +1,70 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateRate } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue } = require('../queue/consumer');
+const { In, Not } = require('typeorm');
+let lodash = require("lodash");
 
 // Default expert domain URL, fallback to localhost if not provided
 let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 
 exports.getBet = async (req, res) => {
   try {
-    const { id } = req.user
-    if (req.query.id) {
-      const bets = await betPlacedService.getBetById(req.query.id);
-      if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Bet" } } }, req, res)
-      return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { name: "Bet" } }, data: bets }, req, res)
+    const reqUser = req.user
+    let query=req.query;
+    let where = {};
+    let result;
+    let select = [
+      "betPlaced.id","betPlaced.eventName","betPlaced.teamName","betPlaced.betType","betPlaced.amount","betPlaced.rate","betPlaced.winAmount","betPlaced.lossAmount","betPlaced.createdAt","betPlaced.eventType","betPlaced.marketType","betPlaced.odds","betPlaced.marketBetType","betPlaced.result"
+    ]
+
+    if(query.status && query.status == "MATCHED"){
+       where.result =  In([betResultStatus.LOSS,betResultStatus.TIE,betResultStatus.WIN]); 
+       query = lodash.omit(query,['status']);
     }
-    // const bets = await betPlacedService.getBetByUserId(id);
-    const bets = await betPlacedService.getBetByUserId(id);
-    if (!bets) ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Bet" } } }, req, res)
-    return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { name: "Bet" } }, data: bets }, req, res)
+    else if(query.status && query.status == betResultStatus.PENDING){
+      where.result = betResultStatus.PENDING;
+      query = lodash.omit(query,['status']);
+    }
+    else if(query.status && query.status == "DELETED"){
+      where.deleteReason = Not(null);
+      where.result = betResultStatus.UNDECLARE;
+      query = lodash.omit(query,['status']);
+    }else{
+      query = lodash.omit(query,['status']);
+    }
+
+    if (reqUser.roleName == userRoleConstant.user) {
+      where.createBy=  reqUser.id ;
+      result = await betPlacedService.getBet(where,query,reqUser.roleName,select);
+    }else{
+      let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
+      childsId = childsId.map(item => item.id);
+      if(!childsId.length){
+        return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
+          count: 0,
+          rows: []
+        } }, req, res)
+      }
+      select.push("user.id","user.userName");
+      where.createBy = In(childsId);
+      result = await betPlacedService.getBet(where,query,reqUser.roleName,select);
+    }
+    if (!result[1]) return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
+      count: 0,
+      rows: []
+    } }, req, res)
+    
+    return SuccessResponse({ statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
+      count : result[1],
+      rows  : result[0]
+    } }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res)
   }
@@ -38,7 +79,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       data: req.body
     });
     let reqUser = req.user;
-    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail,placeIndex } = req.body;
+    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     if (!userBalanceData || !userBalanceData.user) {
@@ -116,12 +157,13 @@ exports.matchBettingBetPlaced = async (req, res) => {
       rate: 0,
       createBy: reqUser.id,
       marketType: matchBetType,
-      marketBetType : marketBetType.MATCHBETTING,
+      marketBetType: marketBetType.MATCHBETTING,
       ipAddress,
       browserDetail,
-
+      eventName : match.title,
+      eventType : match.matchType
     }
-    await validateMatchBettingDetails(match, matchBetting, betPlacedObj, { teamA, teamB, teamC,placeIndex });
+    await validateMatchBettingDetails(match, matchBetting, betPlacedObj, { teamA, teamB, teamC, placeIndex });
     const teamArateRedisKey = redisKeys.userTeamARate + matchId;
     const teamBrateRedisKey = redisKeys.userTeamBRate + matchId;
     const teamCrateRedisKey = redisKeys.userTeamCRate + matchId;
@@ -160,12 +202,12 @@ exports.matchBettingBetPlaced = async (req, res) => {
     if (maximumLoss > 0) {
       maximumLoss = 0;
     }
-    let newUserExposure = calculateUserExposure(userPreviousExposure,teamRates,newTeamRateData,teamC);
-    if(newUserExposure > userExposureLimit){
+    let newUserExposure = calculateUserExposure(userPreviousExposure, teamRates, newTeamRateData, teamC);
+    if (newUserExposure > userExposureLimit) {
       logger.info({
-        info:`User exceeded the limit of total exposure for a day`,
-        user_id : reqUser.id,
-        newUserExposure ,
+        info: `User exceeded the limit of total exposure for a day`,
+        user_id: reqUser.id,
+        newUserExposure,
         userExposureLimit
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
@@ -189,23 +231,23 @@ exports.matchBettingBetPlaced = async (req, res) => {
       userCurrentBalance,
       matchExposure, maximumLoss
     })
-    await updateMatchExposure(reqUser.id,matchId, matchExposure);
+    await updateMatchExposure(reqUser.id, matchId, matchExposure);
     let newBet = await betPlacedService.addNewBet(betPlacedObj);
     let jobData = {
       userId: reqUser.id,
       teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam,
       winAmount,
-      lossAmount,newUserExposure,
+      lossAmount, newUserExposure,
       userPreviousExposure,
-      userCurrentBalance,teamArateRedisKey,teamBrateRedisKey,teamCrateRedisKey,newTeamRateData,
+      userCurrentBalance, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newTeamRateData,
       newBet
     }
     let walletJobData = {
-      partnerships : userRedisData.partnerShips,
-      userId : reqUser.id,
-      newUserExposure,userPreviousExposure,
-      winAmount,lossAmount,teamRates,
-      bettingType,betOnTeam,teamA,teamB,teamC,teamArateRedisKey,teamBrateRedisKey,teamCrateRedisKey,newBet
+      partnerships: userRedisData.partnerShips,
+      userId: reqUser.id,
+      newUserExposure, userPreviousExposure,
+      winAmount, lossAmount, teamRates,
+      bettingType, betOnTeam, teamA, teamB, teamC, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newBet
     }
     //add redis queue function
     const job = MatchBetQueue.createJob(jobData);
@@ -213,7 +255,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
 
     const walletJob = WalletMatchBetQueue.createJob(walletJobData);
     await walletJob.save();
-    return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced"}, data: newBet }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
   } catch (error) {
@@ -502,16 +544,16 @@ const validateMatchBettingDetails = async (matchDetail, matchBettingDetail, betO
 }
 
 const checkRate = async (matchDetails, matchBettingDetail, betObj, teams) => {
-  if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && matchBettingDetail.backTeamA-teams.placeIndex != betObj.odds) {
+  if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && matchBettingDetail.backTeamA - teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.BACK && teams.teamB == betObj.teamName && matchBettingDetail.backTeamB-teams.placeIndex != betObj.odds) {
+  else if (betObj.betType == betType.BACK && teams.teamB == betObj.teamName && matchBettingDetail.backTeamB - teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.LAY && teams.teamA == betObj.teamName && matchBettingDetail.layTeamA+teams.placeIndex!= betObj.odds) {
+  else if (betObj.betType == betType.LAY && teams.teamA == betObj.teamName && matchBettingDetail.layTeamA + teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.LAY && teams.teamB == betObj.teamName && matchBettingDetail.layTeamB+teams.placeIndex != betObj.odds) {
+  else if (betObj.betType == betType.LAY && teams.teamB == betObj.teamName && matchBettingDetail.layTeamB + teams.placeIndex != betObj.odds) {
     return true;
   }
   else {
@@ -519,21 +561,21 @@ const checkRate = async (matchDetails, matchBettingDetail, betObj, teams) => {
   }
 }
 
-let calculateUserExposure = (userOldExposure,oldTeamRate,newTeamRate,teamC) => {
+let calculateUserExposure = (userOldExposure, oldTeamRate, newTeamRate, teamC) => {
 
   let minAmountNewRate = 0;
-  let minAmountOldRate = 0;  
-  if(teamC && teamC != ''){
-    minAmountNewRate = Math.min(newTeamRate.teamA,newTeamRate.teamB,newTeamRate.teamC);
-    minAmountOldRate = Math.min(oldTeamRate.teamA,oldTeamRate.teamB,oldTeamRate.teamC);
+  let minAmountOldRate = 0;
+  if (teamC && teamC != '') {
+    minAmountNewRate = Math.min(newTeamRate.teamA, newTeamRate.teamB, newTeamRate.teamC);
+    minAmountOldRate = Math.min(oldTeamRate.teamA, oldTeamRate.teamB, oldTeamRate.teamC);
   }
-  else{
-    minAmountNewRate = Math.min(newTeamRate.teamA,newTeamRate.teamB);
-    minAmountOldRate = Math.min(oldTeamRate.teamA,oldTeamRate.teamB);
+  else {
+    minAmountNewRate = Math.min(newTeamRate.teamA, newTeamRate.teamB);
+    minAmountOldRate = Math.min(oldTeamRate.teamA, oldTeamRate.teamB);
   }
-  if(minAmountNewRate > 0)
+  if (minAmountNewRate > 0)
     minAmountNewRate = 0;
-  if(minAmountOldRate > 0)
+  if (minAmountOldRate > 0)
     minAmountOldRate = 0;
   let newExposure = userOldExposure - Math.abs(minAmountOldRate) + Math.abs(minAmountNewRate);
   return Number(newExposure.toFixed(2));

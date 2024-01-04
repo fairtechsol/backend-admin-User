@@ -89,6 +89,14 @@ const betPlacedSchema = new EntitySchema({
             type: 'varchar',
             nullable: true,
         },
+        eventName : {
+            type : 'varchar',
+            nullable : true
+        },
+        eventType : {
+            type : 'varchar',
+            nullable : true
+        }
     },
     relations: {
         user: {

@@ -792,25 +792,25 @@ exports.userBalanceDetails = async (req, res, next) => {
     let loginUser = await getUserById(id)
     if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
 
-    let firstLevelChildUser = await getFirstLevelChildUser(loginUser.id)
+    let firstLevelChildUser = await getFirstLevelChildUser(loginUser.id);
 
-    let firstLevelChildUserIds = await firstLevelChildUser.map(obj => obj.id)
+    let firstLevelChildUserIds = firstLevelChildUser.map(obj => obj.id);
 
-    let childUsers = await getChildUser(loginUser.id)
+    let childUsers = await getChildUser(loginUser.id);
 
-    let allChildUserIds = childUsers.map(obj => obj.id)
+    let allChildUserIds = childUsers.map(obj => obj.id);
 
-    let userBalanceData = getUserBalanceDataByUserId(loginUser.id, ["id", "currentBalance", "profitLoss"])
+    let userBalanceData = getUserBalanceDataByUserId(loginUser.id, ["id", "currentBalance", "profitLoss"]);
 
-    let FirstLevelChildBalanceData = getAllChildProfitLossSum(firstLevelChildUserIds)
+    let FirstLevelChildBalanceData = getAllChildProfitLossSum(firstLevelChildUserIds);
 
-    let allChildBalanceData = getAllChildCurrentBalanceSum(allChildUserIds)
+    let allChildBalanceData = getAllChildCurrentBalanceSum(allChildUserIds);
 
-    let AggregateBalanceData = await Promise.allSettled([userBalanceData, FirstLevelChildBalanceData, allChildBalanceData])
+    let AggregateBalanceData = await Promise.allSettled([userBalanceData, FirstLevelChildBalanceData, allChildBalanceData]);
 
-    userBalanceData = AggregateBalanceData[0] ? AggregateBalanceData[0] : {};
-    FirstLevelChildBalanceData = AggregateBalanceData[1] ? AggregateBalanceData[1] : {};
-    allChildBalanceData = AggregateBalanceData[2] ? AggregateBalanceData[2] : {};
+    userBalanceData = AggregateBalanceData[0] && AggregateBalanceData[0].value ? AggregateBalanceData[0].value : {};
+    FirstLevelChildBalanceData = AggregateBalanceData[1] && AggregateBalanceData[1].value ? AggregateBalanceData[1].value : {};
+    allChildBalanceData = AggregateBalanceData[2] && AggregateBalanceData[2].value ? AggregateBalanceData[2].value : {};
 
     let response = {
       userCreditReference: parseFloat(loginUser.creditRefrence),
