@@ -185,6 +185,7 @@ module.exports.betResultStatus = {
 module.exports.socketData = {
   expertRoomSocket: "expertRoom",
   MatchBetPlaced: "userMatchBetPlaced",
+  SessionBetPlaced: "userSessionBetPlaced",
   userAllExposure: "exposure",
   userMatchExposure: "matchExposure_",
   userSessionExposure: "sessionExposure_",
@@ -199,3 +200,10 @@ exports.marketBetType = {
   SESSION: "SESSION",
   MATCHBETTING: "MATCHBETTING",
 };
+
+module.exports.manualMatchBettingType = [
+  "quickbookmaker1",
+  "quickbookmaker2",
+  "quickbookmaker3",
+  "tiedMatch2",
+];

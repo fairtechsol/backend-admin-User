@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -571,18 +571,16 @@ exports.setExposureLimit = async (req, res, next) => {
 exports.userList = async (req, res, next) => {
   try {
     let reqUser = req.user;
-    let { userName, roleName, offset, limit, type } = req.query;
     // let loginUser = await getUserById(reqUser.id)
     let userRole = reqUser.roleName;
     let where = {
       createBy: reqUser.id,
       roleName: Not(userRole)
     };
-    if (userName) where.userName = ILike(`%${userName}%`);
-    if (roleName) where.roleName = roleName;
 
-    let relations = ["user"];
-    let users = await getUsersWithUserBalance(where, offset, limit);
+    const { type, ...apiQuery } = req.query;
+
+    let users = await getUsersWithUsersBalanceData(where, apiQuery);
 
     let response = {
       count: 0,
@@ -764,7 +762,7 @@ exports.userSearchList = async (req, res, next) => {
     }
     let where = {};
     if (userName) where.userName = ILike(`%${userName}%`);
-    if (createdBy) where.createdBy = createdBy
+    if (createdBy) where.createBy = createdBy
 
     let users = await getUsers(where, ["id", "userName"])
     let response = {
@@ -787,10 +785,10 @@ exports.userSearchList = async (req, res, next) => {
 
 exports.userBalanceDetails = async (req, res, next) => {
   try {
-    let reqUser = req.user || {}
-    let { id } = req.query || reqUser.id;
-    let loginUser = await getUserById(id)
-    if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
+    let reqUser = req.user || {};
+    let id = req.query?.id || reqUser.id;
+    let loginUser = await getUserById(id);
+    if (!loginUser || id != loginUser.id) return ErrorResponse({ statusCode: 400, message: { msg: "notFound",keys : {name : "User"} } }, req, res);
 
     let firstLevelChildUser = await getFirstLevelChildUser(loginUser.id);
 
