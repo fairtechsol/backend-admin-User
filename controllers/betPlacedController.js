@@ -249,7 +249,13 @@ exports.matchBettingBetPlaced = async (req, res) => {
       userCurrentBalance, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newTeamRateData,
       newBet
     }
+
+    const protocol = req.protocol; // Will give 'http' or 'https'
+    const domain = req.get('host'); // Will give the domain name
+    const domainUrl = `${protocol}://${domain}`;
+
     let walletJobData = {
+      domainUrl:domainUrl,
       partnerships: userRedisData.partnerShips,
       userId: reqUser.id,
       newUserExposure, userPreviousExposure,
@@ -495,12 +501,18 @@ exports.sessionBetPlace = async (req, res, next) => {
     });
     await job.save();
 
+
+    const protocol = req.protocol; // Will give 'http' or 'https'
+    const domain = req.get('host'); // Will give the domain name
+    const domainUrl = `${protocol}://${domain}`;
+
     const walletJob = WalletSessionBetQueue.createJob({
       userId: id,
       partnership: userData?.partnerShips,
       placedBet: placedBet,
       newBalance: newBalance,
       betPlaceObject: betPlaceObject,
+      domainUrl: domainUrl
     });
     await walletJob.save();
 
