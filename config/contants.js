@@ -152,7 +152,11 @@ module.exports.redisKeys = {
   userTeamARate : "teamARate_",
   userTeamBRate : "teamBRate_",
   userTeamCRate : "teamCRate_",
-  userExposureLimit : "exposureLimit"
+  userExposureLimit : "exposureLimit",
+  yesRateTie: "yesRateTie_",
+  noRateTie: "noRateTie_",
+  yesRateComplete: "yesRateComplete_",
+  noRateComplete: "noRateComplete_",
 }
 
 module.exports.betResultStatus = {

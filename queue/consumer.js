@@ -109,7 +109,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
             // If masterRedisData exists, update partner exposure and session data
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
             let partnerExposure = masterExposure + maxLossExposure;
-            await updateUserBalanceByUserId(partnershipId, {
+            updateUserBalanceByUserId(partnershipId, {
               exposure: partnerExposure,
             });
 
@@ -130,7 +130,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
               partnership
             );
 
-            await updateUserDataRedis(partnershipId, {
+            updateUserDataRedis(partnershipId, {
               [`${placedBetObject?.betPlacedData?.betId}_profitLoss`]:
                 JSON.stringify(redisData),
               exposure: partnerExposure,
@@ -211,16 +211,17 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
   let partnership = JSON.parse(userRedisData.partnerShips);
+
   let teamRates = {
     teamA: parseFloat(userRedisData[jobData.teamArateRedisKey]) || 0.0,
     teamB: parseFloat(userRedisData[jobData.teamBrateRedisKey]) || 0.0,
-    teamC: parseFloat(userRedisData[jobData.teamCrateRedisKey]) || 0.0
+    teamC:jobData.teamCrateRedisKey ? parseFloat(userRedisData[jobData.teamCrateRedisKey]) || 0.0:0.0
   }
 
   let teamData = {
     teamA : jobData.newTeamRateData.teamA,
     teamB : jobData.newTeamRateData.teamB,
-    teamC : jobData.newTeamRateData.teamC
+    ...(jobData.teamCrateRedisKey ? {teamC : jobData.newTeamRateData.teamC}: {})
   }
   let obj = {
     teamA : jobData.teamA,
@@ -236,11 +237,11 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
       [redisKeys.userAllExposure] : userCurrentExposure,
       [jobData.teamArateRedisKey] : teamData.teamA,
       [jobData.teamBrateRedisKey] : teamData.teamB,
-      [jobData.teamCrateRedisKey] : teamData.teamC
+      ...(jobData.teamCrateRedisKey?{[jobData.teamCrateRedisKey] : teamData.teamC}:{})
     }
     let setRedis = await updateUserDataRedis(userId,userRedisObj);
     //send socket to user
-    sendMessageToUser(userId,socketData.MatchBetPlaced,{userRedisData,jobData})
+    sendMessageToUser(userId,socketData.MatchBetPlaced,{userRedisData,jobData,...teamData})
   }
   if(partnership['mPartnershipId']){
     let mPartenerShipId = partnership['mPartnershipId'];
@@ -261,7 +262,7 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
         [redisKeys.userAllExposure] : partnerExpsoure,
         [jobData.teamArateRedisKey] : teamData.teamA,
         [jobData.teamBrateRedisKey] : teamData.teamB,
-        [jobData.teamCrateRedisKey] : teamData.teamC
+        ...(jobData.teamCrateRedisKey?{ [jobData.teamCrateRedisKey] : teamData.teamC}:{})
       }
       await updateUserDataRedis(mPartenerShipId,userRedisObj);
       let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
@@ -301,7 +302,7 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
         [redisKeys.userAllExposure] : partnerExpsoure,
         [jobData.teamArateRedisKey] : teamData.teamA,
         [jobData.teamBrateRedisKey] : teamData.teamB,
-        [jobData.teamCrateRedisKey] : teamData.teamC
+        ...(jobData.teamCrateRedisKey?{ [jobData.teamCrateRedisKey] : teamData.teamC}:{})
       }
       await updateUserDataRedis(mPartenerShipId,userRedisObj);
       let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
@@ -341,7 +342,7 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
         [redisKeys.userAllExposure] : partnerExpsoure,
         [jobData.teamArateRedisKey] : teamData.teamA,
         [jobData.teamBrateRedisKey] : teamData.teamB,
-        [jobData.teamCrateRedisKey] : teamData.teamC
+        ...(jobData.teamCrateRedisKey?{ [jobData.teamCrateRedisKey] : teamData.teamC}:{})
       }
       await updateUserDataRedis(mPartenerShipId,userRedisObj);
       let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
@@ -381,7 +382,7 @@ let calculateRateAmount = async (userRedisData, jobData,userId) => {
         [redisKeys.userAllExposure] : partnerExpsoure,
         [jobData.teamArateRedisKey] : teamData.teamA,
         [jobData.teamBrateRedisKey] : teamData.teamB,
-        [jobData.teamCrateRedisKey] : teamData.teamC
+        ...(jobData.teamCrateRedisKey?{ [jobData.teamCrateRedisKey] : teamData.teamC}:{})
       }
       await updateUserDataRedis(mPartenerShipId,userRedisObj);
       let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
