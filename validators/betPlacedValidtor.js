@@ -7,7 +7,7 @@ module.exports.MatchBetPlacedValidator = Joi.object({
     matchId: Joi.string().required(),
     teamA : Joi.string().required(),
     teamB : Joi.string().required(),
-    teamC : Joi.string(),
+    teamC : Joi.string().allow(""),
     stake : Joi.number().required(),
     odd : Joi.number().required(),
     betId : Joi.string().required(),

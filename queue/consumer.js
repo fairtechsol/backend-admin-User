@@ -31,6 +31,17 @@ const WalletMatchBetQueue = new Queue('walletMatchBetQueue', walletRedisOption);
 const WalletSessionBetQueue = new Queue('walletSessionBetQueue', walletRedisOption);
 
 
+const expertRedisOption = {
+  removeOnSuccess: true,
+  redis: {
+    port: process.env.EXPERT_REDIS_PORT,
+    host: process.env.EXPERT_REDIS_HOST
+  }
+}
+
+const ExpertMatchBetQueue = new Queue('expertMatchBetQueue', expertRedisOption);
+const ExpertSessionBetQueue = new Queue('expertSessionBetQueue', expertRedisOption);
+
 SessionMatchBetQueue.process(async function (job, done) {
   let jobData = job.data;
   let userId = jobData.userId;
@@ -66,7 +77,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
   const placedBetObject = jobData.betPlaceObject;
   let maxLossExposure = placedBetObject.maxLoss;
   let partnerSessionExposure = placedBetObject.diffSessionExp;
-  let stake = placedBetObject.stake;
+  let stake = placedBetObject?.betPlacedData?.stake;
 
   // If user role is 'user', send balance update message
   if (userRedisData?.roleName == userRoleConstant.user) {
@@ -410,4 +421,6 @@ module.exports = {
   WalletMatchBetQueue: WalletMatchBetQueue,
   SessionMatchBetQueue: SessionMatchBetQueue,
   WalletSessionBetQueue: WalletSessionBetQueue,
+  ExpertMatchBetQueue:ExpertMatchBetQueue,
+  ExpertSessionBetQueue:ExpertSessionBetQueue
 };
