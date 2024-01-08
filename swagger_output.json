@@ -1405,6 +1405,73 @@
           }
         }
       }
+    },
+    "/bet/session": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "betId": {
+                    "example": "any"
+                  },
+                  "betType": {
+                    "example": "any"
+                  },
+                  "browserDetail": {
+                    "example": "any"
+                  },
+                  "eventName": {
+                    "example": "any"
+                  },
+                  "eventType": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  },
+                  "ipAddress": {
+                    "example": "any"
+                  },
+                  "odds": {
+                    "example": "any"
+                  },
+                  "ratePercent": {
+                    "example": "any"
+                  },
+                  "stake": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {

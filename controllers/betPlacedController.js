@@ -3,13 +3,14 @@ const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getUserRedisData, updateMatchExposure } = require("../services/redis/commonfunction");
+const { getUserRedisData, updateMatchExposure, updateUserDataRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate } = require('../services/commonService');
-const { MatchBetQueue, WalletMatchBetQueue } = require('../queue/consumer');
+const { calculateRate, calculateProfitLossSession } = require('../services/commonService');
+const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue } = require('../queue/consumer');
 const { In, Not } = require('typeorm');
 let lodash = require("lodash");
+const { updateUserBalanceByUserId } = require('../services/userBalanceService');
 
 // Default expert domain URL, fallback to localhost if not provided
 let expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
@@ -248,7 +249,13 @@ exports.matchBettingBetPlaced = async (req, res) => {
       userCurrentBalance, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newTeamRateData,
       newBet
     }
+
+    const protocol = req.protocol; // Will give 'http' or 'https'
+    const domain = req.get('host'); // Will give the domain name
+    const domainUrl = `${protocol}://${domain}`;
+
     let walletJobData = {
+      domainUrl:domainUrl,
       partnerships: userRedisData.partnerShips,
       userId: reqUser.id,
       newUserExposure, userPreviousExposure,
@@ -286,7 +293,18 @@ exports.matchBettingBetPlaced = async (req, res) => {
 exports.sessionBetPlace = async (req, res, next) => {
   try {
     // Destructure relevant data from the request body and user object
-    const { betId, betType: sessionBetType, country, matchId, ipAddress, odds, ratePercent, stake } = req.body;
+    const {
+      betId,
+      betType: sessionBetType,
+      browserDetail,
+      eventName,
+      eventType,
+      matchId,
+      ipAddress,
+      odds,
+      ratePercent,
+      stake,
+    } = req.body;
     const { id } = req.user;
 
     // Fetch user details by ID
@@ -341,17 +359,17 @@ exports.sessionBetPlace = async (req, res, next) => {
       return ErrorResponse(err?.response?.data, req, res);
     }
 
-    validateSessionBet(sessionDetails, req.body);
+    await validateSessionBet(sessionDetails, req.body);
 
     let winAmount = 0,
       loseAmount = 0;
 
     // Calculate win and lose amounts based on the bet type
-    if (sessionBetType == betType.yes) {
+    if (sessionBetType == betType.YES) {
       winAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
-      loseAmount = stake;
-    } else if (sessionBetType == betType.no) {
-      winAmount = stake;
+      loseAmount = parseFloat(stake);
+    } else if (sessionBetType == betType.NO) {
+      winAmount = parseFloat(stake);
       loseAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
     } else {
       // Return an error response for an invalid bet type
@@ -371,7 +389,8 @@ exports.sessionBetPlace = async (req, res, next) => {
     }
 
     const userData = await getUserRedisData(id);
-    let sessionExp = parseFloat(userData[`${matchId}_sessionExposure`]) || 0.0;
+    let sessionExp = parseFloat(userData[`${redisKeys.userSessionExposure}${matchId}`]) || 0.0;
+    
 
     logger.info({
       message: "Session exposure coming from redis.",
@@ -380,21 +399,21 @@ exports.sessionBetPlace = async (req, res, next) => {
 
 
     let betPlaceObject = {
-      winAmount,
-      loseAmount,
+      winAmount: parseFloat(winAmount),
+      loseAmount: parseFloat(loseAmount),
       betPlacedData: {
         userName: user.userName,
-        odds: odds,
+        odds: parseFloat(odds),
         betType: sessionBetType,
-        stake: stake,
+        stake: parseFloat(stake),
         matchId: matchId,
         betId: betId,
-        rate: ratePercent,
+        rate: parseFloat(ratePercent),
       },
-      userBalance: userData?.currentBalance || 0,
+      userBalance: parseFloat(userData?.currentBalance) || 0,
     };
 
-    const totalExposure = userData?.exposure || 0;
+    let totalExposure = parseFloat(userData?.exposure) || 0;
 
     logger.info({
       message: "Exposure and balance of user before calculation: ",
@@ -406,12 +425,98 @@ exports.sessionBetPlace = async (req, res, next) => {
     let maxSessionLoss = 0.0;
     if (sessionProfitLossData) {
       sessionProfitLossData = JSON.parse(sessionProfitLossData);
-      maxSessionLoss = parseFloat(sessionProfitLossData['maxLoss']);
+      maxSessionLoss = parseFloat(sessionProfitLossData["maxLoss"]);
     }
 
+    let redisData = await calculateProfitLossSession(
+      sessionProfitLossData,
+      betPlaceObject
+    );
+
+    betPlaceObject.maxLoss = Math.abs(redisData.maxLoss - maxSessionLoss);
+    let redisSessionExp = Number(
+      (sessionExp + redisData?.maxLoss - maxSessionLoss).toFixed(2)
+    );
+
+    totalExposure +=parseFloat( parseFloat(
+      betPlaceObject.maxLoss
+    ).toFixed(2));
+
+    let redisObject = {
+      [`${redisKeys.userSessionExposure}${matchId}`]: redisSessionExp,
+      [`${betId}_profitLoss`]: JSON.stringify(redisData),
+      exposure: totalExposure,
+    };
+
+    let newBalance =
+      parseFloat(userData?.currentBalance).toFixed(2) - totalExposure;
+
+    betPlaceObject.diffSessionExp = redisSessionExp - sessionExp;
+
+    if (newBalance < 0) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "userBalance.insufficientBalance",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    await updateUserBalanceByUserId(id, {
+      exposure: totalExposure,
+    });
+
+    await updateUserDataRedis(id, redisObject);
+
+    const placedBet = await betPlacedService.addNewBet({
+      matchId: matchId,
+      betId: betId,
+      amount: stake,
+      odds: odds,
+      winAmount: winAmount,
+      lossAmount: loseAmount,
+      betType: sessionBetType,
+      rate: ratePercent,
+      marketType: sessionDetails?.name,
+      marketBetType: marketBetType.SESSION,
+      ipAddress: ipAddress,
+      browserDetail: browserDetail,
+      eventName: eventName,
+      eventType: eventType,
+      userId: id,
+      createBy: id,
+    });
 
 
+    //add redis queue function
+    const job = SessionMatchBetQueue.createJob({
+      userId:id,
+      placedBet:placedBet,
+      newBalance:newBalance,
+      betPlaceObject:betPlaceObject
+    });
+    await job.save();
 
+
+    const protocol = req.protocol; // Will give 'http' or 'https'
+    const domain = req.get('host'); // Will give the domain name
+    const domainUrl = `${protocol}://${domain}`;
+
+    const walletJob = WalletSessionBetQueue.createJob({
+      userId: id,
+      partnership: userData?.partnerShips,
+      placedBet: placedBet,
+      newBalance: newBalance,
+      betPlaceObject: betPlaceObject,
+      domainUrl: domainUrl
+    });
+    await walletJob.save();
+
+    return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: placedBet }, req, res)
 
   } catch (error) {
     // Log the error details
@@ -427,17 +532,8 @@ exports.sessionBetPlace = async (req, res, next) => {
 };
 
 
-const calculateProfitLossSession = async (redisProfitLoss, betData) => {
-  const lowerLimit =
-    redisProfitLoss?.lowerLimitOdds || betData?.odds - 5 < 0
-      ? 0
-      : betData?.odds - 5;
-  const upperLimit = redisProfitLoss?.upperLimitOdds || betData?.odds + 5;
-}
 
-
-
-const validateSessionBet = async (apiBetData, betDetails) => {
+const validateSessionBet =async (apiBetData, betDetails) => {
   if (apiBetData.activeStatus != betStatusType.live) {
     throw {
       message: {
@@ -468,12 +564,22 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       throw {
         statusCode: 400,
         message: {
-          msg: "bet.notLive"
-        }
+          msg: "bet.notLive",
+        },
       };
-    }
-    else {
-      // check the rates of third party api
+    } else {
+      const rateChange = await checkApiSessionRates(apiBetData, betDetails);
+      if (rateChange) {
+        throw {
+          statusCode: 400,
+          message: {
+            msg: "bet.marketRateChanged",
+            keys: {
+              marketType: "Session",
+            },
+          },
+        };
+      }
     }
   }
   else {
@@ -486,16 +592,16 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       };
     }
     if (
-      (betDetails.sessionBetType == betType.no &&
+      (betDetails.betType == betType.NO &&
         betDetails.odds != apiBetData.noRate) ||
-      (betDetails.sessionBetType == betType.yes &&
+      (betDetails.betType == betType.YES &&
         betDetails.odds != apiBetData.yesRate) ||
       (apiBetData.status != null && apiBetData.status != teamStatus.active)
     ) {
       throw {
         statusCode: 400,
         message: {
-          msg: "marketRateChanged",
+          msg: "bet.marketRateChanged",
           keys: {
             marketType: "Session",
           },
@@ -505,6 +611,36 @@ const validateSessionBet = async (apiBetData, betDetails) => {
   }
 }
 
+
+const checkApiSessionRates = async(apiBetData, betDetail) => {
+  const microServiceUrl = process.env.MICROSERVICEURL;
+  try {
+    let data =await apiCall(
+      apiMethod.get,
+      microServiceUrl + "session/" + apiBetData.marketId
+    );
+    let filterData = data?.data?.find(
+      (d) => d.SelectionId == apiBetData.selectionId
+    );
+
+    if (
+      betDetail.betType == betType.NO &&
+      betDetail.odds != filterData["LayPrice1"]
+    ) {
+      return true;
+    } else if (
+      betDetail.betType == betType.YES &&
+      betDetail.odds != filterData["BackPrice1"]
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (error) {
+    return true;
+  }
+  // check the rates of third party api
+};
 
 const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) => {
   if (matchBettingDetail.activeStatus != betStatusType.live) {
@@ -543,7 +679,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       throw {
         statusCode: 400,
         message: {
-          msg: "marketRateChanged",
+          msg: "bet.marketRateChanged",
           keys: {
             marketType: "Match betting",
           },

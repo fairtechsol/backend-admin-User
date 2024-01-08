@@ -55,6 +55,7 @@ const setUserDetailsRedis = async (user) => {
     myProfitLoss: user?.userBal?.myProfitLoss || 0,
     userName: user.userName,
     currentBalance: user?.userBal?.currentBalance || 0,
+    roleName:user.roleName
   });
   if (user.roleName == userRoleConstant.user) {
     const redisUserPartnerShip = await internalRedis.hget(

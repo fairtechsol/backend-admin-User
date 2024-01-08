@@ -762,7 +762,7 @@ exports.userSearchList = async (req, res, next) => {
     }
     let where = {};
     if (userName) where.userName = ILike(`%${userName}%`);
-    if (createdBy) where.createdBy = createdBy
+    if (createdBy) where.createBy = createdBy
 
     let users = await getUsers(where, ["id", "userName"])
     let response = {

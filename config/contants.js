@@ -175,10 +175,31 @@ module.exports.socketData ={
   userExposureLimit: "exposureLimit",
 };
 
-exports.marketBetType= {
-  SESSION : "SESSION",
-  MATCHBETTING : "MATCHBETTING"
-}
+module.exports.betResultStatus = {
+  UNDECLARE: "UNDECLARE",
+  PENDING: "PENDING",
+  WIN: "WIN",
+  LOSS: "LOSS",
+};
+
+module.exports.socketData = {
+  expertRoomSocket: "expertRoom",
+  MatchBetPlaced: "userMatchBetPlaced",
+  SessionBetPlaced: "userSessionBetPlaced",
+  userAllExposure: "exposure",
+  userMatchExposure: "matchExposure_",
+  userSessionExposure: "sessionExposure_",
+  userBalanceUpdateEvent: "updateUserBalance",
+  userTeamARate: "teamARate_",
+  userTeamBRate: "teamBRate_",
+  userTeamCRate: "teamCRate_",
+  userExposureLimit: "exposureLimit",
+};
+
+exports.marketBetType = {
+  SESSION: "SESSION",
+  MATCHBETTING: "MATCHBETTING",
+};
 
 module.exports.manualMatchBettingType = [
   "quickbookmaker1",

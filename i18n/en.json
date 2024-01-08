@@ -45,7 +45,7 @@
     "InvalidUser" : "User is invalid."
   },
   "userBalance" : {
-    "insufficientBalance" : "balance is insufficient to take this action.",
+    "insufficientBalance" : "Balance is insufficient to take this action.",
     "BalanceAddedSuccessfully" : "Balance Updated successfully.",
     "InvalidTransactionType" : "Invalid transaction type."
   },
