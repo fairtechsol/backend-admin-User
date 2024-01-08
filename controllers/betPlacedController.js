@@ -7,7 +7,7 @@ const { getUserRedisData, updateMatchExposure, updateUserDataRedis } = require("
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateRate, calculateProfitLossSession } = require('../services/commonService');
-const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue } = require('../queue/consumer');
+const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue } = require('../queue/consumer');
 const { In, Not } = require('typeorm');
 let lodash = require("lodash");
 const { updateUserBalanceByUserId } = require('../services/userBalanceService');
@@ -285,6 +285,9 @@ exports.matchBettingBetPlaced = async (req, res) => {
 
     const walletJob = WalletMatchBetQueue.createJob(walletJobData);
     await walletJob.save();
+
+    const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
+    await expertJob.save();
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -519,9 +522,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     await job.save();
 
 
-    const protocol = req.protocol; // Will give 'http' or 'https'
-    const domain = req.get('host'); // Will give the domain name
-    const domainUrl = `${protocol}://${domain}`;
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
 
     const walletJob = WalletSessionBetQueue.createJob({
       userId: id,
@@ -532,6 +533,17 @@ exports.sessionBetPlace = async (req, res, next) => {
       domainUrl: domainUrl
     });
     await walletJob.save();
+
+
+    const expertJob = ExpertSessionBetQueue.createJob({
+      userId: id,
+      partnership: userData?.partnerShips,
+      placedBet: placedBet,
+      newBalance: newBalance,
+      betPlaceObject: betPlaceObject,
+      domainUrl: domainUrl
+    });
+    await expertJob.save();
 
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: placedBet }, req, res)
 
