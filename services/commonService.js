@@ -112,21 +112,7 @@ exports.calculateExpertRate =async  (teamRates, data, partnership = 100) => {
     return newTeamRates;
   }
 
-
-  /**
- * Calculates the profit or loss for a betting session.
- * @param {object} redisProfitLoss - Redis data for profit and loss.
- * @param {object} betData - Data for the current bet.
- * @returns {object} - Object containing upper and lower limit odds, and the updated bet placed data.
- */
-exports.calculateProfitLossSession = async (redisProfitLoss, betData, partnership) => {
-  /**
-   * Calculates the profit or loss for a specific bet at given odds.
-   * @param {object} betData - Data for the current bet.
-   * @param {number} odds - Odds for the current bet.
-   * @returns {number} - Profit or loss amount.
-   */
-  let maxLoss = 0;
+  
   const calculateProfitLoss = (betData, odds,partnership) => {
     if (
       (betData?.betPlacedData?.betType === betType.NO &&
@@ -153,6 +139,20 @@ exports.calculateProfitLossSession = async (redisProfitLoss, betData, partnershi
     }
     return 0;
   };
+  /**
+ * Calculates the profit or loss for a betting session.
+ * @param {object} redisProfitLoss - Redis data for profit and loss.
+ * @param {object} betData - Data for the current bet.
+ * @returns {object} - Object containing upper and lower limit odds, and the updated bet placed data.
+ */
+exports.calculateProfitLossSession = async (redisProfitLoss, betData, partnership) => {
+  /**
+   * Calculates the profit or loss for a specific bet at given odds.
+   * @param {object} betData - Data for the current bet.
+   * @param {number} odds - Odds for the current bet.
+   * @returns {number} - Profit or loss amount.
+   */
+  let maxLoss = 0;
 
   /**
    * Gets the lower limit for the current bet data.

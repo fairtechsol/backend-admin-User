@@ -20,4 +20,15 @@ module.exports.MatchBetPlacedValidator = Joi.object({
     
   })
   
-
+  module.exports.SessionBetPlacedValidator = Joi.object({
+    matchId: Joi.string().required(),
+    stake : Joi.number().required(),
+    odds : Joi.number().required(),
+    betId : Joi.string().required(),
+    betType : Joi.string().valid(...Object.values(betType)).required(),
+    ipAddress : Joi.string().required().allow(""),
+    browserDetail :  Joi.string().required().allow(""),
+    eventName:Joi.string().required(),
+    eventType:Joi.string().required(),
+    ratePercent:Joi.number()
+  })
