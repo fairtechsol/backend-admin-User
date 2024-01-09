@@ -9,10 +9,11 @@ const {
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced } = require("../services/betPlacedService");
 const {
   forceLogoutIfLogin,
   forceLogoutUser,
+  calculateProfitLossForSessionToResult,
 } = require("../services/commonService");
 const {
   getDomainDataById,
@@ -539,9 +540,9 @@ exports.changePasswordSuperAdmin = async (req, res, next) => {
 exports.declareSessionResult = async (req,res)=>{
   try {
 
-    const { betId,score }=req.body;
+    const { betId,score,matchId,sessionDetails,userId }=req.body;
 
-    const betPlaced = await getMatchBetPlaceWithUser(betId,['BetPlaced.id', 'BetPlaced.userId', "BetPlaced.betId",  'BetPlaced.amount', 'BetPlaced.winAmount', 'BetPlaced.lossAmount', 'BetPlaced.betType', 'BetPlaced.odds',  'user.id', 'user.createBy', 'user.fwPartnership'])
+    const betPlaced = await getMatchBetPlaceWithUser(betId)
     
     logger.info({
       message:"Session result declared.",
@@ -563,6 +564,24 @@ exports.declareSessionResult = async (req,res)=>{
 
         await addNewBet(updateRecords);
 
+
+        let users = await getDistinctUserBetPlaced(betId);
+
+
+        let upperUserObj = {};
+        let bulkWalletRecord = [];
+        const profitLossData = await calculateProfitLossSessionForUserDeclare(
+          users,
+          betId,
+          matchId,
+          0,
+          sessionDetails,
+          socketData.sessionResult,
+          userId,
+          bulkWalletRecord,
+          upperUserObj
+        );
+
     
     
   } catch (error) {
@@ -579,7 +598,7 @@ exports.declareSessionResult = async (req,res)=>{
 
 
 
-const calculateProfitLossForUserDeclare=async (users, betId,matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj) =>{
+const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj) =>{
  
   let faAdminCal={};
 
@@ -598,7 +617,7 @@ const calculateProfitLossForUserDeclare=async (users, betId,matchId, fwProfitLos
     logger.info({ message: "Updated users", data: user.user });
     logger.info({
       redisSessionExposureValue: redisSesionExposureValue,
-      sessionBet: sessionBet,
+      sessionBet: true,
     });
    
       // check if data is already present in the redis or not
@@ -607,8 +626,8 @@ const calculateProfitLossForUserDeclare=async (users, betId,matchId, fwProfitLos
         maxLoss = redisData.maxLoss || 0;
       } else {
         // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
-        let redisData = await this.calculateProfitLossForSessionToResult(betId, user.user);
-        maxLoss = redisData.maxLoss || 0;
+        let redisData = await calculateProfitLossForSessionToResult(betId, user.user);
+        maxLoss = redisData.max_loss || 0;
       }
       redisSesionExposureValue = redisSesionExposureValue - maxLoss;
       if (userRedisData.exposure) {
@@ -628,8 +647,8 @@ const calculateProfitLossForUserDeclare=async (users, betId,matchId, fwProfitLos
       data:user.user.exposure
     });
 
-    getWinAmount = getMultipleAmount[0].winAmount;
-    getLossAmount = getMultipleAmount[0].lossAmount;
+    getWinAmount = getMultipleAmount[0].winamount;
+    getLossAmount = getMultipleAmount[0].lossamount;
     profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
 
  
@@ -645,7 +664,7 @@ const calculateProfitLossForUserDeclare=async (users, betId,matchId, fwProfitLos
     }
 
     const userCurrBalance=Number(user.user.userBalance.currentBalance+profitLoss).toFixed(2);
-    user.user.userBalance = await updateUserBalanceByUserId({
+    user.user.userBalance = await updateUserBalanceByUserId(user.user.id,{
       currentBalance:userCurrBalance,
       profitLoss:user.user.userBalance.profitLoss+profitLoss,
       myProfitLoss:user.user.userBalance.myProfitLoss+profitLoss,
@@ -653,8 +672,7 @@ const calculateProfitLossForUserDeclare=async (users, betId,matchId, fwProfitLos
     })
     
     if (userRedisData.exposure) {
-      updateUserDataRedis(user.user.id)
-      this.redis.hmset(user.user.id, { exposure: user.user.userBalance.exposure, myProfitLoss: user.user.userBalance.myProfitLoss, currentBalance:  userCurrBalance });
+      updateUserDataRedis(user.user.id,{ exposure: user.user.userBalance.exposure, myProfitLoss: user.user.userBalance.myProfitLoss, currentBalance:  userCurrBalance })
     }
     await addUser(user.user);
 

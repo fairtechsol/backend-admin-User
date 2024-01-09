@@ -19,28 +19,20 @@ const options = {
 const MatchBetQueue = new Queue('matchBetQueue', options);
 const SessionMatchBetQueue = new Queue('sessionMatchBetQueue', options);
 
-const walletRedisOption = {
+const externalRedisOption = {
   removeOnSuccess: true,
   redis: {
-    port: process.env.WALLET_REDIS_PORT,
-    host: process.env.WALLET_REDIS_HOST
+    port: process.env.EXTERNAL_REDIS_PORT,
+    host: process.env.EXTERNAL_REDIS_HOST
   }
 }
 
-const WalletMatchBetQueue = new Queue('walletMatchBetQueue', walletRedisOption);
-const WalletSessionBetQueue = new Queue('walletSessionBetQueue', walletRedisOption);
+const WalletMatchBetQueue = new Queue('walletMatchBetQueue', externalRedisOption);
+const WalletSessionBetQueue = new Queue('walletSessionBetQueue', externalRedisOption);
 
 
-const expertRedisOption = {
-  removeOnSuccess: true,
-  redis: {
-    port: process.env.EXPERT_REDIS_PORT,
-    host: process.env.EXPERT_REDIS_HOST
-  }
-}
-
-const ExpertMatchBetQueue = new Queue('expertMatchBetQueue', expertRedisOption);
-const ExpertSessionBetQueue = new Queue('expertSessionBetQueue', expertRedisOption);
+const ExpertMatchBetQueue = new Queue('expertMatchBetQueue', externalRedisOption);
+const ExpertSessionBetQueue = new Queue('expertSessionBetQueue', externalRedisOption);
 
 SessionMatchBetQueue.process(async function (job, done) {
   let jobData = job.data;
@@ -87,6 +79,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
       myProfitLoss: userRedisData?.myProfitLoss,
       totalComission: userRedisData?.totalComission,
       profitLoss: userRedisData?.profitLoss,
+      profitLossData:userRedisData?.[`${jobData?.placedBet?.betId}_profitLoss`],
       betPlaced: jobData
     });
   }
@@ -218,7 +211,7 @@ let userRedisData = await getUserRedisData(userId);
   }
 });
 
-let calculateRateAmount = async (userRedisData, jobData,userId) => {
+let calculateRateAmount = async (userRedisData, jobData, userId) => {
   let roleName = userRedisData.userRole;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;

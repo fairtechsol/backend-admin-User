@@ -50,8 +50,8 @@ exports.createUser = async (req, res) => {
 
     creditRefrence = creditRefrence ? parseFloat(creditRefrence) : 0;
     exposureLimit = exposureLimit ? exposureLimit : creator.exposureLimit;
-    creditRefrence = maxBetLimit ? maxBetLimit : creator.maxBetLimit;
-    creditRefrence = maxBetLimit ? maxBetLimit : creator.maxBetLimit;
+    maxBetLimit = maxBetLimit ?? creator.maxBetLimit;
+    minBetLimit = minBetLimit ?? creator.minBetLimit;
     let userData = {
       userName,
       fullName,

@@ -179,9 +179,9 @@ exports.getParentsWithBalance = async(userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${userId}'
     UNION
-    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
   )
-  SELECT p."id", "userName","roleName","userBalance.profitLoss","userBalance.currentBalance", "userBalance.exposure", "userBalance.myProfitLoss" FROM p join "userBalance" on "p"."id"= "userBalance"."id" where p."id" != '${userId};`);
+  SELECT p."id", p."userName",p."roleName","userBalances".* FROM p where p."id" != '${userId}';`);
   return query;
 }
 
