@@ -1,9 +1,10 @@
+const { expertDomain } = require("../config/contants");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 
 exports.matchDetails = async (req, res) => {
   try {
-    let domain = process.env.EXPERT_DOMAIN_URL;
+    let domain = expertDomain;
     let apiResponse = {};
 
     try {
@@ -30,7 +31,7 @@ exports.matchDetails = async (req, res) => {
 
 exports.listMatch = async (req, res) => {
   try {
-    let domain = process.env.EXPERT_DOMAIN_URL;
+    let domain = expertDomain;
     let apiResponse = {};
     try {
       apiResponse = await apiCall(

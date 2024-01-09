@@ -1,3 +1,4 @@
+const { In } = require("typeorm");
 const { userRoleConstant } = require("../config/contants");
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");
@@ -45,4 +46,17 @@ exports.getBet = async (where, query,roleName, select) => {
     .sort()
     .paginate()
     .getResult();
+}
+
+exports.findAllPlacedBet = async (matchId, placeBetIdArray) => {
+  return await BetPlaced.find({
+    where: {
+      matchId: matchId,
+      id: In(placeBetIdArray)
+    }
+  });
+}
+
+exports.updatePlaceBet = async (conditionObj, updateColumsObj) => {
+  return await BetPlaced.update(conditionObj, updateColumsObj);
 }

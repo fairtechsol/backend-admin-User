@@ -1,3 +1,6 @@
+module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
+module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
+
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",
   fairGameAdmin: "fairGameAdmin",

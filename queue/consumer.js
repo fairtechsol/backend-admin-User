@@ -206,7 +206,7 @@ let userRedisData = await getUserRedisData(userId);
   }
 });
 
-let calculateRateAmount = async (userRedisData, jobData,userId) => {
+let calculateRateAmount = async (userRedisData, jobData, userId) => {
   let roleName = userRedisData.userRole;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
