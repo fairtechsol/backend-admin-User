@@ -26,6 +26,15 @@ exports.updateUser = async (id, body) => {
   return updateUser;
 };
 
+exports.getCreditRefrence = async(select) => {
+  let getamount = await user.find({select:select})
+  return getamount
+}
+
+exports.getUserBalance = async(select)=>{
+  let getBalance = await UserBalance.find({select:select})
+  return getBalance
+}
 
 exports.getUserByUserName = async (userName, select) => {
   return await user.findOne({

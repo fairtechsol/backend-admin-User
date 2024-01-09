@@ -29,6 +29,7 @@ const dataSourceOption = {
   migrations: [__dirname + "/../**/migrations/*{.js,.ts}"],
   migrationsTableName: "migrations",
   namingStrategy: new PluralNamingStrategy(),
+  ssl : true
 };
 
 const AppDataSource = new DataSource(dataSourceOption);
