@@ -1,4 +1,4 @@
-const { userRoleConstant } = require("../config/contants");
+const { userRoleConstant, betResultStatus } = require("../config/contants");
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");
 const ApiFeature = require("../utils/apiFeatures");
@@ -35,7 +35,7 @@ exports.getBet = async (where, query,roleName, select) => {
       "betPlaced.createBy = user.id"
     )
   }
-  pgQuery.select(select);
+  pgQuery.select(select).orderBy("betPlaced.createdAt");
   return await new ApiFeature(
     pgQuery,
     query
@@ -46,3 +46,19 @@ exports.getBet = async (where, query,roleName, select) => {
     .paginate()
     .getResult();
 }
+
+
+
+exports.getMatchBetPlaceWithUser = async (betId,select) => {
+  let betPlaced = await BetPlaced.createQueryBuilder()
+  .where({ betId: betId, result: betResultStatus.PENDING, deleteReason: IsNull() })
+  .leftJoinAndMapOne("BetPlaced.user", "user", 'user', 'BetPlaced.createBy = user.id')
+  .select(select).getMany()
+  return betPlaced;
+};
+
+
+exports.getMultipleAccountProfitLoss = async (betId, userId) => {
+  let betPlaced = await BetPlaced.query(`SELECT Sum(CASE result WHEN '${betResultStatus.WIN}' then winAmount ELSE 0 END) AS winAmount, Sum(CASE result WHEN '${betResultStatus.LOSS}' then lossAmount ELSE 0 END) AS lossAmount, Sum(maxLossAmount) AS maxLossAmount from "betPlaced" where betId ='${betId}' AND userId='${userId}' AND deletedReason IS NULL`)
+  return betPlaced;
+};

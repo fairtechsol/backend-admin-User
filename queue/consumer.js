@@ -81,7 +81,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
 
   // If user role is 'user', send balance update message
   if (userRedisData?.roleName == userRoleConstant.user) {
-    sendMessageToUser(userId, socketData.userBalanceUpdateEvent, {
+    sendMessageToUser(userId, socketData.SessionBetPlaced, {
       currentBalance: userRedisData?.currentBalance,
       exposure: userRedisData?.exposure,
       myProfitLoss: userRedisData?.myProfitLoss,
