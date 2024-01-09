@@ -493,6 +493,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     await updateUserDataRedis(id, redisObject);
 
     const placedBet = await betPlacedService.addNewBet({
+      result:betResultStatus.PENDING,
       matchId: matchId,
       betId: betId,
       amount: stake,

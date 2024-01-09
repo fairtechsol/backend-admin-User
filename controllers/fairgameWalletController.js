@@ -527,3 +527,25 @@ exports.changePasswordSuperAdmin = async (req, res, next) => {
     );
   }
 };
+
+
+
+exports.declareSessionResult = async (req,res)=>{
+  try {
+
+    const { betId }=req.body;
+
+    
+
+    
+    
+  } catch (error) {
+    logger.error({
+      error: `Error at declare session result for the expert.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(error, req, res);
+  }
+}
