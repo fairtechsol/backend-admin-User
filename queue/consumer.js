@@ -87,6 +87,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
       myProfitLoss: userRedisData?.myProfitLoss,
       totalComission: userRedisData?.totalComission,
       profitLoss: userRedisData?.profitLoss,
+      betPlaced: jobData
     });
   }
 
