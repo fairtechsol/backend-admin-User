@@ -3,6 +3,10 @@ const { logger } = require("../config/logger");
 
 module.exports.ErrorResponse = (errorData, req, res) => {
   try {
+    if(!errorData){
+      res.status(500).json({ message: "Internal server error" });
+      return
+    }
     errorData.statusCode = errorData.statusCode || 500;
     errorData.status = "error";
     const errorMessage = errorData.message || "Internal Server Error";
