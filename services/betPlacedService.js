@@ -77,7 +77,7 @@ exports.findAllPlacedBetWithUserIdAndBetId = async (userId, betId) => {
   return await BetPlaced.find({
     where: {
       betId: betId,
-      userId: userId
+      createBy: userId
     }
   });
 }

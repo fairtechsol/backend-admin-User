@@ -181,7 +181,7 @@ exports.getParentsWithBalance = async(userId) => {
     UNION
     SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
   )
-  SELECT p."id", p."userName",p."roleName","userBalances".* FROM p where p."id" != '${userId}';`);
+  SELECT p."id", p."userName",p."roleName" FROM p where p."id" != '${userId}';`);
   return query;
 }
 
