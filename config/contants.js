@@ -1,5 +1,6 @@
 module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
+module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",
@@ -201,6 +202,7 @@ module.exports.socketData = {
   userTeamBRate: "teamBRate_",
   userTeamCRate: "teamCRate_",
   userExposureLimit: "exposureLimit",
+  sessionResult:"sessionResult"
 };
 
 exports.marketBetType = {

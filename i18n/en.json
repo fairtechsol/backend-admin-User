@@ -54,6 +54,7 @@
     "notLive": "Bet Is currently not live.",
     "minAmountViolate": "Amount less then minimun amount.",
     "maxAmountViolate": "Amount More then maximum amount.",
-    "marketRateChanged": "{marketType} rate has been changed."
+    "marketRateChanged": "{marketType} rate has been changed.",
+    "resultDeclared":"Result declared successfully."
   }
 }

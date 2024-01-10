@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, updateUserDataRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -487,6 +487,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     await updateUserDataRedis(id, redisObject);
 
     const placedBet = await betPlacedService.addNewBet({
+      result:betResultStatus.PENDING,
       matchId: matchId,
       betId: betId,
       amount: stake,
@@ -751,7 +752,7 @@ let calculateUserExposure = (userOldExposure, oldTeamRate, newTeamRate, teamC) =
 
 let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
   let url = "";
-  const microServiceUrl = process.env.MICROSERVICEURL;
+  const microServiceUrl = microServiceDomain;
   try {
   if (matchBettingDetail.type == matchBettingType.bookmaker) {
     url = microServiceUrl + allApiRoutes.MICROSERVICE.bookmaker + matchBettingDetail.marketId

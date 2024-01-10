@@ -175,6 +175,16 @@ exports.getChildsWithOnlyUserRole = async(userId) => {
 }
 
 
+exports.getParentsWithBalance = async(userId) => {
+  let query = await user.query(`WITH RECURSIVE p AS (
+    SELECT * FROM "users" WHERE "users"."id" = '${userId}'
+    UNION
+    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
+  )
+  SELECT p."id", p."userName",p."roleName" FROM p where p."id" != '${userId}';`);
+  return query;
+}
+
 exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where : { createBy: id}, select: { id: true, userName:true }})
 

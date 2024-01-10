@@ -1,6 +1,7 @@
 const { socketData, betType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
+const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId } = require("./betPlacedService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -309,4 +310,11 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
   }
   max_loss = Number(max_loss.toFixed(2));
   return { betData: betData, line: line, max_loss: max_loss, total_bet: betPlace.length }
+}
+
+
+exports.calculateProfitLossForSessionToResult=async (betId, userId) =>{
+  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId,betId);
+  let redisData = await this.calculatePLAllBet(betPlace,100);
+  return redisData;
 }
