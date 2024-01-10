@@ -3,12 +3,12 @@ const { userRoleConstant, transType } = require("../config/contants");
 
 module.exports.CreateSuperAdmin = Joi.object({
   userName: Joi.string().trim(),
-  fullName: Joi.string().trim().allow(null, undefined, "").min(3).max(255),
+  fullName: Joi.string().trim().allow("").min(3).max(255),
   password: Joi.string(),
-  phoneNumber: Joi.string().trim().allow(null, undefined, ""),
+  phoneNumber: Joi.string().trim().allow(""),
   betBlock: Joi.boolean(),
   userBlock: Joi.boolean(),
-  city: Joi.string().trim().allow(null, undefined, "").max(255),
+  city: Joi.string().trim().allow("").max(255),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)),
   fwPartnership: Joi.number(),
   faPartnership: Joi.number(),
@@ -33,9 +33,9 @@ module.exports.CreateSuperAdmin = Joi.object({
 module.exports.UpdateSuperAdmin = Joi.object({
     id: Joi.string().guid({ version: "uuidv4" }).required(),
     user: Joi.object({
-    city: Joi.string().trim().allow(null, undefined, ""),
-    phoneNumber: Joi.string().trim().allow(null, undefined, ""),
-    fullName: Joi.string().trim().allow(null, undefined, ""),
+    city: Joi.string().trim().allow(""),
+    phoneNumber: Joi.string().trim().allow(""),
+    fullName: Joi.string().trim().allow(""),
   }),
   domain: Joi.object({
     logo: Joi.string(),
@@ -49,7 +49,7 @@ module.exports.SuperAdminBalance = Joi.object({
   userId: Joi.string().guid({ version: "uuidv4" }).required(),
   transactionType: Joi.string().valid(...Object.values(transType)),
   amount: Joi.number(),
-  remark: Joi.string().trim().allow(null, undefined, ""),
+  remark: Joi.string().trim().allow(""),
 });
 
 module.exports.SuperAdminExposureLimit = Joi.object({
@@ -60,7 +60,7 @@ module.exports.SuperAdminExposureLimit = Joi.object({
 module.exports.SuperAdminCreditReference = Joi.object({
   userId: Joi.string().guid({ version: "uuidv4" }).required(),
   amount: Joi.number(),
-  remark: Joi.string().trim().allow(null, undefined, ""),
+  remark: Joi.string().trim().allow(""),
 });
 
 module.exports.SuperAdminLockUnlock = Joi.object({
