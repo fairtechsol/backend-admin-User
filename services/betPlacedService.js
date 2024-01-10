@@ -36,7 +36,7 @@ exports.getBet = async (where, query,roleName, select) => {
       "betPlaced.createBy = user.id"
     )
   }
-  pgQuery.select(select).orderBy("betPlaced.createdAt");
+  pgQuery.select(select).orderBy("betPlaced.createdAt", 'DESC');
   return await new ApiFeature(
     pgQuery,
     query

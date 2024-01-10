@@ -476,6 +476,8 @@ exports.changePassword = async (req, res, next) => {
     }
     // if password is changed by parent of users
     const userId = req.body.userId;
+
+
     const isPasswordMatch = await checkTransactionPassword(
       req.user.id,
       transactionPassword
@@ -494,13 +496,21 @@ exports.changePassword = async (req, res, next) => {
       );
     }
 
-    // Update loginAt, password, and reset transactionPassword
-    await updateUser(userId, {
-      loginAt: null,
-      password,
-      transPassword: null,
-    });
-    await forceLogoutUser(userId);
+    if (!userId) {
+      // Update loginAt, password, and reset transactionPassword
+      await updateUser(req.user.id, {
+        password,
+      });
+      await forceLogoutUser(req.user.id);
+    } else {
+      // Update loginAt, password, and reset transactionPassword
+      await updateUser(userId, {
+        loginAt: null,
+        password,
+        transPassword: null,
+      });
+      await forceLogoutUser(userId);
+    }
     return SuccessResponse(
       {
         statusCode: 200,

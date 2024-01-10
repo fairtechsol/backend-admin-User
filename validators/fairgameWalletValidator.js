@@ -3,12 +3,12 @@ const { userRoleConstant, transType } = require("../config/contants");
 
 module.exports.CreateSuperAdmin = Joi.object({
   userName: Joi.string().trim(),
-  fullName: Joi.string().min(3).max(255),
+  fullName: Joi.string().min(3).max(255).allow(""),
   password: Joi.string(),
-  phoneNumber: Joi.string(),
+  phoneNumber: Joi.string().allow(""),
   betBlock: Joi.boolean(),
   userBlock: Joi.boolean(),
-  city: Joi.string().max(255),
+  city: Joi.string().max(255).allow(""),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)),
   fwPartnership: Joi.number(),
   faPartnership: Joi.number(),
@@ -20,7 +20,7 @@ module.exports.CreateSuperAdmin = Joi.object({
   exposureLimit: Joi.number(),
   maxBetLimit: Joi.number(),
   minBetLimit: Joi.number(),
-  id: Joi.string().guid({ version: "uuidv4" }),
+  id: Joi.string().guid({ version: "uuidv4" }).required(),
   domain: Joi.object({
     domain: Joi.string(),
     sidebarColor: Joi.string(),
@@ -33,9 +33,9 @@ module.exports.CreateSuperAdmin = Joi.object({
 module.exports.UpdateSuperAdmin = Joi.object({
     id: Joi.string().guid({ version: "uuidv4" }).required(),
     user: Joi.object({
-    city: Joi.string(),
-    phoneNumber: Joi.string(),
-    fullName: Joi.string(),
+    city: Joi.string().allow(""),
+    phoneNumber: Joi.string().allow(""),
+    fullName: Joi.string().allow(""),
   }),
   domain: Joi.object({
     logo: Joi.string(),
