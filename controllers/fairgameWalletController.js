@@ -342,9 +342,7 @@ exports.setExposureLimitSuperAdmin = async (req, res, next) => {
 exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
   try {
     let { userId, amount, remark } = req.body;
-
     amount = parseFloat(amount);
-
     let user = await getUser({ id: userId }, [
       "id",
       "creditRefrence",
@@ -374,7 +372,6 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
     const userExistRedis=await hasUserInCache(user.id);
 
     if(userExistRedis){
-
       await updateUserDataRedis(user.id, { profitLoss });
     }
 
