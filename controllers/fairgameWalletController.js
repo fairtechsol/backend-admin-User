@@ -607,7 +607,7 @@ exports.declareSessionResult = async (req,res)=>{
           parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
           parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
           parentUser.exposure = parentExposure - value["exposure"];
-          if (parentExposure.exposure < 0) {
+          if (parentExposure < 0) {
             logger.info({
               message: "Exposure in negative for user: ",
               data: {
@@ -764,7 +764,9 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
     })
     
     if (userRedisData?.exposure) {
-      updateUserDataRedis(user.user.id,{ exposure: user.user.userBalance.exposure, myProfitLoss: user.user.userBalance.myProfitLoss, currentBalance:  userCurrBalance })
+      updateUserDataRedis(user.user.id,{ exposure: user.user.userBalance.exposure, myProfitLoss: user.user.userBalance.myProfitLoss, currentBalance:  userCurrBalance });
+      await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
+
     }
     await addUser(user.user);
 
@@ -817,3 +819,210 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
   };
   return {fwProfitLoss,faAdminCal};
 }
+
+
+
+exports.declareSessionNoResult = async (req,res)=>{
+  try {
+
+    const { betId, score, matchId }=req.body;
+
+    
+    logger.info({
+      message:"Session no result declared.",
+      data:{
+        betId,score
+      }
+    });
+
+       
+        let users = await getDistinctUserBetPlaced(betId);
+
+
+        let upperUserObj = {};
+        const profitLossData = await calculateMaxLossSessionForUserNoResult(
+          users,
+          betId,
+          matchId,
+          socketData.sessionNoResult,
+          upperUserObj
+        );
+
+        
+        logger.info({
+          message:"Upper user for this bet.",
+          data:{upperUserObj,betId}
+        })
+
+
+        for (let [key, value] of Object.entries(upperUserObj)) {
+          let parentUser = await getUserBalanceDataByUserId(key);
+
+          let parentUserRedisData = await getUserRedisData(parentUser.userId);
+
+          
+          let parentExposure = parentUser?.exposure || 0;
+          if (parentUserRedisData?.exposure) {
+            parentExposure = parseFloat(parentUserRedisData?.exposure);
+          }
+
+          parentUser.exposure = parentExposure - value["exposure"];
+          if (parentExposure < 0) {
+            logger.info({
+              message: "Exposure in negative for user: ",
+              data: {
+                betId,
+                matchId,
+                parentUser,
+              },
+            });
+            parentUser.exposure = 0;
+          }
+          addInitialUserBalance(parentUser);
+          logger.info({
+            message: "Declare result db update for parent ",
+            data: {
+              betId,
+              parentUser,
+            },
+          });
+          let parentRedisUpdateObj = {};
+          if (parentUserRedisData?.exposure) {
+            parentRedisUpdateObj= {
+              exposure: parentUser.exposure
+            };
+          }
+          const redisSessionExposureName =
+            redisKeys.userSessionExposure + matchId;
+          let sessionExposure = 0;
+          if (parentUserRedisData?.[redisSessionExposureName]) {
+            sessionExposure =
+              parseFloat(parentUserRedisData[redisSessionExposureName]) || 0;
+          }
+          if (parentUserRedisData?.[betId + "_profitLoss"]) {
+            let redisData = JSON.parse(
+              parentUserRedisData[betId + "_profitLoss"]
+            );
+            sessionExposure = sessionExposure - (redisData.maxLoss || 0);
+            parentRedisUpdateObj[redisSessionExposureName] = sessionExposure;
+          }
+          await deleteKeyFromUserRedis(key, betId + "_profitLoss");
+
+          if (
+            parentUserRedisData?.exposure &&
+            Object.keys(parentRedisUpdateObj).length > 0
+          ) {
+            updateUserDataRedis(key, parentRedisUpdateObj);
+          }
+          sendMessageToUser(key, socketData.sessionResult, {
+            ...parentUser,
+            betId,
+            matchId,
+            sessionExposure: sessionExposure,
+          });
+        }
+
+
+        return SuccessResponse(
+          {
+            statusCode: 200,
+            message: { msg: "bet.resultDeclared" },
+            data: profitLossData
+          },
+          req,
+          res
+        );
+    
+    
+  } catch (error) {
+    logger.error({
+      error: `Error at declare session no result for the user.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(error, req, res);
+  }
+}
+
+
+
+const calculateMaxLossSessionForUserNoResult = async (
+  users,
+  betId,
+  matchId,
+  redisEventName,
+  upperUserObj
+) => {
+  for (const user of users) {
+    let userRedisData = await getUserRedisData(user.user.id);
+    let maxLoss = 0;
+    let redisSesionExposureValue = 0;
+    let redisSesionExposureName = redisKeys.userSessionExposure + matchId;
+    redisSesionExposureValue = parseFloat(
+      userRedisData?.[redisSesionExposureName] || 0
+    );
+
+    logger.info({ message: "Updated users", data: user.user });
+    logger.info({
+      redisSessionExposureValue: redisSesionExposureValue,
+      sessionBet: true,
+    });
+
+    // check if data is already present in the redis or not
+    if (userRedisData?.[betId + "_profitLoss"]) {
+      let redisData = JSON.parse(userRedisData[betId + "_profitLoss"]);
+      maxLoss = redisData.maxLoss || 0;
+    } else {
+      // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
+      let redisData = await calculateProfitLossForSessionToResult(
+        betId,
+        user.user?.id
+      );
+      maxLoss = redisData.max_loss || 0;
+    }
+    redisSesionExposureValue = redisSesionExposureValue - maxLoss;
+
+    user.user.userBalance.exposure = user.user.userBalance.exposure - maxLoss;
+
+    logger.info({
+      message: "Update user exposure.",
+      data: {
+        userExposure: user.user.exposure,
+        maxLoss: maxLoss,
+        userExposure: redisSesionExposureValue,
+      },
+    });
+
+    if (userRedisData?.exposure) {
+      updateUserDataRedis(user.user.id, {
+        exposure: user.user.userBalance.exposure,
+        [redisSesionExposureName]: redisSesionExposureValue,
+      });
+      await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
+    }
+    await addUser(user.user);
+
+    sendMessageToUser(user.user.id, redisEventName, {
+      ...user.user,
+      betId,
+      matchId,
+      sessionExposure: redisSesionExposureValue,
+    });
+
+    let parentUsers = await getParentsWithBalance(user.user.id);
+
+    for (const patentUser of parentUsers) {
+      if (upperUserObj[patentUser.id]) {
+        upperUserObj[patentUser.id].exposure =
+          upperUserObj[patentUser.id].exposure + maxLoss;
+      } else {
+        upperUserObj[patentUser.id] = { exposure: maxLoss };
+      }
+    }
+    faAdminCal = {
+      exposure: maxLoss,
+    };
+  }
+  return faAdminCal;
+};
