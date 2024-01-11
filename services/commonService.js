@@ -309,7 +309,7 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
     }
   }
   max_loss = Number(max_loss.toFixed(2));
-  return { betData: betData, line: line, max_loss: max_loss, total_bet: betPlace.length }
+  return { betData: betData, line: line, max_loss: max_loss, total_bet: betPlace.length,lowerLimit:first,upperLimit:last }
 }
 
 

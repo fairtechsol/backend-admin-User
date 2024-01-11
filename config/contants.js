@@ -60,6 +60,7 @@ module.exports.transType = {
   win: "win",
   loss: "loss",
   creditRefer: "creditReference",
+  bet:'bet'
 };
 
 module.exports.partnershipPrefixByRole = {
