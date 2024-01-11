@@ -619,7 +619,7 @@
         }
       }
     },
-    "/user/amount": {
+    "/user/generalReport": {
       "get": {
         "description": "",
         "parameters": [
@@ -1179,6 +1179,45 @@
         }
       }
     },
+    "/fairgameWallet/declare/noResult/session": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "betId": {
+                    "example": "any"
+                  },
+                  "score": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/expert/notification": {
       "get": {
         "description": "",
@@ -1396,6 +1435,40 @@
           {
             "name": "status",
             "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/bet/session/profitLoss/{betId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "betId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
             "schema": {
               "type": "string"
             }

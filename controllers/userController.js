@@ -1029,7 +1029,7 @@ exports.generalReport = async (req, res) => {
     let reqUser = req.user
 
 
-    if (req.query.type === "credit refrence") {
+    if (req.query.type === "creditRefrence") {
       message = "user.credit/refrence"
 
       usersData = await getCreditRefrence({ createBy: reqUser.id }, ["id", "roleName", "createBy", "userName", "creditRefrence"])
