@@ -7,8 +7,8 @@ module.exports.MatchBetPlacedValidator = Joi.object({
     matchId: Joi.string().required(),
     teamA : Joi.string().required(),
     teamB : Joi.string().required(),
-    teamC : Joi.string(),
-    stake : Joi.number().required(),
+    teamC : Joi.string().allow(""),
+    stake : Joi.number().required().positive().greater(0),
     odd : Joi.number().required(),
     betId : Joi.string().required(),
     bettingType : Joi.string().valid(...Object.values(betType)).required(),
@@ -20,4 +20,15 @@ module.exports.MatchBetPlacedValidator = Joi.object({
     
   })
   
-
+  module.exports.SessionBetPlacedValidator = Joi.object({
+    matchId: Joi.string().required(),
+    stake : Joi.number().required().positive().greater(0),
+    odds : Joi.number().required(),
+    betId : Joi.string().required(),
+    betType : Joi.string().valid(...Object.values(betType)).required(),
+    ipAddress : Joi.string().required().allow(""),
+    browserDetail :  Joi.string().required().allow(""),
+    eventName:Joi.string().required(),
+    eventType:Joi.string().required(),
+    ratePercent:Joi.number()
+  })

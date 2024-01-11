@@ -3,6 +3,7 @@ const {
   redisTimeOut,
   partnershipPrefixByRole,
   differLoginTypeByRoles,
+  walletDomain,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -18,8 +19,6 @@ const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 
-
-let walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
 
 // Function to validate a user by username and password
 const validateUser = async (userName, password) => {
@@ -55,6 +54,7 @@ const setUserDetailsRedis = async (user) => {
     myProfitLoss: user?.userBal?.myProfitLoss || 0,
     userName: user.userName,
     currentBalance: user?.userBal?.currentBalance || 0,
+    roleName:user.roleName
   });
   if (user.roleName == userRoleConstant.user) {
     const redisUserPartnerShip = await internalRedis.hget(

@@ -1,3 +1,7 @@
+module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
+module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
+module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
+
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",
   fairGameAdmin: "fairGameAdmin",
@@ -152,7 +156,11 @@ module.exports.redisKeys = {
   userTeamARate : "teamARate_",
   userTeamBRate : "teamBRate_",
   userTeamCRate : "teamCRate_",
-  userExposureLimit : "exposureLimit"
+  userExposureLimit : "exposureLimit",
+  yesRateTie: "yesRateTie_",
+  noRateTie: "noRateTie_",
+  yesRateComplete: "yesRateComplete_",
+  noRateComplete: "noRateComplete_",
 }
 
 module.exports.betResultStatus = {
@@ -175,10 +183,32 @@ module.exports.socketData ={
   userExposureLimit: "exposureLimit",
 };
 
-exports.marketBetType= {
-  SESSION : "SESSION",
-  MATCHBETTING : "MATCHBETTING"
-}
+module.exports.betResultStatus = {
+  UNDECLARE: "UNDECLARE",
+  PENDING: "PENDING",
+  WIN: "WIN",
+  LOSS: "LOSS",
+};
+
+module.exports.socketData = {
+  expertRoomSocket: "expertRoom",
+  MatchBetPlaced: "userMatchBetPlaced",
+  SessionBetPlaced: "userSessionBetPlaced",
+  userAllExposure: "exposure",
+  userMatchExposure: "matchExposure_",
+  userSessionExposure: "sessionExposure_",
+  userBalanceUpdateEvent: "updateUserBalance",
+  userTeamARate: "teamARate_",
+  userTeamBRate: "teamBRate_",
+  userTeamCRate: "teamCRate_",
+  userExposureLimit: "exposureLimit",
+  sessionResult:"sessionResult"
+};
+
+exports.marketBetType = {
+  SESSION: "SESSION",
+  MATCHBETTING: "MATCHBETTING",
+};
 
 module.exports.manualMatchBettingType = [
   "quickbookmaker1",

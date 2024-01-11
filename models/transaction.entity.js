@@ -1,5 +1,6 @@
 const { EntitySchema } = require('typeorm');
 const { baseColumnsSchemaPart, transType } = require("../config/contants");
+const { ColumnNumericTransformer } = require('../services/dbService');
 
 const transactionSchema = new EntitySchema({
     name: 'transaction',
@@ -22,14 +23,16 @@ const transactionSchema = new EntitySchema({
             nullable: false,
             precision: 13,
             scale: 2,
-            default: 0
+            default: 0,
+            transformer: new ColumnNumericTransformer()
         },
         closingBalance: {
             type: 'decimal',
             nullable: false,
             precision: 13,
             scale: 2,
-            default: 0
+            default: 0,
+            transformer: new ColumnNumericTransformer()
         },
         transType: {
             type: 'enum',

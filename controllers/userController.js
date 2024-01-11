@@ -50,8 +50,8 @@ exports.createUser = async (req, res) => {
 
     creditRefrence = creditRefrence ? parseFloat(creditRefrence) : 0;
     exposureLimit = exposureLimit ? exposureLimit : creator.exposureLimit;
-    creditRefrence = maxBetLimit ? maxBetLimit : creator.maxBetLimit;
-    creditRefrence = maxBetLimit ? maxBetLimit : creator.maxBetLimit;
+    maxBetLimit = maxBetLimit ?? creator.maxBetLimit;
+    minBetLimit = minBetLimit ?? creator.minBetLimit;
     let userData = {
       userName,
       fullName,
@@ -476,6 +476,8 @@ exports.changePassword = async (req, res, next) => {
     }
     // if password is changed by parent of users
     const userId = req.body.userId;
+
+
     const isPasswordMatch = await checkTransactionPassword(
       req.user.id,
       transactionPassword
@@ -494,13 +496,21 @@ exports.changePassword = async (req, res, next) => {
       );
     }
 
-    // Update loginAt, password, and reset transactionPassword
-    await updateUser(userId, {
-      loginAt: null,
-      password,
-      transPassword: null,
-    });
-    await forceLogoutUser(userId);
+    if (!userId) {
+      // Update loginAt, password, and reset transactionPassword
+      await updateUser(req.user.id, {
+        password,
+      });
+      await forceLogoutUser(req.user.id);
+    } else {
+      // Update loginAt, password, and reset transactionPassword
+      await updateUser(userId, {
+        loginAt: null,
+        password,
+        transPassword: null,
+      });
+      await forceLogoutUser(userId);
+    }
     return SuccessResponse(
       {
         statusCode: 200,
@@ -762,7 +772,7 @@ exports.userSearchList = async (req, res, next) => {
     }
     let where = {};
     if (userName) where.userName = ILike(`%${userName}%`);
-    if (createdBy) where.createdBy = createdBy
+    if (createdBy) where.createBy = createdBy
 
     let users = await getUsers(where, ["id", "userName"])
     let response = {

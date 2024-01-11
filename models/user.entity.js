@@ -1,5 +1,6 @@
 const { EntitySchema } = require('typeorm');
 const { userRoleConstant, matchComissionTypeConstant, baseColumnsSchemaPart } = require("./../config/contants");
+const { ColumnNumericTransformer } = require('../services/dbService');
 
 const userSchema = new EntitySchema({
   name: 'user',
@@ -88,40 +89,46 @@ const userSchema = new EntitySchema({
       nullable: false,
       precision: 13,
       scale: 2,
-      default: 0
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
     maxBetLimit: {
       type: 'decimal',
       nullable: false,
       precision: 13,
       scale: 2,
-      default: 0
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
     minBetLimit: {
       type: 'decimal',
       nullable: false,
       precision: 13,
       scale: 2,
-      default: 0
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
     creditRefrence: {
       type: 'decimal',
       nullable: false,
       precision: 13,
       scale: 2,
-      default: 0
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
     downLevelCreditRefrence: {
       type: 'decimal',
       nullable: false,
       precision: 13,
       scale: 2,
-      default: 0
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
     sessionCommission: {
       type: 'float',
       nullable: false,
-      default: 0
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
     matchComissionType: {
       type: 'enum',
@@ -131,14 +138,16 @@ const userSchema = new EntitySchema({
     matchCommission: {
       type: 'float',
       nullable: false,
-      default: 0
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
     totalComission: {
       type: 'decimal',
       nullable: false,
       precision: 13,
       scale: 2,
-      default: 0
+      default: 0,
+      transformer: new ColumnNumericTransformer()
     },
     delayTime: {
       type: 'int',

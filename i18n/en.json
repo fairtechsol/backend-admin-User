@@ -10,7 +10,8 @@
   "alreadyExist":"{name} already exist.",
   "fetched": "{type} fetch successfully.",  
   "betPlaced" : "Your bet placed successfull.",
-  "required" : "{name} is required",
+  "required" : "{name} is required.",
+  "NoData" : "No data selected.",
   "auth": {
     "loginSuccess": "Login successfully.",
     "invalidPass": "Invalid {type} password.",
@@ -39,7 +40,7 @@
     "UserBalanceFetchSuccessfully" : "User balance fetch successfully.",
     "profile": "Profile get successfully.",
     "userList": "User List Get Success.",
-    "ExposureLimitExceed" : "User exposure is greater than exposure limit",
+    "ExposureLimitExceed" : "User exposure is greater than exposure limit.",
     "credit/refrence" : "credit refrence",
     "balance":"balance"
   },
@@ -47,7 +48,7 @@
     "InvalidUser" : "User is invalid."
   },
   "userBalance" : {
-    "insufficientBalance" : "balance is insufficient to take this action.",
+    "insufficientBalance" : "Balance is insufficient to take this action.",
     "BalanceAddedSuccessfully" : "Balance Updated successfully.",
     "InvalidTransactionType" : "Invalid transaction type."
   },
@@ -55,6 +56,7 @@
     "notLive": "Bet Is currently not live.",
     "minAmountViolate": "Amount less then minimun amount.",
     "maxAmountViolate": "Amount More then maximum amount.",
-    "marketRateChanged": "{marketType} rate has been changed."
+    "marketRateChanged": "{marketType} rate has been changed.",
+    "resultDeclared":"Result declared successfully."
   }
 }
