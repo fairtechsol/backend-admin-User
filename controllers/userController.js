@@ -1,4 +1,4 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData } = require('../config/contants');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report } = require('../config/contants');
 const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
@@ -1029,7 +1029,7 @@ exports.generalReport = async (req, res) => {
     let reqUser = req.user
 
 
-    if (req.query.type === "credit refrence") {
+    if (req.query.type === report.queryType ) {
       message = "user.credit/refrence"
 
       usersData = await getCreditRefrence({ createBy: reqUser.id }, ["id", "roleName", "createBy", "userName", "creditRefrence"])
