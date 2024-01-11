@@ -790,7 +790,6 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
 
 exports.deleteMultipleBet = async (req, res) => {
   try {
-    console.log(req.body);
     const {
       matchId, data, deleteReason
     } = req.body;
@@ -845,7 +844,7 @@ exports.deleteMultipleBet = async (req, res) => {
           };
       }
   }
-
+  return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
   } catch (error) {
      logger.error({
       error: `Error at delete bet for the user.`,
@@ -873,12 +872,6 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
   }
   let redisName = `${betId}_profitLoss`;
   let socketSessionEvent = "sessionDeleteBet";
-  // await this.calcualteAndSendBetData(user, userRedisData, userId, betId, redisName, match_id, socketSessionEvent, placedBetIdArray, deleted_reason);
-  logger.info({
-    message: "updateUserAtSession function called",
-    userRedisData,
-    userId
-  });
   let partnershipObj = JSON.parse(userRedisData.partnerShips);
   
   let redisSesionExposureName = redisKeys.userSessionExposure + matchId;
@@ -918,7 +911,6 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
     bets :bets,
     deleteReason: deleteReason
    });
-
    Object.keys(partnershipPrefixByRole)
     ?.filter(
       (item) =>
@@ -956,17 +948,15 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
             let parentPLbetPlaced = oldProfitLossParent?.betPlaced || [];
             let newMaxLossParent = 0;
 
-            oldBetPlacedPL.map((ob, index) => {
+            userDeleteProfitLoss.betData.map((ob, index) => {
               let partnershipData = (ob.profitLoss * partnership) / 100;
               if(ob.odds == parentPLbetPlaced[index].odds){
-                parentPLbetPlaced[index].profitLoss = parentPLbetPlaced[index].profitLoss + partnershipData;
-  
+                parentPLbetPlaced[index].profitLoss = parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData;
                 if (newMaxLossParent < Math.abs(parentPLbetPlaced[index].profitLoss) && parentPLbetPlaced[index].profitLoss < 0) {
                   newMaxLossParent = Math.abs(parentPLbetPlaced[index].profitLoss);
                 }
               }
             });
-
             oldProfitLossParent.betPlaced = parentPLbetPlaced;
             oldProfitLossParent.maxLoss = newMaxLossParent;
             let sessionExposure = parseFloat(masterRedisData[redisSesionExposureName]) - oldMaxLoss + newMaxLoss;
@@ -998,6 +988,4 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
         }
       }
     });
-
-
 }
