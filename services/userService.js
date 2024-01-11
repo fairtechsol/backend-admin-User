@@ -51,7 +51,6 @@ exports.getUserBalance = async (where, select) => {
 
     return userData;
   } catch (error) {
-    console.error(error.message);
     throw error;
   }
 }
