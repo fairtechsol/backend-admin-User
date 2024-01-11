@@ -799,14 +799,15 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
         ((profitLoss * upLinePartnership) / 100).toString()
       );
       
-      if (upperUserObj[parentUsers.id]) {
-        upperUserObj[parentUsers.id].profitLoss = upperUserObj[parentUsers.id].profitLoss + profitLoss;
-        upperUserObj[parentUsers.id].myProfitLoss = upperUserObj[parentUsers.id].myProfitLoss + myProfitLoss;
-        upperUserObj[parentUsers.id].exposure = upperUserObj[parentUsers.id].exposure + maxLoss;
+      if (upperUserObj[patentUser.id]) {
+        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
       } else {
-        upperUserObj[parentUsers.id] = { profitLoss: profitLoss };
-        upperUserObj[parentUsers.id].myProfitLoss = myProfitLoss;
-        upperUserObj[parentUsers.id].exposure = maxLoss; }
+        upperUserObj[patentUser.id] = { profitLoss: profitLoss };
+        upperUserObj[patentUser.id] = { myProfitLoss: myProfitLoss };
+        upperUserObj[patentUser.id] = { exposure: maxLoss };
+      }
     }
     faAdminCal={
       profitLoss: profitLoss,
