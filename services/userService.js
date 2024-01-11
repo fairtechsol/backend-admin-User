@@ -43,7 +43,6 @@ exports.getUserBalance = async (where, select) => {
       )
       .select(select);
       //userData1.select(select)
-      console.log("userData1", await userData1.getQueryAndParameters());
     let userData = userData1.getMany();
 
     if (!userData || userData.length === 0) {

@@ -1023,7 +1023,7 @@ exports.generateTransactionPassword = async (req, res) => {
   );
 };
 
-exports.amount = async (req, res) => {
+exports.generalReport = async (req, res) => {
   try {
     let usersData, total, message
     let reqUser = req.user

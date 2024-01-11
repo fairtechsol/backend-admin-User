@@ -41,8 +41,8 @@
     "profile": "Profile get successfully.",
     "userList": "User List Get Success.",
     "ExposureLimitExceed" : "User exposure is greater than exposure limit.",
-    "credit/refrence" : "credit refrence",
-    "balance":"balance"
+    "credit/refrence" : "Credit refrence fetch successfully.",
+    "balance":"User balance fetch successfully."
   },
   "button" : {
     "InvalidUser" : "User is invalid."
