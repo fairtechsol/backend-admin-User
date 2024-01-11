@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult } = require("../controllers/fairgameWalletController");
+const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword } = require("../validators/fairgameWalletValidator");
 
@@ -12,5 +12,6 @@ router.post("/update/creditReference", validator(SuperAdminCreditReference), set
 router.post("/lockUnlock", validator(SuperAdminLockUnlock), lockUnlockSuperAdmin);
 router.post("/changePassword", validator(SuperAdminChangePassword), changePasswordSuperAdmin);
 router.post("/declare/result/session",  declareSessionResult);
+router.post("/declare/noResult/session",  declareSessionNoResult);
 
 module.exports = router;
