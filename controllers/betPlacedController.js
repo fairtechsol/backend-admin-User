@@ -3,7 +3,7 @@ const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getUserRedisData, updateMatchExposure, updateUserDataRedis } = require("../services/redis/commonfunction");
+const { getUserRedisData, updateMatchExposure, updateUserDataRedis, getUserRedisKey } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateRate, calculateProfitLossSession, calculatePLAllBet } = require('../services/commonService');
@@ -74,6 +74,33 @@ exports.getBet = async (req, res) => {
     return ErrorResponse(err, req, res)
   }
 
+};
+
+
+exports.getSessionProfitLoss = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    const { betId } = req.params;
+
+    const sessionProfitLoss = await getUserRedisKey(
+      userId,
+      betId + redisKeys.profitLoss
+    );
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "fetched", keys: { type: "Session profit loss" } },
+        data: {
+          profitLoss: sessionProfitLoss,
+        },
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
 };
 
 exports.matchBettingBetPlaced = async (req, res) => {

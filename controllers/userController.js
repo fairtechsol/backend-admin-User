@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -1022,3 +1022,49 @@ exports.generateTransactionPassword = async (req, res) => {
     res
   );
 };
+
+exports.generalReport = async (req, res) => {
+  try {
+    let usersData, total, message
+    let reqUser = req.user
+
+
+    if (req.query.type === "credit refrence") {
+      message = "user.credit/refrence"
+
+      usersData = await getCreditRefrence({ createBy: reqUser.id }, ["id", "roleName", "createBy", "userName", "creditRefrence"])
+
+      total = usersData.reduce(function (tot, arr) {
+        const creditRefValue = parseFloat(arr.creditRefrence);
+        return tot + creditRefValue;
+      }, 0)
+    } else {
+      message = "user.balance"
+
+      usersData = await getUserBalance({ createBy: reqUser.id }, ['user.id', 'user.userName', 'user.phoneNumber', "userBalances.id", "userBalances.currentBalance", "userBalances.userId"
+      ])
+      total = usersData.reduce(function (tot, arr) {
+        const current = parseFloat(arr.userBal.currentBalance);
+        return tot + current;
+      }, 0)
+    }
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: message }, data: { usersData, total: total, },
+      },
+      req,
+      res
+    );
+
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+
+}

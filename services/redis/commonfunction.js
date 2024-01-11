@@ -17,6 +17,14 @@ exports.getUserRedisData = async (userId)=>{
   return Object.keys(userData)?.length == 0 ? null : userData;
 }
 
+exports.getUserRedisKey = async (userId,key)=>{
+  
+  // Retrieve all user data for the match from Redis
+  const userData = await internalRedis.hget(userId,key);
+
+  // Return the user data as an object or null if no data is found
+  return  userData;
+}
 
 exports.updateUserDataRedis = async (userId, value) => {
   await internalRedis.hmset(userId, value);

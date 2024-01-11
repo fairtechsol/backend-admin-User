@@ -161,6 +161,7 @@ module.exports.redisKeys = {
   noRateTie: "noRateTie_",
   yesRateComplete: "yesRateComplete_",
   noRateComplete: "noRateComplete_",
+  profitLoss:"_profitLoss"
 }
 
 module.exports.betResultStatus = {
@@ -202,7 +203,8 @@ module.exports.socketData = {
   userTeamBRate: "teamBRate_",
   userTeamCRate: "teamCRate_",
   userExposureLimit: "exposureLimit",
-  sessionResult:"sessionResult"
+  sessionResult:"sessionResult",
+  sessionNoResult:"sessionNoResult",
 };
 
 exports.marketBetType = {

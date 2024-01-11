@@ -26,7 +26,34 @@ exports.updateUser = async (id, body) => {
   return updateUser;
 };
 
+exports.getCreditRefrence = async(where, select) => {
+  let getamount = await user.find({where ,select:select})
+  return getamount
+}
 
+exports.getUserBalance = async (where, select) => {
+  try {
+    let userData1 = await user.createQueryBuilder()
+      .where(where)
+      .leftJoinAndMapOne(
+        'user.userBal',
+        'userBalances', 
+        'userBalances', 
+        'user.id = userBalances.userId' 
+      )
+      .select(select);
+      //userData1.select(select)
+    let userData = userData1.getMany();
+
+    if (!userData || userData.length === 0) {
+      throw new Error('No data found for the given criteria.');
+    }
+
+    return userData;
+  } catch (error) {
+    throw error;
+  }
+}
 exports.getUserByUserName = async (userName, select) => {
   return await user.findOne({
     where: { userName: ILike(userName) },
