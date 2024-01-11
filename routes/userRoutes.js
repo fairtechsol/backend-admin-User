@@ -21,7 +21,7 @@ router.get("/balance",isAuthenticate,userBalanceDetails);
 router.post("/update/creditreferrence",isAuthenticate,checkTransactionPassword,validator(setCreditRefValidate),setCreditReferrence);
 router.post("/generateTransactionPassword",isAuthenticate,validator(generateTransactionPass),generateTransactionPassword);
 
-router.get("/amount",amount)
+router.get("/amount", isAuthenticate,  amount)
 
 module.exports = router;
 //https://3100dev.fairgame.club/fair-game-wallet/getUserBalanceDetails

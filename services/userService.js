@@ -26,16 +26,36 @@ exports.updateUser = async (id, body) => {
   return updateUser;
 };
 
-exports.getCreditRefrence = async(select) => {
-  let getamount = await user.find({select:select})
+exports.getCreditRefrence = async(where, select) => {
+  let getamount = await user.find({where ,select:select})
   return getamount
 }
 
-exports.getUserBalance = async(select)=>{
-  let getBalance = await UserBalance.find({select:select})
-  return getBalance
-}
+exports.getUserBalance = async (where, select) => {
+  try {
+    let userData1 = await user.createQueryBuilder()
+      .where(where)
+      .leftJoinAndMapOne(
+        'user.userBal',
+        'userBalances', 
+        'userBalances', 
+        'user.id = userBalances.userId' 
+      )
+      .select(select);
+      //userData1.select(select)
+      console.log("userData1", await userData1.getQueryAndParameters());
+    let userData = userData1.getMany();
 
+    if (!userData || userData.length === 0) {
+      throw new Error('No data found for the given criteria.');
+    }
+
+    return userData;
+  } catch (error) {
+    console.error(error.message);
+    throw error;
+  }
+}
 exports.getUserByUserName = async (userName, select) => {
   return await user.findOne({
     where: { userName: ILike(userName) },

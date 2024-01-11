@@ -1016,19 +1016,25 @@ exports.generateTransactionPassword = async (req, res) => {
 exports.amount = async (req, res) => {
   try {
     let usersData, total, message
+    let reqUser = req.user
+
+
     if (req.query.type === "credit refrence") {
-      message = "credit refrence"
-      usersData = await getCreditRefrence(["id", "roleName", "userName", "creditRefrence"])
+      message = "user.credit/refrence"
+
+      usersData = await getCreditRefrence({ createBy: reqUser.id }, ["id", "roleName", "createBy", "userName", "creditRefrence"])
 
       total = usersData.reduce(function (tot, arr) {
         const creditRefValue = parseFloat(arr.creditRefrence);
         return tot + creditRefValue;
       }, 0)
     } else {
-      message = "balance"
-      usersData = await getUserBalance(["id", "currentBalance", "userId"])
+      message = "user.balance"
+
+      usersData = await getUserBalance({ createBy: reqUser.id }, ['user.id', 'user.userName', 'user.phoneNumber', "userBalances.id", "userBalances.currentBalance", "userBalances.userId"
+      ])
       total = usersData.reduce(function (tot, arr) {
-        const current = parseFloat(arr.currentBalance);
+        const current = parseFloat(arr.userBal.currentBalance);
         return tot + current;
       }, 0)
     }
