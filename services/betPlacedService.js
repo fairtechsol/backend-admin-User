@@ -96,3 +96,35 @@ exports.getDistinctUserBetPlaced= async (betId)=>{
   .getMany()
   return betPlaced;
 }
+
+exports.allChildsProfitLoss = async (where, select) => {
+  let profitLoss = await BetPlaced.createQueryBuilder()
+    .where(where)
+    .select([
+      `"marketType"`,
+      `"eventType"`,
+    `(SUM(case when result = 'WIN' then "winAmount" else 0 end) - SUM(case when result = 'LOSS' then "lossAmount" else 0 end) ) as "aggregateAmount"`
+  ])
+    .groupBy([
+      `"marketType"`,
+      `"eventType"`,
+    ])
+  let profitLossData = await profitLoss.getRawMany();
+  return profitLossData
+}
+
+exports.singleChildProfitLoss = async (where)=>{
+  let profitLoss = await BetPlaced.createQueryBuilder()
+    .where(where)
+    .select([
+      `"marketType"`,
+      `"eventType"`,
+    `(SUM(case when result = 'WIN' then "winAmount" else 0 end) - SUM(case when result = 'LOSS' then "lossAmount" else 0 end) ) as "aggregateAmount"`
+  ])
+    .groupBy([
+      `"marketType"`,
+      `"eventType"`,
+    ])
+    let profitLossData = await profitLoss.getRawMany();
+    return profitLossData
+}
