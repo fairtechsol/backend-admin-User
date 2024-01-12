@@ -856,7 +856,7 @@ exports.deleteMultipleBet = async (req, res) => {
         }
       }
     });
-
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
     if (Object.keys(updateObj).length > 0) {
       for (let key in updateObj) {
           let userId = key;
@@ -865,9 +865,9 @@ exports.deleteMultipleBet = async (req, res) => {
               let betId = value;
               let bet = userDataDelete[value];
               if (bet.isSessionBet) {
-                  await updateUserAtSession(userId, betId, matchId, bet.array, deleteReason);
+                  await updateUserAtSession(userId, betId, matchId, bet.array, deleteReason, domainUrl);
               } else {
-                  await this.updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason);
+                  await this.updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason, domainUrl);
               }
           };
       }
@@ -880,69 +880,6 @@ exports.deleteMultipleBet = async (req, res) => {
       message: error.message,
     });
     return ErrorResponse(error, req, res);
-  }
-}
-
-exports.profitLoss = async (req, res) => {
-  try {
-    const startDate = req.body.startDate
-    const endDate = req.body.endDate
-    const reqUser = req.user
-    let where = {
-      result: In([betResultStatus.LOSS, betResultStatus.WIN])
-    }
-    let result
-    let total
-    let userId = req.body.userId
-    let user
-
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      where.createdAt = Between(start, end);
-    }
-
-    if (userId != "") {
-      user = await getUserById(userId, ["roleName"]);
-    }
-    if (user && user.roleName == userRoleConstant.user) {
-      where.createBy = userId;
-      result = await betPlacedService.allChildsProfitLoss(where);
-
-    } else {
-
-      let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
-      childsId = childsId.map(item => item.id)
-      if (!childsId.length) {
-        return SuccessResponse({
-          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: {
-            result: [],
-            total: 0
-          }
-        }, req, res)
-      }
-      where.createBy = In(childsId);
-      result = await betPlacedService.allChildsProfitLoss(where);
-    }
-
-    total = result.reduce(function (tot, arr) {
-      const current = parseFloat(arr.aggregateAmount);
-      return tot + current;
-    }, 0)
-    total = parseFloat(total.toFixed(2))
-    return SuccessResponse(
-      {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: { result, total },
-      },
-      req,
-      res
-    );
-
-  } catch (error) {
-    return ErrorResponse(error, req, res)
   }
 }
 
@@ -988,7 +925,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
   }
   oldProfitLoss.betPlaced = oldBetPlacedPL;
   oldProfitLoss.maxLoss = newMaxLoss;
-  let exposureDiff = oldMaxLoss + newMaxLoss;
+  let exposureDiff = oldMaxLoss - newMaxLoss;
   let redisObject = {
     [redisSesionExposureName] : oldSessionExposure - exposureDiff,
     exposure : userOldExposure - exposureDiff,
@@ -1003,6 +940,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
     profitLoss: oldProfitLoss,
     bets :bets,
     deleteReason: deleteReason,
+    matchId: matchId,
     betPlacedId: betPlacedId
    });
    Object.keys(partnershipPrefixByRole)
@@ -1068,6 +1006,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
               profitLoss: oldProfitLossParent,
               bets :bets,
               deleteReason: deleteReason,
+              matchId: matchId,
               betPlacedId: betPlacedId
              });
             
@@ -1084,7 +1023,6 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
       }
     });
     
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
     const walletJob = walletSessionBetDeleteQueue.createJob({
       userId: userId,
       partnership: userRedisData?.partnerShips,
@@ -1111,4 +1049,67 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
     });
     await expertJob.save();
 
+}
+
+exports.profitLoss = async (req, res) => {
+  try {
+    const startDate = req.body.startDate
+    const endDate = req.body.endDate
+    const reqUser = req.user
+    let where = {
+      result: In([betResultStatus.LOSS, betResultStatus.WIN])
+    }
+    let result
+    let total
+    let userId = req.body.userId
+    let user
+
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      where.createdAt = Between(start, end);
+    }
+
+    if (userId != "") {
+      user = await getUserById(userId, ["roleName"]);
+    }
+    if (user && user.roleName == userRoleConstant.user) {
+      where.createBy = userId;
+      result = await betPlacedService.allChildsProfitLoss(where);
+
+    } else {
+
+      let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
+      childsId = childsId.map(item => item.id)
+      if (!childsId.length) {
+        return SuccessResponse({
+          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: {
+            result: [],
+            total: 0
+          }
+        }, req, res)
+      }
+      where.createBy = In(childsId);
+      result = await betPlacedService.allChildsProfitLoss(where);
+    }
+
+    total = result.reduce(function (tot, arr) {
+      const current = parseFloat(arr.aggregateAmount);
+      return tot + current;
+    }, 0)
+    total = parseFloat(total.toFixed(2))
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: { result, total },
+      },
+      req,
+      res
+    );
+
+  } catch (error) {
+    return ErrorResponse(error, req, res)
+  }
 }
