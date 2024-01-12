@@ -917,6 +917,63 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
   let oldBetPlacedPL = oldProfitLoss.betPlaced;
   let newMaxLoss = 0;
+
+
+//   let newbetPlaced = [
+//     { "odds": 62, "profitLoss": -10 },
+//     { "odds": 63, "profitLoss": -10 },
+//     { "odds": 64, "profitLoss": -10 },
+//     { "odds": 65, "profitLoss": 30 },
+//     { "odds": 66, "profitLoss": 10 },
+//     { "odds": 67, "profitLoss": 10 },
+//     { "odds": 68, "profitLoss": 10 },
+// ];
+
+// let oldbetPlaced = [
+//     { "odds": 60, "profitLoss": -11 },
+//     { "odds": 61, "profitLoss": -12 },
+//     { "odds": 62, "profitLoss": -13 },
+//     { "odds": 63, "profitLoss": -14 },
+//     { "odds": 64, "profitLoss": -15 },
+//     { "odds": 65, "profitLoss": 33 },
+//     { "odds": 66, "profitLoss": 15 },
+//     { "odds": 67, "profitLoss": 14 },
+//     { "odds": 68, "profitLoss": 17 },
+//     { "odds": 69, "profitLoss": 18 },
+//     { "odds": 70, "profitLoss": 19 },
+//     { "odds": 71, "profitLoss": 17 },
+// ];
+// if(newbetPlaced[0].odds > oldbetPlaced[0].odds){
+//     while(newbetPlaced[0].odds != oldbetPlaced[0].odds){
+//         const newEntry = { "odds": newbetPlaced[0].odds - 1, "profitLoss": newbetPlaced[0].profitLoss };
+//         newbetPlaced.unshift(newEntry);
+//     }
+// }
+// if(newbetPlaced[0].odds < oldbetPlaced[0].odds){
+//     while(newbetPlaced[0].odds != oldbetPlaced[0].odds){
+//         const newEntry = { "odds": oldbetPlaced[0].odds - 1, "profitLoss": oldbetPlaced[0].profitLoss };
+//         oldbetPlaced.unshift(newEntry);
+//     }
+// }
+
+// if(newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds){
+//     while(newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds){
+//         const newEntry = { "odds": oldbetPlaced[oldbetPlaced.length - 1].odds + 1, "profitLoss": oldbetPlaced[oldbetPlaced.length - 1].profitLoss };
+//         oldbetPlaced.push(newEntry);
+//     }
+// }
+// if(newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds){
+//     while(newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds){
+//         const newEntry = { "odds": newbetPlaced[newbetPlaced.length - 1].odds + 1, "profitLoss": newbetPlaced[newbetPlaced.length - 1].profitLoss };
+//         newbetPlaced.push(newEntry);
+//     }
+// }
+// console.log(newbetPlaced)
+// console.log(oldbetPlaced)
+
+
+
+
   for (let i = 0; i < oldBetPlacedPL.length; i++) {
     oldBetPlacedPL[i].profitLoss = oldBetPlacedPL[i].profitLoss - userDeleteProfitLoss.betData[i].profitLoss;
     if (newMaxLoss < Math.abs(oldBetPlacedPL[i].profitLoss) && oldBetPlacedPL[i].profitLoss < 0) {
