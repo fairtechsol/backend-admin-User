@@ -260,16 +260,16 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
   let betData = [];
   let line = 1;
   let max_loss = 0.0;
+  let first = 0;
+  let last = 0;
   if (betPlace && betPlace.length) {
     // let latest_bet = betPlace[betPlace.length - 1].odds;
     let oddsValues = betPlace.map(({ odds }) => odds)
-    let first = 0;
     if (oldLowerLimitOdds) {
       first = oldLowerLimitOdds + 5;
     } else {
       first = Math.min(...oddsValues);
     }
-    let last = 0;
     if (oldUpperLimitOdds) {
       last = oldUpperLimitOdds - 5;
     } else {
@@ -309,7 +309,7 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
     }
   }
   max_loss = Number(max_loss.toFixed(2));
-  return { betData: betData, line: line, max_loss: max_loss, total_bet: betPlace.length }
+  return { betData: betData, line: line, max_loss: max_loss, total_bet: betPlace.length,lowerLimit:first,upperLimit:last }
 }
 
 
