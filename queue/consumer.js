@@ -29,10 +29,12 @@ const externalRedisOption = {
 
 const WalletMatchBetQueue = new Queue('walletMatchBetQueue', externalRedisOption);
 const WalletSessionBetQueue = new Queue('walletSessionBetQueue', externalRedisOption);
+const walletSessionBetDeleteQueue = new Queue('walletSessionBetDeleteQueue', externalRedisOption);
 
 
 const ExpertMatchBetQueue = new Queue('expertMatchBetQueue', externalRedisOption);
 const ExpertSessionBetQueue = new Queue('expertSessionBetQueue', externalRedisOption);
+const expertSessionBetDeleteQueue = new Queue('expertSessionBetDeleteQueue', externalRedisOption);
 
 SessionMatchBetQueue.process(async function (job, done) {
   let jobData = job.data;
@@ -416,5 +418,6 @@ module.exports = {
   SessionMatchBetQueue: SessionMatchBetQueue,
   WalletSessionBetQueue: WalletSessionBetQueue,
   ExpertMatchBetQueue:ExpertMatchBetQueue,
-  ExpertSessionBetQueue:ExpertSessionBetQueue
+  ExpertSessionBetQueue:ExpertSessionBetQueue,
+  walletSessionBetDeleteQueue, expertSessionBetDeleteQueue
 };

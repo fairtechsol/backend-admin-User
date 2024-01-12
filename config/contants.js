@@ -220,3 +220,7 @@ module.exports.manualMatchBettingType = [
   "quickbookmaker3",
   "tiedMatch2",
 ];
+
+module.exports.report = {
+  queryType : "creditRefrence"
+}
