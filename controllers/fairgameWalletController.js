@@ -7,6 +7,7 @@ const {
   betType,
   betResultStatus,
   redisKeys,
+  partnershipPrefixByRole,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
@@ -639,27 +640,14 @@ exports.declareSessionResult = async (req,res)=>{
           }
           const redisSessionExposureName =
             redisKeys.userSessionExposure + matchId;
-          let parentRedisUpdateObj = {};
           let sessionExposure = 0;
           if (parentUserRedisData?.[redisSessionExposureName]) {
             sessionExposure =
               parseFloat(parentUserRedisData[redisSessionExposureName]) || 0;
           }
-          if (parentUserRedisData?.[betId + "_profitLoss"]) {
-            let redisData = JSON.parse(
-              parentUserRedisData[betId + "_profitLoss"]
-            );
-            sessionExposure = sessionExposure - (redisData.maxLoss || 0);
-            parentRedisUpdateObj[redisSessionExposureName] = sessionExposure;
-          }
+          await deleteKeyFromUserRedis(key,redisKeys.userSessionExposure+betId);
           await deleteKeyFromUserRedis(key, betId + "_profitLoss");
 
-          if (
-            parentUserRedisData?.exposure &&
-            Object.keys(parentRedisUpdateObj).length > 0
-          ) {
-            updateUserDataRedis(key, parentRedisUpdateObj);
-          }
           sendMessageToUser(key, socketData.sessionResult, {
             ...parentUser,
             betId,
@@ -760,15 +748,17 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
     }
 
     const userCurrBalance=Number(user.user.userBalance.currentBalance+profitLoss).toFixed(2);
-    user.user.userBalance = await updateUserBalanceByUserId(user.user.id,{
+    let userBalanceData={
       currentBalance:userCurrBalance,
       profitLoss:user.user.userBalance.profitLoss+profitLoss,
       myProfitLoss:user.user.userBalance.myProfitLoss+profitLoss,
       exposure: user.user.userBalance.exposure
-    })
+    }
+
+     await updateUserBalanceByUserId(user.user.id,userBalanceData)
     
     if (userRedisData?.exposure) {
-      updateUserDataRedis(user.user.id,{ exposure: user.user.userBalance.exposure, myProfitLoss: user.user.userBalance.myProfitLoss, currentBalance:  userCurrBalance });
+      updateUserDataRedis(user.user.id,userBalanceData);
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
 
     }
@@ -810,15 +800,13 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
         upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
       } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss };
-        upperUserObj[patentUser.id] = { myProfitLoss: myProfitLoss };
-        upperUserObj[patentUser.id] = { exposure: maxLoss };
+        upperUserObj[patentUser.id] = { profitLoss: profitLoss,myProfitLoss: myProfitLoss,exposure: maxLoss };
       }
     }
     faAdminCal={
       profitLoss: profitLoss + (faAdminCal?.profitLoss||0),
       exposure: maxLoss+(faAdminCal?.exposure||0),
-      myProfitLoss: ((profitLoss + (faAdminCal?.profitLoss||0))*parseFloat(user.user.fwPartnership)/100).toFixed(2)
+      myProfitLoss: +((profitLoss + (faAdminCal?.profitLoss||0))*parseFloat(user.user.fwPartnership)/100).toFixed(2)
     }
   };
   return {fwProfitLoss,faAdminCal};
@@ -1241,18 +1229,19 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
     const userCurrBalance = Number(
       (user.user.userBalance.currentBalance - profitLoss).toFixed(2)
     );
-    user.user.userBalance = await updateUserBalanceByUserId(user.user.id, {
-      currentBalance: userCurrBalance,
-      profitLoss: user.user.userBalance.profitLoss - profitLoss,
-      myProfitLoss: user.user.userBalance.myProfitLoss - profitLoss,
-      exposure: user.user.userBalance.exposure,
-    });
+
+let userBalanceData={
+  currentBalance: userCurrBalance,
+  profitLoss: user.user.userBalance.profitLoss - profitLoss,
+  myProfitLoss: user.user.userBalance.myProfitLoss - profitLoss,
+  exposure: user.user.userBalance.exposure,
+}
+
+    await updateUserBalanceByUserId(user.user.id, userBalanceData);
     
     if (userRedisData?.exposure) {
       updateUserDataRedis(user.user.id, {
-        exposure: user.user.userBalance.exposure,
-        myProfitLoss: user.user.userBalance.myProfitLoss,
-        currentBalance: userCurrBalance,
+       ...userBalanceData,
         [betId + redisKeys.profitLoss]: JSON.stringify({
           upperLimitOdds: redisData?.upperLimit,
           lowerLimitOdds: redisData?.lowerLimit,
@@ -1315,13 +1304,11 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
             },user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
         }
       } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss };
-        upperUserObj[patentUser.id] = { myProfitLoss: myProfitLoss };
-        upperUserObj[patentUser.id] = { exposure: maxLoss };
+        upperUserObj[patentUser.id] = { profitLoss: profitLoss,myProfitLoss: myProfitLoss ,exposure: maxLoss};
 
         const betPlaceProfitLoss=await calculatePLAllBet(betPlace,-user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
 
-        upperUserObj[patentUser.id] = { profitLossObj: {
+        upperUserObj[patentUser.id] = {...upperUserObj[patentUser.id], profitLossObj: {
           upperLimitOdds: betPlaceProfitLoss?.upperLimit,
           lowerLimitOdds: betPlaceProfitLoss?.lowerLimit,
           betPlaced: betPlaceProfitLoss?.betData,
