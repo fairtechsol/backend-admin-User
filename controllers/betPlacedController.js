@@ -856,7 +856,7 @@ exports.deleteMultipleBet = async (req, res) => {
         }
       }
     });
-
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
     if (Object.keys(updateObj).length > 0) {
       for (let key in updateObj) {
           let userId = key;
@@ -865,9 +865,9 @@ exports.deleteMultipleBet = async (req, res) => {
               let betId = value;
               let bet = userDataDelete[value];
               if (bet.isSessionBet) {
-                  await updateUserAtSession(userId, betId, matchId, bet.array, deleteReason);
+                  await updateUserAtSession(userId, betId, matchId, bet.array, deleteReason, domainUrl);
               } else {
-                  await this.updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason);
+                  await this.updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason, domainUrl);
               }
           };
       }
@@ -883,7 +883,7 @@ exports.deleteMultipleBet = async (req, res) => {
   }
 }
 
-const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) => {
+const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, domainUrl) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = userRedisData ? true : false;
   let userOldExposure = 0;
@@ -925,7 +925,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
   }
   oldProfitLoss.betPlaced = oldBetPlacedPL;
   oldProfitLoss.maxLoss = newMaxLoss;
-  let exposureDiff = oldMaxLoss + newMaxLoss;
+  let exposureDiff = oldMaxLoss - newMaxLoss;
   let redisObject = {
     [redisSesionExposureName] : oldSessionExposure - exposureDiff,
     exposure : userOldExposure - exposureDiff,
@@ -940,6 +940,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
     profitLoss: oldProfitLoss,
     bets :bets,
     deleteReason: deleteReason,
+    matchId: matchId,
     betPlacedId: betPlacedId
    });
    Object.keys(partnershipPrefixByRole)
@@ -1005,6 +1006,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
               profitLoss: oldProfitLossParent,
               bets :bets,
               deleteReason: deleteReason,
+              matchId: matchId,
               betPlacedId: betPlacedId
              });
             
@@ -1021,7 +1023,6 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) =
       }
     });
     
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
     const walletJob = walletSessionBetDeleteQueue.createJob({
       userId: userId,
       partnership: userRedisData?.partnerShips,
