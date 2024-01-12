@@ -206,6 +206,7 @@ module.exports.socketData = {
   userExposureLimit: "exposureLimit",
   sessionResult:"sessionResult",
   sessionNoResult:"sessionNoResult",
+  sessionResultUnDeclare:"sessionResultUnDeclare"
 };
 
 exports.marketBetType = {

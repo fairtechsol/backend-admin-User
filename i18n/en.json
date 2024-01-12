@@ -57,6 +57,7 @@
     "minAmountViolate": "Amount less then minimun amount.",
     "maxAmountViolate": "Amount More then maximum amount.",
     "marketRateChanged": "{marketType} rate has been changed.",
-    "resultDeclared":"Result declared successfully."
+    "resultDeclared":"Result declared successfully.",
+    "resultUnDeclared":"Result un declared successfully."
   }
 }

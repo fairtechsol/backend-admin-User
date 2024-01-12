@@ -1,3 +1,4 @@
+const { IsNull } = require("typeorm");
 const {
   transType,
   walletDescription,
@@ -9,12 +10,13 @@ const {
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet } = require("../services/betPlacedService");
 const {
   forceLogoutIfLogin,
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
   calculatePLAllBet,
+  calculateProfitLossSession,
 } = require("../services/commonService");
 const {
   getDomainDataById,
@@ -814,9 +816,9 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
       }
     }
     faAdminCal={
-      profitLoss: profitLoss,
-      exposure: maxLoss,
-      fwPartnership: user.user.fwPartnership
+      profitLoss: profitLoss + (faAdminCal?.profitLoss||0),
+      exposure: maxLoss+(faAdminCal?.exposure||0),
+      myProfitLoss: ((profitLoss + (faAdminCal?.profitLoss||0))*parseFloat(user.user.fwPartnership)/100).toFixed(2)
     }
   };
   return {fwProfitLoss,faAdminCal};
@@ -1057,18 +1059,17 @@ exports.unDeclareSessionResult = async (req,res)=>{
           matchId,
           0,
           sessionDetails,
-          socketData.sessionResult,
+          socketData.sessionResultUnDeclare,
           userId,
           bulkWalletRecord,
-          upperUserObj,
-          score
+          upperUserObj
         );
 
         insertTransactions(bulkWalletRecord);
         logger.info({
           message:"Upper user for this bet.",
           data:{upperUserObj,betId}
-        })
+        });
 
 
         for (let [key, value] of Object.entries(upperUserObj)) {
@@ -1088,6 +1089,7 @@ exports.unDeclareSessionResult = async (req,res)=>{
           if (parentUserRedisData?.exposure) {
             parentExposure = parseFloat(parentUserRedisData?.exposure);
           }
+          
 
           parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
           parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
@@ -1111,31 +1113,27 @@ exports.unDeclareSessionResult = async (req,res)=>{
               parentUser,
             },
           });
+          let parentRedisUpdateObj = {};
+
           if (parentUserRedisData?.exposure) {
-            updateUserDataRedis(key, {
+            parentRedisUpdateObj= {
               exposure: parentUser.exposure,
               profitLoss: parentUser.profitLoss,
               myProfitLoss: parentUser.myProfitLoss,
-            });
-
-
+              [betId+redisKeys.profitLoss]:JSON.stringify(value?.profitLossObj)
+            };
           }
           const redisSessionExposureName =
             redisKeys.userSessionExposure + matchId;
-          let parentRedisUpdateObj = {};
           let sessionExposure = 0;
           if (parentUserRedisData?.[redisSessionExposureName]) {
             sessionExposure =
               parseFloat(parentUserRedisData[redisSessionExposureName]) || 0;
           }
-          if (parentUserRedisData?.[betId + "_profitLoss"]) {
-            let redisData = JSON.parse(
-              parentUserRedisData[betId + "_profitLoss"]
-            );
-            sessionExposure = sessionExposure - (redisData.maxLoss || 0);
+          
+            sessionExposure = sessionExposure - (value?.profitLossObj?.maxLoss || 0);
             parentRedisUpdateObj[redisSessionExposureName] = sessionExposure;
-          }
-          await deleteKeyFromUserRedis(key, betId + "_profitLoss");
+          
 
           if (
             parentUserRedisData?.exposure &&
@@ -1152,10 +1150,21 @@ exports.unDeclareSessionResult = async (req,res)=>{
         }
 
 
+        await updatePlaceBet(
+          {
+            betId: betId,
+            deleteReason: IsNull(),
+          },
+          {
+            result: betResultStatus.PENDING,
+          }
+        );
+
+
         return SuccessResponse(
           {
             statusCode: 200,
-            message: { msg: "bet.resultDeclared" },
+            message: { msg: "bet.resultUnDeclared" },
             data: profitLossData
           },
           req,
@@ -1165,7 +1174,7 @@ exports.unDeclareSessionResult = async (req,res)=>{
     
   } catch (error) {
     logger.error({
-      error: `Error at declare session result for the user.`,
+      error: `Error at un declare session result for the user.`,
       stack: error.stack,
       message: error.message,
     });
@@ -1293,18 +1302,99 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
         upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+
+        for(const placedBets of betPlace){
+          upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSession( upperUserObj[patentUser.id].profitLossObj,{
+              betPlacedData: {
+                betType: placedBets?.betType,
+                odds: placedBets?.odds,
+              },
+              loseAmount: placedBets?.lossAmount,
+              winAmount: placedBets?.winAmount,
+            },user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+        }
       } else {
         upperUserObj[patentUser.id] = { profitLoss: profitLoss };
         upperUserObj[patentUser.id] = { myProfitLoss: myProfitLoss };
         upperUserObj[patentUser.id] = { exposure: maxLoss };
-        upperUserObj[patentUser.id] = { profitLossObj: maxLoss };
+
+        const betPlaceProfitLoss=await calculatePLAllBet(betPlace,-user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+
+        upperUserObj[patentUser.id] = { profitLossObj: {
+          upperLimitOdds: betPlaceProfitLoss?.upperLimit,
+          lowerLimitOdds: betPlaceProfitLoss?.lowerLimit,
+          betPlaced: betPlaceProfitLoss?.betData,
+          maxLoss: betPlaceProfitLoss?.max_loss,
+        }};
 
       }
     }
+
+
+    if (faAdminCal.profitLossObjWallet) {
+      const betPlaceProfitLoss = await calculatePLAllBet(
+        betPlace,
+        -user?.user[`fwPartnership`]
+      );
+      faAdminCal.profitLossObjWallet = {
+        upperLimitOdds: betPlaceProfitLoss?.upperLimit,
+        lowerLimitOdds: betPlaceProfitLoss?.lowerLimit,
+        betPlaced: betPlaceProfitLoss?.betData,
+        maxLoss: betPlaceProfitLoss?.max_loss,
+      };
+    } else {
+      for (const placedBets of betPlace) {
+        faAdminCal.profitLossObjWallet = await calculateProfitLossSession(
+          faAdminCal.profitLossObjWallet,
+          {
+            betPlacedData: {
+              betType: placedBets?.betType,
+              odds: placedBets?.odds,
+            },
+            loseAmount: placedBets?.lossAmount,
+            winAmount: placedBets?.winAmount,
+          },
+          user?.user[`fwPartnership`]
+        );
+      }
+    }
+
+    if (faAdminCal.profitLossObjAdmin) {
+      const betPlaceProfitLoss = await calculatePLAllBet(
+        betPlace,
+        -user?.user[`faPartnership`]
+      );
+      faAdminCal.profitLossObjAdmin = {
+        upperLimitOdds: betPlaceProfitLoss?.upperLimit,
+        lowerLimitOdds: betPlaceProfitLoss?.lowerLimit,
+        betPlaced: betPlaceProfitLoss?.betData,
+        maxLoss: betPlaceProfitLoss?.max_loss,
+      };
+    } else {
+      for (const placedBets of betPlace) {
+        faAdminCal.profitLossObjAdmin = await calculateProfitLossSession(
+          faAdminCal.profitLossObjAdmin,
+          {
+            betPlacedData: {
+              betType: placedBets?.betType,
+              odds: placedBets?.odds,
+            },
+            loseAmount: placedBets?.lossAmount,
+            winAmount: placedBets?.winAmount,
+          },
+          user?.user[`faPartnership`]
+        );
+      }
+    }
+
+   
+
     faAdminCal={
-      profitLoss: profitLoss,
-      exposure: maxLoss,
-      fwPartnership: user.user.fwPartnership
+      ...faAdminCal,
+      profitLoss: profitLoss + (faAdminCal?.profitLoss||0),
+      exposure: maxLoss+(faAdminCal?.exposure||0),
+      myProfitLoss: (((faAdminCal?.myProfitLoss||0))+(parseFloat(profitLoss)*parseFloat(user.user.fwPartnership)/100)).toFixed(2)
     }
   };
   return {fwProfitLoss,faAdminCal};
