@@ -46,5 +46,6 @@ exports.allApiRoutes = {
   MICROSERVICE : {
     matchOdd : "/matchOdds/",
     bookmaker : "/bookmaker/",
+    session : "/session/",
   }
 }

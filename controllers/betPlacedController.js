@@ -667,12 +667,18 @@ const checkApiSessionRates = async(apiBetData, betDetail) => {
   try {
     let data =await apiCall(
       apiMethod.get,
-      microServiceUrl + "session/" + apiBetData.marketId
-    );
+      microServiceUrl + allApiRoutes.MICROSERVICE.session + apiBetData.marketId
+    ).catch(error =>{
+      logger.error({
+        error: `Error at session bet check validate with third party url api hit.`,
+        stack: error.stack,
+        message: error.message,
+      });
+      throw error
+    });
     let filterData = data?.data?.find(
       (d) => d.SelectionId == apiBetData.selectionId
     );
-
     if (
       betDetail.betType == betType.NO &&
       betDetail.odds != filterData["LayPrice1"]
