@@ -97,34 +97,35 @@ exports.getDistinctUserBetPlaced= async (betId)=>{
   return betPlaced;
 }
 
-exports.allChildsProfitLoss = async (where, select) => {
+exports.allChildsProfitLoss = async (where) => {
   let profitLoss = await BetPlaced.createQueryBuilder()
-    .where(where)
+    .where(cond => {
+      if (where.result) {
+        cond.andWhere(`result IN (:...result)`, { result: where.result });
+      }
+      if (where.createBy) {
+        if (Array.isArray(where.createBy)) {
+          cond.andWhere(`betPlaced.createBy IN (:...createBy)`, { createBy: where.createBy });
+        } else {
+          cond.andWhere(`"createBy" = :createBy`, { createBy: where.createBy });
+        }
+      }
+      if (where.startDate) {
+        cond.andWhere(`"createdAt" >= :startDate`, { startDate: where.startDate.gte });
+      }
+      if (where.endDate) {
+        cond.andWhere(`"createdAt" <= :endDate`, { endDate: where.endDate.lte });
+      }
+    })
     .select([
       `"marketType"`,
       `"eventType"`,
-    `(SUM(case when result = 'WIN' then "winAmount" else 0 end) - SUM(case when result = 'LOSS' then "lossAmount" else 0 end) ) as "aggregateAmount"`
-  ])
+      `(SUM(case when result = 'WIN' then "winAmount" else 0 end) - SUM(case when result = 'LOSS' then "lossAmount" else 0 end) ) as "aggregateAmount"`
+    ])
     .groupBy([
       `"marketType"`,
       `"eventType"`,
     ])
   let profitLossData = await profitLoss.getRawMany();
   return profitLossData
-}
-
-exports.singleChildProfitLoss = async (where)=>{
-  let profitLoss = await BetPlaced.createQueryBuilder()
-    .where(where)
-    .select([
-      `"marketType"`,
-      `"eventType"`,
-    `(SUM(case when result = 'WIN' then "winAmount" else 0 end) - SUM(case when result = 'LOSS' then "lossAmount" else 0 end) ) as "aggregateAmount"`
-  ])
-    .groupBy([
-      `"marketType"`,
-      `"eventType"`,
-    ])
-    let profitLossData = await profitLoss.getRawMany();
-    return profitLossData
 }

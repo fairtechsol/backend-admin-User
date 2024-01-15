@@ -1712,6 +1712,9 @@
                   },
                   "endDate": {
                     "example": "any"
+                  },
+                  "userId": {
+                    "example": "any"
                   }
                 }
               }

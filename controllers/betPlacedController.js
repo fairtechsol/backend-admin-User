@@ -8,7 +8,7 @@ const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateRate, calculateProfitLossSession, calculatePLAllBet } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue } = require('../queue/consumer');
-const { In, Not, Between } = require('typeorm');
+const { In, Not } = require('typeorm');
 let lodash = require("lodash");
 const { updateUserBalanceByUserId, getUserBalanceDataByUserId } = require('../services/userBalanceService');
 const { sendMessageToUser } = require('../sockets/socketManager');
@@ -883,7 +883,7 @@ exports.deleteMultipleBet = async (req, res) => {
   }
 }
 
-const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason) => {
+const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, domainUrl) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = userRedisData ? true : false;
   let userOldExposure = 0;
@@ -1057,20 +1057,24 @@ exports.profitLoss = async (req, res) => {
     const endDate = req.body.endDate
     const reqUser = req.user
     let where = {
-      result: In([betResultStatus.LOSS, betResultStatus.WIN])
+      result: [betResultStatus.LOSS, betResultStatus.WIN]
     }
-    let result
-    let total
+    let result, total, user
     let userId = req.body.userId
-    let user
 
-    if (startDate && endDate) {
+    if (startDate) {
       const start = new Date(startDate);
-      start.setHours(0, 0, 0, 0);
-
+      start.setUTCHours(0, 0, 0, 0);
+      where.startDate = {
+        gte: start,
+      };
+    }
+    if (endDate) {
       const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
-      where.createdAt = Between(start, end);
+      end.setUTCHours(23, 59, 59, 999);
+      where.endDate = {
+        lte: end,
+      };
     }
 
     if (userId != "") {
@@ -1081,7 +1085,6 @@ exports.profitLoss = async (req, res) => {
       result = await betPlacedService.allChildsProfitLoss(where);
 
     } else {
-
       let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
       childsId = childsId.map(item => item.id)
       if (!childsId.length) {
@@ -1092,7 +1095,7 @@ exports.profitLoss = async (req, res) => {
           }
         }, req, res)
       }
-      where.createBy = In(childsId);
+      where.createBy = childsId;
       result = await betPlacedService.allChildsProfitLoss(where);
     }
 
