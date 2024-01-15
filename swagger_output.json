@@ -1218,6 +1218,48 @@
         }
       }
     },
+    "/fairgameWallet/unDeclare/result/session": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "betId": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  },
+                  "sessionDetails": {
+                    "example": "any"
+                  },
+                  "userId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/expert/notification": {
       "get": {
         "description": "",

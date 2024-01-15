@@ -215,8 +215,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
 
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
-    let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ?? 0.0;
-    let sessionExposure = userRedisData[redisKeys.userSessionExposure + matchId] ?? 0.0;
+    let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]) :  0.0;
+    let sessionExposure = userRedisData[redisKeys.userSessionExposure + matchId] ? parseFloat(userRedisData[redisKeys.userSessionExposure + matchId]) : 0.0;
     let userTotalExposure = matchExposure + sessionExposure;
 
 
@@ -227,9 +227,9 @@ exports.matchBettingBetPlaced = async (req, res) => {
         teamC: teamCrateRedisKey? Number(userRedisData[teamCrateRedisKey]) || 0.0 : 0.0 
       };
     
-    let userPreviousExposure = userRedisData[redisKeys.userAllExposure] || 0.0;
+    let userPreviousExposure = parseFloat(userRedisData[redisKeys.userAllExposure]) || 0.0;
     let userOtherMatchExposure = userPreviousExposure - userTotalExposure;
-    let userExposureLimit = userRedisData[redisKeys.userExposureLimit];
+    let userExposureLimit = parseFloat(userRedisData[redisKeys.userExposureLimit]);
 
     logger.info({
       info: `User's match and session exposure and teams rate in redis with userId ${reqUser.id} `,
