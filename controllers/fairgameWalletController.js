@@ -640,12 +640,17 @@ exports.declareSessionResult = async (req,res)=>{
           }
           const redisSessionExposureName =
             redisKeys.userSessionExposure + matchId;
+          let parentRedisUpdateObj = {};
           let sessionExposure = 0;
           if (parentUserRedisData?.[redisSessionExposureName]) {
             sessionExposure =
               parseFloat(parentUserRedisData[redisSessionExposureName]) || 0;
           }
-          await deleteKeyFromUserRedis(key,redisKeys.userSessionExposure+betId);
+          if (parentUserRedisData?.[betId + "_profitLoss"]) {
+            let redisData = JSON.parse(parentUserRedisData[betId + "_profitLoss"]);
+            sessionExposure = sessionExposure - (redisData.maxLoss || 0);
+            parentRedisUpdateObj[redisSessionExposureName] = sessionExposure;
+          }
           await deleteKeyFromUserRedis(key, betId + "_profitLoss");
 
           sendMessageToUser(key, socketData.sessionResult, {
@@ -755,7 +760,7 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
       exposure: user.user.userBalance.exposure
     }
 
-     await updateUserBalanceByUserId(user.user.id,userBalanceData)
+     await updateUserBalanceByUserId(user.user.id,userBalanceData);
     
     if (userRedisData?.exposure) {
       updateUserDataRedis(user.user.id,userBalanceData);
@@ -1119,7 +1124,7 @@ exports.unDeclareSessionResult = async (req,res)=>{
               parseFloat(parentUserRedisData[redisSessionExposureName]) || 0;
           }
           
-            sessionExposure = sessionExposure - (value?.profitLossObj?.maxLoss || 0);
+            sessionExposure = sessionExposure + (value?.profitLossObj?.maxLoss || 0);
             parentRedisUpdateObj[redisSessionExposureName] = sessionExposure;
           
 
@@ -1243,8 +1248,8 @@ let userBalanceData={
       updateUserDataRedis(user.user.id, {
        ...userBalanceData,
         [betId + redisKeys.profitLoss]: JSON.stringify({
-          upperLimitOdds: redisData?.upperLimit,
-          lowerLimitOdds: redisData?.lowerLimit,
+          upperLimitOdds: redisData?.betData?.[redisData?.betData?.length-1]?.odds,
+          lowerLimitOdds: redisData?.betData?.[0]?.odds,
           betPlaced: redisData?.betData,
           maxLoss: redisData?.max_loss,
         }),
@@ -1309,8 +1314,8 @@ let userBalanceData={
         const betPlaceProfitLoss=await calculatePLAllBet(betPlace,-user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
 
         upperUserObj[patentUser.id] = {...upperUserObj[patentUser.id], profitLossObj: {
-          upperLimitOdds: betPlaceProfitLoss?.upperLimit,
-          lowerLimitOdds: betPlaceProfitLoss?.lowerLimit,
+          upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length-1]?.odds,
+          lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
           betPlaced: betPlaceProfitLoss?.betData,
           maxLoss: betPlaceProfitLoss?.max_loss,
         }};
@@ -1325,8 +1330,8 @@ let userBalanceData={
         -user?.user[`fwPartnership`]
       );
       faAdminCal.profitLossObjWallet = {
-        upperLimitOdds: betPlaceProfitLoss?.upperLimit,
-        lowerLimitOdds: betPlaceProfitLoss?.lowerLimit,
+        upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length - 1]?.odds,
+        lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.max_loss,
       };
@@ -1353,8 +1358,8 @@ let userBalanceData={
         -user?.user[`faPartnership`]
       );
       faAdminCal.profitLossObjAdmin = {
-        upperLimitOdds: betPlaceProfitLoss?.upperLimit,
-        lowerLimitOdds: betPlaceProfitLoss?.lowerLimit,
+        upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length - 1]?.odds,
+        lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.max_loss,
       };
@@ -1381,7 +1386,7 @@ let userBalanceData={
       ...faAdminCal,
       profitLoss: profitLoss + (faAdminCal?.profitLoss||0),
       exposure: maxLoss+(faAdminCal?.exposure||0),
-      myProfitLoss: (((faAdminCal?.myProfitLoss||0))+(parseFloat(profitLoss)*parseFloat(user.user.fwPartnership)/100)).toFixed(2)
+      myProfitLoss: parseFloat((parseFloat(faAdminCal?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) /100 )).toFixed(2))
     }
   };
   return {fwProfitLoss,faAdminCal};
