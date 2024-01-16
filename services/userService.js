@@ -4,7 +4,9 @@ const userSchema = require("../models/user.entity");
 const userBalanceSchema = require("../models/userBalance.entity");
 const user = AppDataSource.getRepository(userSchema);
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
-const { ILike, In } = require("typeorm");
+const betPlacedSchema = require("../models/betPlaced.entity");
+const BetPlaced = AppDataSource.getRepository(betPlacedSchema);
+const { ILike, In, Not, IsNull } = require("typeorm");
 const ApiFeature = require("../utils/apiFeatures");
 
 // id is required and select is optional parameter is an type or array
@@ -258,4 +260,32 @@ exports.getUsersWithUsersBalanceData = async (where, query) => {
 
     return await transactionQuery;
 
+}
+
+exports.getTotalProfitLoss = async (where, startDate, endDate, matchId, totalLoss) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .where(where)
+    .andWhere({ result: Not('PENDING'), deleteReason: IsNull() });
+
+  if (startDate) {
+    query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
+  }
+  if (endDate) {
+    let newDate = new Date(endDate);
+    newDate.setHours(23, 59, 59, 999);
+    query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
+  }
+  if (matchId) {
+    query = query.andWhere({ 'matchId': matchId })
+  }
+  query = query
+    .leftJoinAndMapOne("placeBet.user", "user", 'user', 'placeBet.createBy = user.id')
+    .select([
+      totalLoss,
+      'placeBet.eventType as "eventType"',
+      'COUNT(placeBet.id) as "totalBet"'
+    ])
+    .groupBy('placeBet.eventType')
+  let result = await query.getRawMany();
+  return result
 }

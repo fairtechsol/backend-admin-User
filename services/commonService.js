@@ -1,4 +1,4 @@
-const { socketData, betType } = require("../config/contants");
+const { socketData, betType, userRoleConstant } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId } = require("./betPlacedService");
@@ -317,4 +317,39 @@ exports.calculateProfitLossForSessionToResult=async (betId, userId) =>{
   let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId,betId);
   let redisData = await this.calculatePLAllBet(betPlace,100);
   return redisData;
+}
+
+exports.proftLossPercentCol = async (user, queryColumns) => {
+  switch (user.roleName) {
+    case (userRoleConstant.fairGameWallet):
+    case (userRoleConstant.expert): {
+      queryColumns = '(fwPartnership)';
+      break;
+    }
+    case (userRoleConstant.fairGameAdmin): {
+      queryColumns = `(user.faPartnership + user.fwPartnership)`;
+      break;
+    }
+    case (userRoleConstant.superAdmin): {
+      queryColumns = `(user.saPartnership + user.faPartnership + user.fwPartnership)`;
+      break;
+    }
+    case (userRoleConstant.admin): {
+      queryColumns = `(user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership)`;
+      break;
+    }
+    case (userRoleConstant.superMaster): {
+      queryColumns = `(user.sm_partnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership)`;
+      break;
+    }
+    case (userRoleConstant.master): {
+      queryColumns = `(user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership)`;
+      break;
+    }
+    default:
+      queryColumns = '100';
+      break;
+  }
+  console.log("queryColumns",queryColumns)
+  return queryColumns;
 }
