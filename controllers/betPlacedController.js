@@ -196,8 +196,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
     }
     await validateMatchBettingDetails(matchBetting, betPlacedObj, { teamA, teamB, teamC, placeIndex });
     const teamArateRedisKey =
-      matchBetType == (matchBettingType.tiedMatch1 ||
-        matchBetType == matchBettingType.tiedMatch2
+     ( matchBetType == matchBettingType.tiedMatch1 ||
+      matchBetType == matchBettingType.tiedMatch2
         ? redisKeys.yesRateTie
         : matchBetType == matchBettingType.completeMatch
           ? redisKeys.yesRateComplete

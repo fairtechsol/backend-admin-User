@@ -37,3 +37,11 @@ exports.hasUserInCache = async (userId) => {
 exports.deleteKeyFromUserRedis = async (userId,key) => {
   return await internalRedis.hdel(userId,key);
 }
+
+exports.getUserRedisKeys = async (userId,keys)=>{
+  // Retrieve all user data for the match from Redis
+  const userData = await internalRedis.hmget(userId,keys);
+
+  // Return the user data as an object or null if no data is found
+  return  userData;
+}
