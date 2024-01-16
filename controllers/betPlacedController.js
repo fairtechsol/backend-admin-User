@@ -1057,33 +1057,17 @@ exports.profitLoss = async (req, res) => {
     const endDate = req.body.endDate
     const reqUser = req.user
     let where = {
-      result: [betResultStatus.LOSS, betResultStatus.WIN]
+      result: In([betResultStatus.LOSS, betResultStatus.WIN])
     }
     let result, total, user
-    let userId = req.body.userId
-
-    if (startDate) {
-      const start = new Date(startDate);
-      start.setUTCHours(0, 0, 0, 0);
-      where.startDate = {
-        gte: start,
-      };
-    }
-    if (endDate) {
-      const end = new Date(endDate);
-      end.setUTCHours(23, 59, 59, 999);
-      where.endDate = {
-        lte: end,
-      };
-    }
+    let userId = req.body.userId;
 
     if (userId != "") {
       user = await getUserById(userId, ["roleName"]);
     }
     if (user && user.roleName == userRoleConstant.user) {
-      where.createBy = userId;
-      result = await betPlacedService.allChildsProfitLoss(where);
-
+      where.createBy = In([userId]);
+      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
     } else {
       let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
       childsId = childsId.map(item => item.id)
@@ -1095,10 +1079,9 @@ exports.profitLoss = async (req, res) => {
           }
         }, req, res)
       }
-      where.createBy = childsId;
-      result = await betPlacedService.allChildsProfitLoss(where);
+      where.createBy = In(childsId);
+      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
     }
-
     total = result.reduce(function (tot, arr) {
       const current = parseFloat(arr.aggregateAmount);
       return tot + current;
