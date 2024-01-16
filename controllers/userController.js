@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, findAllCreateUser } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -7,11 +7,13 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const { forceLogoutUser } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
-const { ILike, Not } = require('typeorm');
+const { ILike, Not, IsNull } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis } = require('../services/redis/commonfunction');
-
+const betPlacedSchema = require("../models/betPlaced.entity");
+const { AppDataSource } = require("../config/postGresConnection");
+const BetPlaced = AppDataSource.getRepository(betPlacedSchema);
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
   let userId = reqUser?.id
@@ -1067,4 +1069,55 @@ exports.generalReport = async (req, res) => {
     );
   }
 
+}
+
+exports.totalProfitLoss = async (req, res) => {
+  try {
+    let body = req.body
+    let userId = body.userId;
+    let queryColumns = '100';
+    let typeFilter = { result: Not('PENDING'), deleteReason: IsNull() }
+    let totalLoss = `(Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+    // let user = await getUserById(userId);
+    // console.log("user", user)
+    let query = BetPlaced.createQueryBuilder('placeBet')
+      .where({ createBy: userId })
+      .andWhere(typeFilter);
+
+    if (body.from && body.from != '') {
+      query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(body.from) })
+    }
+    if (body.to && body.to != '') {
+      let newDate = new Date(body.to);
+      newDate.setHours(23, 59, 59, 999);
+      query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
+    }
+    if (body.matchId && body.matchId != '') {
+      query = query.andWhere({ 'matchId': body.matchId })
+    }
+    query = query.select([
+      totalLoss,
+      'placeBet.eventType as "eventType"',
+      'COUNT(placeBet.id) as "totalBet"'
+    ])
+      .groupBy('placeBet.eventType')
+    let result = await query.getRawMany();
+
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result, },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
 }

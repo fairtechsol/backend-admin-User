@@ -3,7 +3,7 @@ const router = express.Router();
 
 const validator = require('../middleware/joi.validator')
 const {CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser,updateUserValid,setExposureLimitValid, setCreditRefValidate} = require('../validators/userValidator');
-const {createUser,lockUnlockUser,insertWallet,generateTransactionPassword, changePassword, updateUser,setExposureLimit, userList, userSearchList,userBalanceDetails, setCreditReferrence, getProfile, generalReport} = require('../controllers/userController');
+const {createUser,lockUnlockUser,insertWallet,generateTransactionPassword, changePassword, updateUser,setExposureLimit, userList, userSearchList,userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss} = require('../controllers/userController');
 
 const { isAuthenticate,checkTransactionPassword } = require('../middleware/auth');
 
@@ -22,6 +22,6 @@ router.post("/update/creditreferrence",isAuthenticate,checkTransactionPassword,v
 router.post("/generateTransactionPassword",isAuthenticate,validator(generateTransactionPass),generateTransactionPassword);
 
 router.get("/generalReport", isAuthenticate,  generalReport)
-
+router.post("/totalProfitLoss", isAuthenticate, totalProfitLoss)
 module.exports = router;
 //https://3100dev.fairgame.club/fair-game-wallet/getUserBalanceDetails
