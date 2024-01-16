@@ -97,3 +97,25 @@ exports.getDistinctUserBetPlaced= async (betId)=>{
   .getMany()
   return betPlaced;
 }
+
+exports.allChildsProfitLoss = async (where, startDate, endDate) => {
+  let profitLoss = await BetPlaced.createQueryBuilder()
+    .where(where);
+  if (startDate) {
+    profitLoss.andWhere(`"createdAt" >= :startDate`, { startDate: startDate });
+  }
+  if (endDate) {
+    profitLoss.andWhere(`"createdAt" <= :endDate`, { endDate: endDate });
+  }
+  profitLoss = profitLoss.select([
+    `"marketType"`,
+    `"eventType"`,
+    `(SUM(case when result = 'WIN' then "winAmount" else 0 end) - SUM(case when result = 'LOSS' then "lossAmount" else 0 end) ) as "aggregateAmount"`
+  ])
+    .groupBy([
+      `"marketType"`,
+      `"eventType"`,
+    ])
+  let profitLossData = await profitLoss.getRawMany();
+  return profitLossData
+}

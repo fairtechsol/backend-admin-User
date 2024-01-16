@@ -1113,3 +1113,52 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     await expertJob.save();
 
 }
+
+exports.profitLoss = async (req, res) => {
+  try {
+    const startDate = req.body.startDate
+    const endDate = req.body.endDate
+    const reqUser = req.user
+    let where = {
+      result: In([betResultStatus.LOSS, betResultStatus.WIN])
+    }
+    let result, total, user
+    let userId = req.body.userId;
+
+    if (userId != "") {
+      user = await getUserById(userId, ["roleName"]);
+    }
+    if (user && user.roleName == userRoleConstant.user) {
+      where.createBy = In([userId]);
+      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
+    } else {
+      let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
+      childsId = childsId.map(item => item.id)
+      if (!childsId.length) {
+        return SuccessResponse({
+          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: {
+            result: [],
+            total: 0
+          }
+        }, req, res)
+      }
+      where.createBy = In(childsId);
+      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
+    }
+    total = result.reduce(function (tot, arr) {
+      const current = parseFloat(arr.aggregateAmount);
+      return tot + current;
+    }, 0)
+    total = parseFloat(total.toFixed(2))
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: { result, total },
+      },
+      req,
+      res
+    );
+
+  } catch (error) {
+    return ErrorResponse(error, req, res)
+  }
+}
