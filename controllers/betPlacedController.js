@@ -6,7 +6,7 @@ const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, updateUserDataRedis, getUserRedisKey } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate, calculateProfitLossSession, calculatePLAllBet } = require('../services/commonService');
+const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue } = require('../queue/consumer');
 const { In, Not } = require('typeorm');
 let lodash = require("lodash");
@@ -894,12 +894,11 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   let isUserLogin = userRedisData ? true : false;
   let userOldExposure = 0;
   let betPlacedId = bets.map(bet => bet.id);
+  let partnershipObj = {};
 
   if (isUserLogin) {
-    // userRedisData['partnerShips'] = userRedisData.partnerShips;
-    // userRedisData['roleName'] = userRedisData.roleName;
     userOldExposure = parseFloat(userRedisData.exposure);
-    // await this.redis.hmset(userId, userRedisData);
+    partnershipObj = JSON.parse(userRedisData.partnerShips);
   } else {
     // let user = await this.userService.findUserBy({ id: userId });
     // let userPartnerships = await this.userService.findUserPartnerShipObj(user, userRole );
@@ -907,7 +906,6 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   }
   let redisName = `${betId}_profitLoss`;
   let socketSessionEvent = "sessionDeleteBet";
-  let partnershipObj = JSON.parse(userRedisData.partnerShips);
   
   let redisSesionExposureName = redisKeys.userSessionExposure + matchId;
   let oldSessionExposure = userRedisData[redisSesionExposureName];
@@ -921,64 +919,10 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   let oldUpperLimitOdds = parseFloat(oldProfitLoss.upperLimitOdds);
   let userDeleteProfitLoss = await calculatePLAllBet(bets, 100, oldLowerLimitOdds, oldUpperLimitOdds);
 
+  await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced);
+
   let oldBetPlacedPL = oldProfitLoss.betPlaced;
   let newMaxLoss = 0;
-
-
-//   let newbetPlaced = [
-//     { "odds": 62, "profitLoss": -10 },
-//     { "odds": 63, "profitLoss": -10 },
-//     { "odds": 64, "profitLoss": -10 },
-//     { "odds": 65, "profitLoss": 30 },
-//     { "odds": 66, "profitLoss": 10 },
-//     { "odds": 67, "profitLoss": 10 },
-//     { "odds": 68, "profitLoss": 10 },
-// ];
-
-// let oldbetPlaced = [
-//     { "odds": 60, "profitLoss": -11 },
-//     { "odds": 61, "profitLoss": -12 },
-//     { "odds": 62, "profitLoss": -13 },
-//     { "odds": 63, "profitLoss": -14 },
-//     { "odds": 64, "profitLoss": -15 },
-//     { "odds": 65, "profitLoss": 33 },
-//     { "odds": 66, "profitLoss": 15 },
-//     { "odds": 67, "profitLoss": 14 },
-//     { "odds": 68, "profitLoss": 17 },
-//     { "odds": 69, "profitLoss": 18 },
-//     { "odds": 70, "profitLoss": 19 },
-//     { "odds": 71, "profitLoss": 17 },
-// ];
-// if(newbetPlaced[0].odds > oldbetPlaced[0].odds){
-//     while(newbetPlaced[0].odds != oldbetPlaced[0].odds){
-//         const newEntry = { "odds": newbetPlaced[0].odds - 1, "profitLoss": newbetPlaced[0].profitLoss };
-//         newbetPlaced.unshift(newEntry);
-//     }
-// }
-// if(newbetPlaced[0].odds < oldbetPlaced[0].odds){
-//     while(newbetPlaced[0].odds != oldbetPlaced[0].odds){
-//         const newEntry = { "odds": oldbetPlaced[0].odds - 1, "profitLoss": oldbetPlaced[0].profitLoss };
-//         oldbetPlaced.unshift(newEntry);
-//     }
-// }
-
-// if(newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds){
-//     while(newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds){
-//         const newEntry = { "odds": oldbetPlaced[oldbetPlaced.length - 1].odds + 1, "profitLoss": oldbetPlaced[oldbetPlaced.length - 1].profitLoss };
-//         oldbetPlaced.push(newEntry);
-//     }
-// }
-// if(newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds){
-//     while(newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds){
-//         const newEntry = { "odds": newbetPlaced[newbetPlaced.length - 1].odds + 1, "profitLoss": newbetPlaced[newbetPlaced.length - 1].profitLoss };
-//         newbetPlaced.push(newEntry);
-//     }
-// }
-// console.log(newbetPlaced)
-// console.log(oldbetPlaced)
-
-
-
 
   for (let i = 0; i < oldBetPlacedPL.length; i++) {
     oldBetPlacedPL[i].profitLoss = oldBetPlacedPL[i].profitLoss - userDeleteProfitLoss.betData[i].profitLoss;
@@ -1006,6 +950,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     matchId: matchId,
     betPlacedId: betPlacedId
    });
+   
    Object.keys(partnershipPrefixByRole)
     ?.filter(
       (item) =>
@@ -1042,6 +987,9 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             let oldProfitLossParent = JSON.parse(masterRedisData[redisName]);
             let parentPLbetPlaced = oldProfitLossParent?.betPlaced || [];
             let newMaxLossParent = 0;
+            let oldMaxLossParent = oldProfitLossParent?.maxLoss;
+            
+            await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
 
             userDeleteProfitLoss.betData.map((ob, index) => {
               let partnershipData = (ob.profitLoss * partnership) / 100;
@@ -1054,7 +1002,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             });
             oldProfitLossParent.betPlaced = parentPLbetPlaced;
             oldProfitLossParent.maxLoss = newMaxLossParent;
-            let sessionExposure = parseFloat(masterRedisData[redisSesionExposureName]) - exposureDiff;
+            let sessionExposure = parseFloat(masterRedisData[redisSesionExposureName]) - oldMaxLossParent + newMaxLossParent;
             let redisObj = {
               [redisName]: JSON.stringify(oldProfitLossParent),
               exposure: partnerExposure,
