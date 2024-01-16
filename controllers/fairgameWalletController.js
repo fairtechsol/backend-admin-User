@@ -9,9 +9,8 @@ const {
   redisKeys,
   partnershipPrefixByRole,
 } = require("../config/contants");
-const internalRedis = require("../config/internalRedisConnection");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet } = require("../services/betPlacedService");
 const {
   forceLogoutIfLogin,
   forceLogoutUser,
@@ -46,7 +45,6 @@ const {
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const lodash = require("lodash");
 
 exports.createSuperAdmin = async (req, res) => {
   try {
@@ -1391,3 +1389,54 @@ let userBalanceData={
   };
   return {fwProfitLoss,faAdminCal};
 }
+
+
+exports.getBetWallet = async (req, res) => {
+  try {
+    let query = req.query;
+    let result;
+    let select = [
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId"
+    ];
+    
+      select.push("user.id", "user.userName");
+      result = await getBet({}, query, null, select);
+
+
+      if (!result[1]){
+        return SuccessResponse(
+          {
+            statusCode: 200,
+            message: { msg: "fetched", keys: { type: "Bet" } },
+            data: { count: 0, rows: [] },
+          },
+          req,
+          res
+        );
+      }
+        const domainUrl = `${req.protocol}://${req.get("host")}`;
+        result[0] = result?.[0]?.map((item) => {
+          return {
+            ...item,
+            domain: domainUrl,
+          };
+        });
+      
+
+    return SuccessResponse({
+      statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
+        count: result[1],
+        rows: result[0]
+      }
+    }, req, res)
+  } catch (err) {
+    logger.error({
+      error:"Error in get bet for wallet",
+      stack: err.stack,
+      message: err.message,
+    })
+    return ErrorResponse(err, req, res);
+    
+  }
+
+};
