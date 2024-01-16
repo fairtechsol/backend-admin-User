@@ -714,7 +714,7 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
       } else {
         // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
         let redisData = await calculateProfitLossForSessionToResult(betId, user.user?.id);
-        maxLoss = redisData.max_loss || 0;
+        maxLoss = redisData.maxLoss || 0;
       }
       redisSesionExposureValue = redisSesionExposureValue - maxLoss;
       if (userRedisData?.exposure) {
@@ -974,7 +974,7 @@ const calculateMaxLossSessionForUserNoResult = async (
         betId,
         user.user?.id
       );
-      maxLoss = redisData.max_loss || 0;
+      maxLoss = redisData.maxLoss || 0;
     }
     redisSesionExposureValue = redisSesionExposureValue - maxLoss;
 
@@ -1199,7 +1199,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
         let betPlace = await findAllPlacedBetWithUserIdAndBetId(user?.user?.id,betId);
         let redisData = await calculatePLAllBet(betPlace,100);
-        maxLoss = redisData.max_loss || 0;
+        maxLoss = redisData.maxLoss || 0;
       
       redisSesionExposureValue = redisSesionExposureValue + maxLoss;
       if (userRedisData?.exposure) {
@@ -1249,7 +1249,7 @@ let userBalanceData={
           upperLimitOdds: redisData?.betData?.[redisData?.betData?.length-1]?.odds,
           lowerLimitOdds: redisData?.betData?.[0]?.odds,
           betPlaced: redisData?.betData,
-          maxLoss: redisData?.max_loss,
+          maxLoss: redisData?.maxLoss,
         }),
       });
     }
@@ -1315,7 +1315,7 @@ let userBalanceData={
           upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length-1]?.odds,
           lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
           betPlaced: betPlaceProfitLoss?.betData,
-          maxLoss: betPlaceProfitLoss?.max_loss,
+          maxLoss: betPlaceProfitLoss?.maxLoss,
         }};
 
       }
@@ -1331,7 +1331,7 @@ let userBalanceData={
         upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length - 1]?.odds,
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
-        maxLoss: betPlaceProfitLoss?.max_loss,
+        maxLoss: betPlaceProfitLoss?.maxLoss,
       };
     } else {
       for (const placedBets of betPlace) {
@@ -1359,7 +1359,7 @@ let userBalanceData={
         upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length - 1]?.odds,
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
-        maxLoss: betPlaceProfitLoss?.max_loss,
+        maxLoss: betPlaceProfitLoss?.maxLoss,
       };
     } else {
       for (const placedBets of betPlace) {

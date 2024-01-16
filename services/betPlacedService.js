@@ -1,5 +1,5 @@
 const { userRoleConstant, betResultStatus } = require("../config/contants");
-const { In, IsNull } = require("typeorm");
+const { IsNull } = require("typeorm");
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");
 const ApiFeature = require("../utils/apiFeatures");
@@ -65,12 +65,9 @@ exports.getMultipleAccountProfitLoss = async (betId, userId) => {
   let betPlaced = await BetPlaced.query(`SELECT Sum(CASE result WHEN '${betResultStatus.WIN}' then "winAmount" ELSE 0 END) AS winAmount, Sum(CASE result WHEN '${betResultStatus.LOSS}' then "lossAmount" ELSE 0 END) AS lossAmount from "betPlaceds" where "betId" ='${betId}' AND "userId"='${userId}' AND "deleteReason" IS NULL`)
   return betPlaced;
 };
-exports.findAllPlacedBet = async (matchId, placeBetIdArray) => {
+exports.findAllPlacedBet = async (whereObj) => {
   return await BetPlaced.find({
-    where: {
-      matchId: matchId,
-      id: In(placeBetIdArray)
-    }
+    where: whereObj
   });
 }
 
