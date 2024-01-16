@@ -350,6 +350,5 @@ exports.proftLossPercentCol = async (user, queryColumns) => {
       queryColumns = '100';
       break;
   }
-  console.log("queryColumns",queryColumns)
   return queryColumns;
 }
