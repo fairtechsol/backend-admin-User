@@ -1,8 +1,9 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getTotalProfitLoss,  } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
+const { getTotalProfitLoss } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const { forceLogoutUser, proftLossPercentCol } = require("../services/commonService");
@@ -1070,12 +1071,17 @@ exports.generalReport = async (req, res) => {
 
 exports.totalProfitLoss = async (req, res) => {
   try {
-    let body = req.body
-    let userId = body.userId || req.user.id;
-    let startDate = body.from
-    let endDate = body.to
-    let user, result
+    let { userId, startDate, endDate, matchId } = req.body;
+    let user, result, totalLoss
     let queryColumns = ``;
+    let where = {}
+
+    if (!userId) {
+      userId = req.user.id
+    }
+    if (matchId) {
+      where.matchId = matchId
+    }
 
     user = await getUserById(userId);
     if (!user)
@@ -1085,13 +1091,12 @@ exports.totalProfitLoss = async (req, res) => {
         res
       );
     queryColumns = await proftLossPercentCol(user, queryColumns);
-    let totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-    if (user.role == userRoleConstant.user) {
-      totalLoss = `(Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-    }
-    if (user && user.roleName == userRoleConstant.user) {
+    totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
 
-      result = await getTotalProfitLoss({ createBy: In([userId]) }, startDate, endDate, body.matchId, totalLoss);
+    if (user && user.roleName == userRoleConstant.user) {
+      where.createBy = In([userId])
+      totalLoss = `(Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+      result = await getTotalProfitLoss(where, startDate, endDate, totalLoss);
 
     } else {
       let childsId = await getChildsWithOnlyUserRole(req.user.id);
@@ -1103,7 +1108,8 @@ exports.totalProfitLoss = async (req, res) => {
           }
         }, req, res)
       }
-      result = await getTotalProfitLoss({ createBy: In(childsId) }, startDate, endDate, body.matchId, totalLoss)
+      where.createBy = In(childsId)
+      result = await getTotalProfitLoss(where, startDate, endDate, totalLoss)
     }
     return SuccessResponse(
       {
