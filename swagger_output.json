@@ -826,77 +826,6 @@
           "default": {
             "description": ""
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "userName": {
-                    "example": "any"
-                  },
-                  "fullName": {
-                    "example": "any"
-                  },
-                  "password": {
-                    "example": "any"
-                  },
-                  "phoneNumber": {
-                    "example": "any"
-                  },
-                  "city": {
-                    "example": "any"
-                  },
-                  "betBlock": {
-                    "example": "any"
-                  },
-                  "userBlock": {
-                    "example": "any"
-                  },
-                  "roleName": {
-                    "example": "any"
-                  },
-                  "fwPartnership": {
-                    "example": "any"
-                  },
-                  "faPartnership": {
-                    "example": "any"
-                  },
-                  "saPartnership": {
-                    "example": "any"
-                  },
-                  "aPartnership": {
-                    "example": "any"
-                  },
-                  "smPartnership": {
-                    "example": "any"
-                  },
-                  "mPartnership": {
-                    "example": "any"
-                  },
-                  "id": {
-                    "example": "any"
-                  },
-                  "creditRefrence": {
-                    "example": "any"
-                  },
-                  "exposureLimit": {
-                    "example": "any"
-                  },
-                  "maxBetLimit": {
-                    "example": "any"
-                  },
-                  "minBetLimit": {
-                    "example": "any"
-                  },
-                  "domain": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
-          }
         }
       }
     },
@@ -915,26 +844,6 @@
         "responses": {
           "default": {
             "description": ""
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "user": {
-                    "example": "any"
-                  },
-                  "domain": {
-                    "example": "any"
-                  },
-                  "id": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -955,29 +864,6 @@
           "default": {
             "description": ""
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "userId": {
-                    "example": "any"
-                  },
-                  "transactionType": {
-                    "example": "any"
-                  },
-                  "amount": {
-                    "example": "any"
-                  },
-                  "remark": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
-          }
         }
       }
     },
@@ -996,23 +882,6 @@
         "responses": {
           "default": {
             "description": ""
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "exposureLimit": {
-                    "example": "any"
-                  },
-                  "id": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -1033,26 +902,6 @@
           "default": {
             "description": ""
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "userId": {
-                    "example": "any"
-                  },
-                  "amount": {
-                    "example": "any"
-                  },
-                  "remark": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
-          }
         }
       }
     },
@@ -1071,29 +920,6 @@
         "responses": {
           "default": {
             "description": ""
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "userId": {
-                    "example": "any"
-                  },
-                  "betBlock": {
-                    "example": "any"
-                  },
-                  "userBlock": {
-                    "example": "any"
-                  },
-                  "loginId": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -1114,23 +940,6 @@
           "default": {
             "description": ""
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "userId": {
-                    "example": "any"
-                  },
-                  "password": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
-          }
         }
       }
     },
@@ -1149,32 +958,6 @@
         "responses": {
           "default": {
             "description": ""
-          }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "betId": {
-                    "example": "any"
-                  },
-                  "score": {
-                    "example": "any"
-                  },
-                  "matchId": {
-                    "example": "any"
-                  },
-                  "sessionDetails": {
-                    "example": "any"
-                  },
-                  "userId": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
           }
         }
       }
@@ -1195,26 +978,6 @@
           "default": {
             "description": ""
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "betId": {
-                    "example": "any"
-                  },
-                  "score": {
-                    "example": "any"
-                  },
-                  "matchId": {
-                    "example": "any"
-                  }
-                }
-              }
-            }
-          }
         }
       }
     },
@@ -1234,28 +997,24 @@
           "default": {
             "description": ""
           }
-        },
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "betId": {
-                    "example": "any"
-                  },
-                  "matchId": {
-                    "example": "any"
-                  },
-                  "sessionDetails": {
-                    "example": "any"
-                  },
-                  "userId": {
-                    "example": "any"
-                  }
-                }
-              }
+        }
+      }
+    },
+    "/fairgameWallet/getBet": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
             }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }
