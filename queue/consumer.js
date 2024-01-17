@@ -217,7 +217,7 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
   let roleName = userRedisData.userRole;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
-  let partnership = JSON.parse(userRedisData.partnerShips);
+  let partnershipObj = JSON.parse(userRedisData.partnerShips);
 
   let teamRates = {
     teamA: parseFloat(userRedisData[jobData.teamArateRedisKey]) || 0.0,
@@ -252,65 +252,65 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
   }
 
   Object.keys(partnershipPrefixByRole)
-  ?.filter(
-    (item) =>
-      item != userRoleConstant.fairGameAdmin &&
-      item != userRoleConstant.fairGameWallet
-  )
-  ?.map(async (item) => {
-    let partnerShipKey = `${partnershipPrefixByRole[item]}`;
-    // Check if partnershipId exists in partnershipObj
-    if (partnershipObj[`${partnerShipKey}PartnershipId`]) {
-      let partnershipId = partnershipObj[`${partnerShipKey}PartnershipId`];
-      let partnership = partnershipObj[`${partnerShipKey}Partnership`];
-      try {
-        // Get user data from Redis or balance data by userId
-        let masterRedisData = await getUserRedisData(partnershipId);
-        if (lodash.isEmpty(masterRedisData)) {
-          let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-          let partnerExposure = partnerUser.exposure - userOldExposure + userCurrentExposure;
-          await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
-        } else {
-          let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
-          let partnerExposure = masterExposure - userOldExposure + userCurrentExposure;
-          await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
-  
-          let teamRates = {
-            teamA: parseFloat(masterRedisData[jobData.teamArateRedisKey]) || 0.0,
-            teamB: parseFloat(masterRedisData[jobData.teamBrateRedisKey]) || 0.0,
-            teamC: jobData.teamCrateRedisKey ? parseFloat(masterRedisData[jobData.teamCrateRedisKey]) || 0.0 : 0.0
-          }
-          let teamData = await calculateExpertRate(teamRates, obj, partnership);
-          let userRedisObj = {
-            [redisKeys.userAllExposure]: partnerExposure,
-            [jobData.teamArateRedisKey]: teamData.teamA,
-            [jobData.teamBrateRedisKey]: teamData.teamB,
-            ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
-          }
-          await updateUserDataRedis(partnershipId, userRedisObj);
-          let myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
-          sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { userRedisData, jobData })
-          // Log information about exposure and stake update
-          logger.info({
-            context: "Update User Exposure and Stake at the match bet",
-            process: `User ID : ${userId} ${item} id ${partnershipId}`,
-            data: `My Stake : ${(
-              (stake * parseFloat(partnership)) /
-              100
-            ).toFixed(2)}`,
-          });
+    ?.filter(
+      (item) =>
+        item != userRoleConstant.fairGameAdmin &&
+        item != userRoleConstant.fairGameWallet
+    )
+    ?.map(async (item) => {
+      let partnerShipKey = `${partnershipPrefixByRole[item]}`;
+      // Check if partnershipId exists in partnershipObj
+      if (partnershipObj[`${partnerShipKey}PartnershipId`]) {
+        let partnershipId = partnershipObj[`${partnerShipKey}PartnershipId`];
+        let partnership = partnershipObj[`${partnerShipKey}Partnership`];
+        try {
+          // Get user data from Redis or balance data by userId
+          let masterRedisData = await getUserRedisData(partnershipId);
+          if (lodash.isEmpty(masterRedisData)) {
+            let partnerUser = await getUserBalanceDataByUserId(partnershipId);
+            let partnerExposure = partnerUser.exposure - userOldExposure + userCurrentExposure;
+            await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
+          } else {
+            let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+            let partnerExposure = masterExposure - userOldExposure + userCurrentExposure;
+            await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
 
+            let teamRates = {
+              teamA: parseFloat(masterRedisData[jobData.teamArateRedisKey]) || 0.0,
+              teamB: parseFloat(masterRedisData[jobData.teamBrateRedisKey]) || 0.0,
+              teamC: jobData.teamCrateRedisKey ? parseFloat(masterRedisData[jobData.teamCrateRedisKey]) || 0.0 : 0.0
+            }
+            let teamData = await calculateExpertRate(teamRates, obj, partnership);
+            let userRedisObj = {
+              [redisKeys.userAllExposure]: partnerExposure,
+              [jobData.teamArateRedisKey]: teamData.teamA,
+              [jobData.teamBrateRedisKey]: teamData.teamB,
+              ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
+            }
+            await updateUserDataRedis(partnershipId, userRedisObj);
+            let myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
+            sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { userRedisData, jobData })
+            // Log information about exposure and stake update
+            logger.info({
+              context: "Update User Exposure and Stake at the match bet",
+              process: `User ID : ${userId} ${item} id ${partnershipId}`,
+              data: `My Stake : ${(
+                (stake * parseFloat(partnership)) /
+                100
+              ).toFixed(2)}`,
+            });
+
+          }
+        } catch (error) {
+          logger.error({
+            context: "error in master exposure update",
+            process: `User ID : ${userId} and master id ${mPartenerShipId}`,
+            error: error.message,
+            stake: error.stack
+          })
         }
-      } catch (error) {
-        logger.error({
-          context: "error in master exposure update",
-          process: `User ID : ${userId} and master id ${mPartenerShipId}`,
-          error: error.message,
-          stake: error.stack
-        })
       }
-    }
-  });
+    });
 
 }
 
