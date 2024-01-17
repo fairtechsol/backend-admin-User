@@ -1,8 +1,10 @@
 const { In } = require("typeorm");
-const { socketData, betType, tiedManualTeamName, matchBettingType } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
+const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId } = require("./betPlacedService");
+const { getUserById } = require("./userService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -260,7 +262,7 @@ exports.calculateProfitLossSession = async (redisProfitLoss, betData, partnershi
 exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds, oldUpperLimitOdds) => {
   let betData = [];
   let line = 1;
-  let max_loss = 0.0;
+  let maxLoss = 0.0;
   let first = 0;
   let last = 0;
   if (betPlace && betPlace.length) {
@@ -295,8 +297,8 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
           profitLoss = profitLoss + (betPlace[key]['winAmount'] * partnership / 100);
         }
       }
-      if (max_loss < Math.abs(profitLoss) && profitLoss < 0) {
-        max_loss = Math.abs(profitLoss);
+      if (maxLoss < Math.abs(profitLoss) && profitLoss < 0) {
+        maxLoss = Math.abs(profitLoss);
       }
       if (j == last) {
         line = i;
@@ -309,8 +311,8 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
       i++;
     }
   }
-  max_loss = Number(max_loss.toFixed(2));
-  return { betData: betData, line: line, max_loss: max_loss, total_bet: betPlace.length, lowerLimit: first, upperLimit: last }
+  maxLoss = Number(maxLoss.toFixed(2));
+  return { betData: betData, line: line, maxLoss: maxLoss, total_bet: betPlace.length, lowerLimitOdds: betData[0]?.odds, upperLimitOdds: betData[betData.length -1]?.odds }
 };
 
 
@@ -414,4 +416,62 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
       newbetPlaced.push(newEntry);
     }
   }
+};
+
+exports.findUserPartnerShipObj = async (user) => {
+  const obj = {};
+
+  const updateObj = (prefix, id) => {
+    obj[`${prefix}Partnership`] = user[`${prefix}Partnership`];
+    obj[`${prefix}PartnershipId`] = id;
+  };
+
+  const traverseHierarchy = async (currentUser, walletPartnerships) => {
+    if (!currentUser) {
+      return;
+    }
+
+    if (currentUser.roleName != userRoleConstant.user) {
+      updateObj(partnershipPrefixByRole[currentUser.roleName], currentUser.id);
+    }
+
+    if (currentUser.createBy ||
+      currentUser?.roleName == userRoleConstant.fairGameAdmin) {
+      if (currentUser?.roleName == userRoleConstant.superAdmin) {
+        try {
+          let response = await apiCall(
+            apiMethod.get,
+            walletDomain + allApiRoutes.EXPERT.partnershipId + currentUser.id
+          ).catch((err) => {
+            throw err?.response?.data;
+          });
+          await traverseHierarchy(
+            response?.data?.find(
+              (item) => item?.roleName == userRoleConstant.fairGameAdmin
+            ),
+            response?.data
+          );
+        } catch (err) {
+          console.log(err);
+        }
+      } else if (currentUser?.roleName == userRoleConstant.fairGameAdmin) {
+        await traverseHierarchy(
+          walletPartnerships?.find(
+            (item) => item?.roleName == userRoleConstant.fairGameWallet
+          )
+        );
+      } else {
+        const createdByUser = await getUserById(currentUser.createBy, [
+          "id",
+          "roleName",
+          "createBy",
+        ]);
+        await traverseHierarchy(createdByUser);
+      }
+    }
+  };
+
+  await traverseHierarchy(user);
+
+  return JSON.stringify(obj);
 };

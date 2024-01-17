@@ -83,10 +83,7 @@ exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
 
 exports.findAllPlacedBet = async (matchId, placeBetIdArray) => {
   return await BetPlaced.find({
-    where: {
-      matchId: matchId,
-      id: In(placeBetIdArray)
-    }
+    where: whereObj
   });
 }
 
