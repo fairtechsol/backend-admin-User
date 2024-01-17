@@ -81,7 +81,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
       myProfitLoss: userRedisData?.myProfitLoss,
       totalComission: userRedisData?.totalComission,
       profitLoss: userRedisData?.profitLoss,
-      profitLossData:userRedisData?.[`${jobData?.placedBet?.betId}_profitLoss`],
+      profitLossData: userRedisData?.[`${jobData?.placedBet?.betId}_profitLoss`],
       betPlaced: jobData
     });
   }
@@ -125,10 +125,10 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
               `${placedBetObject?.betPlacedData?.betId}_profitLoss`
             ]
               ? JSON.parse(
-                  masterRedisData[
-                    `${placedBetObject?.betPlacedData?.betId}_profitLoss`
-                  ]
-                )
+                masterRedisData[
+                `${placedBetObject?.betPlacedData?.betId}_profitLoss`
+                ]
+              )
               : null;
 
             let redisData = await calculateProfitLossSession(
@@ -144,9 +144,9 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
               [`${redisKeys.userSessionExposure}${placedBetObject?.betPlacedData?.matchId}`]:
                 parseFloat(
                   masterRedisData?.[
-                    `${redisKeys.userSessionExposure}${placedBetObject?.betPlacedData?.matchId}`
+                  `${redisKeys.userSessionExposure}${placedBetObject?.betPlacedData?.matchId}`
                   ] || 0
-                ) + parseFloat(redisData?.maxLoss || 0.0)-parseFloat(redisBetData?.maxLoss || 0.0),
+                ) + parseFloat(redisData?.maxLoss || 0.0) - parseFloat(redisBetData?.maxLoss || 0.0),
             });
 
             // Log information about exposure and stake update
@@ -183,29 +183,29 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
       }
     });
 };
-  
+
 
 MatchBetQueue.process(async function (job, done) {
-  
-let jobData = job.data;
-let userId = jobData.userId;
-let userRedisData = await getUserRedisData(userId);
+
+  let jobData = job.data;
+  let userId = jobData.userId;
+  let userRedisData = await getUserRedisData(userId);
   try {
-  
-  if (!lodash.isEmpty(userRedisData)) {
-    logger.info({
-      file: 'matchBetQueueProcessingFile',
-      info : `process job for user id ${userId}`,
-      userRedisData,
-      jobData
-    })
-    await calculateRateAmount(userRedisData,jobData,userId);
-  }
-  return done(null, {});
+
+    if (!lodash.isEmpty(userRedisData)) {
+      logger.info({
+        file: 'matchBetQueueProcessingFile',
+        info: `process job for user id ${userId}`,
+        userRedisData,
+        jobData
+      })
+      await calculateRateAmount(userRedisData, jobData, userId);
+    }
+    return done(null, {});
   } catch (error) {
     logger.info({
       file: 'error in bet Queue',
-      info : `process job for user id ${userId}`,
+      info: `process job for user id ${userId}`,
       userRedisData,
       jobData
     })
@@ -217,199 +217,101 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
   let roleName = userRedisData.userRole;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
-  let partnership = JSON.parse(userRedisData.partnerShips);
+  let partnershipObj = JSON.parse(userRedisData.partnerShips);
 
   let teamRates = {
     teamA: parseFloat(userRedisData[jobData.teamArateRedisKey]) || 0.0,
     teamB: parseFloat(userRedisData[jobData.teamBrateRedisKey]) || 0.0,
-    teamC:jobData.teamCrateRedisKey ? parseFloat(userRedisData[jobData.teamCrateRedisKey]) || 0.0:0.0
+    teamC: jobData.teamCrateRedisKey ? parseFloat(userRedisData[jobData.teamCrateRedisKey]) || 0.0 : 0.0
   }
 
   let teamData = {
-    teamA : jobData.newTeamRateData.teamA,
-    teamB : jobData.newTeamRateData.teamB,
-    ...(jobData.teamCrateRedisKey ? {teamC : jobData.newTeamRateData.teamC}: {})
+    teamA: jobData.newTeamRateData.teamA,
+    teamB: jobData.newTeamRateData.teamB,
+    ...(jobData.teamCrateRedisKey ? { teamC: jobData.newTeamRateData.teamC } : {})
   }
   let obj = {
-    teamA : jobData.teamA,
-    teamB : jobData.teamB,
-    teamC : jobData.teamC,
-    winAmount : jobData.winAmount,
-    lossAmount : jobData.lossAmount,
-    bettingType : jobData.bettingType,
-    betOnTeam : jobData.betOnTeam
+    teamA: jobData.teamA,
+    teamB: jobData.teamB,
+    teamC: jobData.teamC,
+    winAmount: jobData.winAmount,
+    lossAmount: jobData.lossAmount,
+    bettingType: jobData.bettingType,
+    betOnTeam: jobData.betOnTeam
   }
-  if(roleName == userRoleConstant.user){
+  if (roleName == userRoleConstant.user) {
     let userRedisObj = {
-      [redisKeys.userAllExposure] : userCurrentExposure,
-      [jobData.teamArateRedisKey] : teamData.teamA,
-      [jobData.teamBrateRedisKey] : teamData.teamB,
-      ...(jobData.teamCrateRedisKey?{[jobData.teamCrateRedisKey] : teamData.teamC}:{})
+      [redisKeys.userAllExposure]: userCurrentExposure,
+      [jobData.teamArateRedisKey]: teamData.teamA,
+      [jobData.teamBrateRedisKey]: teamData.teamB,
+      ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
     }
-    let setRedis = await updateUserDataRedis(userId,userRedisObj);
+    let setRedis = await updateUserDataRedis(userId, userRedisObj);
     //send socket to user
-    sendMessageToUser(userId,socketData.MatchBetPlaced,{userRedisData,jobData,...teamData})
+    sendMessageToUser(userId, socketData.MatchBetPlaced, { userRedisData, jobData, ...teamData })
   }
-  if(partnership['mPartnershipId']){
-    let mPartenerShipId = partnership['mPartnershipId'];
-    let mPartenerShip = partnership['mPartnership'];
-    try{
-    let masterRedisData = await getUserRedisData(mPartenerShipId);
-    if(lodash.isEmpty(masterRedisData)){
-      let partnerUser = await getUserBalanceDataByUserId(mPartenerShipId);
-      let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
-      await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
-    }else {
-      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
-      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
-      await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
-    
-      let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
-      let userRedisObj = {
-        [redisKeys.userAllExposure] : partnerExpsoure,
-        [jobData.teamArateRedisKey] : teamData.teamA,
-        [jobData.teamBrateRedisKey] : teamData.teamB,
-        ...(jobData.teamCrateRedisKey?{ [jobData.teamCrateRedisKey] : teamData.teamC}:{})
+
+  Object.keys(partnershipPrefixByRole)
+    ?.filter(
+      (item) =>
+        item != userRoleConstant.fairGameAdmin &&
+        item != userRoleConstant.fairGameWallet
+    )
+    ?.map(async (item) => {
+      let partnerShipKey = `${partnershipPrefixByRole[item]}`;
+      // Check if partnershipId exists in partnershipObj
+      if (partnershipObj[`${partnerShipKey}PartnershipId`]) {
+        let partnershipId = partnershipObj[`${partnerShipKey}PartnershipId`];
+        let partnership = partnershipObj[`${partnerShipKey}Partnership`];
+        try {
+          // Get user data from Redis or balance data by userId
+          let masterRedisData = await getUserRedisData(partnershipId);
+          if (lodash.isEmpty(masterRedisData)) {
+            let partnerUser = await getUserBalanceDataByUserId(partnershipId);
+            let partnerExposure = partnerUser.exposure - userOldExposure + userCurrentExposure;
+            await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
+          } else {
+            let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
+            let partnerExposure = masterExposure - userOldExposure + userCurrentExposure;
+            await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
+
+            let teamRates = {
+              teamA: parseFloat(masterRedisData[jobData.teamArateRedisKey]) || 0.0,
+              teamB: parseFloat(masterRedisData[jobData.teamBrateRedisKey]) || 0.0,
+              teamC: jobData.teamCrateRedisKey ? parseFloat(masterRedisData[jobData.teamCrateRedisKey]) || 0.0 : 0.0
+            }
+            let teamData = await calculateExpertRate(teamRates, obj, partnership);
+            let userRedisObj = {
+              [redisKeys.userAllExposure]: partnerExposure,
+              [jobData.teamArateRedisKey]: teamData.teamA,
+              [jobData.teamBrateRedisKey]: teamData.teamB,
+              ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
+            }
+            await updateUserDataRedis(partnershipId, userRedisObj);
+            let myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
+            sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { userRedisData, jobData })
+            // Log information about exposure and stake update
+            logger.info({
+              context: "Update User Exposure and Stake at the match bet",
+              process: `User ID : ${userId} ${item} id ${partnershipId}`,
+              data: `My Stake : ${(
+                (stake * parseFloat(partnership)) /
+                100
+              ).toFixed(2)}`,
+            });
+
+          }
+        } catch (error) {
+          logger.error({
+            context: "error in master exposure update",
+            process: `User ID : ${userId} and master id ${mPartenerShipId}`,
+            error: error.message,
+            stake: error.stack
+          })
+        }
       }
-      await updateUserDataRedis(mPartenerShipId,userRedisObj);
-      let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
-      logger.info({
-        context: "Update User Exposure and Stake",
-        process: `User ID : ${userId} master id ${mPartenerShipId}`,
-        data: `My Stake : ${myStake}`
-      })
-      //send Data to socket      
-    sendMessageToUser(mPartenerShipId,socketData.MatchBetPlaced,{userRedisData,jobData})
-    }
-  }catch(error){
-    logger.error({
-      context: "error in master exposure update",
-      process: `User ID : ${userId} and master id ${mPartenerShipId}`,
-      error: error.message,
-      stake : error.stack
-    })
-  }
-  } 
-  if(partnership['smPartnershipId']){
-    let mPartenerShipId = partnership['smPartnershipId'];
-    let mPartenerShip = partnership['smPartnership'];
-    try{
-    let masterRedisData = await getUserRedisData(mPartenerShipId);
-    if(lodash.isEmpty(masterRedisData)){
-      let partnerUser = await getUserBalanceDataByUserId(mPartenerShipId);
-      let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
-      await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
-    }else {
-      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
-      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
-      await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
-    
-      let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
-      let userRedisObj = {
-        [redisKeys.userAllExposure] : partnerExpsoure,
-        [jobData.teamArateRedisKey] : teamData.teamA,
-        [jobData.teamBrateRedisKey] : teamData.teamB,
-        ...(jobData.teamCrateRedisKey?{ [jobData.teamCrateRedisKey] : teamData.teamC}:{})
-      }
-      await updateUserDataRedis(mPartenerShipId,userRedisObj);
-      let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
-      logger.info({
-        context: "Update User Exposure and Stake",
-        process: `User ID : ${userId} super master id ${mPartenerShipId}`,
-        data: `My Stake : ${myStake}`
-      })
-      sendMessageToUser(mPartenerShipId,socketData.MatchBetPlaced,{userRedisData,jobData})
-      //send Data to socket
-    }
-  }catch(error){
-    logger.error({
-      context: "error in super master exposure update",
-      process: `User ID : ${userId} and super master id ${mPartenerShipId}`,
-      error: error.message,
-      stake : error.stack
-    })
-  }
-  }
-  if(partnership['aPartnershipId']){
-    let mPartenerShipId = partnership['aPartnershipId'];
-    let mPartenerShip = partnership['aPartnership'];
-    try{
-    let masterRedisData = await getUserRedisData(mPartenerShipId);
-    if(lodash.isEmpty(masterRedisData)){
-      let partnerUser = await getUserBalanceDataByUserId(mPartenerShipId);
-      let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
-      await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
-    }else {
-      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
-      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
-      await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
-    
-      let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
-      let userRedisObj = {
-        [redisKeys.userAllExposure] : partnerExpsoure,
-        [jobData.teamArateRedisKey] : teamData.teamA,
-        [jobData.teamBrateRedisKey] : teamData.teamB,
-        ...(jobData.teamCrateRedisKey?{ [jobData.teamCrateRedisKey] : teamData.teamC}:{})
-      }
-      await updateUserDataRedis(mPartenerShipId,userRedisObj);
-      let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
-      logger.info({
-        context: "Update User Exposure and Stake",
-        process: `User ID : ${userId} admin id ${mPartenerShipId}`,
-        data: `My Stake : ${myStake}`
-      })
-      //send Data to socket
-    sendMessageToUser(mPartenerShipId,socketData.MatchBetPlaced,{userRedisData,jobData})
-    }
-  }catch(error){
-    logger.error({
-      context: "error in admin exposure update",
-      process: `User ID : ${userId} and admin id ${mPartenerShipId}`,
-      error: error.message,
-      stake : error.stack
-    })
-  }
-  }
-  if(partnership['saPartnershipId']){
-    let mPartenerShipId = partnership['saPartnershipId'];
-    let mPartenerShip = partnership['saPartnership'];
-    try{
-    let masterRedisData = await getUserRedisData(mPartenerShipId);
-    if(lodash.isEmpty(masterRedisData)){
-      let partnerUser = await getUserBalanceDataByUserId(mPartenerShipId);
-      let partnerExpsoure = partnerUser.exposure - userOldExposure + userCurrentExposure;
-      await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure})
-    }else {
-      let masterExposure = masterRedisData.exposure ? masterRedisData.exposure : 0;
-      let partnerExpsoure = masterExposure - userOldExposure + userCurrentExposure;
-      await updateUserBalanceByUserId(mPartenerShipId,{exposure:partnerExpsoure});
-    
-      let teamData =await calculateExpertRate(teamRates,obj,mPartenerShip);
-      let userRedisObj = {
-        [redisKeys.userAllExposure] : partnerExpsoure,
-        [jobData.teamArateRedisKey] : teamData.teamA,
-        [jobData.teamBrateRedisKey] : teamData.teamB,
-        ...(jobData.teamCrateRedisKey?{ [jobData.teamCrateRedisKey] : teamData.teamC}:{})
-      }
-      await updateUserDataRedis(mPartenerShipId,userRedisObj);
-      let myStake = Number(((jobData.stake/100) * mPartenerShip).toFixed(2));
-      logger.info({
-        context: "Update User Exposure and Stake",
-        process: `User ID : ${userId} super admin id ${mPartenerShipId}`,
-        data: `My Stake : ${myStake}`
-      })
-      //send Data to socket
-    sendMessageToUser(mPartenerShipId,socketData.MatchBetPlaced,{userRedisData,jobData})
-    }
-  }catch(error){
-    logger.error({
-      context: "error in super admin exposure update",
-      process: `User ID : ${userId} and superAdmin id ${mPartenerShipId}`,
-      error: error.message,
-      stake : error.stack
-    })
-  }
-  }
+    });
+
 }
 
 module.exports = {
@@ -417,7 +319,7 @@ module.exports = {
   WalletMatchBetQueue: WalletMatchBetQueue,
   SessionMatchBetQueue: SessionMatchBetQueue,
   WalletSessionBetQueue: WalletSessionBetQueue,
-  ExpertMatchBetQueue:ExpertMatchBetQueue,
-  ExpertSessionBetQueue:ExpertSessionBetQueue,
+  ExpertMatchBetQueue: ExpertMatchBetQueue,
+  ExpertSessionBetQueue: ExpertSessionBetQueue,
   walletSessionBetDeleteQueue, expertSessionBetDeleteQueue
 };

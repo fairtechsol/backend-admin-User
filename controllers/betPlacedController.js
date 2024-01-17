@@ -299,6 +299,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       domainUrl: domainUrl,
       partnerships: userRedisData.partnerShips,
       userId: reqUser.id,
+      stake: jobData.stake,
       newUserExposure, userPreviousExposure,
       winAmount, lossAmount, teamRates,
       bettingType, betOnTeam, teamA, teamB, teamC, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newBet
