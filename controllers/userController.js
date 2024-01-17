@@ -1072,7 +1072,7 @@ exports.generalReport = async (req, res) => {
 exports.totalProfitLoss = async (req, res) => {
   try {
     let { userId, startDate, endDate, matchId } = req.body;
-    let user, result, totalLoss
+    let user, totalLoss
     let queryColumns = ``;
     let where = {}
 
@@ -1096,7 +1096,6 @@ exports.totalProfitLoss = async (req, res) => {
     if (user && user.roleName == userRoleConstant.user) {
       where.createBy = In([userId])
       totalLoss = `(Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-      result = await getTotalProfitLoss(where, startDate, endDate, totalLoss);
 
     } else {
       let childsId = await getChildsWithOnlyUserRole(req.user.id);
@@ -1109,8 +1108,8 @@ exports.totalProfitLoss = async (req, res) => {
         }, req, res)
       }
       where.createBy = In(childsId)
-      result = await getTotalProfitLoss(where, startDate, endDate, totalLoss)
     }
+    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss)
     return SuccessResponse(
       {
         statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result, },

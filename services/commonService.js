@@ -1,4 +1,4 @@
-const { socketData, betType } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -319,3 +319,101 @@ exports.calculateProfitLossForSessionToResult = async (betId, userId) => {
   let redisData = await this.calculatePLAllBet(betPlace, 100);
   return redisData;
 }
+
+exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
+  if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
+    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+      const newEntry = {
+        odds: newbetPlaced[0].odds - 1,
+        profitLoss: newbetPlaced[0].profitLoss,
+      };
+      newbetPlaced.unshift(newEntry);
+    }
+  }
+  if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
+    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+      const newEntry = {
+        odds: oldbetPlaced[0].odds - 1,
+        profitLoss: oldbetPlaced[0].profitLoss,
+      };
+      oldbetPlaced.unshift(newEntry);
+    }
+  }
+
+  if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
+    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+      const newEntry = {
+        odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
+        profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
+      };
+      oldbetPlaced.push(newEntry);
+    }
+  }
+  if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
+    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+      const newEntry = {
+        odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
+        profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
+      };
+      newbetPlaced.push(newEntry);
+    }
+  }
+};
+
+exports.findUserPartnerShipObj = async (user) => {
+  const obj = {};
+
+  const updateObj = (prefix, id) => {
+    obj[`${prefix}Partnership`] = user[`${prefix}Partnership`];
+    obj[`${prefix}PartnershipId`] = id;
+  };
+
+  const traverseHierarchy = async (currentUser, walletPartnerships) => {
+    if (!currentUser) {
+      return;
+    }
+
+    if (currentUser.roleName != userRoleConstant.user) {
+      updateObj(partnershipPrefixByRole[currentUser.roleName], currentUser.id);
+    }
+
+    if (currentUser.createBy ||
+      currentUser?.roleName == userRoleConstant.fairGameAdmin) {
+      if (currentUser?.roleName == userRoleConstant.superAdmin) {
+        try {
+          let response = await apiCall(
+            apiMethod.get,
+            walletDomain + allApiRoutes.EXPERT.partnershipId + currentUser.id
+          ).catch((err) => {
+            throw err?.response?.data;
+          });
+          await traverseHierarchy(
+            response?.data?.find(
+              (item) => item?.roleName == userRoleConstant.fairGameAdmin
+            ),
+            response?.data
+          );
+        } catch (err) {
+          console.log(err);
+        }
+      } else if (currentUser?.roleName == userRoleConstant.fairGameAdmin) {
+        await traverseHierarchy(
+          walletPartnerships?.find(
+            (item) => item?.roleName == userRoleConstant.fairGameWallet
+          )
+        );
+      } else {
+        const createdByUser = await getUserById(currentUser.createBy, [
+          "id",
+          "roleName",
+          "createBy",
+        ]);
+        await traverseHierarchy(createdByUser);
+      }
+    }
+  };
+
+  await traverseHierarchy(user);
+
+  return JSON.stringify(obj);
+};
