@@ -1,4 +1,4 @@
-const { userRoleConstant, betResultStatus } = require("../config/contants");
+const { userRoleConstant, betResultStatus, matchBettingType } = require("../config/contants");
 const { In, IsNull } = require("typeorm");
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");
@@ -52,7 +52,7 @@ exports.getBet = async (where, query,roleName, select) => {
 
 exports.getMatchBetPlaceWithUser = async (betId,select) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
-  .where({ betId: betId, result: betResultStatus.PENDING, deleteReason: IsNull() })
+  .where({ betId: In(betId), result: betResultStatus.PENDING, deleteReason: IsNull() })
   .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
   .select(select)
   .getMany()
@@ -65,6 +65,22 @@ exports.getMultipleAccountProfitLoss = async (betId, userId) => {
   let betPlaced = await BetPlaced.query(`SELECT Sum(CASE result WHEN '${betResultStatus.WIN}' then "winAmount" ELSE 0 END) AS winAmount, Sum(CASE result WHEN '${betResultStatus.LOSS}' then "lossAmount" ELSE 0 END) AS lossAmount from "betPlaceds" where "betId" ='${betId}' AND "userId"='${userId}' AND "deleteReason" IS NULL`)
   return betPlaced;
 };
+
+exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
+  const betPlaced = await BetPlaced.query(`
+  SELECT
+    SUM(CASE WHEN result = '${betResultStatus.WIN}' AND type IN ($1) THEN winAmount ELSE 0 END) AS "winAmount",
+    SUM(CASE WHEN result = '${betResultStatus.LOSS}' AND type IN ($1) THEN lossAmount ELSE 0 END) AS "lossAmount",
+    SUM(CASE WHEN result = '${betResultStatus.WIN}' AND type IN ($2) THEN winAmount ELSE 0 END) AS "winAmountTied",
+    SUM(CASE WHEN result = '${betResultStatus.LOSS}' AND type IN ($2) THEN lossAmount ELSE 0 END) AS "lossAmountTied",
+    SUM(CASE WHEN result = '${betResultStatus.WIN}' AND type IN ($3) THEN winAmount ELSE 0 END) AS "winAmountComplete",
+    SUM(CASE WHEN result = '${betResultStatus.LOSS}' AND type IN ($3) THEN lossAmount ELSE 0 END) AS "lossAmountComplete"
+  FROM "betPlaceds"
+  WHERE "betId" = $4 AND "userId" = $5 AND "deleteReason" IS NULL
+`, [[matchBettingType.bookmaker, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3, matchBettingType.matchOdd], [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2], [matchBettingType.completeMatch], betId, userId]);
+  return betPlaced;
+};
+
 exports.findAllPlacedBet = async (matchId, placeBetIdArray) => {
   return await BetPlaced.find({
     where: {
