@@ -1,7 +1,9 @@
-const { socketData, betType, userRoleConstant } = require("../config/contants");
+const { socketData, betType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
+const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId } = require("./betPlacedService");
+const { getUserById } = require("./userService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -121,7 +123,7 @@ const calculateProfitLoss = (betData, odds, partnership) => {
     (betData?.betPlacedData?.betType === betType.YES &&
       odds >= betData?.betPlacedData?.odds)
   ) {
-    return partnership!=null||partnership!=undefined
+    return partnership != null || partnership != undefined
       ? -parseFloat(
         (parseFloat(betData?.winAmount) * partnership) / 100
       ).toFixed(2)
@@ -132,7 +134,7 @@ const calculateProfitLoss = (betData, odds, partnership) => {
     (betData?.betPlacedData?.betType === betType.YES &&
       odds < betData?.betPlacedData?.odds)
   ) {
-    return partnership!=null||partnership!=undefined
+    return partnership != null || partnership != undefined
       ? +parseFloat(
         (parseFloat(betData?.loseAmount) * partnership) / 100
       ).toFixed(2)
@@ -259,17 +261,17 @@ exports.calculateProfitLossSession = async (redisProfitLoss, betData, partnershi
 exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds, oldUpperLimitOdds) => {
   let betData = [];
   let line = 1;
-  let max_loss = 0.0;
+  let maxLoss = 0.0;
+  let first = 0;
+  let last = 0;
   if (betPlace && betPlace.length) {
     // let latest_bet = betPlace[betPlace.length - 1].odds;
     let oddsValues = betPlace.map(({ odds }) => odds)
-    let first = 0;
     if (oldLowerLimitOdds) {
       first = oldLowerLimitOdds + 5;
     } else {
       first = Math.min(...oddsValues);
     }
-    let last = 0;
     if (oldUpperLimitOdds) {
       last = oldUpperLimitOdds - 5;
     } else {
@@ -294,8 +296,8 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
           profitLoss = profitLoss + (betPlace[key]['winAmount'] * partnership / 100);
         }
       }
-      if (max_loss < Math.abs(profitLoss) && profitLoss < 0) {
-        max_loss = Math.abs(profitLoss);
+      if (maxLoss < Math.abs(profitLoss) && profitLoss < 0) {
+        maxLoss = Math.abs(profitLoss);
       }
       if (j == last) {
         line = i;
@@ -308,47 +310,12 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
       i++;
     }
   }
-  max_loss = Number(max_loss.toFixed(2));
-  return { betData: betData, line: line, max_loss: max_loss, total_bet: betPlace.length }
+  maxLoss = Number(maxLoss.toFixed(2));
+  return { betData: betData, line: line, maxLoss: maxLoss, total_bet: betPlace.length, lowerLimitOdds: betData[0]?.odds, upperLimitOdds: betData[betData.length -1]?.odds }
 }
 
-
-exports.calculateProfitLossForSessionToResult=async (betId, userId) =>{
-  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId,betId);
-  let redisData = await this.calculatePLAllBet(betPlace,100);
+exports.calculateProfitLossForSessionToResult = async (betId, userId) => {
+  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, betId);
+  let redisData = await this.calculatePLAllBet(betPlace, 100);
   return redisData;
-}
-
-exports.proftLossPercentCol = async (user, queryColumns) => {
-  switch (user.roleName) {
-    case (userRoleConstant.fairGameWallet):
-    case (userRoleConstant.expert): {
-      queryColumns = '(fwPartnership)';
-      break;
-    }
-    case (userRoleConstant.fairGameAdmin): {
-      queryColumns = `(user.faPartnership + user.fwPartnership)`;
-      break;
-    }
-    case (userRoleConstant.superAdmin): {
-      queryColumns = `(user.saPartnership + user.faPartnership + user.fwPartnership)`;
-      break;
-    }
-    case (userRoleConstant.admin): {
-      queryColumns = `(user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership)`;
-      break;
-    }
-    case (userRoleConstant.superMaster): {
-      queryColumns = `(user.sm_partnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership)`;
-      break;
-    }
-    case (userRoleConstant.master): {
-      queryColumns = `(user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership)`;
-      break;
-    }
-    default:
-      queryColumns = '100';
-      break;
-  }
-  return queryColumns;
 }

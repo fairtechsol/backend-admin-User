@@ -1,23 +1,19 @@
 const {
   userRoleConstant,
   redisTimeOut,
-  partnershipPrefixByRole,
   differLoginTypeByRoles,
-  walletDomain,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const {
-  getUserById,
   getUserWithUserBalance,
 } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
-const { forceLogoutIfLogin } = require("../services/commonService");
+const { forceLogoutIfLogin, findUserPartnerShipObj } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 
 
 // Function to validate a user by username and password
@@ -74,66 +70,6 @@ const setUserDetailsRedis = async (user) => {
     await internalRedis.hmset(user.id, userPartnerShipData);
     await internalRedis.expire(user.id, redisTimeOut);
   }
-};
-
-const findUserPartnerShipObj = async (user) => {
-  const obj = {};
-
-  const updateObj = (prefix, id) => {
-    obj[`${prefix}Partnership`] = user[`${prefix}Partnership`];
-    obj[`${prefix}PartnershipId`] = id;
-  };
-
-  const traverseHierarchy = async (currentUser,walletPartnerships) => {
-    if (!currentUser) {
-      return;
-    }
-
-    if (currentUser.roleName != userRoleConstant.user) {
-      updateObj(partnershipPrefixByRole[currentUser.roleName], currentUser.id);
-    }
-
-    if (
-      currentUser.createBy ||
-      currentUser?.roleName == userRoleConstant.fairGameAdmin
-    ) {
-      if (currentUser?.roleName == userRoleConstant.superAdmin) {
-        try {
-          let response = await apiCall(
-            apiMethod.get,
-            walletDomain + allApiRoutes.EXPERT.partnershipId + currentUser.id
-          ).catch((err) => {
-            throw err?.response?.data;
-          });
-          await traverseHierarchy(
-            response?.data?.find(
-              (item) => item?.roleName == userRoleConstant.fairGameAdmin
-            ),
-            response?.data
-          );
-        } catch (err) {
-          console.log(err);
-        }
-      } else if (currentUser?.roleName == userRoleConstant.fairGameAdmin) {
-        await traverseHierarchy(
-          walletPartnerships?.find(
-            (item) => item?.roleName == userRoleConstant.fairGameWallet
-          )
-        );
-      } else {
-        const createdByUser = await getUserById(currentUser.createBy, [
-          "id",
-          "roleName",
-          "createBy",
-        ]);
-        await traverseHierarchy(createdByUser);
-      }
-    }
-  };
-
-  await traverseHierarchy(user);
-
-  return JSON.stringify(obj);
 };
 
 exports.login = async (req, res) => {

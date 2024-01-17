@@ -5,6 +5,9 @@ const {
   LessThan,
   MoreThanOrEqual,
   LessThanOrEqual,
+  In,
+  IsNull,
+  Not,
 } = require("typeorm");
 
 class ApiFeature {
@@ -69,6 +72,15 @@ class ApiFeature {
             case "lte":
               this.query.andWhere({ [key]: LessThanOrEqual(filterValue) });
               break;
+            case "inArr":
+                this.query.andWhere({ [key]: In(filterValue) });
+                break;
+            case "isNull":
+                this.query.andWhere({ [key]: IsNull() });
+                break;
+            case "notNull":
+                this.query.andWhere({ [key]: Not(IsNull()) });
+                break;
             case "between":
               if (filterValue?.split("|")?.length === 2) {
                 this.query.andWhere({
@@ -128,7 +140,7 @@ class ApiFeature {
 
   parseFilterValue(value) {
     // Parse the filter value to extract operator and actual value
-    const operators = ["eq", "gte", "lte", "gt", "lt", "between"]; // Add more operators as needed
+    const operators = ["eq", "gte", "lte", "gt", "lt", "between", "inArr", "isNull", "notNull"]; // Add more operators as needed
     const [operator] = operators.filter((op) => value?.startsWith(`${op}`));
 
     if (operator) {
@@ -139,6 +151,15 @@ class ApiFeature {
       return [null, this.parseFilterValueByType(value)];
     }
   }
+
+   isJson=(str)=> {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
 
   parseFilterValueByType(value) {
     // Parse the filter value based on its type (e.g., handle string, numeric, etc.)
@@ -152,7 +173,11 @@ class ApiFeature {
       value.toLowerCase() === "false"
     ) {
       return value.toLowerCase() === "true"; // Assume it's a boolean
-    } else {
+    }
+    else if(this.isJson(value)){
+      return JSON.parse(value);
+    }
+    else {
       return value; // Assume it's a string
     }
   }

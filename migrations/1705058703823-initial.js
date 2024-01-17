@@ -1,12 +1,12 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class SetupBetplaced1703741495803 {
-    name = 'SetupBetplaced1703741495803'
+module.exports = class Initial1705058703823 {
+    name = 'Initial1705058703823'
 
     async up(queryRunner) {
         await queryRunner.query(`CREATE TYPE "public"."betPlaceds_bettype_enum" AS ENUM('YES', 'NO', 'BACK', 'LAY')`);
-        await queryRunner.query(`CREATE TYPE "public"."betPlaceds_markettype_enum" AS ENUM('SESSION', 'MATCHBETTING')`);
-        await queryRunner.query(`CREATE TABLE "betPlaceds" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createBy" uuid, "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP WITH TIME ZONE, "matchId" uuid NOT NULL, "betId" uuid, "result" character varying, "teamName" character varying, "amount" numeric(13,2) NOT NULL DEFAULT '0', "odds" numeric(13,2) NOT NULL DEFAULT '0', "winAmount" numeric(13,2) NOT NULL DEFAULT '0', "lossAmount" numeric(13,2) NOT NULL DEFAULT '0', "betType" "public"."betPlaceds_bettype_enum" NOT NULL DEFAULT 'YES', "rate" numeric(13,2) NOT NULL DEFAULT '0', "marketType" "public"."betPlaceds_markettype_enum" NOT NULL DEFAULT 'MATCHBETTING', "deleteReason" character varying, "ipAddress" character varying, "browserDetail" character varying, "userId" uuid, CONSTRAINT "PK_9c485987c2b7a57f31b0c230abf" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TYPE "public"."betPlaceds_marketbettype_enum" AS ENUM('SESSION', 'MATCHBETTING')`);
+        await queryRunner.query(`CREATE TABLE "betPlaceds" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createBy" uuid, "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP WITH TIME ZONE, "matchId" uuid NOT NULL, "betId" uuid, "result" character varying, "teamName" character varying, "amount" numeric(13,2) NOT NULL DEFAULT '0', "odds" numeric(13,2) NOT NULL DEFAULT '0', "winAmount" numeric(13,2) NOT NULL DEFAULT '0', "lossAmount" numeric(13,2) NOT NULL DEFAULT '0', "betType" "public"."betPlaceds_bettype_enum" NOT NULL DEFAULT 'YES', "rate" numeric(13,2) NOT NULL DEFAULT '0', "marketType" character varying NOT NULL, "marketBetType" "public"."betPlaceds_marketbettype_enum", "deleteReason" character varying, "ipAddress" character varying, "browserDetail" character varying, "eventName" character varying, "eventType" character varying, "userId" uuid, CONSTRAINT "PK_9c485987c2b7a57f31b0c230abf" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "betPlaced_createBy" ON "betPlaceds" ("createBy") `);
         await queryRunner.query(`CREATE TABLE "buttons" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createBy" uuid, "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP WITH TIME ZONE, "type" character varying NOT NULL, "value" character varying NOT NULL, CONSTRAINT "REL_1b57705131901411bf9ad8f965" UNIQUE ("createBy"), CONSTRAINT "PK_0b55de60f80b00823be7aff0de2" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE UNIQUE INDEX "button_createBy" ON "buttons" ("createBy") `);
@@ -14,7 +14,7 @@ module.exports = class SetupBetplaced1703741495803 {
         await queryRunner.query(`CREATE UNIQUE INDEX "domainData_userName" ON "domainDatas" ("id", "userName") `);
         await queryRunner.query(`CREATE TABLE "systemTables" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createBy" uuid, "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP WITH TIME ZONE, "type" character varying NOT NULL, "value" character varying, CONSTRAINT "PK_c70d94890c6018a3a4ad2d01a56" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE UNIQUE INDEX "systemTable_type" ON "systemTables" ("type") `);
-        await queryRunner.query(`CREATE TYPE "public"."transactions_transtype_enum" AS ENUM('add', 'withDraw', 'win', 'loss', 'creditReference')`);
+        await queryRunner.query(`CREATE TYPE "public"."transactions_transtype_enum" AS ENUM('add', 'withDraw', 'win', 'loss', 'creditReference', 'bet')`);
         await queryRunner.query(`CREATE TABLE "transactions" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "createBy" uuid, "createdAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "deletedAt" TIMESTAMP WITH TIME ZONE, "searchId" uuid NOT NULL, "userId" uuid NOT NULL, "actionBy" uuid NOT NULL, "amount" numeric(13,2) NOT NULL DEFAULT '0', "closingBalance" numeric(13,2) NOT NULL DEFAULT '0', "transType" "public"."transactions_transtype_enum" NOT NULL, "description" character varying, "matchId" uuid, "betId" uuid, "actionByUserId" uuid, CONSTRAINT "PK_a219afd8dd77ed80f5a862f1db9" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "transaction_searchId" ON "transactions" ("searchId") `);
         await queryRunner.query(`CREATE TYPE "public"."users_rolename_enum" AS ENUM('fairGameWallet', 'fairGameAdmin', 'superAdmin', 'admin', 'superMaster', 'master', 'expert', 'user')`);
@@ -61,7 +61,7 @@ module.exports = class SetupBetplaced1703741495803 {
         await queryRunner.query(`DROP TABLE "buttons"`);
         await queryRunner.query(`DROP INDEX "public"."betPlaced_createBy"`);
         await queryRunner.query(`DROP TABLE "betPlaceds"`);
-        await queryRunner.query(`DROP TYPE "public"."betPlaceds_markettype_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."betPlaceds_marketbettype_enum"`);
         await queryRunner.query(`DROP TYPE "public"."betPlaceds_bettype_enum"`);
     }
 }

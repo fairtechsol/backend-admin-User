@@ -60,6 +60,7 @@ module.exports.transType = {
   win: "win",
   loss: "loss",
   creditRefer: "creditReference",
+  bet:'bet'
 };
 
 module.exports.partnershipPrefixByRole = {
@@ -205,6 +206,7 @@ module.exports.socketData = {
   userExposureLimit: "exposureLimit",
   sessionResult:"sessionResult",
   sessionNoResult:"sessionNoResult",
+  sessionResultUnDeclare:"sessionResultUnDeclare"
 };
 
 exports.marketBetType = {
