@@ -1,17 +1,17 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
+const { getTotalProfitLoss } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
-const { forceLogoutUser } = require("../services/commonService");
+const { forceLogoutUser, proftLossPercentCol } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
-const { ILike, Not } = require('typeorm');
+const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis } = require('../services/redis/commonfunction');
-
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
   let userId = reqUser?.id
@@ -1067,4 +1067,64 @@ exports.generalReport = async (req, res) => {
     );
   }
 
+}
+
+exports.totalProfitLoss = async (req, res) => {
+  try {
+    let { userId, startDate, endDate, matchId } = req.body;
+    let user, totalLoss
+    let queryColumns = ``;
+    let where = {}
+
+    if (!userId) {
+      userId = req.user.id
+    }
+    if (matchId) {
+      where.matchId = matchId
+    }
+
+    user = await getUserById(userId);
+    if (!user)
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    queryColumns = await proftLossPercentCol(user, queryColumns);
+    totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+
+    if (user && user.roleName == userRoleConstant.user) {
+      where.createBy = In([userId])
+      totalLoss = `(Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+
+    } else {
+      let childsId = await getChildsWithOnlyUserRole(req.user.id);
+      childsId = childsId.map(item => item.id)
+      if (!childsId.length) {
+        return SuccessResponse({
+          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: {
+            result: []
+          }
+        }, req, res)
+      }
+      where.createBy = In(childsId)
+    }
+    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss)
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result, },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
 }
