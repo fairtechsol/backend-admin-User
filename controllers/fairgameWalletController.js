@@ -1616,7 +1616,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       let teamNoRateComplete = userRedisData[redisKeys.noRateComplete + matchId] ?? Number.MAX_VALUE;
       let teamYesRateComplete = userRedisData[redisKeys.yesRateComplete + matchId] ?? Number.MAX_VALUE;
 
-      maxLoss = (Math.abs(Math.min(teamARate, teamBRate, teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
+      maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
 
     }
     else {
@@ -1633,7 +1633,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       let teamNoRateComplete = redisData?.teamNoRateComplete ?? Number.MAX_VALUE;
       let teamYesRateComplete = redisData?.teamYesRateComplete ?? Number.MAX_VALUE;
 
-      maxLoss = (Math.abs(Math.min(teamARate, teamBRate, teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
+      maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
 
     }
 
@@ -1921,7 +1921,7 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
       let teamNoRateComplete = redisData?.teamNoRateComplete ?? Number.MAX_VALUE;
       let teamYesRateComplete = redisData?.teamYesRateComplete ?? Number.MAX_VALUE;
 
-      maxLoss = (Math.abs(Math.min(teamARate, teamBRate, teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
+    maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
       
     logger.info({
       maxLoss:maxLoss
