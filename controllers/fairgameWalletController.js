@@ -1593,7 +1593,12 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     let getLossAmount = 0;
     let profitLoss = 0;
     let userRedisData = await getUserRedisData(user.user.id);
-    let getMultipleAmount = await getMultipleAccountMatchProfitLoss(In(betId), user.user.id);
+    let getMultipleAmount = await getMultipleAccountMatchProfitLoss(betId, user.user.id);
+
+    Object.keys(getMultipleAmount)?.map((item) => {
+      getMultipleAmount[item] = parseFloat(parseFloat(getMultipleAmount[item]).toFixed(2));
+    });
+
     let maxLoss = 0;
     logger.info({ message: "Updated users", data: user.user });
 
@@ -1642,16 +1647,16 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
 
     if (result == resultType.tie) {
-      getWinAmount = getMultipleAmount[0].winAmountTied + getMultipleAmount[0].winAmountComplete;
-      getLossAmount = getMultipleAmount[0].lossAmountTied + getMultipleAmount[0].lossAmountComplete;
+      getWinAmount = getMultipleAmount.winAmountTied + getMultipleAmount.winAmountComplete;
+      getLossAmount = getMultipleAmount.lossAmountTied + getMultipleAmount.lossAmountComplete;
     }
     else if (result == resultType.noResult) {
-      getWinAmount = getMultipleAmount[0].winAmountComplete;
-      getLossAmount = getMultipleAmount[0].lossAmountComplete;
+      getWinAmount = getMultipleAmount.winAmountComplete;
+      getLossAmount = getMultipleAmount.lossAmountComplete;
     }
     else {
-      getWinAmount = getMultipleAmount[0].winAmount + getMultipleAmount[0].winAmountTied + getMultipleAmount[0].winAmountComplete;
-      getLossAmount = getMultipleAmount[0].lossAmount + getMultipleAmount[0].lossAmountTied + getMultipleAmount[0].lossAmountComplete;
+      getWinAmount = getMultipleAmount.winAmount + getMultipleAmount.winAmountTied + getMultipleAmount.winAmountComplete;
+      getLossAmount = getMultipleAmount.lossAmount + getMultipleAmount.lossAmountTied + getMultipleAmount.lossAmountComplete;
     }
 
     profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
@@ -1680,21 +1685,21 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
     bulkWalletRecord.push(
       ...[
-        ...(result != resultType.tie && result != resultType.noResult ? {
-          winAmount: parseFloat(getMultipleAmount[0].winAmount),
-          lossAmount: parseFloat(getMultipleAmount[0].lossAmount),
+        ...(result != resultType.tie && result != resultType.noResult ? [{
+          winAmount: parseFloat(getMultipleAmount.winAmount),
+          lossAmount: parseFloat(getMultipleAmount.lossAmount),
           type: "MATCH ODDS",
           result: result
-        } : {}),
-        ...(result != resultType.noResult ? {
-          winAmount: parseFloat(getMultipleAmount[0].winAmountTied),
-          lossAmount: parseFloat(getMultipleAmount[0].lossAmountTied),
+        }] : []),
+        ...(result != resultType.noResult ? [{
+          winAmount: parseFloat(getMultipleAmount.winAmountTied),
+          lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
           type: "Tied Match",
           result: result == resultType.tie ? "YES" : "NO"
-        } : {}),
+        }] : []),
         {
-          winAmount: parseFloat(getMultipleAmount[0].winAmountComplete),
-          lossAmount: parseFloat(getMultipleAmount[0].lossAmountComplete),
+          winAmount: parseFloat(getMultipleAmount.winAmountComplete),
+          lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
           type: "Complete Match",
           result: "YES"
         }
