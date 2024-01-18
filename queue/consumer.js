@@ -288,23 +288,20 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
               ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
             }
             await updateUserDataRedis(partnershipId, userRedisObj);
-            let myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
+            jobData.myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
             sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { userRedisData, jobData })
             // Log information about exposure and stake update
             logger.info({
               context: "Update User Exposure and Stake at the match bet",
               process: `User ID : ${userId} ${item} id ${partnershipId}`,
-              data: `My Stake : ${(
-                (stake * parseFloat(partnership)) /
-                100
-              ).toFixed(2)}`,
+              data: `My Stake : ${jobData.myStake}`,
             });
 
           }
         } catch (error) {
           logger.error({
             context: "error in master exposure update",
-            process: `User ID : ${userId} and master id ${mPartenerShipId}`,
+            process: `User ID : ${userId} and master id ${partnershipId}`,
             error: error.message,
             stake: error.stack
           })

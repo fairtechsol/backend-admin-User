@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 const { userRoleConstant, betResultStatus, matchBettingType } = require("../config/contants");
 const { In, IsNull } = require("typeorm");
+=======
+const { userRoleConstant, betResultStatus } = require("../config/contants");
+const { IsNull, Not } = require("typeorm");
+>>>>>>> 7b3afac1925a02df2ab622dfff92702544833ee5
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");
 const ApiFeature = require("../utils/apiFeatures");
@@ -145,4 +150,29 @@ exports.allChildsProfitLoss = async (where, startDate, endDate) => {
     ])
   let profitLossData = await profitLoss.getRawMany();
   return profitLossData
+}
+
+exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .leftJoinAndMapOne("placeBet.user", "user", 'user', 'placeBet.createBy = user.id')
+    .where(where)
+    .andWhere({ result: Not('PENDING'), deleteReason: IsNull() })
+
+  if (startDate) {
+    query = query.andWhere('placeBet.createdAt >= :startDate', { from: new Date(startDate) })
+  }
+  if (endDate) {
+    let newDate = new Date(endDate);
+    newDate.setHours(23, 59, 59, 999);
+    query = query.andWhere('placeBet.createdAt <= :endDate', { to: newDate })
+  }
+  query = query
+    .select([
+      totalLoss,
+      'placeBet.eventType as "eventType"',
+      'COUNT(placeBet.id) as "totalBet"'
+    ])
+    .groupBy('placeBet.eventType')
+  let result = await query.getRawMany();
+  return result
 }
