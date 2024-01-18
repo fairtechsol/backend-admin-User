@@ -1706,6 +1706,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
           result: "YES"
         }
       ]?.map((item) => {
+        currBal = currBal + item.winAmount - item.lossAmount;
+
         return {
           matchId: matchId,
           actionBy: userId,
@@ -1713,7 +1715,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
           userId: user.user.id,
           amount: item.winAmount - item.lossAmount,
           transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
-          currentAmount: currBal + item.winAmount - item.lossAmount,
+          currentAmount: currBal,
           description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         }
       })
@@ -1921,9 +1923,6 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
 
       maxLoss = (Math.abs(Math.min(teamARate, teamBRate, teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
       
-    
-    
-
     logger.info({
       maxLoss:maxLoss
     });
