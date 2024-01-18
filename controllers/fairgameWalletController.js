@@ -1642,7 +1642,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
     logger.info({
       message: "Update user exposure.",
-      data: user.user.exposure
+      data: user.user.userBalance.exposure
     });
 
 
@@ -1716,6 +1716,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         }
       })
     );
+    await deleteKeyFromUserRedis(user.user.id,redisKeys.userMatchExposure + matchId, redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId);
 
     let parentUsers = await getParentsWithBalance(user.user.id);
 
