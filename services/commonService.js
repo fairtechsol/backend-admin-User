@@ -1,4 +1,5 @@
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain } = require("../config/contants");
+const { In } = require("typeorm");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -37,9 +38,9 @@ exports.calculateRate = async (teamRates, data, partnership = 100) => {
     newTeamRates.teamC = teamRates.teamC - (teamC ? ((lossAmount * partnership) / 100) : 0);
   }
   else if (betOnTeam == teamA && bettingType == betType.LAY) {
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
+    newTeamRates.teamA = teamRates.teamA - ((lossAmount * partnership) / 100);
+    newTeamRates.teamB = teamRates.teamB + ((winAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC + (teamC ? ((winAmount * partnership) / 100) : 0);
   }
   else if (betOnTeam == teamB && bettingType == betType.BACK) {
     newTeamRates.teamB = teamRates.teamB + ((winAmount * partnership) / 100);
@@ -47,18 +48,18 @@ exports.calculateRate = async (teamRates, data, partnership = 100) => {
     newTeamRates.teamC = teamRates.teamC - (teamC ? ((lossAmount * partnership) / 100) : 0);
   }
   else if (betOnTeam == teamB && bettingType == betType.LAY) {
-    newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
-    newTeamRates.teamA = teamRates.teamA + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
+    newTeamRates.teamB = teamRates.teamB - ((lossAmount * partnership) / 100);
+    newTeamRates.teamA = teamRates.teamA + ((winAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC + (teamC ? ((winAmount * partnership) / 100) : 0);
   }
   else if (teamC && betOnTeam == teamC && bettingType == betType.BACK) {
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
+    newTeamRates.teamA = teamRates.teamA - ((lossAmount * partnership) / 100);
     newTeamRates.teamB = teamRates.teamB - ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC + ((lossAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC + ((winAmount * partnership) / 100);
   }
   else if (teamC && betOnTeam == teamC && bettingType == betType.LAY) {
-    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
+    newTeamRates.teamA = teamRates.teamA + ((winAmount * partnership) / 100);
+    newTeamRates.teamB = teamRates.teamB + ((winAmount * partnership) / 100);
     newTeamRates.teamC = teamRates.teamC - ((lossAmount * partnership) / 100);
   }
 
@@ -82,9 +83,9 @@ exports.calculateExpertRate = async (teamRates, data, partnership = 100) => {
     newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
   }
   else if (betOnTeam == teamA && bettingType == betType.LAY) {
-    newTeamRates.teamA = teamRates.teamA + ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB - ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - (teamC ? ((lossAmount * partnership) / 100) : 0);
+    newTeamRates.teamA = teamRates.teamA + ((lossAmount * partnership) / 100);
+    newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC - (teamC ? ((winAmount * partnership) / 100) : 0);
   }
   else if (betOnTeam == teamB && bettingType == betType.BACK) {
     newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
@@ -92,18 +93,18 @@ exports.calculateExpertRate = async (teamRates, data, partnership = 100) => {
     newTeamRates.teamC = teamRates.teamC + (teamC ? ((lossAmount * partnership) / 100) : 0);
   }
   else if (betOnTeam == teamB && bettingType == betType.LAY) {
-    newTeamRates.teamB = teamRates.teamB + ((winAmount * partnership) / 100);
-    newTeamRates.teamA = teamRates.teamA - ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - (teamC ? ((lossAmount * partnership) / 100) : 0);
+    newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
+    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC - (teamC ? ((winAmount * partnership) / 100) : 0);
   }
   else if (teamC && betOnTeam == teamC && bettingType == betType.BACK) {
-    newTeamRates.teamA = teamRates.teamA + ((winAmount * partnership) / 100);
+    newTeamRates.teamA = teamRates.teamA + ((lossAmount * partnership) / 100);
     newTeamRates.teamB = teamRates.teamB + ((lossAmount * partnership) / 100);
-    newTeamRates.teamC = teamRates.teamC - ((lossAmount * partnership) / 100);
+    newTeamRates.teamC = teamRates.teamC - ((winAmount * partnership) / 100);
   }
   else if (teamC && betOnTeam == teamC && bettingType == betType.LAY) {
-    newTeamRates.teamA = teamRates.teamA + ((winAmount * partnership) / 100);
-    newTeamRates.teamB = teamRates.teamB - ((lossAmount * partnership) / 100);
+    newTeamRates.teamA = teamRates.teamA - ((winAmount * partnership) / 100);
+    newTeamRates.teamB = teamRates.teamB - ((winAmount * partnership) / 100);
     newTeamRates.teamC = teamRates.teamC + ((lossAmount * partnership) / 100);
   }
 
@@ -312,11 +313,68 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
   }
   maxLoss = Number(maxLoss.toFixed(2));
   return { betData: betData, line: line, maxLoss: maxLoss, total_bet: betPlace.length, lowerLimitOdds: betData[0]?.odds, upperLimitOdds: betData[betData.length -1]?.odds }
+};
+
+
+exports.calculateRatesMatch = async (betPlace, partnerShip=100, matchData) => {
+  let teamARate = 0;
+  let teamBRate = 0;
+  let teamCRate = 0;
+
+  let teamNoRateTie = 0;
+  let teamYesRateTie = 0;
+
+  let teamNoRateComplete = 0;
+  let teamYesRateComplete = 0;
+
+  for (let placedBets of betPlace) {
+    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch].includes(placedBets?.marketType);
+    let isTiedMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2].includes(placedBets?.marketType);
+    let isCompleteMatch = [matchBettingType.completeMatch].includes(placedBets?.marketType);
+
+    let calculatedRates = await this.calculateRate({
+      teamA: isTiedMatch ? teamYesRateTie : isCompleteMatch ? teamYesRateComplete : teamARate,
+      teamB: isTiedMatch ? teamNoRateTie : isCompleteMatch ? teamNoRateComplete : teamBRate,
+      ...(matchData?.teamC && !isTiedOrCompMatch ? { teamC: teamCRate } : {}),
+    },
+      {
+        teamA: isTiedOrCompMatch ? tiedManualTeamName.yes : matchData?.teamA,
+        teamB: isTiedOrCompMatch ? tiedManualTeamName.no : matchData?.teamB,
+        teamC: isTiedOrCompMatch ? null : matchData?.teamC,
+        winAmount: placedBets?.winAmount,
+        lossAmount: placedBets?.lossAmount,
+        bettingType: placedBets?.betType,
+        betOnTeam: placedBets?.teamName
+      },
+      partnerShip);
+
+    if (isTiedMatch) {
+      teamYesRateTie += calculatedRates.teamA;
+      teamNoRateTie += calculatedRates.teamB;
+    }
+    else if (isCompleteMatch) {
+      teamYesRateComplete += calculatedRates.teamA;
+      teamNoRateComplete += calculatedRates.teamB;
+    }
+    else {
+      teamARate += calculatedRates.teamA;
+      teamBRate += calculatedRates.teamB;
+      teamCRate += calculatedRates.teamC;
+    }
+  }
+
+  return { teamARate, teamBRate, teamCRate, teamNoRateTie, teamYesRateTie, teamNoRateComplete, teamYesRateComplete };
 }
 
 exports.calculateProfitLossForSessionToResult = async (betId, userId) => {
   let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, betId);
   let redisData = await this.calculatePLAllBet(betPlace, 100);
+  return redisData;
+}
+
+exports.calculateProfitLossForMatchToResult = async (betId, userId,matchData) => {
+  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId));
+  let redisData = await this.calculateRatesMatch(betPlace, 100, matchData);
   return redisData;
 }
 

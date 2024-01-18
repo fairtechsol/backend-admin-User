@@ -1,4 +1,4 @@
-const { IsNull } = require("typeorm");
+const { IsNull, In } = require("typeorm");
 const {
   transType,
   walletDescription,
@@ -8,15 +8,19 @@ const {
   betResultStatus,
   redisKeys,
   partnershipPrefixByRole,
+  resultType,
+  matchBettingType,
+  tiedManualTeamName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutIfLogin,
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
   calculatePLAllBet,
   calculateProfitLossSession,
+  calculateProfitLossForMatchToResult,
 } = require("../services/commonService");
 const {
   getDomainDataById,
@@ -541,7 +545,7 @@ exports.declareSessionResult = async (req,res)=>{
 
     const { betId,score,matchId,sessionDetails,userId }=req.body;
 
-    const betPlaced = await getMatchBetPlaceWithUser(betId)
+    const betPlaced = await getMatchBetPlaceWithUser([betId])
     
     logger.info({
       message:"Session result declared.",
@@ -682,9 +686,6 @@ exports.declareSessionResult = async (req,res)=>{
   }
 }
 
-
-
-
 const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj,score) =>{
  
   let faAdminCal={};
@@ -815,8 +816,6 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
   return {fwProfitLoss,faAdminCal};
 }
 
-
-
 exports.declareSessionNoResult = async (req,res)=>{
   try {
 
@@ -940,8 +939,6 @@ exports.declareSessionNoResult = async (req,res)=>{
   }
 }
 
-
-
 const calculateMaxLossSessionForUserNoResult = async (
   users,
   betId,
@@ -1021,7 +1018,6 @@ const calculateMaxLossSessionForUserNoResult = async (
   }
   return faAdminCal;
 };
-
 
 exports.unDeclareSessionResult = async (req,res)=>{
   try {
@@ -1173,7 +1169,6 @@ exports.unDeclareSessionResult = async (req,res)=>{
     return ErrorResponse(error, req, res);
   }
 }
-
 
 const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj) =>{
  
@@ -1390,7 +1385,6 @@ let userBalanceData={
   return {fwProfitLoss,faAdminCal};
 }
 
-
 exports.getBetWallet = async (req, res) => {
   try {
     let query = req.query;
@@ -1440,3 +1434,319 @@ exports.getBetWallet = async (req, res) => {
   }
 
 };
+
+exports.declareMatchResult = async (req, res) => {
+  try {
+    const { result, matchDetails, userId, matchId, match } = req.body;
+
+    const betIds = matchDetails?.map((item) => item?.id);
+    const betPlaced = await getMatchBetPlaceWithUser(betIds);
+
+    logger.info({
+      message: "Match result declared.",
+      data: {
+        betIds,
+        result,
+      },
+    });
+
+    
+
+      let updateRecords = [];
+
+      for (let item of betPlaced) {
+        if (result === resultType.tie) {
+          if ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName === tiedManualTeamName.no)) {
+            item.result = betResultStatus.WIN;
+          }
+          else if ((item.betType === betType.LAY && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.BACK && item.teamName === tiedManualTeamName.no)) {
+            item.result = betResultStatus.LOSS;
+          }
+        } else if (result === resultType.noResult) {
+          if (!(item.marketBetType === matchBettingType.tiedMatch1 || item.marketBetType === matchBettingType.tiedMatch2)) {
+            if ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName === tiedManualTeamName.no)) {
+              betResultStatus.LOSS;
+            }
+            else if ((item.betType === betType.LAY && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.BACK && item.teamName === tiedManualTeamName.no)) {
+              betResultStatus.WIN
+            };
+          }
+        } else {
+          const isWinCondition = (item.betType === betType.BACK && item.teamName === result) || (item.betType === betType.LAY && item.teamName !== result);
+          const isTiedMatchCondition = (item.marketBetType === matchBettingType.tiedMatch1 || item.marketBetType === matchBettingType.tiedMatch2) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.no) || (item.betType === betType.LAY && item.teamName !== tiedManualTeamName.yes));
+          const isCompleteMatchCondition = (item.marketBetType === matchBettingType.completeMatch) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName !== tiedManualTeamName.no));
+          item.result = isWinCondition || isTiedMatchCondition || isCompleteMatchCondition ? betResultStatus.WIN : betResultStatus.LOSS;
+        }
+        updateRecords.push(item);
+      }
+
+    await addNewBet(updateRecords);
+  
+
+    let users = await getDistinctUserBetPlaced(In(betIds));
+
+    let upperUserObj = {};
+    let bulkWalletRecord = [];
+    const profitLossData = await calculateProfitLossMatchForUserDeclare(
+      users,
+      betIds,
+      matchId,
+      0,
+      socketData.matchResult,
+      userId,
+      bulkWalletRecord,
+      upperUserObj,
+      result,
+      match
+    );
+
+    insertTransactions(bulkWalletRecord);
+    logger.info({
+      message: "Upper user for this bet.",
+      data: { upperUserObj, betIds },
+    });
+
+    for (let [key, value] of Object.entries(upperUserObj)) {
+      let parentUser = await getUserBalanceDataByUserId(key);
+
+      let parentUserRedisData = await getUserRedisData(parentUser.userId);
+
+      let parentProfitLoss = parentUser?.profitLoss || 0;
+      if (parentUserRedisData?.profitLoss) {
+        parentProfitLoss = parseFloat(parentUserRedisData.profitLoss);
+      }
+      let parentMyProfitLoss = parentUser?.myProfitLoss || 0;
+      if (parentUserRedisData?.myProfitLoss) {
+        parentMyProfitLoss = parseFloat(parentUserRedisData.myProfitLoss);
+      }
+      let parentExposure = parentUser?.exposure || 0;
+      if (parentUserRedisData?.exposure) {
+        parentExposure = parseFloat(parentUserRedisData?.exposure);
+      }
+
+      parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
+      parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
+      parentUser.exposure = parentExposure - value["exposure"];
+      if (parentExposure < 0) {
+        logger.info({
+          message: "Exposure in negative for user: ",
+          data: {
+            betIds,
+            matchId,
+            parentUser,
+          },
+        });
+        parentUser.exposure = 0;
+      }
+      addInitialUserBalance(parentUser);
+      logger.info({
+        message: "Declare result db update for parent ",
+        data: {
+          betIds,
+          parentUser,
+        },
+      });
+      if (parentUserRedisData?.exposure) {
+        updateUserDataRedis(key, {
+          exposure: parentUser.exposure,
+          profitLoss: parentUser.profitLoss,
+          myProfitLoss: parentUser.myProfitLoss,
+        });
+      }
+     
+      await deleteKeyFromUserRedis(key,redisKeys.userTeamARate + matchId,redisKeys.userTeamBRate + matchId,redisKeys.userTeamCRate + matchId,redisKeys.yesRateTie + matchId,redisKeys.noRateTie + matchId,redisKeys.yesRateComplete + matchId,redisKeys.noRateComplete + matchId);
+
+      sendMessageToUser(key, socketData.matchResult, {
+        ...parentUser,
+        betIds,
+        matchId
+      });
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "bet.resultDeclared" },
+        data: profitLossData,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at declare session result for the user.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(error, req, res);
+  }
+};
+
+
+const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData) => {
+
+  let faAdminCal = {};
+
+  for (const user of users) {
+    let getWinAmount = 0;
+    let getLossAmount = 0;
+    let profitLoss = 0;
+    let userRedisData = await getUserRedisData(user.user.id);
+    let getMultipleAmount = await getMultipleAccountMatchProfitLoss(betId, user.user.id);
+
+    Object.keys(getMultipleAmount)?.map((item) => {
+      getMultipleAmount[item] = parseFloat(parseFloat(getMultipleAmount[item]).toFixed(2));
+    });
+
+    let maxLoss = 0;
+    logger.info({ message: "Updated users", data: user.user });
+
+
+    // check if data is already present in the redis or not
+    if (userRedisData?.[redisKeys.userTeamARate + matchId]) {
+
+      let teamARate = userRedisData[redisKeys.userTeamARate + matchId] ?? Number.MAX_VALUE;
+      let teamBRate = userRedisData[redisKeys.userTeamBRate + matchId] ?? Number.MAX_VALUE;
+      let teamCRate = userRedisData[redisKeys.userTeamCRate + matchId] ?? Number.MAX_VALUE;
+
+      let teamNoRateTie = userRedisData[redisKeys.noRateTie + matchId] ?? Number.MAX_VALUE;
+      let teamYesRateTie = userRedisData[redisKeys.yesRateTie + matchId] ?? Number.MAX_VALUE;
+
+      let teamNoRateComplete = userRedisData[redisKeys.noRateComplete + matchId] ?? Number.MAX_VALUE;
+      let teamYesRateComplete = userRedisData[redisKeys.yesRateComplete + matchId] ?? Number.MAX_VALUE;
+
+      maxLoss = (Math.abs(Math.min(teamARate, teamBRate, teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
+
+    }
+    else {
+      // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
+      let redisData = await calculateProfitLossForMatchToResult(betId, user.user?.id, matchData);
+
+      let teamARate = redisData?.teamARate ?? Number.MAX_VALUE;
+      let teamBRate = redisData?.teamBRate ?? Number.MAX_VALUE;
+      let teamCRate = redisData?.teamCRate ?? Number.MAX_VALUE;
+
+      let teamNoRateTie = redisData?.teamNoRateTie ?? Number.MAX_VALUE;
+      let teamYesRateTie = redisData?.teamYesRateTie ?? Number.MAX_VALUE;
+
+      let teamNoRateComplete = redisData?.teamNoRateComplete ?? Number.MAX_VALUE;
+      let teamYesRateComplete = redisData?.teamYesRateComplete ?? Number.MAX_VALUE;
+
+      maxLoss = (Math.abs(Math.min(teamARate, teamBRate, teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
+
+    }
+
+
+    user.user.userBalance.exposure = user.user.userBalance.exposure - maxLoss;
+
+    logger.info({
+      message: "Update user exposure.",
+      data: user.user.exposure
+    });
+
+
+    if (result == resultType.tie) {
+      getWinAmount = getMultipleAmount.winAmountTied + getMultipleAmount.winAmountComplete;
+      getLossAmount = getMultipleAmount.lossAmountTied + getMultipleAmount.lossAmountComplete;
+    }
+    else if (result == resultType.noResult) {
+      getWinAmount = getMultipleAmount.winAmountComplete;
+      getLossAmount = getMultipleAmount.lossAmountComplete;
+    }
+    else {
+      getWinAmount = getMultipleAmount.winAmount + getMultipleAmount.winAmountTied + getMultipleAmount.winAmountComplete;
+      getLossAmount = getMultipleAmount.lossAmount + getMultipleAmount.lossAmountTied + getMultipleAmount.lossAmountComplete;
+    }
+
+    profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
+
+    fwProfitLoss = parseFloat(fwProfitLoss.toString()) + parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString());
+
+
+
+    const userCurrBalance = Number(user.user.userBalance.currentBalance + profitLoss).toFixed(2);
+    let userBalanceData = {
+      currentBalance: userCurrBalance,
+      profitLoss: user.user.userBalance.profitLoss + profitLoss,
+      myProfitLoss: user.user.userBalance.myProfitLoss + profitLoss,
+      exposure: user.user.userBalance.exposure
+    }
+
+    await updateUserBalanceByUserId(user.user.id, userBalanceData);
+
+    if (userRedisData?.exposure) {
+      updateUserDataRedis(user.user.id, userBalanceData);
+
+    }
+    await addUser(user.user);
+
+    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId });
+
+    bulkWalletRecord.push(
+      ...[
+        ...(result != resultType.tie && result != resultType.noResult ? [{
+          winAmount: parseFloat(getMultipleAmount.winAmount),
+          lossAmount: parseFloat(getMultipleAmount.lossAmount),
+          type: "MATCH ODDS",
+          result: result
+        }] : []),
+        ...(result != resultType.noResult ? [{
+          winAmount: parseFloat(getMultipleAmount.winAmountTied),
+          lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
+          type: "Tied Match",
+          result: result == resultType.tie ? "YES" : "NO"
+        }] : []),
+        {
+          winAmount: parseFloat(getMultipleAmount.winAmountComplete),
+          lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
+          type: "Complete Match",
+          result: "YES"
+        }
+      ]?.map((item) => {
+        return {
+          matchId: matchId,
+          actionBy: userId,
+          searchId: user.user.id,
+          userId: user.user.id,
+          amount: item.winAmount - item.lossAmount,
+          transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
+          currentAmount: user.user.userBalance.currentBalance + item.winAmount - item.lossAmount,
+          description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
+        }
+      })
+    );
+
+    let parentUsers = await getParentsWithBalance(user.user.id);
+
+    for (const patentUser of parentUsers) {
+      let upLinePartnership = 100;
+      if (patentUser.roleName === userRoleConstant.superAdmin) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+      } else if (patentUser.roleName === userRoleConstant.admin) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+      } else if (patentUser.roleName === userRoleConstant.superMaster) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+      } else if (patentUser.roleName === userRoleConstant.master) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+      }
+      let myProfitLoss = parseFloat(
+        ((profitLoss * upLinePartnership) / 100).toString()
+      );
+
+      if (upperUserObj[patentUser.id]) {
+        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+      } else {
+        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+      }
+    }
+    faAdminCal = {
+      profitLoss: profitLoss + (faAdminCal?.profitLoss || 0),
+      exposure: maxLoss + (faAdminCal?.exposure || 0),
+      myProfitLoss: +((profitLoss + (faAdminCal?.profitLoss || 0)) * parseFloat(user.user.fwPartnership) / 100).toFixed(2)
+    }
+  };
+  return { fwProfitLoss, faAdminCal };
+}

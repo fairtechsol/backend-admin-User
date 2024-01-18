@@ -8,6 +8,7 @@ const {
   In,
   IsNull,
   Not,
+  Equal,
 } = require("typeorm");
 
 class ApiFeature {

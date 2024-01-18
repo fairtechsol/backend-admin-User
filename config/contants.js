@@ -2,6 +2,16 @@ module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
 module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 
+module.exports.resultType = {
+  tie: "Tie",
+  noResult: "No Result",
+};
+
+module.exports.tiedManualTeamName = {
+  yes: "YES",
+  no: "NO"
+}
+
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",
   fairGameAdmin: "fairGameAdmin",
@@ -206,7 +216,8 @@ module.exports.socketData = {
   userExposureLimit: "exposureLimit",
   sessionResult:"sessionResult",
   sessionNoResult:"sessionNoResult",
-  sessionResultUnDeclare:"sessionResultUnDeclare"
+  sessionResultUnDeclare:"sessionResultUnDeclare",
+  matchResult:"matchResult",
 };
 
 exports.marketBetType = {
