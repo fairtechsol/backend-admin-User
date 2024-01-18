@@ -349,17 +349,17 @@ exports.calculateRatesMatch = async (betPlace, partnerShip=100, matchData) => {
       partnerShip);
 
     if (isTiedMatch) {
-      teamYesRateTie += calculatedRates.teamA;
-      teamNoRateTie += calculatedRates.teamB;
+      teamYesRateTie = calculatedRates.teamA;
+      teamNoRateTie = calculatedRates.teamB;
     }
     else if (isCompleteMatch) {
-      teamYesRateComplete += calculatedRates.teamA;
-      teamNoRateComplete += calculatedRates.teamB;
+      teamYesRateComplete = calculatedRates.teamA;
+      teamNoRateComplete = calculatedRates.teamB;
     }
     else {
-      teamARate += calculatedRates.teamA;
-      teamBRate += calculatedRates.teamB;
-      teamCRate += calculatedRates.teamC;
+      teamARate = calculatedRates.teamA;
+      teamBRate = calculatedRates.teamB;
+      teamCRate = calculatedRates.teamC;
     }
   }
 
