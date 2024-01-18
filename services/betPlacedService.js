@@ -1,10 +1,5 @@
-<<<<<<< HEAD
 const { userRoleConstant, betResultStatus, matchBettingType } = require("../config/contants");
-const { In, IsNull } = require("typeorm");
-=======
-const { userRoleConstant, betResultStatus } = require("../config/contants");
-const { IsNull, Not } = require("typeorm");
->>>>>>> 7b3afac1925a02df2ab622dfff92702544833ee5
+const { In, IsNull, Not } = require("typeorm");
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");
 const ApiFeature = require("../utils/apiFeatures");
