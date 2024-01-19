@@ -246,7 +246,10 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
       [jobData.teamBrateRedisKey]: teamData.teamB,
       ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
     }
-    let setRedis = await updateUserDataRedis(userId, userRedisObj);
+    await updateUserDataRedis(userId, userRedisObj);
+    updateUserBalanceByUserId(userId, {
+      exposure: userCurrentExposure
+    });
     //send socket to user
     sendMessageToUser(userId, socketData.MatchBetPlaced, { userRedisData, jobData, ...teamData })
   }
