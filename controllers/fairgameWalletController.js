@@ -611,8 +611,8 @@ exports.declareSessionResult = async (req,res)=>{
             parentExposure = parseFloat(parentUserRedisData?.exposure);
           }
 
-          parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
-          parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
+          parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
+          parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
           parentUser.exposure = parentExposure - value["exposure"];
           if (parentExposure < 0) {
             logger.info({
@@ -1078,8 +1078,8 @@ exports.unDeclareSessionResult = async (req,res)=>{
           }
           
 
-          parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
-          parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
+          parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
+          parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
           parentUser.exposure = parentExposure + value["exposure"];
           if (parentExposure < 0) {
             logger.info({
@@ -1524,8 +1524,8 @@ exports.declareMatchResult = async (req, res) => {
         parentExposure = parseFloat(parentUserRedisData?.exposure);
       }
 
-      parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
-      parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
+      parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
+      parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
       parentUser.exposure = parentExposure - value["exposure"];
       if (parentExposure < 0) {
         logger.info({
@@ -1761,11 +1761,6 @@ exports.unDeclareMatchResult = async (req, res) => {
 
     const { matchId, match, matchBetting, userId } = req.body;
 
-
-
-    
-
-
     const betIds = matchBetting?.map((item) => item?.id);
     let users = await getDistinctUserBetPlaced(In(betIds));
 
@@ -1784,7 +1779,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       matchId,
       0,
       matchBetting,
-      socketData.matchResult,
+      socketData.matchResultUnDeclare,
       userId,
       bulkWalletRecord,
       upperUserObj,
@@ -1817,8 +1812,8 @@ exports.unDeclareMatchResult = async (req, res) => {
       }
 
 
-      parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
-      parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
+      parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
+      parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
       parentUser.exposure = parentExposure + value["exposure"];
       if (parentExposure < 0) {
         logger.info({
@@ -1902,6 +1897,10 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
     let profitLoss = 0;
     let userRedisData = await getUserRedisData(user.user.id);
     let getMultipleAmount = await getMultipleAccountMatchProfitLoss(betId,user.user.id);
+
+    Object.keys(getMultipleAmount)?.map((item) => {
+      getMultipleAmount[item] = parseFloat(parseFloat(getMultipleAmount[item]).toFixed(2));
+    });
     let maxLoss = 0;
    
     logger.info({ message: "Updated users", data: user.user });
@@ -1953,7 +1952,7 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
 
  
 
-    fwProfitLoss = parseFloat(fwProfitLoss.toString()) - parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString());
+    fwProfitLoss = parseFloat((parseFloat(fwProfitLoss.toString()) - parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString())).toFixed(2));
 
     
 
@@ -1972,13 +1971,13 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
 
 
     const matchTeamRates = {
-      ...(teamARate != Number.MAX_VALUE && teamARate ? { [redisKeys.userTeamARate + matchId]: teamARate } : {}),
-      ...(teamBRate != Number.MAX_VALUE && teamBRate ? { [redisKeys.userTeamBRate + matchId]: teamBRate } : {}),
-      ...(teamCRate != Number.MAX_VALUE && teamCRate ? { [redisKeys.userTeamCRate + matchId]: teamCRate } : {}),
-      ...(teamYesRateTie != Number.MAX_VALUE && teamYesRateTie ? { [redisKeys.yesRateTie + matchId]: teamYesRateTie } : {}),
-      ...(teamNoRateTie != Number.MAX_VALUE && teamNoRateTie ? { [redisKeys.noRateTie + matchId]: teamNoRateTie } : {}),
-      ...(teamYesRateComplete != Number.MAX_VALUE && teamYesRateComplete ? { [redisKeys.yesRateComplete + matchId]: teamYesRateComplete } : {}),
-      ...(teamNoRateComplete != Number.MAX_VALUE && teamNoRateComplete ? { [redisKeys.noRateComplete + matchId]: teamNoRateComplete } : {})
+      ...(teamARate != Number.MAX_VALUE && teamARate!= null && teamARate!=undefined ? { [redisKeys.userTeamARate + matchId]: teamARate } : {}),
+      ...(teamBRate != Number.MAX_VALUE && teamBRate!= null && teamBRate!= undefined ?  { [redisKeys.userTeamBRate + matchId]: teamBRate } : {}),
+      ...(teamCRate != Number.MAX_VALUE && teamCRate!= null && teamCRate!= undefined ? { [redisKeys.userTeamCRate + matchId]: teamCRate } : {}),
+      ...(teamYesRateTie != Number.MAX_VALUE && teamYesRateTie!= null && teamYesRateTie!= undefined ? { [redisKeys.yesRateTie + matchId]: teamYesRateTie } : {}),
+      ...(teamNoRateTie != Number.MAX_VALUE && teamNoRateTie!= null && teamNoRateTie!= undefined ? { [redisKeys.noRateTie + matchId]: teamNoRateTie } : {}),
+      ...(teamYesRateComplete != Number.MAX_VALUE && teamYesRateComplete!= null && teamYesRateComplete!= undefined ? { [redisKeys.yesRateComplete + matchId]: teamYesRateComplete } : {}),
+      ...(teamNoRateComplete != Number.MAX_VALUE && teamNoRateComplete!= null && teamNoRateComplete!= undefined ? { [redisKeys.noRateComplete + matchId]: teamNoRateComplete } : {})
     }
     
     if (userRedisData?.exposure) {
@@ -2000,20 +1999,20 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
      bulkWalletRecord.push(
       ...[
         ...(result != resultType.tie && result != resultType.noResult ? [{
-          winAmount: parseFloat(getMultipleAmount.winAmount),
-          lossAmount: parseFloat(getMultipleAmount.lossAmount),
+          winAmount: parseFloat(parseFloat(getMultipleAmount.winAmount).toFixed(2)),
+          lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
           type: "MATCH ODDS",
           result: result
         }] : []),
         ...(result != resultType.noResult ? [{
-          winAmount: parseFloat(getMultipleAmount.winAmountTied),
-          lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
+          winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountTied).toFixed(2)),
+          lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountTied).toFixed(2)),
           type: "Tied Match",
           result: result == resultType.tie ? "YES" : "NO"
         }] : []),
         {
-          winAmount: parseFloat(getMultipleAmount.winAmountComplete),
-          lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
+          winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountComplete).toFixed(2)),
+          lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
           type: "Complete Match",
           result: "YES"
         }
