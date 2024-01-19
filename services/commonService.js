@@ -312,11 +312,11 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
     }
   }
   maxLoss = Number(maxLoss.toFixed(2));
-  return { betData: betData, line: line, maxLoss: maxLoss, total_bet: betPlace.length, lowerLimitOdds: betData[0]?.odds, upperLimitOdds: betData[betData.length -1]?.odds }
+  return { betData: betData, line: line, maxLoss: maxLoss, total_bet: betPlace.length, lowerLimitOdds: betData[0]?.odds, upperLimitOdds: betData[betData.length - 1]?.odds }
 };
 
 
-exports.calculateRatesMatch = async (betPlace, partnerShip=100, matchData) => {
+exports.calculateRatesMatch = async (betPlace, partnerShip = 100, matchData) => {
   let teamARate = 0;
   let teamBRate = 0;
   let teamCRate = 0;
@@ -335,7 +335,7 @@ exports.calculateRatesMatch = async (betPlace, partnerShip=100, matchData) => {
     let calculatedRates = await this.calculateRate({
       teamA: isTiedMatch ? teamYesRateTie : isCompleteMatch ? teamYesRateComplete : teamARate,
       teamB: isTiedMatch ? teamNoRateTie : isCompleteMatch ? teamNoRateComplete : teamBRate,
-      ...(matchData?.teamC && !isTiedOrCompMatch ? { teamC: teamCRate } : {}),
+      ...(matchData?.teamC && !isTiedOrCompMatch ? { teamC: teamCRate } : { teamC: 0 }),
     },
       {
         teamA: isTiedOrCompMatch ? tiedManualTeamName.yes : matchData?.teamA,
