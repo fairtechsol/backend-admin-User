@@ -1362,11 +1362,14 @@ exports.profitLoss = async (req, res) => {
       where.createBy = In(childsId);
       result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
     }
-    total = result.reduce(function (tot, arr) {
-      const current = parseFloat(arr.aggregateAmount);
-      return tot + current;
-    }, 0)
-    total = parseFloat(total.toFixed(2))
+    total = {};
+    result.map((arr, index) => {
+      if(total[arr.marketType]){
+        total[arr.marketType] += parseFloat(arr.aggregateAmount);
+      } else {
+        total[arr.marketType] = parseFloat(arr.aggregateAmount);
+      }
+    });
     return SuccessResponse(
       {
         statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: { result, total },
