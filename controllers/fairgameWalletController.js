@@ -1779,7 +1779,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       matchId,
       0,
       matchBetting,
-      socketData.matchResult,
+      socketData.matchResultUnDeclare,
       userId,
       bulkWalletRecord,
       upperUserObj,
