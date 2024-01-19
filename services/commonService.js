@@ -372,7 +372,7 @@ exports.calculateProfitLossForSessionToResult = async (betId, userId) => {
   return redisData;
 }
 
-exports.calculateProfitLossForMatchToResult = async (betId, userId,matchData) => {
+exports.calculateProfitLossForMatchToResult = async (betId, userId, matchData) => {
   let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId));
   let redisData = await this.calculateRatesMatch(betPlace, 100, matchData);
   return redisData;
