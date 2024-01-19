@@ -174,6 +174,11 @@ exports.matchBettingBetPlaced = async (req, res) => {
       throw error?.response?.data;
     }
     let { match, matchBetting } = apiResponse.data;
+
+    if (match?.stopAt) {
+      return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
+    }
+
     let betPlacedObj = {
       matchId: matchId,
       betId: betId,
@@ -585,6 +590,9 @@ exports.sessionBetPlace = async (req, res, next) => {
 
 
 const validateSessionBet = async (apiBetData, betDetails) => {
+  if (apiBetData?.stopAt) {
+    return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
+  }
   if (apiBetData.activeStatus != betStatusType.live) {
     throw {
       message: {

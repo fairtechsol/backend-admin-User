@@ -1,10 +1,10 @@
 const { getTransactions } = require("../services/transactionService");
+const FileGenerate = require("../utils/generateFile");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.getAccountStatement = async (req, res) => {
   try {
     const userId = req?.params?.userId;
-
     /** query format
      * @keyword : key for searching,
      * @searchBy : name of fields on which searching would be apply separated by , like first_name,last_name
@@ -14,7 +14,8 @@ exports.getAccountStatement = async (req, res) => {
      * @filters : for filters you need to give the filters like the key value pair like ->
      * if you want query like username=="client" then give the filter like username : eqclient
      *   **/
-    const { query } = req;
+    const { type, ...query } = req.query;
+    
     if (!userId) {
       return ErrorResponse(
         {
@@ -51,6 +52,45 @@ exports.getAccountStatement = async (req, res) => {
     ];
 
     const transaction = await getTransactions(filters, select, query);
+
+    if (type) {
+      const header = [
+        { excelHeader: "Date", dbKey: "date" },
+        { excelHeader: "Credit", dbKey: "credit" },
+        { excelHeader: "Debit", dbKey: "debit" },
+        { excelHeader: "Closing", dbKey: "closingBalance" },
+        { excelHeader: "Description", dbKey: "description" },
+        { excelHeader: "Fromto", dbKey: "fromTo" },
+      ];
+
+      let data = transaction.transactions?.map((item)=>{
+        let date=new Date(item?.createdAt);
+        return{
+          date: `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`,
+          credit: parseFloat(item?.amount) > 0 ? parseFloat(item.amount).toFixed(2) : 0,
+          debit: parseFloat(item?.amount) < 0 ? parseFloat(item.amount).toFixed(2) : 0,
+          closingBalance: item?.closingBalance,
+          description: item?.description,
+          fromTo: item?.actionByUser && item?.user ? item?.user?.userName + " / " + item?.actionByUser?.userName : ""
+        }
+      })
+
+      const fileGenerate = new FileGenerate(type);
+      const file = await fileGenerate.generateReport(data, header);
+      const fileName = `accountStatement_${new Date()}`
+
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "fetched", keys:{ type:"Transactions" }},
+          data: { file: file, fileName: fileName },
+        },
+        req,
+        res
+      );
+    }
+
+
     SuccessResponse(
       {
         statusCode: 200,
