@@ -11,7 +11,7 @@ const {
   getUserWithUserBalance,
 } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj } = require("../services/commonService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
 
@@ -43,6 +43,7 @@ const validateUser = async (userName, password) => {
 
 const setUserDetailsRedis = async (user) => {
   logger.info({ message: "Setting exposure at login time.", data: user });
+  let betData = await settingBetsDataAtLogin(user);
   await updateUserDataRedis(user.id, {
     exposure: user?.userBal?.exposure || 0,
     totalComission: user?.totalComission || 0,
@@ -50,7 +51,8 @@ const setUserDetailsRedis = async (user) => {
     myProfitLoss: user?.userBal?.myProfitLoss || 0,
     userName: user.userName,
     currentBalance: user?.userBal?.currentBalance || 0,
-    roleName:user.roleName
+    roleName:user.roleName,
+    ...(betData ? { betData } : {})
   });
   if (user.roleName == userRoleConstant.user) {
     const redisUserPartnerShip = await internalRedis.hget(

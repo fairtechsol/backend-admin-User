@@ -1,4 +1,4 @@
-const { userRoleConstant, betResultStatus, matchBettingType } = require("../config/contants");
+const { userRoleConstant, betResultStatus, matchBettingType, partnershipPrefixByRole, marketBetType } = require("../config/contants");
 const { In, IsNull, Not } = require("typeorm");
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");
@@ -126,6 +126,23 @@ exports.getDistinctUserBetPlaced= async (betId)=>{
   return betPlaced;
 }
 
+exports.getUserDistinctBets = async (userId) => {
+  let betPlaced = await BetPlaced.createQueryBuilder()
+    .where({ createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull() })
+    .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType","betPlaced.marketType"])
+    .distinctOn(['betPlaced.betId'])
+    .getMany()
+  return betPlaced;
+}
+
+exports.getBetsWithUserRole = async (ids) => {
+  let betPlaced = await BetPlaced.createQueryBuilder()
+    .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
+    .where({ createBy: In(ids), result: betResultStatus.PENDING, deleteReason: IsNull() })
+    .getMany()
+  return betPlaced;
+}
+
 exports.allChildsProfitLoss = async (where, startDate, endDate) => {
   let profitLoss = await BetPlaced.createQueryBuilder()
     .where(where);
@@ -185,7 +202,7 @@ exports.getPlacedBetsWithCategory = async (userId) => {
     ])
     .setParameter('tiedmatch', 'Match Odds')
     .setParameter('other', 'Tied Match')
-    .where({ createBy: userId, result: betResultStatus.PENDING })
+    .where({ createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull() })
     .groupBy('groupedMarketType, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType');
 
 const data = await query.getRawMany();
