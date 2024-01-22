@@ -1382,3 +1382,23 @@ exports.profitLoss = async (req, res) => {
     return ErrorResponse(error, req, res)
   }
 }
+
+
+exports.getMyMarket = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+
+   const marketData = await betPlacedService.getPlacedBetsWithCategory(userId);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: marketData,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
