@@ -172,3 +172,24 @@ exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss) => {
   let result = await query.getRawMany();
   return result
 }
+
+
+exports.getPlacedBetsWithCategory = async (userId) => {
+  const query = BetPlaced.createQueryBuilder()
+    .select([
+      'COUNT(*) AS "trade"',
+      'betPlaced.eventType AS "eventType"',
+      'betPlaced.eventName AS "eventName"',
+      'betPlaced.matchId AS "matchId"',
+      "CASE WHEN betPlaced.marketType IN ('tiedMatch1','tiedMatch2') THEN :tiedmatch ELSE :other END AS groupedMarketType",
+    ])
+    .setParameter('tiedmatch', 'Match Odds')
+    .setParameter('other', 'Tied Match')
+    .where({ createBy: userId, result: betResultStatus.PENDING })
+    .groupBy('groupedMarketType, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType');
+
+const data = await query.getRawMany();
+
+  return data;
+}
+
