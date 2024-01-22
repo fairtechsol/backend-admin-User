@@ -4,7 +4,7 @@ const userSchema = require("../models/user.entity");
 const userBalanceSchema = require("../models/userBalance.entity");
 const user = AppDataSource.getRepository(userSchema);
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
-const { ILike, In } = require("typeorm");
+const { ILike, In, Not } = require("typeorm");
 const ApiFeature = require("../utils/apiFeatures");
 
 // id is required and select is optional parameter is an type or array
@@ -213,8 +213,7 @@ exports.getParentsWithBalance = async(userId) => {
 }
 
 exports.getFirstLevelChildUser = async (id) => {
-  return await user.find({ where : { createBy: id}, select: { id: true, userName:true }})
-
+  return await user.find({ where : { createBy: id, id: Not(id) }, select: { id: true, userName:true }});
 }
 
 

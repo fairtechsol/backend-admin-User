@@ -39,10 +39,10 @@ exports.createUser = async (req, res) => {
     userName = userName.toUpperCase();
     let userExist = await getUserByUserName(userName);
     if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
-    if (creator.roleName != userRoleConstant.fairGameWallet) {
-      if (exposureLimit && exposureLimit > creator.exposureLimit)
-        return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
-    }
+    // if (creator.roleName != userRoleConstant.fairGameWallet) {
+    //   if (exposureLimit && exposureLimit > creator.exposureLimit)
+    //     return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
+    // }
     password = await bcrypt.hash(
       password,
       process.env.BCRYPTSALT||10
@@ -314,57 +314,6 @@ const checkUserCreationHierarchy = (creator, createUserRoleName) => {
   return true
 
 }
-
-exports.insertWallet = async (req, res) => {
-  try {
-    let wallet = {
-      userName: "FGWALLET",
-      fullName: "fair game wallet",
-      password: "FGwallet@123",
-      phoneNumber: "1234567890",
-      city: "india",
-      roleName: userRoleConstant.fairGameWallet,
-      userBlock: false,
-      betBlock: false,
-      createdBy: null,
-      fwPartnership: 0,
-      faPartnership: 0,
-      saPartnership: 0,
-      aPartnership: 0,
-      smPartnership: 0,
-      mPartnership: 0,
-    };
-    let user = await getUserByUserName(wallet.userName);
-    if (user)
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "userExist" } },
-        req,
-        res
-      );
-
-    wallet.password = await bcrypt.hash(
-      wallet.password,
-      process.env.BCRYPTSALT
-    );
-    let insertUser = await addUser(wallet);
-    let insertUserBalanceData = {
-      currentBalance: 0,
-      userId: insertUser.id,
-      profitLoss: 0,
-      myProfitLoss: 0,
-      downLevelBalance: 0,
-      exposure: 0
-    }
-    insertUserBalanceData = await addInitialUserBalance(insertUserBalanceData)
-    return SuccessResponse(
-      { statusCode: 200, message: { msg: "login" }, data: insertUser },
-      req,
-      res
-    );
-  } catch (err) {
-    return ErrorResponse(err, req, res);
-  }
-};
 
 const generateTransactionPass = () => {
   const randomNumber = Math.floor(100000 + Math.random() * 900000);
@@ -642,10 +591,7 @@ exports.userList = async (req, res, next) => {
     if (userRole == userRoleConstant.fairGameAdmin) {
       partnershipCol = ["faPartnership", "fwPartnership"];
     }
-    if (
-      userRole == userRoleConstant.fairGameWallet ||
-      userRole == userRoleConstant.expert
-    ) {
+    if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
       partnershipCol = ["fwPartnership"];
     }
 
@@ -808,7 +754,7 @@ exports.userBalanceDetails = async (req, res, next) => {
 
     let allChildUserIds = childUsers.map(obj => obj.id);
 
-    let userBalanceData = getUserBalanceDataByUserId(loginUser.id, ["id", "currentBalance", "profitLoss"]);
+    let userBalanceData = getUserBalanceDataByUserId(loginUser.id, ["id", "currentBalance", "profitLoss", "myProfitLoss"]);
 
     let FirstLevelChildBalanceData = getAllChildProfitLossSum(firstLevelChildUserIds);
 
@@ -826,9 +772,12 @@ exports.userBalanceDetails = async (req, res, next) => {
       downLevelCreditReference: loginUser.downLevelCreditRefrence,
       availableBalance: userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0,
       totalMasterBalance: (userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0) + (allChildBalanceData.allchildscurrentbalancesum ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0),
-      upperLevelBalance: userBalanceData.profitLoss ? userBalanceData.profitLoss : 0,
-      downLevelProfitLoss: FirstLevelChildBalanceData.firstlevelchildsprofitlosssum ? FirstLevelChildBalanceData.firstlevelchildsprofitlosssum : 0,
-      availableBalanceWithProfitLoss: ((userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0) + (allChildBalanceData.allchildscurrentbalancesum ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0)) + (userBalanceData.profitLoss ? userBalanceData.profitLoss : 0),
+      upperLevelBalance: userBalanceData.profitLoss ? -userBalanceData.profitLoss : 0,
+      downLevelProfitLoss: FirstLevelChildBalanceData.firstlevelchildsprofitlosssum ? -FirstLevelChildBalanceData.firstlevelchildsprofitlosssum : 0,
+      availableBalanceWithProfitLoss: ((userBalanceData.currentBalance ? parseFloat(userBalanceData.currentBalance) : 0) 
+      // + (allChildBalanceData.allchildscurrentbalancesum ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0)
+      ) + 
+      (userBalanceData.myProfitLoss ? userBalanceData.myProfitLoss : 0),
       profitLoss: 0
     };
     return SuccessResponse(
