@@ -946,6 +946,7 @@ const calculateMaxLossSessionForUserNoResult = async (
   redisEventName,
   upperUserObj
 ) => {
+  let faAdminCal={};
   for (const user of users) {
     let userRedisData = await getUserRedisData(user.user.id);
     let maxLoss = 0;
@@ -1307,7 +1308,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         const betPlaceProfitLoss=await calculatePLAllBet(betPlace,-user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
 
         upperUserObj[patentUser.id] = {...upperUserObj[patentUser.id], profitLossObj: {
-          upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length-1]?.odds,
+          upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length-1]?.odds,
           lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
           betPlaced: betPlaceProfitLoss?.betData,
           maxLoss: betPlaceProfitLoss?.maxLoss,
@@ -1323,7 +1324,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         -user?.user[`fwPartnership`]
       );
       faAdminCal.profitLossObjWallet = {
-        upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length - 1]?.odds,
+        upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.maxLoss,
@@ -1351,7 +1352,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         -user?.user[`faPartnership`]
       );
       faAdminCal.profitLossObjAdmin = {
-        upperLimitOdds: betPlaceProfitLoss?.betData?.[redisData?.betData?.length - 1]?.odds,
+        upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.maxLoss,
