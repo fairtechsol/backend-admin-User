@@ -84,10 +84,18 @@ class ApiFeature {
                 break;
             case "between":
               if (filterValue?.split("|")?.length === 2) {
+                let from = filterValue?.split("|")?.[0];
+                let to = filterValue?.split("|")?.[1];
+                if (new Date(from) !== "Invalid Date" && !isNaN(new Date(from))) {
+                  from = new Date(from);
+                }
+                if (new Date(to) !== "Invalid Date" && !isNaN(new Date(to))) {
+                  to = new Date(to);
+                }
                 this.query.andWhere({
                   [key]: Between(
-                    filterValue?.split("|")?.[0],
-                    filterValue?.split("|")?.[1]
+                    from,
+                    to
                   ),
                 });
               }

@@ -1394,7 +1394,7 @@ exports.getBetWallet = async (req, res) => {
       "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId"
     ];
     
-      select.push("user.id", "user.userName", "user.fwPartnership");
+      select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
       result = await getBet({}, query, null, select);
 
 
