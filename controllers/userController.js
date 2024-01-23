@@ -531,13 +531,12 @@ exports.userList = async (req, res, next) => {
   try {
     let reqUser = req.user;
     // let loginUser = await getUserById(reqUser.id)
+    const { type, userId, ...apiQuery } = req.query;
     let userRole = reqUser.roleName;
     let where = {
-      createBy: reqUser.id,
+      createBy: userId || reqUser.id,
       roleName: Not(userRole)
     };
-
-    const { type, ...apiQuery } = req.query;
 
     let users = await getUsersWithUsersBalanceData(where, apiQuery);
 

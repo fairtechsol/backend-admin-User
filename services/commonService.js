@@ -541,6 +541,9 @@ exports.settingBetsDataAtLogin = async (user) => {
       }
 
     }
+    Object.keys(sessionResult)?.forEach((item)=>{
+      sessionResult[item]=JSON.stringify(sessionResult[item]);
+    });
     return {
       ...matchExposure, ...matchResult, ...sessionExp, ...sessionResult
     }
@@ -568,7 +571,7 @@ exports.settingBetsDataAtLogin = async (user) => {
         winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
         lossAmount: -parseFloat((parseFloat(item.lossAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2))
       };
-      if (betResult[item.betId]) {
+      if (betResult.session[item.betId]||betResult.match[item.betId]) {
         if (item.marketBetType == marketBetType.SESSION) {
           betResult.session[item.betId].push(itemData);
         }
@@ -640,6 +643,9 @@ exports.settingBetsDataAtLogin = async (user) => {
       matchExposure[`${redisKeys.userMatchExposure}${matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${matchId}`] || 0) + maxLoss).toFixed(2));
 
     }
+    Object.keys(sessionResult)?.forEach((item)=>{
+      sessionResult[item]=JSON.stringify(sessionResult[item]);
+    });
     return {
       ...matchExposure, ...matchResult, ...sessionExp, ...sessionResult
     }
