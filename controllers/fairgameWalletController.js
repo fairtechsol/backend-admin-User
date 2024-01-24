@@ -11,9 +11,10 @@ const {
   resultType,
   matchBettingType,
   tiedManualTeamName,
+  marketBetType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -2198,6 +2199,98 @@ exports.totalProfitLossByMatch = async (req, res) => {
   } catch (error) {
     logger.error({
       context: `error in get total domain wise profit loss`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getResultBetProfitLoss = async (req, res) => {
+  try {
+    let {user, matchId, betId, isSession } = req.body;
+
+    let queryColumns = ``;
+    let where = { marketBetType: isSession ? marketBetType.SESSION : marketBetType.MATCHBETTING };
+
+    if(matchId){
+      where.matchId = matchId;
+    }
+    if(betId){
+      where.betId = betId;
+    }
+
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await profitLossPercentCol(user, queryColumns);
+    let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+
+    const result = await getBetsProfitLoss(where,totalLoss);
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get bet profit loss.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getSessionBetProfitLoss = async (req, res) => {
+  try {
+    let { user, matchId } = req.body;
+
+    let queryColumns = ``;
+    let where = { marketBetType: marketBetType.SESSION, matchId: matchId };
+
+
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await profitLossPercentCol(user, queryColumns);
+    let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+
+    const result = await getSessionsProfitLoss(where, totalLoss);
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Session profit loss" } }, data: result
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get session profit loss.`,
       error: error.message,
       stake: error.stack,
     });

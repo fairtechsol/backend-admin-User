@@ -229,7 +229,57 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, sessionLo
   return { count, result };
 }
 
+exports.getBetsProfitLoss = async (where, totalLoss) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
+    .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
+    .where(where)
+    .andWhere([{ result: Not(betResultStatus.PENDING), deleteReason: IsNull() }, { result: betResultStatus.PENDING, deleteReason: Not(IsNull()) }])
 
+
+  query = query
+    .select([
+      totalLoss,
+      'placeBet.id as "id"',
+      'placeBet.createBy as "userId"',
+      'placeBet.matchId as "matchId"',
+      'placeBet.result  as "result"',
+      'placeBet.teamName  as "teamName"',
+      'placeBet.betType  as "betType"',
+      'placeBet.marketType  as "marketType"',
+      'placeBet.marketBetType  as "marketBetType"',
+      'placeBet.rate  as "rate"',
+      'placeBet.amount as "amount"',
+      'placeBet.odds as "odds"',
+      'placeBet.createdAt as "createdAt"',
+      'user.userName as userName',
+      'placeBet.deleteReason as "deleteReason"'
+    ])
+    .groupBy('placeBet.id, user.userName').orderBy('placeBet.createdAt', 'DESC');
+
+    let result = await query.getRawMany();
+
+    return result;
+}
+
+exports.getSessionsProfitLoss = async (where, totalLoss) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .where(where)
+    .andWhere({ result: Not(betResultStatus.PENDING), deleteReason: IsNull() })
+
+
+  query = query
+    .select([
+      totalLoss,
+      'placeBet.betId as "betId"',
+      'placeBet.eventName  as "eventName"',
+    ])
+    .groupBy('placeBet.betId, placeBet.eventName');
+
+    let result = await query.getRawMany();
+
+    return result;
+}
 exports.getPlacedBetsWithCategory = async (userId) => {
   const query = BetPlaced.createQueryBuilder()
     .select([

@@ -195,12 +195,6 @@ module.exports.socketData ={
   userExposureLimit: "exposureLimit",
 };
 
-module.exports.betResultStatus = {
-  UNDECLARE: "UNDECLARE",
-  PENDING: "PENDING",
-  WIN: "WIN",
-  LOSS: "LOSS",
-};
 
 module.exports.socketData = {
   expertRoomSocket: "expertRoom",
