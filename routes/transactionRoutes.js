@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const validator = require('../middleware/joi.validator')
 const { isAuthenticate } = require('../middleware/auth');
 const { getAccountStatement } = require('../controllers/transactionController');
 

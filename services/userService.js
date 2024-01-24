@@ -258,3 +258,10 @@ exports.getUsersWithUsersBalanceData = async (where, query) => {
     return await transactionQuery;
 
 }
+
+exports.getAllUsersByRole = async (role, select) => {
+  return await user.find({
+    where: { roleName: role },
+    select: select,
+  });
+}

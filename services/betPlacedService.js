@@ -167,9 +167,8 @@ exports.allChildsProfitLoss = async (where, startDate, endDate) => {
 
 exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
-    .leftJoinAndMapOne("placeBet.user", "user", 'user', 'placeBet.createBy = user.id')
     .where(where)
-    .andWhere({ result: Not('PENDING'), deleteReason: IsNull() })
+    .andWhere({ result: Not(betResultStatus.PENDING), deleteReason: IsNull() })
 
   if (startDate) {
     query = query.andWhere('placeBet.createdAt >= :startDate', { from: new Date(startDate) })
@@ -188,6 +187,46 @@ exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss) => {
     .groupBy('placeBet.eventType')
   let result = await query.getRawMany();
   return result
+}
+
+exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, sessionLoss, matchLoss, apiQuery) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
+    .where(where)
+    .andWhere({ result: Not(betResultStatus.PENDING), deleteReason: IsNull() })
+
+  if (startDate) {
+    query = query.andWhere('placeBet.createdAt >= :startDate', { from: new Date(startDate) })
+  }
+  if (endDate) {
+    let newDate = new Date(endDate);
+    newDate.setHours(23, 59, 59, 999);
+    query = query.andWhere('placeBet.createdAt <= :endDate', { to: newDate })
+  }
+  query = query
+    .select([
+      sessionLoss,
+      matchLoss,
+      'placeBet.eventType as "eventType"',
+      'COUNT(placeBet.id) as "totalBet"',
+      'match.startAt as "startAt"',
+      'match.title as title',
+    ])
+    .groupBy('placeBet.matchId, match.id, placeBet.eventType').orderBy('match.startAt', 'DESC');
+
+  let count = await query.getCount();
+
+  if (apiQuery.page) {
+    let skip = (apiQuery.page - 1) * apiQuery.limit;
+    query = query.offset(skip);
+  }
+  if (apiQuery.limit) {
+    query = query.limit(apiQuery.limit);
+  }
+
+  let result = await query.getRawMany();
+
+  return { count, result };
 }
 
 
