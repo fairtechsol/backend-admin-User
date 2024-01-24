@@ -651,3 +651,40 @@ exports.settingBetsDataAtLogin = async (user) => {
     }
   }
 }
+
+exports.profitLossPercentCol = (body, queryColumns) => {
+  // queryColumns = '(user.m_partnership + user.sm_partnership + user.a_partnership + user.sa_partnership + user.fa_partnership + user.fw_partnership)';
+  // return queryColumns;
+  switch (body.role) {
+    case (userRoleConstant.fairGameWallet):
+    case (userRoleConstant.expert): {
+      queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership)`;
+      break;
+    }
+    case (userRoleConstant.fairGameAdmin): {
+      queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership)`;
+      break;
+    }
+    case (userRoleConstant.superAdmin): {
+      queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superAdmin]}Partnership)`;
+      break;
+    }
+    case (userRoleConstant.admin): {
+      queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.admin]}Partnership)`;
+      break;
+    }
+    case (userRoleConstant.superMaster): {
+      queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.admin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superMaster]}Partnership)`;
+
+      break;
+    }
+    case (userRoleConstant.master): {
+      queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.admin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superMaster]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.master]}Partnership)`;
+      break;
+    }
+    default:
+      queryColumns = '100';
+      break;
+  }
+  return queryColumns;
+}

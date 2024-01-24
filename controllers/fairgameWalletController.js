@@ -13,17 +13,16 @@ const {
   tiedManualTeamName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss } = require("../services/betPlacedService");
 const {
-  forceLogoutIfLogin,
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
   calculatePLAllBet,
   calculateProfitLossSession,
   calculateProfitLossForMatchToResult,
+  profitLossPercentCol,
 } = require("../services/commonService");
 const {
-  getDomainDataById,
   updateDomainData,
   addDomainData,
   getDomainDataByDomain,
@@ -46,6 +45,7 @@ const {
   userBlockUnblock,
   betBlockUnblock,
   getParentsWithBalance,
+  getAllUsersByRole,
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -2102,4 +2102,112 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
     }
   };
   return {fwProfitLoss,faAdminCal};
+}
+
+exports.totalProfitLossWallet = async (req, res) => {
+  try {
+    let { user, startDate, endDate, matchId } = req.body;
+    let totalLoss
+    let queryColumns = ``;
+    let where = {}
+
+
+    if (matchId) {
+      where.matchId = matchId
+    }
+
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await profitLossPercentCol(user, queryColumns);
+    totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+
+    let childrenId = await getAllUsersByRole(userRoleConstant.user,["id"]);
+    childrenId = childrenId.map(item => item.id);
+    if (!childrenId.length) {
+      return SuccessResponse({
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
+      }, req, res);
+    }
+
+    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss);
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `error in get total profit loss`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.totalProfitLossByMatch = async (req, res) => {
+  try {
+    let {user, type, startDate, endDate, page, limit } = req.body;
+
+    let queryColumns = ``;
+    let where = {
+      eventType: type
+    }
+
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await profitLossPercentCol(user, queryColumns);
+    let rateProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "rateProfitLoss"`;
+    let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss"`;
+   
+    let childrenId = await getAllUsersByRole(userRoleConstant.user,["id"]);
+    childrenId = childrenId.map(item => item.id);
+    if (!childrenId.length) {
+      return SuccessResponse({
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
+      }, req, res);
+    }
+
+    const {count,result} = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss, { page: page, limit: limit});
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result, count }
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `error in get total domain wise profit loss`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
 }

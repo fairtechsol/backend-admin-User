@@ -6,7 +6,7 @@ const { insertButton } = require('../services/buttonService');
 const { getTotalProfitLoss } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
-const { forceLogoutUser, proftLossPercentCol } = require("../services/commonService");
+const { forceLogoutUser, profitLossPercentCol } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
@@ -1038,7 +1038,7 @@ exports.totalProfitLoss = async (req, res) => {
         req,
         res
       );
-    queryColumns = await proftLossPercentCol(user, queryColumns);
+    queryColumns = await profitLossPercentCol(user, queryColumns);
     totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
 
     if (user && user.roleName == userRoleConstant.user) {
