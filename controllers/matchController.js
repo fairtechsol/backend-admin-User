@@ -18,34 +18,62 @@ exports.matchDetails = async (req, res) => {
       throw error?.response?.data;
     }
 
-    const redisIds = apiResponse?.data?.sessionBettings?.map((item)=> JSON.parse(item)?.id+redisKeys.profitLoss );
-    redisIds.push(...[`${redisKeys.userTeamARate}${matchId}`,`${redisKeys.userTeamBRate}${matchId}`,`${redisKeys.userTeamCRate}${matchId}`,`${redisKeys.yesRateComplete}${matchId}`,`${redisKeys.noRateComplete}${matchId}`,`${redisKeys.yesRateTie}${matchId}`,`${redisKeys.noRateTie}${matchId}`]);
+    if (apiResponse?.data) {
+      if (Array.isArray(apiResponse?.data)) {
+        for (let i = 0; i < apiResponse?.data?.length; i++) {
+          const matchId = apiResponse?.data?.[i]?.id;
+          const redisIds = apiResponse?.data?.[i]?.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
+          redisIds.push(...[`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`]);
 
-    let redisData = await getUserRedisKeys(userId, redisIds);
-    let sessionResult = [];
-    let matchResult = {};
-    redisData?.forEach((item, index) => {
-      if (item) {
-        if (index >= redisData?.length - 7) {
-          matchResult[redisIds?.[index]?.split("_")[0]] = item;
-        } else {
-          sessionResult.push({
-            betId: redisIds?.[index]?.split("_")[0],
-            maxLoss: JSON.parse(item)?.maxLoss,
+          let redisData = await getUserRedisKeys(userId, redisIds);
+          let sessionResult = [];
+          let matchResult = {};
+          redisData?.forEach((item, index) => {
+            if (item) {
+              if (index >= redisData?.length - 7) {
+                matchResult[redisIds?.[index]?.split("_")[0]] = item;
+              } else {
+                sessionResult.push({
+                  betId: redisIds?.[index]?.split("_")[0],
+                  maxLoss: JSON.parse(item)?.maxLoss,
+                });
+              }
+            }
           });
+          apiResponse.data[i].profitLossDataSession = sessionResult;
+          apiResponse.data[i].profitLossDataMatch = matchResult;
         }
       }
-    });
+      else {
+        const redisIds = apiResponse?.data?.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
+        redisIds.push(...[`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`]);
 
+        let redisData = await getUserRedisKeys(userId, redisIds);
+        let sessionResult = [];
+        let matchResult = {};
+        redisData?.forEach((item, index) => {
+          if (item) {
+            if (index >= redisData?.length - 7) {
+              matchResult[redisIds?.[index]?.split("_")[0]] = item;
+            } else {
+              sessionResult.push({
+                betId: redisIds?.[index]?.split("_")[0],
+                maxLoss: JSON.parse(item)?.maxLoss,
+              });
+            }
+          }
+        });
+        apiResponse.data.profitLossDataSession = sessionResult;
+        apiResponse.data.profitLossDataMatch = matchResult;
+      }
+    }
+
+    
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "match details", keys: { name: "Match" } },
-        data: {
-          ...apiResponse.data,
-          profitLossDataSession: sessionResult,
-          profitLossDataMatch: matchResult,
-        },
+        data: apiResponse.data,
       },
       req,
       res
