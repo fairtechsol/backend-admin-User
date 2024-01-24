@@ -83,7 +83,7 @@ exports.createUser = async (req, res) => {
       userId: insertUser.id,
       amount: 0,
       transType: transType.add,
-      currentAmount: insertUser.creditRefer,
+      closingBalance: insertUser.creditRefer,
       description: walletDescription.userCreate
     }]
     if (insertUser.createdBy != insertUser.id) {
@@ -93,7 +93,7 @@ exports.createUser = async (req, res) => {
         userId: insertUser.id,
         amount: 0,
         transType: transType.withDraw,
-        currentAmount: insertUser.creditRefer,
+        closingBalance: insertUser.creditRefer,
         description: walletDescription.userCreate
       });
     }
@@ -717,7 +717,10 @@ exports.userSearchList = async (req, res, next) => {
     }
     let where = {};
     if (userName) where.userName = ILike(`%${userName}%`);
-    if (createdBy) where.createBy = createdBy
+    if (createdBy) {
+      where.createBy = createdBy;
+      where.id = Not(req.user.id);
+    }
 
     let users = await getUsers(where, ["id", "userName"])
     let response = {
@@ -829,7 +832,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       userId: user.id,
       amount: previousCreditReference,
       transType: transType.creditRefer,
-      currentAmount: amount,
+      closingBalance: amount,
       description: "CREDIT REFRENCE " + remark
     }, {
       actionBy: reqUser.id,
@@ -837,7 +840,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       userId: user.id,
       amount: previousCreditReference,
       transType: transType.creditRefer,
-      currentAmount: amount,
+      closingBalance: amount,
       description: "CREDIT REFRENCE " + remark
     }]
 
@@ -980,7 +983,7 @@ exports.generalReport = async (req, res) => {
     if (req.query.type === report.queryType ) {
       message = "user.credit/refrence"
 
-      usersData = await getCreditRefrence({ createBy: reqUser.id }, ["id", "roleName", "createBy", "userName", "creditRefrence"])
+      usersData = await getCreditRefrence({ createBy: reqUser.id, id: Not(reqUser.id) }, ["id", "roleName", "createBy", "userName", "creditRefrence"])
 
       total = usersData.reduce(function (tot, arr) {
         const creditRefValue = parseFloat(arr.creditRefrence);
@@ -989,7 +992,7 @@ exports.generalReport = async (req, res) => {
     } else {
       message = "user.balance"
 
-      usersData = await getUserBalance({ createBy: reqUser.id }, ['user.id', 'user.userName', 'user.phoneNumber', "userBalances.id", "userBalances.currentBalance", "userBalances.userId"
+      usersData = await getUserBalance({ createBy: reqUser.id, id: Not(reqUser.id) }, ['user.id', 'user.userName', 'user.phoneNumber', "userBalances.id", "userBalances.currentBalance", "userBalances.userId"
       ])
       total = usersData.reduce(function (tot, arr) {
         const current = parseFloat(arr.userBal.currentBalance);

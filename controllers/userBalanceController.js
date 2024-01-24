@@ -136,7 +136,7 @@ exports.updateUserBalance = async (req, res) => {
         userId: user.id,
         amount: transactionType == transType.add ? amount : -amount,
         transType: transactionType,
-        currentAmount: updatedUpdateUserBalanceData.currentBalance,
+        closingBalance: updatedUpdateUserBalanceData.currentBalance,
         description: remark,
       },
       {
@@ -146,7 +146,7 @@ exports.updateUserBalance = async (req, res) => {
         amount: transactionType == transType.add ? -amount : amount,
         transType:
           transactionType == transType.add ? transType.withDraw : transType.add,
-        currentAmount: updatedUpdateUserBalanceData.currentBalance,
+        closingBalance: updatedUpdateUserBalanceData.currentBalance,
         description: remark,
       },
     ];
