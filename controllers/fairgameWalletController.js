@@ -157,7 +157,7 @@ exports.createSuperAdmin = async (req, res) => {
         userId: id,
         amount: 0,
         transType: transType.add,
-        currentAmount: creditRefrence,
+        closingBalance: creditRefrence,
         description: walletDescription.userCreate,
       },
     ];
@@ -291,7 +291,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
         userId: userId,
         amount: transactionType == transType.add ? amount : -amount,
         transType: transactionType,
-        currentAmount: userBalanceData.currentBalance,
+        closingBalance: userBalanceData.currentBalance,
         description: remark,
       },
     ];
@@ -396,7 +396,7 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
         userId: user.id,
         amount: previousCreditReference,
         transType: transType.creditRefer,
-        currentAmount: user.creditRefrence,
+        closingBalance: user.creditRefrence,
         description: "CREDIT REFRENCE " + remark,
       },
     ];
@@ -778,7 +778,7 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
         userId: user.user.id,
         amount: profitLoss,
         transType: transTypes,
-        currentAmount: userCurrBalance,
+        closingBalance: userCurrBalance,
         description: description,
       }
     );
@@ -1265,7 +1265,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         userId: user.user.id,
         amount: -profitLoss,
         transType: transType.bet,
-        currentAmount: userCurrBalance,
+        closingBalance: userCurrBalance,
         description: `${user?.eventType}/${user?.eventName}/${resultDeclare?.type}`,
       }
     );
@@ -1717,7 +1717,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
           userId: user.user.id,
           amount: item.winAmount - item.lossAmount,
           transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
-          currentAmount: currBal,
+          closingBalance: currBal,
           description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         }
       })
@@ -2027,7 +2027,7 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
           userId: user.user.id,
           amount: -(item.winAmount - item.lossAmount),
           transType: transType.bet,
-          currentAmount: currBal,
+          closingBalance: currBal,
           description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         }
       })
