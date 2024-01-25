@@ -110,7 +110,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
           if (lodash.isEmpty(masterRedisData)) {
             // If masterRedisData is empty, update partner exposure
             let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = partnerUser.exposure - maxLossExposure;
+            let partnerExposure = partnerUser.exposure + maxLossExposure;
             await updateUserBalanceByUserId(partnershipId, {
               exposure: partnerExposure,
             });

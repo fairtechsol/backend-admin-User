@@ -53,7 +53,7 @@ exports.getBet = async (req, res) => {
           }
         }, req, res)
       }
-      select.push("user.id", "user.userName");
+      select.push("user.id", "user.userName", "match.title");
       where.createBy = In(childsId);
       result = await betPlacedService.getBet(where, query, reqUser.roleName, select);
     }

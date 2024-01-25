@@ -36,7 +36,12 @@ exports.getBet = async (where, query,roleName, select) => {
       "betPlaced.createBy = user.id"
     )
   }
-  pgQuery.select(select).orderBy("betPlaced.createdAt", 'DESC');
+  pgQuery.leftJoinAndMapOne(
+    "betPlaced.match",
+    "match",
+    "match",
+    "betPlaced.matchId = match.id"
+  ).select(select).orderBy("betPlaced.createdAt", 'DESC');
   return await new ApiFeature(
     pgQuery,
     query
