@@ -239,7 +239,7 @@ exports.getBetsProfitLoss = async (where, totalLoss) => {
     .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
     .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
     .where(where)
-    .andWhere([{ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() }, { result: betResultStatus.PENDING, deleteReason: Not(IsNull()) }])
+    .andWhere({ result: Not(betResultStatus.PENDING) })
 
 
   query = query
