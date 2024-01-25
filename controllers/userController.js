@@ -26,6 +26,14 @@ exports.getProfile = async (req, res) => {
   return SuccessResponse({ statusCode: 200, message: { msg: "user.profile" }, data: response }, req, res)
 }
 
+exports.isUserExist = async (req, res) => {
+  let { userName } = req.query;
+
+  const isUserExist = await getUser({ userName: userName });
+
+  return SuccessResponse({ statusCode: 200, data: { isUserExist: Boolean(isUserExist) } }, req, res);
+}
+
 exports.createUser = async (req, res) => {
   try {
     let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
