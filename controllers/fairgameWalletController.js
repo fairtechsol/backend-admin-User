@@ -1247,6 +1247,8 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
           lowerLimitOdds: redisData?.betData?.[0]?.odds,
           betPlaced: redisData?.betData,
           maxLoss: redisData?.maxLoss,
+          totalBet: redisData.total_bet
+
         }),
       });
     }
@@ -1313,6 +1315,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
           lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
           betPlaced: betPlaceProfitLoss?.betData,
           maxLoss: betPlaceProfitLoss?.maxLoss,
+          totalBet: betPlaceProfitLoss?.total_bet
         }};
 
       }
@@ -1329,6 +1332,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.maxLoss,
+        totalBet: betPlaceProfitLoss?.total_bet
       };
     } else {
       for (const placedBets of betPlace) {
@@ -1357,6 +1361,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.maxLoss,
+        totalBet: betPlaceProfitLoss?.total_bet
       };
     } else {
       for (const placedBets of betPlace) {
