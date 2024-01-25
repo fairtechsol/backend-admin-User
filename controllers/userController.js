@@ -1,5 +1,5 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, } = require('../services/userService');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType } = require('../config/contants');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -12,6 +12,7 @@ const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis } = require('../services/redis/commonfunction');
+
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
   let userId = reqUser?.id
@@ -289,7 +290,7 @@ const calculatePartnership = async (userData, creator) => {
   }
 
   if (userData.roleName != userRoleConstant.expert && fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership + mPartnership != 100) {
-    throw new Error("user.partnershipNotValid");
+    throw { msg: "user.partnershipNotValid" };
   }
   return {
     fwPartnership,
@@ -889,12 +890,12 @@ exports.lockUnlockUser = async (req, res, next) => {
 
     // Check if the current user is already blocked
     if (userDetails?.userBlock) {
-      throw new Error("user.userBlockError");
+      throw { msg: "user.userBlockError" };
     }
 
     // Check if the block type is 'betBlock' and the user is already bet-blocked
     if (!betBlock && userDetails?.betBlock) {
-      throw new Error("user.betBlockError");
+      throw { msg: "user.betBlockError" };
     }
 
     // Check if the user performing the block/unblock operation has the right access
@@ -1077,5 +1078,80 @@ exports.totalProfitLoss = async (req, res) => {
       req,
       res
     );
+  }
+}
+
+exports.getMatchLockAllChild = async (req, res) => {
+  let reqUser = req.user;
+  let childUsers = await getMatchLockAllChild(reqUser.id);
+  return SuccessResponse({
+    statusCode: 200,
+    data: childUsers,
+  }, req, res);
+}
+
+exports.userMatchLock = async (req, res) => {
+  try {
+    let { userId, matchId, type, block, operationToAll } = req.body;
+    let reqUser = req.user;
+    if(operationToAll){
+      userId = reqUser.id;
+    }
+    let childUsers = await getChildUser(userId);
+    let allChildUserIds = childUsers.map(obj => obj.id);
+    if(!operationToAll){
+      allChildUserIds.push(userId);
+    }
+
+    let returnData;
+    for(let i = 0; i < allChildUserIds.length; i++){
+      let blockUserId = allChildUserIds[i];
+      returnData = await userBlockUnlockMatch(blockUserId, matchId, reqUser, block, type);
+    }
+
+    return SuccessResponse({
+      statusCode: 200,
+      message: { msg: "updated", keys: { name: "User unlock" } },
+      data: returnData,
+    }, req, res);
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+
+  async function userBlockUnlockMatch(userId, matchId, reqUser, block, type) {
+    let userAlreadyBlockExit = await getUserMatchLock({ userId, matchId, blockBy: reqUser.id });
+    if (!userAlreadyBlockExit && !block) {
+      throw { msg: "notUnblockFirst" };
+    }
+
+    if (!userAlreadyBlockExit && block) {
+      let object = {
+        userId, matchId,
+        blockBy: reqUser.id
+      };
+      if (type == matchWiseBlockType.match) {
+        object.matchLock = true;
+      } else {
+        object.sessionLock = true;
+      }
+      addUserMatchLock(object);
+      return object;
+    }
+
+    if (type == matchWiseBlockType.match) {
+      userAlreadyBlockExit.matchLock = block;
+    } else {
+      userAlreadyBlockExit.sessionLock = block;
+    }
+
+    if (!block) {
+      if (!(userAlreadyBlockExit.matchLock || userAlreadyBlockExit.sessionLock)) {
+        deleteUserMatchLock({ id: userAlreadyBlockExit.id });
+        return userAlreadyBlockExit;
+      }
+    }
+
+    addUserMatchLock(userAlreadyBlockExit);
+    return userAlreadyBlockExit;
   }
 }

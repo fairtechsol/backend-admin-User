@@ -1,3 +1,3 @@
-const AppDataSource = require('./config/PostGresConnection');
+const { AppDataSource } = require("./config/postGresConnection");
 
-module.exports = AppDataSource
+module.exports = AppDataSource;

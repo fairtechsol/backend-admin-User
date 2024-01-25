@@ -1,6 +1,6 @@
 class ColumnNumericTransformer {
     to(data) {
-      return Number(parseFloat(data).toFixed(2));
+      return Number(parseFloat(data).toFixed(2)) || 0;
     }
     from(data) {
       if (data && data != 'NaN') {

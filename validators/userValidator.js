@@ -1,5 +1,5 @@
 const Joi = require('joi')
-const { userRoleConstant, blockType ,matchComissionTypeConstant} = require('../config/contants')
+const { userRoleConstant, blockType, matchComissionTypeConstant, matchWiseBlockType } = require('../config/contants')
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{6,30}$/;
 
@@ -28,15 +28,15 @@ module.exports.CreateUser = Joi.object({
   }),
 })
 
-module.exports.ChangePassword=Joi.object({
-  oldPassword:Joi.string(),
-  newPassword:Joi.string().pattern(passwordRegex).required().label('password').messages({
-      'string.pattern.base': 'user.passwordMatch',
-        'any.required': 'Password is required',
-    }),
-    userId:Joi.string().guid({ version: 'uuidv4' }),
+module.exports.ChangePassword = Joi.object({
+  oldPassword: Joi.string(),
+  newPassword: Joi.string().pattern(passwordRegex).required().label('password').messages({
+    'string.pattern.base': 'user.passwordMatch',
+    'any.required': 'Password is required',
+  }),
+  userId: Joi.string().guid({ version: 'uuidv4' }),
   transactionPassword: Joi.string()
-    ,
+  ,
   confirmPassword: Joi.string()
     .required()
     .valid(Joi.ref("newPassword"))
@@ -97,7 +97,7 @@ module.exports.LockUnlockUser = Joi.object({
     'string.empty': '"Transaction Password" can not be empty.'
   }),
   betBlock: Joi.boolean().required(),
-  userBlock:  Joi.boolean().required()
+  userBlock: Joi.boolean().required()
 })
 
 module.exports.setCreditRefValidate = Joi.object({
@@ -105,5 +105,13 @@ module.exports.setCreditRefValidate = Joi.object({
   amount: Joi.number().required(),
   transactionPassword: Joi.string().required(),
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
-  remark : Joi.string().allow("")
+  remark: Joi.string().allow("")
+})
+
+module.exports.userMatchLockValidate = Joi.object({
+  userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  matchId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  type: Joi.string().valid(...Object.values(matchWiseBlockType)).required(),
+  block: Joi.boolean().required(),
+  operationToAll: Joi.boolean(),
 })
