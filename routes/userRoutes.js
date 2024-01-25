@@ -3,13 +3,14 @@ const router = express.Router();
 
 const validator = require('../middleware/joi.validator')
 const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate } = require('../validators/userValidator');
-const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, userMatchLock, getMatchLockAllChild } = require('../controllers/userController');
+const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild } = require('../controllers/userController');
 
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 
 
 router.post('/add', isAuthenticate, checkTransactionPassword, validator(CreateUser), createUser);
 router.get('/profile', isAuthenticate, getProfile);
+router.get('/exist', isAuthenticate, isUserExist);
 router.post('/updateUser', isAuthenticate, checkTransactionPassword, validator(updateUserValid), updateUser);
 router.post('/lockUnlockUser', isAuthenticate, checkTransactionPassword, validator(LockUnlockUser), lockUnlockUser);
 router.post('/changePassword', isAuthenticate, validator(ChangePassword), changePassword);

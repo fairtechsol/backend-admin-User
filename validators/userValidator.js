@@ -26,6 +26,7 @@ module.exports.CreateUser = Joi.object({
     'any.required': 'Confirm Password is required',
     'any.only': 'Confirm Password must match Password',
   }),
+  delayTime: Joi.string().allow("")
 })
 
 module.exports.ChangePassword = Joi.object({

@@ -257,6 +257,7 @@ exports.calculateProfitLossSession = async (redisProfitLoss, betData, partnershi
     lowerLimitOdds: parseFloat(lowerLimit),
     betPlaced: betProfitloss,
     maxLoss: parseFloat(maxLoss),
+    totalBet: redisProfitLoss?.totalBet ? parseInt(redisProfitLoss?.totalBet) + 1 : 1
   };
 };
 

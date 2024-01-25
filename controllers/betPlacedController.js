@@ -20,8 +20,8 @@ exports.getBet = async (req, res) => {
     let where = {};
     let result;
     let select = [
-      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result"
-    ]
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt"
+    ];
 
     if (query.status && query.status == "MATCHED") {
       where.result = In([betResultStatus.LOSS, betResultStatus.TIE, betResultStatus.WIN]);
@@ -945,7 +945,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       lowerLimitOdds: userAllBetProfitLoss.lowerLimitOdds,
       upperLimitOdds: userAllBetProfitLoss.upperLimitOdds,
       maxLoss: userAllBetProfitLoss.maxLoss,
-      betPlaced: userAllBetProfitLoss.betData
+      betPlaced: userAllBetProfitLoss.betData,
+      totalBet : userAllBetProfitLoss.total_bet
     }
     oldProfitLoss = JSON.stringify(oldProfitLoss);
   }
@@ -962,6 +963,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
   let oldBetPlacedPL = oldProfitLoss.betPlaced;
   let newMaxLoss = 0;
+
+  oldProfitLoss.totalBet = oldProfitLoss.totalBet - userDeleteProfitLoss.total_bet;
 
   for (let i = 0; i < oldBetPlacedPL.length; i++) {
     oldBetPlacedPL[i].profitLoss = oldBetPlacedPL[i].profitLoss - userDeleteProfitLoss.betData[i].profitLoss;
@@ -1048,6 +1051,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             });
             oldProfitLossParent.betPlaced = parentPLbetPlaced;
             oldProfitLossParent.maxLoss = newMaxLossParent;
+            oldProfitLossParent.totalBet = oldProfitLossParent.totalBet - userDeleteProfitLoss.total_bet;
+            
             let sessionExposure = parseFloat(masterRedisData[redisSesionExposureName]) - oldMaxLossParent + newMaxLossParent;
             let redisObj = {
               [redisName]: JSON.stringify(oldProfitLossParent),

@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -25,6 +25,14 @@ exports.getProfile = async (req, res) => {
   let user = await getUsersWithUserBalance(where);
   let response = lodash.omit(user, ["password", "transPassword"])
   return SuccessResponse({ statusCode: 200, message: { msg: "user.profile" }, data: response }, req, res)
+}
+
+exports.isUserExist = async (req, res) => {
+  let { userName } = req.query;
+
+  const isUserExist = await getUser({ userName: userName });
+
+  return SuccessResponse({ statusCode: 200, data: { isUserExist: Boolean(isUserExist) } }, req, res);
 }
 
 exports.createUser = async (req, res) => {
@@ -687,11 +695,49 @@ exports.userList = async (req, res, next) => {
     }
 
     response.list = data;
+
+    let childUsers = await getChildUser(userId || reqUser.id);
+    let userIds = [];
+    childUsers.map(obj => {
+      userIds.push(obj.id);
+    });
+
+    let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum, SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure"`;
+
+    switch (userRole) {
+      case (userRoleConstant.fairGameWallet):
+      case (userRoleConstant.expert): {
+        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.fwPartnership)), 2) as percentProfitLoss`;
+        break;
+      }
+      case (userRoleConstant.fairGameAdmin): {
+        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.faPartnership + user.fwPartnership)), 2) as percentProfitLoss`;
+        break;
+      }
+      case (userRoleConstant.superAdmin): {
+        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+        break;
+      }
+      case (userRoleConstant.admin): {
+        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+        break;
+      }
+      case (userRoleConstant.superMaster): {
+        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+        break;
+      }
+      case (userRoleConstant.master): {
+        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+        break;
+      }
+    }
+
+    const totalValues = await getUsersWithTotalUsersBalanceData(where, req.query, queryColumns, userIds);
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "user.userList" },
-        data: response,
+        data: { ...response, totalValues: totalValues },
       },
       req,
       res

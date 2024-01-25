@@ -1247,6 +1247,8 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
           lowerLimitOdds: redisData?.betData?.[0]?.odds,
           betPlaced: redisData?.betData,
           maxLoss: redisData?.maxLoss,
+          totalBet: redisData.total_bet
+
         }),
       });
     }
@@ -1313,6 +1315,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
           lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
           betPlaced: betPlaceProfitLoss?.betData,
           maxLoss: betPlaceProfitLoss?.maxLoss,
+          totalBet: betPlaceProfitLoss?.total_bet
         }};
 
       }
@@ -1329,6 +1332,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.maxLoss,
+        totalBet: betPlaceProfitLoss?.total_bet
       };
     } else {
       for (const placedBets of betPlace) {
@@ -1357,6 +1361,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.maxLoss,
+        totalBet: betPlaceProfitLoss?.total_bet
       };
     } else {
       for (const placedBets of betPlace) {
@@ -1392,7 +1397,7 @@ exports.getBetWallet = async (req, res) => {
     let query = req.query;
     let result;
     let select = [
-      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId"
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "match.startAt"
     ];
     
       select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
