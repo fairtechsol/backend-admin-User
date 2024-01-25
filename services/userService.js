@@ -2,8 +2,10 @@ const { userRoleConstant } = require("../config/contants");
 const { AppDataSource } = require("../config/postGresConnection");
 const userSchema = require("../models/user.entity");
 const userBalanceSchema = require("../models/userBalance.entity");
+const userMatchLockSchema = require("../models/userMatchLock.entity");
 const user = AppDataSource.getRepository(userSchema);
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
+const userMatchLock = AppDataSource.getRepository(userMatchLockSchema);
 const { ILike, In, Not } = require("typeorm");
 const ApiFeature = require("../utils/apiFeatures");
 
@@ -147,7 +149,6 @@ exports.getUser = async (where = {}, select) => {
 
 };
 
-
 exports.getUsers = async (where, select, offset, limit, relations) => {
   //find list with filter and pagination
   
@@ -190,7 +191,6 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
 
   return await user.query(query)
 }
-
 exports.getChildsWithOnlyUserRole = async(userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${userId}'
@@ -200,7 +200,6 @@ exports.getChildsWithOnlyUserRole = async(userId) => {
   SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}';`);
   return query;
 }
-
 
 exports.getParentsWithBalance = async(userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
@@ -215,7 +214,6 @@ exports.getParentsWithBalance = async(userId) => {
 exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where : { createBy: id, id: Not(id) }, select: { id: true, userName:true }});
 }
-
 
 exports.getUserBalanceDataByUserIds = async (userIds, select) => {
   return await UserBalance.find({
@@ -283,4 +281,23 @@ exports.getAllUsersByRole = async (role, select) => {
     where: { roleName: role },
     select: select,
   });
+}
+exports.getUserMatchLock = (where, select) => {
+  return userMatchLock.findOne({ where: where, select: select });
+}
+
+exports.addUserMatchLock = async (body) => {
+  let inserted = await userMatchLock.save(body);
+  return inserted;
+};
+
+exports.deleteUserMatchLock = async (where) => {
+  let deleted = await userMatchLock.delete(where);
+  return deleted;
+};
+
+
+exports.getMatchLockAllChild = async (id) => {
+  let query = `SELECT p."id", p."userName", um."blockBy", um."matchId", um."matchLock", um."sessionLock" FROM "users" p left join "userMatchLocks" um on p.id = um."userId" where p."deletedAt" IS NULL AND p.id != '${id}' AND p."createBy" = '${id}';`
+  return user.query(query)
 }

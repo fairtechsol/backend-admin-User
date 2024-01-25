@@ -307,25 +307,6 @@
         }
       }
     },
-    "/user/insert/wallet": {
-      "post": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "x-forwarded-for",
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/user/changePassword": {
       "post": {
         "description": "",
@@ -444,6 +425,13 @@
           },
           {
             "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
             "in": "query",
             "schema": {
               "type": "string"
@@ -692,6 +680,55 @@
                     "example": "any"
                   },
                   "matchId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/userMatchLock": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  },
+                  "type": {
+                    "example": "any"
+                  },
+                  "block": {
                     "example": "any"
                   }
                 }
@@ -1415,6 +1452,174 @@
         }
       }
     },
+    "/fairgameWallet/total/profitLoss": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "example": "any"
+                  },
+                  "startDate": {
+                    "example": "any"
+                  },
+                  "endDate": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/total/matchWise/profitLoss": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "example": "any"
+                  },
+                  "type": {
+                    "example": "any"
+                  },
+                  "startDate": {
+                    "example": "any"
+                  },
+                  "endDate": {
+                    "example": "any"
+                  },
+                  "page": {
+                    "example": "any"
+                  },
+                  "limit": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/total/bet/profitLoss": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  },
+                  "betId": {
+                    "example": "any"
+                  },
+                  "isSession": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/total/session/profitLoss": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "user": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/expert/notification": {
       "get": {
         "description": "",
@@ -1598,6 +1803,25 @@
           },
           {
             "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/match/add": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
             "in": "header",
             "schema": {
               "type": "string"

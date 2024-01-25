@@ -2,9 +2,9 @@
 
 ```bash
 # to generate the migrtioan
-$ typeorm migration:generate -d ./orm.config.js -o ./migrations/<migration name>
-or
 $ npm run migration:generate -- ./migrations/<migration name>
+or
+$ typeorm migration:generate -d ./orm.config.js -o ./migrations/<migration name>
 
 # to run the migration
 $ typeorm migration:run -d ./orm.config.js

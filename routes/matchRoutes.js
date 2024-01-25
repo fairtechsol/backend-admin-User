@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
-
 const { isAuthenticate } = require('../middleware/auth');
 const { matchDetails, listMatch } = require('../controllers/matchController');
 const { addMatch } = require('../controllers/expertController');
