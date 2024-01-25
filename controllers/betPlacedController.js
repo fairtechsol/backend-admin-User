@@ -20,8 +20,8 @@ exports.getBet = async (req, res) => {
     let where = {};
     let result;
     let select = [
-      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result"
-    ]
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title"
+    ];
 
     if (query.status && query.status == "MATCHED") {
       where.result = In([betResultStatus.LOSS, betResultStatus.TIE, betResultStatus.WIN]);
@@ -53,7 +53,7 @@ exports.getBet = async (req, res) => {
           }
         }, req, res)
       }
-      select.push("user.id", "user.userName", "match.title");
+      select.push("user.id", "user.userName");
       where.createBy = In(childsId);
       result = await betPlacedService.getBet(where, query, reqUser.roleName, select);
     }
