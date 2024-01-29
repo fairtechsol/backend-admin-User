@@ -9,7 +9,7 @@ module.exports.ErrorResponse = (errorData, req, res) => {
     }
     errorData.statusCode = errorData.statusCode || 500;
     errorData.status = "error";
-    const errorMessage = errorData.message || "Internal Server Error";
+    const errorMessage = errorData.msg ? errorData : errorData.message || "Internal Server Error";
 
     // Extracting message code and keys
     const { msg, keys } = errorMessage;

@@ -2,8 +2,8 @@ const express = require('express');
 const router = express.Router();
 
 const validator = require('../middleware/joi.validator')
-const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate } = require('../validators/userValidator');
-const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist } = require('../controllers/userController');
+const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate } = require('../validators/userValidator');
+const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild } = require('../controllers/userController');
 
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 
@@ -21,7 +21,10 @@ router.get("/balance", isAuthenticate, userBalanceDetails);
 router.post("/update/creditreferrence", isAuthenticate, checkTransactionPassword, validator(setCreditRefValidate), setCreditReferrence);
 router.post("/generateTransactionPassword", isAuthenticate, validator(generateTransactionPass), generateTransactionPassword);
 
-router.get("/generalReport", isAuthenticate, generalReport)
-router.post("/totalProfitLoss", isAuthenticate, totalProfitLoss)
+router.get("/generalReport", isAuthenticate, generalReport);
+router.post("/totalProfitLoss", isAuthenticate, totalProfitLoss);
+router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), userMatchLock);
+router.get("/getMatchLockAllChild", isAuthenticate, getMatchLockAllChild);
+
 module.exports = router;
 //https://3100dev.fairgame.club/fair-game-wallet/getUserBalanceDetails

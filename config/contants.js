@@ -235,3 +235,8 @@ module.exports.manualMatchBettingType = [
 module.exports.report = {
   queryType : "creditRefrence"
 }
+
+module.exports.matchWiseBlockType = {
+  match: "match",
+  session: "session",
+};
