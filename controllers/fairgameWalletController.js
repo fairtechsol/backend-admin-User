@@ -69,6 +69,7 @@ exports.createSuperAdmin = async (req, res) => {
       aPartnership,
       smPartnership,
       mPartnership,
+      agPartnership,
       id,
       creditRefrence,
       exposureLimit,
@@ -142,6 +143,7 @@ exports.createSuperAdmin = async (req, res) => {
       aPartnership,
       smPartnership,
       mPartnership,
+      agPartnership,
       id,
       creditRefrence,
       exposureLimit,
@@ -595,7 +597,6 @@ exports.declareSessionResult = async (req,res)=>{
         })
 
 
-
         for (let [key, value] of Object.entries(upperUserObj)) {
           let parentUser = await getUserBalanceDataByUserId(key);
 
@@ -797,6 +798,9 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
       } else if (patentUser.roleName === userRoleConstant.master) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+      }
+      else if (patentUser.roleName === userRoleConstant.agent) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.agPartnership;
       }
       let myProfitLoss = parseFloat(
         ((profitLoss * upLinePartnership) / 100).toString()
@@ -1292,6 +1296,9 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
       } else if (patentUser.roleName === userRoleConstant.master) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
       }
+      else if (patentUser.roleName === userRoleConstant.agent) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.agPartnership;
+      }
       let myProfitLoss = parseFloat(
         ((profitLoss * upLinePartnership) / 100).toString()
       );
@@ -1754,6 +1761,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       } else if (patentUser.roleName === userRoleConstant.master) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
       }
+      else if (patentUser.roleName === userRoleConstant.agent) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.agPartnership;
+      }
       let myProfitLoss = parseFloat(
         ((profitLoss * upLinePartnership) / 100).toString()
       );
@@ -2067,6 +2077,9 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
       } else if (patentUser.roleName === userRoleConstant.master) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+      }
+      else if (patentUser.roleName === userRoleConstant.agent) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.agPartnership;
       }
       let myProfitLoss = parseFloat(
         ((profitLoss * upLinePartnership) / 100).toString()

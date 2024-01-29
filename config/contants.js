@@ -19,6 +19,7 @@ module.exports.userRoleConstant = {
   admin: "admin",
   superMaster: "superMaster",
   master: "master",
+  agent: "agent",
   expert: "expert",
   user: "user",
 };
@@ -74,6 +75,7 @@ module.exports.transType = {
 };
 
 module.exports.partnershipPrefixByRole = {
+  [this.userRoleConstant.agent]: "ag",
   [this.userRoleConstant.master]: "m",
   [this.userRoleConstant.superMaster]: "sm",
   [this.userRoleConstant.admin]: "a",
@@ -88,6 +90,7 @@ module.exports.differLoginTypeByRoles = {
     this.userRoleConstant.superAdmin,
     this.userRoleConstant.master,
     this.userRoleConstant.superMaster,
+    this.userRoleConstant.agent,
   ],
   wallet: [
     this.userRoleConstant.fairGameAdmin,
