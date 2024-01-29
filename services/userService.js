@@ -259,7 +259,7 @@ exports.getUsersWithUsersBalanceData = async (where, query) => {
 
 }
 
-exports.getUsersWithTotalUsersBalanceData = async (where, query, select, userIds) => {
+exports.getUsersWithTotalUsersBalanceData = (where, query, select) => {
   //get all users with user balance according to pagoination
   let transactionQuery = new ApiFeature(user.createQueryBuilder()
     .where(where)
@@ -269,13 +269,9 @@ exports.getUsersWithTotalUsersBalanceData = async (where, query, select, userIds
     .search()
     .filter();
 
-  let currBalance= user.createQueryBuilder()
-  .where({id:In(userIds)})
-  .leftJoinAndMapOne("user.userBal", "userBalances", "UB", "user.id = UB.userId")
-  .select('SUM(UB.currentBalance) as "currTotalBalance"')
-  .addOrderBy('1');
+  
 
-  return {...(await transactionQuery.query.getRawOne()), ...(await currBalance.getRawOne())};
+  return transactionQuery.query.getRawOne();
 }
 
 exports.getAllUsersByRole = async (role, select) => {
