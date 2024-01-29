@@ -612,17 +612,17 @@ exports.userList = async (req, res, next) => {
           element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partner_ships).toFixed(2);
         }
         if (element.roleName != userRoleConstant.user) {
-          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2));
-          let childUsers = await getChildUser(element.id)
-          let allChildUserIds = childUsers.map(obj => obj.id)
-          let balancesum = 0
+          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2))- Number(parseFloat(element.userBal["exposure"]).toFixed(2));
+          // let childUsers = await getChildUser(element.id)
+          // let allChildUserIds = childUsers.map(obj => obj.id)
+          // let balancesum = 0
 
-          if (allChildUserIds.length) {
-            let allChildBalanceData = await getAllChildCurrentBalanceSum(allChildUserIds)
-            balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
-          }
+          // if (allChildUserIds.length) {
+          //   let allChildBalanceData = await getAllChildCurrentBalanceSum(allChildUserIds)
+          //   balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
+          // }
 
-          element['balance'] = Number(parseFloat(element.userBal['currentBalance']) + balancesum).toFixed(2);
+          element['balance'] = Number((parseFloat(element.userBal["currentBalance"]) + parseFloat(element.userBal["downLevelBalance"])).toFixed(2));
         } else {
           element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
           element['balance'] = element.userBal['currentBalance'];
@@ -696,11 +696,7 @@ exports.userList = async (req, res, next) => {
 
     response.list = data;
 
-    let childUsers = await getChildUser(userId || reqUser.id);
-    let userIds = [];
-    childUsers.map(obj => {
-      userIds.push(obj.id);
-    });
+   
 
     let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum, SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure"`;
 
@@ -732,12 +728,16 @@ exports.userList = async (req, res, next) => {
       }
     }
 
-    const totalValues = await getUsersWithTotalUsersBalanceData(where, req.query, queryColumns, userIds);
+    const totalBalance = await getUsersWithTotalUsersBalanceData(where, req.query, queryColumns);
+    totalBalance.availableBalance = parseFloat(totalBalance.availableBalance) - parseFloat(totalBalance.totalExposure);
+    const adminBalance = await getUserBalanceDataByUserId(userId || reqUser.id);
+    totalBalance.currBalance=parseFloat(adminBalance.downLevelBalance)+parseFloat(adminBalance.currentBalance);
+
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "user.userList" },
-        data: { ...response, totalValues: totalValues },
+        data: { ...response, totalBalance: totalBalance },
       },
       req,
       res

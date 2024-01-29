@@ -11,7 +11,7 @@ exports.getButtonById = async (id, select) => {
   });
 };
 exports.getButtonByUserId = async (id, select) => {
-  return await Button.findOne({
+  return await Button.find({
     where: { createBy: id },
     select: select,
   });
