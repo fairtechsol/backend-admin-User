@@ -30,7 +30,7 @@ exports.getProfile = async (req, res) => {
 exports.isUserExist = async (req, res) => {
   let { userName } = req.query;
 
-  const isUserExist = await getUser({ userName: userName });
+  const isUserExist = await getUserByUserName(userName);
 
   return SuccessResponse({ statusCode: 200, data: { isUserExist: Boolean(isUserExist) } }, req, res);
 }
@@ -38,7 +38,7 @@ exports.isUserExist = async (req, res) => {
 exports.createUser = async (req, res) => {
   try {
     let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
-    let reqUser = req.user || {}
+    let reqUser = req.user || {};
     let creator = await getUserById(reqUser.id || createdBy);
     if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
 
