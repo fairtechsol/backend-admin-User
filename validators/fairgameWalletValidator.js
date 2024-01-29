@@ -16,6 +16,7 @@ module.exports.CreateSuperAdmin = Joi.object({
   aPartnership: Joi.number(),
   smPartnership: Joi.number(),
   mPartnership: Joi.number(),
+  agPartnership: Joi.number(),
   creditRefrence: Joi.number(),
   exposureLimit: Joi.number(),
   maxBetLimit: Joi.number(),
@@ -72,7 +73,7 @@ module.exports.SuperAdminLockUnlock = Joi.object({
 });
 
 module.exports.SuperAdminChangePassword = Joi.object({
-    userId: Joi.string().guid({ version: "uuidv4" }).required(),
-    password:Joi.string().required()
-  });
-  
+  userId: Joi.string().guid({ version: "uuidv4" }).required(),
+  password: Joi.string().required()
+});
+
