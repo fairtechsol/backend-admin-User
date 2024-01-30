@@ -32,7 +32,7 @@ exports.getBet = async (req, res) => {
       query = lodash.omit(query, ['status']);
     }
     else if (query.status && query.status == "DELETED") {
-      where.deleteReason = Not(null);
+      where.deleteReason = Not(IsNull());
       where.result = betResultStatus.UNDECLARE;
       query = lodash.omit(query, ['status']);
     } else {
