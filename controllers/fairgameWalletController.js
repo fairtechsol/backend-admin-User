@@ -76,6 +76,7 @@ exports.createSuperAdmin = async (req, res) => {
       maxBetLimit,
       minBetLimit,
       domain,
+      isOldFairGame
     } = req.body;
 
     const isUserPresent = await getUserByUserName(userName, ["id"]);
@@ -2202,7 +2203,7 @@ exports.totalProfitLossWallet = async (req, res) => {
 
 exports.totalProfitLossByMatch = async (req, res) => {
   try {
-    let {user, type, startDate, endDate, page, limit } = req.body;
+    let {user, type, startDate, endDate } = req.body;
 
     let queryColumns = ``;
     let where = {
@@ -2228,10 +2229,10 @@ exports.totalProfitLossByMatch = async (req, res) => {
       }, req, res);
     }
 
-    const {count,result} = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss, { page: page, limit: limit});
+    const {result} = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss);
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result, count }
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result }
       },
       req,
       res

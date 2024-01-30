@@ -21,6 +21,7 @@ module.exports.CreateSuperAdmin = Joi.object({
   exposureLimit: Joi.number(),
   maxBetLimit: Joi.number(),
   minBetLimit: Joi.number(),
+  isOldFairGame: Joi.boolean(),
   id: Joi.string().guid({ version: "uuidv4" }).required(),
   domain: Joi.object({
     domain: Joi.string(),
