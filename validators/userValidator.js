@@ -26,7 +26,10 @@ module.exports.CreateUser = Joi.object({
     'any.required': 'Confirm Password is required',
     'any.only': 'Confirm Password must match Password',
   }),
-  delayTime: Joi.string().allow("")
+  delayTime: Joi.string().allow(""),
+  sessionCommission: Joi.number(),
+  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchCommission: Joi.number(),
 });
 
 module.exports.ChangePassword = Joi.object({
@@ -77,6 +80,9 @@ module.exports.updateUserValid = Joi.object({
     'any.required': '"Transaction Password" is required',
     'string.empty': '"Transaction Password" can not be empty.'
   }),
+  sessionCommission: Joi.number(),
+  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchCommission: Joi.number(),
 });
 
 module.exports.setExposureLimitValid = Joi.object({

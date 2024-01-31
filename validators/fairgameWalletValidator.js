@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { userRoleConstant, transType } = require("../config/contants");
+const { userRoleConstant, transType, matchComissionTypeConstant } = require("../config/contants");
 
 module.exports.CreateSuperAdmin = Joi.object({
   userName: Joi.string().trim(),
@@ -30,6 +30,9 @@ module.exports.CreateSuperAdmin = Joi.object({
     footerColor: Joi.string(),
     logo: Joi.string(),
   }),
+  sessionCommission: Joi.number(),
+  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchCommission: Joi.number(),
 });
 
 module.exports.UpdateSuperAdmin = Joi.object({
@@ -38,6 +41,10 @@ module.exports.UpdateSuperAdmin = Joi.object({
     city: Joi.string().trim().allow(""),
     phoneNumber: Joi.string().trim().allow(""),
     fullName: Joi.string().trim().allow(""),
+
+    sessionCommission: Joi.number(),
+    matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+    matchCommission: Joi.number(),
   }),
   domain: Joi.object({
     logo: Joi.string(),
@@ -46,7 +53,6 @@ module.exports.UpdateSuperAdmin = Joi.object({
     footerColor: Joi.string(),
   }),
   isOldFairGame: Joi.boolean(),
-
 });
 
 module.exports.SuperAdminBalance = Joi.object({

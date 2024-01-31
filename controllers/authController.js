@@ -42,8 +42,9 @@ const validateUser = async (userName, password) => {
 };
 
 const setUserDetailsRedis = async (user) => {
+  try{
   logger.info({ message: "Setting exposure at login time.", data: user });
-  
+
   // Fetch user details from Redis
   const redisUserData = await internalRedis.hget(user.id, "userName");
 
@@ -75,6 +76,9 @@ const setUserDetailsRedis = async (user) => {
   else{
      // Expire user data in Redis
      await internalRedis.expire(user.id, redisTimeOut);
+  }}
+  catch(err){
+    throw err;
   }
 };
 
