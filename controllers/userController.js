@@ -37,7 +37,7 @@ exports.isUserExist = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
+    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission } = req.body;
     let reqUser = req.user || {};
     let creator = await getUserById(reqUser.id || createdBy);
     if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
@@ -74,7 +74,10 @@ exports.createUser = async (req, res) => {
       creditRefrence: creditRefrence,
       exposureLimit: exposureLimit,
       maxBetLimit: maxBetLimit,
-      minBetLimit: minBetLimit
+      minBetLimit: minBetLimit,
+      sessionCommission,
+      matchComissionType,
+      matchCommission
     }
     let partnerships = await calculatePartnership(userData, creator)
     userData = { ...userData, ...partnerships };
@@ -136,17 +139,20 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    let { fullName, phoneNumber, city, id } = req.body;
+    let { fullName, phoneNumber, city, id, sessionCommission, matchComissionType, matchCommission } = req.body;
     let reqUser = req.user || {}
-    let updateUser = await getUser({ id, createBy: reqUser.id }, ["id", "createBy", "fullName", "phoneNumber", "city"])
+    let updateUser = await getUser({ id, createBy: reqUser.id }, ["id", "createBy", "fullName", "phoneNumber", "city", "sessionCommission", "matchComissionType", "matchCommission"]);
     if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
 
     updateUser.fullName = fullName ?? updateUser.fullName;
     updateUser.phoneNumber = phoneNumber ?? updateUser.phoneNumber;
     updateUser.city = city || updateUser.city;
+    updateUser.sessionCommission = sessionCommission || updateUser.sessionCommission;
+    updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
+    updateUser.matchCommission = matchCommission || updateUser.matchCommission;
     updateUser = await addUser(updateUser);
 
-    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city"])
+    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city", "sessionCommission", "matchComissionType", "matchCommission"])
     return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "User" }  }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);

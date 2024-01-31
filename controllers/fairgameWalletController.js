@@ -76,7 +76,10 @@ exports.createSuperAdmin = async (req, res) => {
       maxBetLimit,
       minBetLimit,
       domain,
-      isOldFairGame
+      isOldFairGame,
+      sessionCommission,
+      matchComissionType,
+      matchCommission
     } = req.body;
 
     const isUserPresent = await getUserByUserName(userName, ["id"]);
@@ -155,6 +158,11 @@ exports.createSuperAdmin = async (req, res) => {
       maxBetLimit,
       minBetLimit,
       createBy: id,
+      ...(isOldFairGame ? {
+        sessionCommission,
+        matchComissionType,
+        matchCommission
+      } : {})
     };
     let insertUser = await addUser(userData);
 
