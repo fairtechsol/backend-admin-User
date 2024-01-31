@@ -76,10 +76,14 @@ exports.createSuperAdmin = async (req, res) => {
       maxBetLimit,
       minBetLimit,
       domain,
+      isOldFairGame
     } = req.body;
 
     const isUserPresent = await getUserByUserName(userName, ["id"]);
-    const isDomainExist = await getDomainDataByDomain(domain?.domain);
+    let isDomainExist;
+    if (!isOldFairGame) {
+      isDomainExist = await getDomainDataByDomain(domain?.domain);
+    }
     if (isUserPresent) {
       return ErrorResponse(
         {
@@ -93,7 +97,7 @@ exports.createSuperAdmin = async (req, res) => {
       );
     }
 
-    if (isDomainExist) {
+    if (!isOldFairGame && isDomainExist) {
       return ErrorResponse(
         {
           statusCode: 400,
@@ -109,7 +113,7 @@ exports.createSuperAdmin = async (req, res) => {
       );
     }
 
-    if (roleName != userRoleConstant.superAdmin) {
+    if (roleName != userRoleConstant.superAdmin && !isOldFairGame) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -122,12 +126,13 @@ exports.createSuperAdmin = async (req, res) => {
       );
     }
 
-    await addDomainData({
-      ...domain,
-      userName,
-      userId: id,
-    });
-
+    if (!isOldFairGame) {
+      await addDomainData({
+        ...domain,
+        userName,
+        userId: id,
+      });
+    }
     let userData = {
       userName,
       fullName,
@@ -196,17 +201,20 @@ exports.createSuperAdmin = async (req, res) => {
 
 exports.updateSuperAdmin = async (req, res) => {
   try {
-    let { user, domain, id } = req.body;
-    let isDomainData = await getDomainDataByUserId(id, ["id"]);
-    if (!isDomainData) {
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "invalidData" } },
-        req,
-        res
-      );
-    }
+    let { user, domain, id, isOldFairGame } = req.body;
 
-    await updateDomainData(id, domain);
+    if (!isOldFairGame) {
+      let isDomainData = await getDomainDataByUserId(id, ["id"]);
+      if (!isDomainData) {
+        return ErrorResponse(
+          { statusCode: 400, message: { msg: "invalidData" } },
+          req,
+          res
+        );
+      }
+
+      await updateDomainData(id, domain);
+    }
     await updateUser(id, user);
 
     return SuccessResponse(
@@ -2202,7 +2210,7 @@ exports.totalProfitLossWallet = async (req, res) => {
 
 exports.totalProfitLossByMatch = async (req, res) => {
   try {
-    let {user, type, startDate, endDate, page, limit } = req.body;
+    let {user, type, startDate, endDate } = req.body;
 
     let queryColumns = ``;
     let where = {
@@ -2228,10 +2236,10 @@ exports.totalProfitLossByMatch = async (req, res) => {
       }, req, res);
     }
 
-    const {count,result} = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss, { page: page, limit: limit});
+    const {result} = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss);
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result, count }
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result }
       },
       req,
       res

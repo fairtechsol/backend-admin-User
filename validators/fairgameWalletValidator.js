@@ -21,6 +21,7 @@ module.exports.CreateSuperAdmin = Joi.object({
   exposureLimit: Joi.number(),
   maxBetLimit: Joi.number(),
   minBetLimit: Joi.number(),
+  isOldFairGame: Joi.boolean(),
   id: Joi.string().guid({ version: "uuidv4" }).required(),
   domain: Joi.object({
     domain: Joi.string(),
@@ -32,8 +33,8 @@ module.exports.CreateSuperAdmin = Joi.object({
 });
 
 module.exports.UpdateSuperAdmin = Joi.object({
-    id: Joi.string().guid({ version: "uuidv4" }).required(),
-    user: Joi.object({
+  id: Joi.string().guid({ version: "uuidv4" }).required(),
+  user: Joi.object({
     city: Joi.string().trim().allow(""),
     phoneNumber: Joi.string().trim().allow(""),
     fullName: Joi.string().trim().allow(""),
@@ -44,6 +45,8 @@ module.exports.UpdateSuperAdmin = Joi.object({
     headerColor: Joi.string(),
     footerColor: Joi.string(),
   }),
+  isOldFairGame: Joi.boolean(),
+
 });
 
 module.exports.SuperAdminBalance = Joi.object({
