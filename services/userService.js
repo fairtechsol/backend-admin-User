@@ -207,7 +207,7 @@ exports.getParentsWithBalance = async (userId) => {
     UNION
     SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
   )
-  SELECT p."id", p."userName",p."roleName" FROM p where p."id" != '${userId}';`);
+  SELECT p."id", p."userName", p."roleName", p."userBlock", p."betBlock" FROM p where p."id" != '${userId}';`);
   return query;
 }
 
@@ -296,16 +296,6 @@ exports.deleteUserMatchLock = async (where) => {
 exports.getMatchLockAllChild = (id) => {
   let query = `SELECT p."id", p."userName", um."blockBy", um."matchId", um."matchLock", um."sessionLock" FROM "users" p left join "userMatchLocks" um on p.id = um."userId" where p."deletedAt" IS NULL AND p.id != '${id}' AND p."createBy" = '${id}';`
   return user.query(query)
-}
-
-exports.getParentsWithRoleAndStatus = (userId) => {
-  let query = user.query(`WITH RECURSIVE p AS (
-    SELECT * FROM "users" WHERE "users"."id" = '${userId}'
-    UNION
-    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
-  )
-  SELECT p."id", p."userName",p."roleName", p."userBlock", p."betBlock" FROM p where p."id" != '${userId}';`);
-  return query;
 }
 
 exports.getGameLockForDetails = (where, select) => {
