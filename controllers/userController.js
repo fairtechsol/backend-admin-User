@@ -95,7 +95,7 @@ exports.createUser = async (req, res) => {
       userId: insertUser.id,
       amount: 0,
       transType: transType.add,
-      closingBalance: insertUser.creditRefer,
+      closingBalance: insertUser.creditRefrence,
       description: walletDescription.userCreate
     }]
     if (insertUser.createdBy != insertUser.id) {
@@ -105,7 +105,7 @@ exports.createUser = async (req, res) => {
         userId: insertUser.id,
         amount: 0,
         transType: transType.withDraw,
-        closingBalance: insertUser.creditRefer,
+        closingBalance: insertUser.creditRefrence,
         description: walletDescription.userCreate
       });
     }
