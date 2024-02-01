@@ -13,7 +13,7 @@ const ApiFeature = require("../utils/apiFeatures");
 
 exports.getUserById = async (id, select) => {
   return await user.findOne({
-    where: { id:id },
+    where: { id: id },
     select: select,
   });
 };
@@ -28,8 +28,8 @@ exports.updateUser = async (id, body) => {
   return updateUser;
 };
 
-exports.getCreditRefrence = async(where, select) => {
-  let getamount = await user.find({where ,select:select})
+exports.getCreditRefrence = async (where, select) => {
+  let getamount = await user.find({ where, select: select })
   return getamount
 }
 
@@ -39,12 +39,12 @@ exports.getUserBalance = async (where, select) => {
       .where(where)
       .leftJoinAndMapOne(
         'user.userBal',
-        'userBalances', 
-        'userBalances', 
-        'user.id = userBalances.userId' 
+        'userBalances',
+        'userBalances',
+        'user.id = userBalances.userId'
       )
       .select(select);
-      //userData1.select(select)
+    //userData1.select(select)
     let userData = userData1.getMany();
 
     if (!userData || userData.length === 0) {
@@ -151,7 +151,7 @@ exports.getUser = async (where = {}, select) => {
 
 exports.getUsers = async (where, select, offset, limit, relations) => {
   //find list with filter and pagination
-  
+
   return await user.findAndCount({
     where: where,
     select: select,
@@ -166,9 +166,9 @@ exports.getUsersWithUserBalance = async (where, offset, limit) => {
   //get all users with user balance according to pagoination
 
   let Query = user.createQueryBuilder()
-  .select()
-  .where(where)
-  .leftJoinAndMapOne("user.userBal","userBalances", "UB","user.id = UB.userId")
+    .select()
+    .where(where)
+    .leftJoinAndMapOne("user.userBal", "userBalances", "UB", "user.id = UB.userId")
 
   if (offset) {
     Query = Query.offset(parseInt(offset));
@@ -191,7 +191,7 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
 
   return await user.query(query)
 }
-exports.getChildsWithOnlyUserRole = async(userId) => {
+exports.getChildsWithOnlyUserRole = async (userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${userId}'
     UNION
@@ -201,18 +201,18 @@ exports.getChildsWithOnlyUserRole = async(userId) => {
   return query;
 }
 
-exports.getParentsWithBalance = async(userId) => {
+exports.getParentsWithBalance = async (userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${userId}'
     UNION
     SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
   )
-  SELECT p."id", p."userName",p."roleName" FROM p where p."id" != '${userId}';`);
+  SELECT p."id", p."userName", p."roleName", p."userBlock", p."betBlock" FROM p where p."id" != '${userId}';`);
   return query;
 }
 
 exports.getFirstLevelChildUser = async (id) => {
-  return await user.find({ where : { createBy: id, id: Not(id) }, select: { id: true, userName:true }});
+  return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, userName: true } });
 }
 
 exports.getUserBalanceDataByUserIds = async (userIds, select) => {
@@ -237,23 +237,23 @@ exports.getUserWithUserBalance = async (userName) => {
   return userData;
 }
 
-exports.getUserWithUserBalanceData = async (where,select) => {
+exports.getUserWithUserBalanceData = async (where, select) => {
   const users = await UserBalance.findOne({
     relations: ["user"],
     where: where,
-    select : select
-    });
-    return users;
+    select: select
+  });
+  return users;
 }
 
 exports.getUsersWithUsersBalanceData = async (where, query) => {
   //get all users with user balance according to pagoination
   let transactionQuery = new ApiFeature(user.createQueryBuilder()
-  .where(where)
-  .leftJoinAndMapOne("user.userBal","userBalances", "UB","user.id = UB.userId")
-  ,query).search().filter().sort().paginate().getResult();
+    .where(where)
+    .leftJoinAndMapOne("user.userBal", "userBalances", "UB", "user.id = UB.userId")
+    , query).search().filter().sort().paginate().getResult();
 
-    return await transactionQuery;
+  return await transactionQuery;
 
 }
 
@@ -278,6 +278,7 @@ exports.getAllUsersByRole = async (role, select) => {
     select: select,
   });
 }
+
 exports.getUserMatchLock = (where, select) => {
   return userMatchLock.findOne({ where: where, select: select });
 }
@@ -292,8 +293,20 @@ exports.deleteUserMatchLock = async (where) => {
   return deleted;
 };
 
-
-exports.getMatchLockAllChild = async (id) => {
+exports.getMatchLockAllChild = (id) => {
   let query = `SELECT p."id", p."userName", um."blockBy", um."matchId", um."matchLock", um."sessionLock" FROM "users" p left join "userMatchLocks" um on p.id = um."userId" where p."deletedAt" IS NULL AND p.id != '${id}' AND p."createBy" = '${id}';`
   return user.query(query)
+}
+
+exports.getGameLockForDetails = (where, select) => {
+  try {
+    let userData = userMatchLock.createQueryBuilder('userMatchLock')
+      .leftJoinAndMapMany('userMatchLock.blockByUser', 'user', 'blockByUser', 'blockByUser.id = userMatchLock.blockBy')
+      .leftJoinAndMapMany('userMatchLock.match', 'match', 'match', 'match.id = userMatchLock.matchId')
+      .select(select)
+      .where(where);
+    return userData.getMany();
+  } catch (error) {
+    throw error;
+  }
 }
