@@ -285,6 +285,7 @@ exports.getSessionsProfitLoss = async (where, totalLoss) => {
 
     return result;
 }
+
 exports.getPlacedBetsWithCategory = async (userId) => {
   const query = BetPlaced.createQueryBuilder()
     .select([
@@ -304,3 +305,14 @@ const data = await query.getRawMany();
   return data;
 }
 
+exports.getPlacedBetTotalLossAmount = (where) => {
+  return BetPlaced.createQueryBuilder('placeBet')
+  .select([
+    'SUM(placeBet.lossAmount) as totalLossAmount',
+    `placeBet.eventName || ' / fancy' as eventName`,
+  ])
+  .where(where)
+  .groupBy('placeBet.betId')
+  .addGroupBy('placeBet.eventName')
+  .getRawMany();
+}

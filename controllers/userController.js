@@ -1,9 +1,9 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, } = require('../services/userService');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType } = require('../config/contants');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getParentsWithRoleAndStatus, getGameLockForDetails, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
-const { getTotalProfitLoss } = require('../services/betPlacedService')
+const { getTotalProfitLoss, findAllPlacedBet, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const { forceLogoutUser, profitLossPercentCol } = require("../services/commonService");
@@ -1140,17 +1140,17 @@ exports.userMatchLock = async (req, res) => {
   try {
     let { userId, matchId, type, block, operationToAll } = req.body;
     let reqUser = req.user;
-    if(operationToAll){
+    if (operationToAll) {
       userId = reqUser.id;
     }
     let childUsers = await getChildUser(userId);
     let allChildUserIds = childUsers.map(obj => obj.id);
-    if(!operationToAll){
+    if (!operationToAll) {
       allChildUserIds.push(userId);
     }
 
     let returnData;
-    for(let i = 0; i < allChildUserIds.length; i++){
+    for (let i = 0; i < allChildUserIds.length; i++) {
       let blockUserId = allChildUserIds[i];
       returnData = await userBlockUnlockMatch(blockUserId, matchId, reqUser, block, type);
     }
@@ -1199,5 +1199,23 @@ exports.userMatchLock = async (req, res) => {
 
     addUserMatchLock(userAlreadyBlockExit);
     return userAlreadyBlockExit;
+  }
+}
+
+exports.getUserDetailsForParent = async (req, res) => {
+  try {
+    const { userId } = req.query;
+    let returnObj = {};
+    returnObj.userLock = await getParentsWithRoleAndStatus(userId);
+    returnObj.userDetails = await getUserBalance({ id: userId }, ["user.id", "user.userName", "user.userBlock", "user.betBlock", "user.exposureLimit", "user.creditRefrence", "userBalances.exposure", "userBalances.currentBalance"]);
+    returnObj.gameLock = await getGameLockForDetails({ userId }, ["userMatchLock", "blockByUser.userName", "match.title"]);
+    returnObj.betPlaced = await getPlacedBetTotalLossAmount({ createBy: userId, result: betResultStatus.PENDING, betType: In([betType.NO, betType.YES]) });
+
+    return SuccessResponse({
+      statusCode: 200,
+      data: returnObj,
+    }, req, res);
+  } catch (error) {
+    return ErrorResponse(error, req, res);
   }
 }
