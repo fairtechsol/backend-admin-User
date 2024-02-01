@@ -26,8 +26,11 @@ module.exports.CreateUser = Joi.object({
     'any.required': 'Confirm Password is required',
     'any.only': 'Confirm Password must match Password',
   }),
-  delayTime: Joi.string().allow("")
-})
+  delayTime: Joi.string().allow(""),
+  sessionCommission: Joi.number(),
+  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchCommission: Joi.number(),
+});
 
 module.exports.ChangePassword = Joi.object({
   oldPassword: Joi.string(),
@@ -66,9 +69,6 @@ module.exports.generateTransactionPass = Joi.object({
     }),
 });
 
-
-
-
 module.exports.updateUserValid = Joi.object({
   //sessionCommission,matchComissionType,matchCommission,id,createBy
   fullName: Joi.string().allow(""),
@@ -80,15 +80,17 @@ module.exports.updateUserValid = Joi.object({
     'any.required': '"Transaction Password" is required',
     'string.empty': '"Transaction Password" can not be empty.'
   }),
-})
+  sessionCommission: Joi.number(),
+  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchCommission: Joi.number(),
+});
 
 module.exports.setExposureLimitValid = Joi.object({
   //sessionCommission,matchComissionType,matchCommission,id,createBy
   amount: Joi.number().required(),
   transactionPassword: Joi.string().required(),
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
-})
-
+});
 
 module.exports.LockUnlockUser = Joi.object({
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
@@ -98,8 +100,8 @@ module.exports.LockUnlockUser = Joi.object({
     'string.empty': '"Transaction Password" can not be empty.'
   }),
   betBlock: Joi.boolean().required(),
-  userBlock: Joi.boolean().required()
-})
+  userBlock:  Joi.boolean().required()
+});
 
 module.exports.setCreditRefValidate = Joi.object({
   //sessionCommission,matchComissionType,matchCommission,id,createBy

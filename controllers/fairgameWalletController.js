@@ -47,6 +47,7 @@ const {
   betBlockUnblock,
   getParentsWithBalance,
   getAllUsersByRole,
+  getSuperAdminDataBalance,
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -68,16 +69,24 @@ exports.createSuperAdmin = async (req, res) => {
       aPartnership,
       smPartnership,
       mPartnership,
+      agPartnership,
       id,
       creditRefrence,
       exposureLimit,
       maxBetLimit,
       minBetLimit,
       domain,
+      isOldFairGame,
+      sessionCommission,
+      matchComissionType,
+      matchCommission
     } = req.body;
 
     const isUserPresent = await getUserByUserName(userName, ["id"]);
-    const isDomainExist = await getDomainDataByDomain(domain?.domain);
+    let isDomainExist;
+    if (!isOldFairGame) {
+      isDomainExist = await getDomainDataByDomain(domain?.domain);
+    }
     if (isUserPresent) {
       return ErrorResponse(
         {
@@ -91,7 +100,7 @@ exports.createSuperAdmin = async (req, res) => {
       );
     }
 
-    if (isDomainExist) {
+    if (!isOldFairGame && isDomainExist) {
       return ErrorResponse(
         {
           statusCode: 400,
@@ -107,7 +116,7 @@ exports.createSuperAdmin = async (req, res) => {
       );
     }
 
-    if (roleName != userRoleConstant.superAdmin) {
+    if (roleName != userRoleConstant.superAdmin && !isOldFairGame) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -120,12 +129,13 @@ exports.createSuperAdmin = async (req, res) => {
       );
     }
 
-    await addDomainData({
-      ...domain,
-      userName,
-      userId: id,
-    });
-
+    if (!isOldFairGame) {
+      await addDomainData({
+        ...domain,
+        userName,
+        userId: id,
+      });
+    }
     let userData = {
       userName,
       fullName,
@@ -141,12 +151,18 @@ exports.createSuperAdmin = async (req, res) => {
       aPartnership,
       smPartnership,
       mPartnership,
+      agPartnership,
       id,
       creditRefrence,
       exposureLimit,
       maxBetLimit,
       minBetLimit,
       createBy: id,
+      ...(isOldFairGame ? {
+        sessionCommission,
+        matchComissionType,
+        matchCommission
+      } : {})
     };
     let insertUser = await addUser(userData);
 
@@ -193,17 +209,20 @@ exports.createSuperAdmin = async (req, res) => {
 
 exports.updateSuperAdmin = async (req, res) => {
   try {
-    let { user, domain, id } = req.body;
-    let isDomainData = await getDomainDataByUserId(id, ["id"]);
-    if (!isDomainData) {
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "invalidData" } },
-        req,
-        res
-      );
-    }
+    let { user, domain, id, isOldFairGame } = req.body;
 
-    await updateDomainData(id, domain);
+    if (!isOldFairGame) {
+      let isDomainData = await getDomainDataByUserId(id, ["id"]);
+      if (!isDomainData) {
+        return ErrorResponse(
+          { statusCode: 400, message: { msg: "invalidData" } },
+          req,
+          res
+        );
+      }
+
+      await updateDomainData(id, domain);
+    }
     await updateUser(id, user);
 
     return SuccessResponse(
@@ -690,6 +709,7 @@ exports.declareSessionResult = async (req,res)=>{
 const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj,score) =>{
  
   let faAdminCal={};
+  let superAdminData={};
 
   for (const user of users) {
     let description = '';
@@ -784,7 +804,6 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
     );
    
     let parentUsers = await getParentsWithBalance(user.user.id);
-    
     for (const patentUser of parentUsers) {
       let upLinePartnership = 100;
        if (patentUser.roleName === userRoleConstant.superAdmin) {
@@ -795,6 +814,9 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
       } else if (patentUser.roleName === userRoleConstant.master) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+      }
+      else if (patentUser.roleName === userRoleConstant.agent) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.agPartnership;
       }
       let myProfitLoss = parseFloat(
         ((profitLoss * upLinePartnership) / 100).toString()
@@ -807,6 +829,10 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
       } else {
         upperUserObj[patentUser.id] = { profitLoss: profitLoss,myProfitLoss: myProfitLoss,exposure: maxLoss };
       }
+
+      if(patentUser.roleName === userRoleConstant.superAdmin){
+        superAdminData = upperUserObj[patentUser.id];
+      }
     }
     faAdminCal={
       profitLoss: profitLoss + (faAdminCal?.profitLoss||0),
@@ -814,7 +840,7 @@ const calculateProfitLossSessionForUserDeclare=async (users, betId,matchId, fwPr
       myProfitLoss: +((profitLoss + (faAdminCal?.profitLoss||0))*parseFloat(user.user.fwPartnership)/100).toFixed(2)
     }
   };
-  return {fwProfitLoss,faAdminCal};
+  return { fwProfitLoss, faAdminCal, superAdminData };
 }
 
 exports.declareSessionNoResult = async (req,res)=>{
@@ -1175,6 +1201,7 @@ exports.unDeclareSessionResult = async (req,res)=>{
 const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj) =>{
  
   let faAdminCal={};
+  let superAdminData={};
 
   for (const user of users) {
     let getWinAmount = 0;
@@ -1285,6 +1312,9 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
       } else if (patentUser.roleName === userRoleConstant.master) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
       }
+      else if (patentUser.roleName === userRoleConstant.agent) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.agPartnership;
+      }
       let myProfitLoss = parseFloat(
         ((profitLoss * upLinePartnership) / 100).toString()
       );
@@ -1318,6 +1348,10 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
           totalBet: betPlaceProfitLoss?.total_bet
         }};
 
+      }
+
+      if(patentUser.roleName === userRoleConstant.superAdmin){
+        superAdminData = upperUserObj[patentUser.id];
       }
     }
 
@@ -1389,7 +1423,7 @@ const calculateProfitLossSessionForUserUnDeclare=async (users, betId,matchId, fw
       myProfitLoss: parseFloat((parseFloat(faAdminCal?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) /100 )).toFixed(2))
     }
   };
-  return {fwProfitLoss,faAdminCal};
+  return {fwProfitLoss,faAdminCal,superAdminData};
 }
 
 exports.getBetWallet = async (req, res) => {
@@ -1594,6 +1628,7 @@ exports.declareMatchResult = async (req, res) => {
 const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData) => {
 
   let faAdminCal = {};
+  let superAdminData={};
 
   for (const user of users) {
     let getWinAmount = 0;
@@ -1742,6 +1777,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       } else if (patentUser.roleName === userRoleConstant.master) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
       }
+      else if (patentUser.roleName === userRoleConstant.agent) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.agPartnership;
+      }
       let myProfitLoss = parseFloat(
         ((profitLoss * upLinePartnership) / 100).toString()
       );
@@ -1753,6 +1791,10 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       } else {
         upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
       }
+
+      if(patentUser.roleName === userRoleConstant.superAdmin){
+        superAdminData = upperUserObj[patentUser.id];
+      }
     }
     faAdminCal = {
       profitLoss: profitLoss + (faAdminCal?.profitLoss || 0),
@@ -1760,7 +1802,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       myProfitLoss: +((profitLoss + (faAdminCal?.profitLoss || 0)) * parseFloat(user.user.fwPartnership) / 100).toFixed(2)
     }
   };
-  return { fwProfitLoss, faAdminCal };
+  return { fwProfitLoss, faAdminCal, superAdminData };
 }
 
 exports.unDeclareMatchResult = async (req, res) => {
@@ -1897,6 +1939,7 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
     admin:{},
     wallet:{}
   };
+  let superAdminData={};
 
   for (const user of users) {
     let getWinAmount = 0;
@@ -2051,6 +2094,9 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
       } else if (patentUser.roleName === userRoleConstant.master) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
       }
+      else if (patentUser.roleName === userRoleConstant.agent) {
+        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.agPartnership;
+      }
       let myProfitLoss = parseFloat(
         ((profitLoss * upLinePartnership) / 100).toString()
       );
@@ -2077,6 +2123,11 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
             upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
           }
         });
+      }
+
+      
+      if(patentUser.roleName === userRoleConstant.superAdmin){
+        superAdminData = upperUserObj[patentUser.id];
       }
     }
 
@@ -2107,7 +2158,7 @@ const calculateProfitLossMatchForUserUnDeclare=async (users, betId,matchId, fwPr
       myProfitLoss: parseFloat((parseFloat(faAdminCal?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2))
     }
   };
-  return {fwProfitLoss,faAdminCal};
+  return { fwProfitLoss, faAdminCal, superAdminData };
 }
 
 exports.totalProfitLossWallet = async (req, res) => {
@@ -2167,7 +2218,7 @@ exports.totalProfitLossWallet = async (req, res) => {
 
 exports.totalProfitLossByMatch = async (req, res) => {
   try {
-    let {user, type, startDate, endDate, page, limit } = req.body;
+    let {user, type, startDate, endDate } = req.body;
 
     let queryColumns = ``;
     let where = {
@@ -2193,10 +2244,10 @@ exports.totalProfitLossByMatch = async (req, res) => {
       }, req, res);
     }
 
-    const {count,result} = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss, { page: page, limit: limit});
+    const {result} = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss);
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result, count }
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result }
       },
       req,
       res

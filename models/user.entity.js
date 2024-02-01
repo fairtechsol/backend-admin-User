@@ -84,6 +84,11 @@ const userSchema = new EntitySchema({
       nullable: false,
       default: 0
     },
+    agPartnership: {
+      type: 'int',
+      nullable: false,
+      default: 0
+    },
     exposureLimit: {
       type: 'decimal',
       nullable: false,

@@ -421,61 +421,66 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
 };
 
 exports.findUserPartnerShipObj = async (user) => {
-  const obj = {};
+  try {
+    const obj = {};
 
-  const updateObj = (prefix, id) => {
-    obj[`${prefix}Partnership`] = user[`${prefix}Partnership`];
-    obj[`${prefix}PartnershipId`] = id;
-  };
+    const updateObj = (prefix, id) => {
+      obj[`${prefix}Partnership`] = user[`${prefix}Partnership`];
+      obj[`${prefix}PartnershipId`] = id;
+    };
 
-  const traverseHierarchy = async (currentUser, walletPartnerships) => {
-    if (!currentUser) {
-      return;
-    }
-
-    if (currentUser.roleName != userRoleConstant.user) {
-      updateObj(partnershipPrefixByRole[currentUser.roleName], currentUser.id);
-    }
-
-    if (currentUser.createBy ||
-      currentUser?.roleName == userRoleConstant.fairGameAdmin) {
-      if (currentUser?.roleName == userRoleConstant.superAdmin) {
-        try {
-          let response = await apiCall(
-            apiMethod.get,
-            walletDomain + allApiRoutes.EXPERT.partnershipId + currentUser.id
-          ).catch((err) => {
-            throw err?.response?.data;
-          });
-          await traverseHierarchy(
-            response?.data?.find(
-              (item) => item?.roleName == userRoleConstant.fairGameAdmin
-            ),
-            response?.data
-          );
-        } catch (err) {
-          console.log(err);
-        }
-      } else if (currentUser?.roleName == userRoleConstant.fairGameAdmin) {
-        await traverseHierarchy(
-          walletPartnerships?.find(
-            (item) => item?.roleName == userRoleConstant.fairGameWallet
-          )
-        );
-      } else {
-        const createdByUser = await getUserById(currentUser.createBy, [
-          "id",
-          "roleName",
-          "createBy",
-        ]);
-        await traverseHierarchy(createdByUser);
+    const traverseHierarchy = async (currentUser, walletPartnerships) => {
+      if (!currentUser) {
+        return;
       }
-    }
-  };
 
-  await traverseHierarchy(user);
+      if (currentUser.roleName != userRoleConstant.user) {
+        updateObj(partnershipPrefixByRole[currentUser.roleName], currentUser.id);
+      }
 
-  return JSON.stringify(obj);
+      if (currentUser.createBy ||
+        currentUser?.roleName == userRoleConstant.fairGameAdmin) {
+        if (currentUser?.id == currentUser?.createBy) {
+          try {
+            let response = await apiCall(
+              apiMethod.get,
+              walletDomain + allApiRoutes.EXPERT.partnershipId + currentUser.id
+            ).catch((err) => {
+              throw err?.response?.data;
+            });
+            await traverseHierarchy(
+              response?.data?.find(
+                (item) => (item?.roleName == userRoleConstant.fairGameAdmin && response?.data?.length == 2) || (item?.roleName == userRoleConstant.fairGameWallet && response?.data?.length == 1)
+              ),
+              response?.data
+            );
+          } catch (err) {
+            console.log(err);
+          }
+        } else if (currentUser?.roleName == userRoleConstant.fairGameAdmin) {
+          await traverseHierarchy(
+            walletPartnerships?.find(
+              (item) => item?.roleName == userRoleConstant.fairGameWallet
+            )
+          );
+        } else {
+          const createdByUser = await getUserById(currentUser.createBy, [
+            "id",
+            "roleName",
+            "createBy",
+          ]);
+          await traverseHierarchy(createdByUser);
+        }
+      }
+    };
+
+    await traverseHierarchy(user);
+
+    return JSON.stringify(obj);
+  }
+  catch (err) {
+    throw err;
+  }
 };
 
 /**
@@ -681,6 +686,10 @@ exports.profitLossPercentCol = (body, queryColumns) => {
     }
     case (userRoleConstant.master): {
       queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.admin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superMaster]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.master]}Partnership)`;
+      break;
+    }
+    case (userRoleConstant.agent): {
+      queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superAdmin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.admin]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.superMaster]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.master]}Partnership + user.${partnershipPrefixByRole[userRoleConstant.agent]}Partnership)`;
       break;
     }
     default:

@@ -30,15 +30,15 @@ exports.getProfile = async (req, res) => {
 exports.isUserExist = async (req, res) => {
   let { userName } = req.query;
 
-  const isUserExist = await getUser({ userName: userName });
+  const isUserExist = await getUserByUserName(userName);
 
   return SuccessResponse({ statusCode: 200, data: { isUserExist: Boolean(isUserExist) } }, req, res);
 }
 
 exports.createUser = async (req, res) => {
   try {
-    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit } = req.body;
-    let reqUser = req.user || {}
+    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission } = req.body;
+    let reqUser = req.user || {};
     let creator = await getUserById(reqUser.id || createdBy);
     if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
 
@@ -74,7 +74,10 @@ exports.createUser = async (req, res) => {
       creditRefrence: creditRefrence,
       exposureLimit: exposureLimit,
       maxBetLimit: maxBetLimit,
-      minBetLimit: minBetLimit
+      minBetLimit: minBetLimit,
+      sessionCommission,
+      matchComissionType,
+      matchCommission
     }
     let partnerships = await calculatePartnership(userData, creator)
     userData = { ...userData, ...partnerships };
@@ -136,17 +139,20 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    let { fullName, phoneNumber, city, id } = req.body;
+    let { fullName, phoneNumber, city, id, sessionCommission, matchComissionType, matchCommission } = req.body;
     let reqUser = req.user || {}
-    let updateUser = await getUser({ id, createBy: reqUser.id }, ["id", "createBy", "fullName", "phoneNumber", "city"])
+    let updateUser = await getUser({ id, createBy: reqUser.id }, ["id", "createBy", "fullName", "phoneNumber", "city", "sessionCommission", "matchComissionType", "matchCommission"]);
     if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
 
     updateUser.fullName = fullName ?? updateUser.fullName;
     updateUser.phoneNumber = phoneNumber ?? updateUser.phoneNumber;
     updateUser.city = city || updateUser.city;
+    updateUser.sessionCommission = sessionCommission || updateUser.sessionCommission;
+    updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
+    updateUser.matchCommission = matchCommission || updateUser.matchCommission;
     updateUser = await addUser(updateUser);
 
-    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city"])
+    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city", "sessionCommission", "matchComissionType", "matchCommission"])
     return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "User" }  }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
@@ -165,6 +171,7 @@ const calculatePartnership = async (userData, creator) => {
   let aPartnership = creator.aPartnership;
   let smPartnership = creator.smPartnership;
   let mPartnership = creator.mPartnership;
+  let agPartnership = creator.agPartnership;
 
   switch (creator.roleName) {
     case (userRoleConstant.fairGameWallet): {
@@ -189,6 +196,10 @@ const calculatePartnership = async (userData, creator) => {
     }
     case (userRoleConstant.master): {
       mPartnership = creator.myPartnership;
+      break;
+    }
+    case (userRoleConstant.agent): {
+      agPartnership = creator.myPartnership;
       break;
     }
   }
@@ -216,6 +227,10 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership);
           break;
         }
+        case (userRoleConstant.agent): {
+          agPartnership = 100 - parseInt(creator.myPartnership);
+          break;
+        }
         default : {
           fwPartnership = parseInt(creator.fwPartnership);
           break;
@@ -241,6 +256,10 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
           break;
         }
+        case (userRoleConstant.agent): {
+          agPartnership = 100 - parseInt(creator.myPartnership + fwPartnership);
+          break;
+        }
         default : {
           faPartnership = parseInt(creator.faPartnership);
         }
@@ -261,6 +280,10 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
           break;
         }
+        case (userRoleConstant.agent): {
+          agPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership);
+          break;
+        }
         default: {
           saPartnership = parseInt(creator.saPartnership);
           }
@@ -277,6 +300,10 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
           break;
         }
+        case (userRoleConstant.agent): {
+          agPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership);
+          break;
+        }
         default: {
           aPartnership = parseInt(creator.aPartnership);
           }
@@ -289,16 +316,32 @@ const calculatePartnership = async (userData, creator) => {
           mPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership + aPartnership);
           break;
         }
+        case (userRoleConstant.agent): {
+          agPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership + aPartnership);
+          break;
+        }
         default : {
           smPartnership = parseInt(creator.smPartnership);
+        }
+      }
+    }
+    case (userRoleConstant.master): {
+      switch (userData.roleName) {
+        
+        case (userRoleConstant.agent): {
+          agPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership);
+          break;
+        }
+        default : {
+          mPartnership = parseInt(creator.mPartnership);
         }
       }
     }
       break;
   }
 
-  if (userData.roleName != userRoleConstant.expert && fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership + mPartnership != 100) {
-    throw { msg: "user.partnershipNotValid" };
+  if (userData.roleName != userRoleConstant.expert && fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership + mPartnership + agPartnership != 100) {
+    throw new Error("user.partnershipNotValid");
   }
   return {
     fwPartnership,
@@ -306,7 +349,8 @@ const calculatePartnership = async (userData, creator) => {
     saPartnership,
     aPartnership,
     smPartnership,
-    mPartnership
+    mPartnership,
+    agPartnership
   }
 }
 
@@ -566,6 +610,17 @@ exports.userList = async (req, res, next) => {
     }
     response.count = users[1];
     let partnershipCol = [];
+    if (userRole == userRoleConstant.agent) {
+      partnershipCol = [
+        "agPartnership",
+        "mPartnership",
+        "smPartnership",
+        "aPartnership",
+        "saPartnership",
+        "faPartnership",
+        "fwPartnership",
+      ];
+    }
     if (userRole == userRoleConstant.master) {
       partnershipCol = [
         "mPartnership",
@@ -612,17 +667,17 @@ exports.userList = async (req, res, next) => {
           element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partner_ships).toFixed(2);
         }
         if (element.roleName != userRoleConstant.user) {
-          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2));
-          let childUsers = await getChildUser(element.id)
-          let allChildUserIds = childUsers.map(obj => obj.id)
-          let balancesum = 0
+          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2))- Number(parseFloat(element.userBal["exposure"]).toFixed(2));
+          // let childUsers = await getChildUser(element.id)
+          // let allChildUserIds = childUsers.map(obj => obj.id)
+          // let balancesum = 0
 
-          if (allChildUserIds.length) {
-            let allChildBalanceData = await getAllChildCurrentBalanceSum(allChildUserIds)
-            balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
-          }
+          // if (allChildUserIds.length) {
+          //   let allChildBalanceData = await getAllChildCurrentBalanceSum(allChildUserIds)
+          //   balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
+          // }
 
-          element['balance'] = Number(parseFloat(element.userBal['currentBalance']) + balancesum).toFixed(2);
+          element['balance'] = Number((parseFloat(element.userBal["currentBalance"]) + parseFloat(element.userBal["downLevelBalance"])).toFixed(2));
         } else {
           element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
           element['balance'] = element.userBal['currentBalance'];
@@ -672,6 +727,7 @@ exports.userList = async (req, res, next) => {
               dbKey: "smPartnership",
             },
             { excelHeader: "Master Partnership", dbKey: "mPartnership" },
+            { excelHeader: "Agent Partnership", dbKey: "agPartnership" },
             { excelHeader: "Full Name", dbKey: "fullName" },
             { excelHeader: "City", dbKey: "city" },
             { excelHeader: "Phone Number", dbKey: "phoneNumber" },
@@ -696,11 +752,7 @@ exports.userList = async (req, res, next) => {
 
     response.list = data;
 
-    let childUsers = await getChildUser(userId || reqUser.id);
-    let userIds = [];
-    childUsers.map(obj => {
-      userIds.push(obj.id);
-    });
+   
 
     let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum, SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure"`;
 
@@ -730,14 +782,22 @@ exports.userList = async (req, res, next) => {
         queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
         break;
       }
+      case (userRoleConstant.agent): {
+        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.agPartnership + user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+        break;
+      }
     }
 
-    const totalValues = await getUsersWithTotalUsersBalanceData(where, req.query, queryColumns, userIds);
+    const totalBalance = await getUsersWithTotalUsersBalanceData(where, req.query, queryColumns);
+    totalBalance.availableBalance = parseFloat(totalBalance.availableBalance) - parseFloat(totalBalance.totalExposure);
+    const adminBalance = await getUserBalanceDataByUserId(userId || reqUser.id);
+    totalBalance.currBalance=parseFloat(adminBalance.downLevelBalance)+parseFloat(adminBalance.currentBalance);
+
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "user.userList" },
-        data: { ...response, totalValues: totalValues },
+        data: { ...response, totalBalance: totalBalance },
       },
       req,
       res

@@ -8,4 +8,4 @@ module.exports.SetUserBalance = Joi.object({
     remark: Joi.string().trim().allow(""),
     createBy: Joi.string().guid({ version: 'uuidv4' }),
     transactionPassword: Joi.string(),
-})
+});

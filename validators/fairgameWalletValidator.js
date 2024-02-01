@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { userRoleConstant, transType } = require("../config/contants");
+const { userRoleConstant, transType, matchComissionTypeConstant } = require("../config/contants");
 
 module.exports.CreateSuperAdmin = Joi.object({
   userName: Joi.string().trim(),
@@ -16,10 +16,12 @@ module.exports.CreateSuperAdmin = Joi.object({
   aPartnership: Joi.number(),
   smPartnership: Joi.number(),
   mPartnership: Joi.number(),
+  agPartnership: Joi.number(),
   creditRefrence: Joi.number(),
   exposureLimit: Joi.number(),
   maxBetLimit: Joi.number(),
   minBetLimit: Joi.number(),
+  isOldFairGame: Joi.boolean(),
   id: Joi.string().guid({ version: "uuidv4" }).required(),
   domain: Joi.object({
     domain: Joi.string(),
@@ -28,14 +30,21 @@ module.exports.CreateSuperAdmin = Joi.object({
     footerColor: Joi.string(),
     logo: Joi.string(),
   }),
+  sessionCommission: Joi.number(),
+  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchCommission: Joi.number(),
 });
 
 module.exports.UpdateSuperAdmin = Joi.object({
-    id: Joi.string().guid({ version: "uuidv4" }).required(),
-    user: Joi.object({
+  id: Joi.string().guid({ version: "uuidv4" }).required(),
+  user: Joi.object({
     city: Joi.string().trim().allow(""),
     phoneNumber: Joi.string().trim().allow(""),
     fullName: Joi.string().trim().allow(""),
+
+    sessionCommission: Joi.number(),
+    matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+    matchCommission: Joi.number(),
   }),
   domain: Joi.object({
     logo: Joi.string(),
@@ -43,6 +52,7 @@ module.exports.UpdateSuperAdmin = Joi.object({
     headerColor: Joi.string(),
     footerColor: Joi.string(),
   }),
+  isOldFairGame: Joi.boolean(),
 });
 
 module.exports.SuperAdminBalance = Joi.object({
@@ -72,7 +82,7 @@ module.exports.SuperAdminLockUnlock = Joi.object({
 });
 
 module.exports.SuperAdminChangePassword = Joi.object({
-    userId: Joi.string().guid({ version: "uuidv4" }).required(),
-    password:Joi.string().required()
-  });
-  
+  userId: Joi.string().guid({ version: "uuidv4" }).required(),
+  password: Joi.string().required()
+});
+

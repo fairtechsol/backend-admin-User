@@ -146,7 +146,7 @@ exports.updateUserBalance = async (req, res) => {
         amount: transactionType == transType.add ? -amount : amount,
         transType:
           transactionType == transType.add ? transType.withDraw : transType.add,
-        closingBalance: updatedUpdateUserBalanceData.currentBalance,
+        closingBalance: updatedLoginUserBalanceData.currentBalance,
         description: remark,
       },
     ];
