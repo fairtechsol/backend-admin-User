@@ -267,7 +267,7 @@ exports.getUsersWithTotalUsersBalanceData = (where, query, select) => {
     .search()
     .filter();
 
-  
+
 
   return transactionQuery.query.getRawOne();
 }
@@ -306,6 +306,18 @@ exports.getGameLockForDetails = (where, select) => {
       .select(select)
       .where(where);
     return userData.getMany();
+  } catch (error) {
+    throw error;
+  }
+}
+
+exports.isAllChildDeactive = (where, select, matchId) => {
+  try {
+    return user.createQueryBuilder('user')
+      .leftJoinAndMapMany('user.blockUser', 'userMatchLock', 'userMatchLock', `user.id = userMatchLock.userId AND userMatchLock.matchId = '${matchId}'`)
+      .select(select)
+      .where(where)
+      .getRawMany();
   } catch (error) {
     throw error;
   }

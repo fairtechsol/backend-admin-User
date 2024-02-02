@@ -165,6 +165,15 @@
                   },
                   "minBetLimit": {
                     "example": "any"
+                  },
+                  "sessionCommission": {
+                    "example": "any"
+                  },
+                  "matchComissionType": {
+                    "example": "any"
+                  },
+                  "matchCommission": {
+                    "example": "any"
                   }
                 }
               }
@@ -282,6 +291,15 @@
                     "example": "any"
                   },
                   "id": {
+                    "example": "any"
+                  },
+                  "sessionCommission": {
+                    "example": "any"
+                  },
+                  "matchComissionType": {
+                    "example": "any"
+                  },
+                  "matchCommission": {
                     "example": "any"
                   }
                 }
@@ -833,6 +851,32 @@
         }
       }
     },
+    "/user/tempCont": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/button/": {
       "get": {
         "description": "",
@@ -1056,6 +1100,9 @@
                   "mPartnership": {
                     "example": "any"
                   },
+                  "agPartnership": {
+                    "example": "any"
+                  },
                   "id": {
                     "example": "any"
                   },
@@ -1072,6 +1119,18 @@
                     "example": "any"
                   },
                   "domain": {
+                    "example": "any"
+                  },
+                  "isOldFairGame": {
+                    "example": "any"
+                  },
+                  "sessionCommission": {
+                    "example": "any"
+                  },
+                  "matchComissionType": {
+                    "example": "any"
+                  },
+                  "matchCommission": {
                     "example": "any"
                   }
                 }
@@ -1111,6 +1170,9 @@
                     "example": "any"
                   },
                   "id": {
+                    "example": "any"
+                  },
+                  "isOldFairGame": {
                     "example": "any"
                   }
                 }
@@ -1648,12 +1710,6 @@
                     "example": "any"
                   },
                   "endDate": {
-                    "example": "any"
-                  },
-                  "page": {
-                    "example": "any"
-                  },
-                  "limit": {
                     "example": "any"
                   }
                 }
