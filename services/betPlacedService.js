@@ -59,6 +59,7 @@ exports.getMatchBetPlaceWithUser = async (betId,select) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
   .where({ betId: In(betId), result: betResultStatus.PENDING, deleteReason: IsNull() })
   .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
+  .leftJoinAndMapOne("betPlaced.userBalance", "userBalance", 'balance', 'betPlaced.createBy = balance.userId')
   .select(select)
   .getMany()
   return betPlaced;
@@ -269,7 +270,7 @@ exports.getSessionsProfitLoss = async (where, totalLoss) => {
     .select([
       totalLoss,
       'placeBet.betId as "betId"',
-      'placeBet.eventName  as "eventName"',
+      'placeBet.eventName  as "eventName"'
     ])
     .groupBy('placeBet.betId, placeBet.eventName');
 

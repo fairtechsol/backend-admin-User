@@ -55,7 +55,6 @@ const setUserDetailsRedis = async (user) => {
     // Set user details and partnerships in Redis
     await updateUserDataRedis(user.id, {
       exposure: user?.userBal?.exposure || 0,
-      totalComission: user?.totalComission || 0,
       profitLoss: user?.userBal?.profitLoss || 0,
       myProfitLoss: user?.userBal?.myProfitLoss || 0,
       userName: user.userName,

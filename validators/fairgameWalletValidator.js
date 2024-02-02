@@ -31,8 +31,10 @@ module.exports.CreateSuperAdmin = Joi.object({
     logo: Joi.string(),
   }),
   sessionCommission: Joi.number(),
-  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
   matchCommission: Joi.number(),
+  superParentType: Joi.string().valid(userRoleConstant.fairGameAdmin, userRoleConstant.fairGameWallet),
+  superParentId: Joi.string().guid({ version: "uuidv4" }),
 });
 
 module.exports.UpdateSuperAdmin = Joi.object({
@@ -43,7 +45,8 @@ module.exports.UpdateSuperAdmin = Joi.object({
     fullName: Joi.string().trim().allow(""),
 
     sessionCommission: Joi.number(),
-    matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+     matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
+
     matchCommission: Joi.number(),
   }),
   domain: Joi.object({
