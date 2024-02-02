@@ -698,4 +698,3 @@ exports.profitLossPercentCol = (body, queryColumns) => {
   }
   return queryColumns;
 }
-
