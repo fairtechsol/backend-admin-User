@@ -1,5 +1,5 @@
 const Joi = require('joi')
-const { userRoleConstant, blockType, matchComissionTypeConstant, matchWiseBlockType } = require('../config/contants')
+const { userRoleConstant, matchComissionTypeConstant, matchWiseBlockType } = require('../config/contants')
 
 const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[#$@!%&*?])[A-Za-z\d#$@!%&*?]{6,30}$/;
 
@@ -28,7 +28,8 @@ module.exports.CreateUser = Joi.object({
   }),
   delayTime: Joi.string().allow(""),
   sessionCommission: Joi.number(),
-  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
+
   matchCommission: Joi.number(),
 });
 
@@ -81,7 +82,7 @@ module.exports.updateUserValid = Joi.object({
     'string.empty': '"Transaction Password" can not be empty.'
   }),
   sessionCommission: Joi.number(),
-  matchComissionType: Joi.number().valid(...Object.values(matchComissionTypeConstant)),
+  matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
   matchCommission: Joi.number(),
 });
 

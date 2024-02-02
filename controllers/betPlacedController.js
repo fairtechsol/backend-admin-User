@@ -20,7 +20,7 @@ exports.getBet = async (req, res) => {
     let where = {};
     let result;
     let select = [
-      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt"
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason"
     ];
 
     if (query.status && query.status == "MATCHED") {
@@ -989,7 +989,6 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       currentBalance: userRedisData?.currentBalance,
       exposure: redisObject?.exposure,
       sessionExposure: redisObject[redisSesionExposureName],
-      totalComission: userRedisData?.totalComission,
       profitLoss: oldProfitLoss,
       bets: bets,
       deleteReason: deleteReason,
