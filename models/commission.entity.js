@@ -16,7 +16,7 @@ const commissionSchema = new EntitySchema({
     },
     betPlaceId: {
       type: 'uuid',
-      nullable: false,
+      nullable: true,
     },
     commissionAmount: {
       type: 'decimal',
