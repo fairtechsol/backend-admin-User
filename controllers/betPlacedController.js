@@ -135,6 +135,14 @@ exports.matchBettingBetPlaced = async (req, res) => {
       })
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
+    let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
+    if (getMatchLockData && getMatchLockData.matchLock) {
+      logger.info({
+        info: `user is blocked for the match ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
+        data: req.body
+      })
+      return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
+    }
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
     if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType)) {
@@ -383,6 +391,14 @@ exports.sessionBetPlace = async (req, res, next) => {
         res
       );
     }
+    let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, sessionLock: true });
+    if (getMatchLockData && getMatchLockData.sessionLock) {
+      logger.info({
+        info: `user is blocked for the session ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
+        data: req.body
+      })
+      return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
+    }
 
     let sessionDetails;
 
@@ -587,7 +603,6 @@ exports.sessionBetPlace = async (req, res, next) => {
     return ErrorResponse(error, req, res);
   }
 };
-
 
 const validateSessionBet = async (apiBetData, betDetails) => {
   if (apiBetData?.stopAt) {
@@ -1387,7 +1402,6 @@ exports.profitLoss = async (req, res) => {
     return ErrorResponse(error, req, res)
   }
 }
-
 
 exports.getMyMarket = async (req, res) => {
   try {

@@ -851,7 +851,7 @@
         }
       }
     },
-    "/user/tempCont": {
+    "/user/checkChildDeactivate": {
       "get": {
         "description": "",
         "parameters": [
@@ -865,6 +865,13 @@
           {
             "name": "authorization",
             "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "matchId",
+            "in": "query",
             "schema": {
               "type": "string"
             }
