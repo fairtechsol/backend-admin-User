@@ -1,5 +1,4 @@
-const { DataSource, getConnection, DefaultNamingStrategy } = require("typeorm");
-const TypeORM = require("typeorm");
+const { DataSource, DefaultNamingStrategy } = require("typeorm");
 require("dotenv").config();
 require("reflect-metadata");
 

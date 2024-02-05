@@ -77,7 +77,9 @@ exports.createUser = async (req, res) => {
       minBetLimit: minBetLimit,
       sessionCommission,
       matchComissionType,
-      matchCommission
+      matchCommission,
+      superParentType: creator.superParentType,
+      superParentId: creator.superParentId
     }
     let partnerships = await calculatePartnership(userData, creator)
     userData = { ...userData, ...partnerships };
@@ -683,11 +685,11 @@ exports.userList = async (req, res, next) => {
           element['balance'] = element.userBal['currentBalance'];
         }
         element['percentProfitLoss'] = element.userBal['myProfitLoss'];
-        element['totalComission'] = element['totalComission']
+        element['commission'] = element.userBal['totalCommission']
         if (partnershipCol && partnershipCol.length) {
           let partnerShips = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
           element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partnerShips).toFixed(2);
-          element['totalComission'] = ((element['totalComission'] / 100) * partnerShips).toFixed(2) + '(' + partnerShips + '%)';
+          element['commission'] = (element.userBal['totalCommission']).toFixed(2) + '(' + partnerShips + '%)';
         }
         return element;
       })
@@ -701,7 +703,7 @@ exports.userList = async (req, res, next) => {
         { excelHeader: "Balance", dbKey: "balance" },
         { excelHeader: "Client P/L", dbKey: "profit_loss" },
         { excelHeader: "% P/L", dbKey: "percentProfitLoss" },
-        { excelHeader: "Comission", dbKey: "TotalComission" },
+        { excelHeader: "Comission", dbKey: "commission" },
         { excelHeader: "Exposure", dbKey: "exposure" },
         { excelHeader: "Available Balance", dbKey: "availableBalance" },
         { excelHeader: "UL", dbKey: "userBlock" },

@@ -81,7 +81,6 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
       currentBalance: userRedisData?.currentBalance,
       exposure: userRedisData?.exposure,
       myProfitLoss: userRedisData?.myProfitLoss,
-      totalComission: userRedisData?.totalComission,
       profitLoss: userRedisData?.profitLoss,
       profitLossData: userRedisData?.[`${jobData?.placedBet?.betId}_profitLoss`],
       betPlaced: jobData

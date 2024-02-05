@@ -46,13 +46,13 @@ const userSchema = new EntitySchema({
       nullable: false,
       default: false,
     },
-    userBlockedBy:{
-      type:"uuid",
-      nullable:true
+    userBlockedBy: {
+      type: "uuid",
+      nullable: true
     },
-    betBlockedBy:{
-      type:"uuid",
-      nullable:true
+    betBlockedBy: {
+      type: "uuid",
+      nullable: true
     },
     fwPartnership: {
       type: 'int',
@@ -146,23 +146,24 @@ const userSchema = new EntitySchema({
       default: 0,
       transformer: new ColumnNumericTransformer()
     },
-    totalComission: {
-      type: 'decimal',
-      nullable: false,
-      precision: 13,
-      scale: 2,
-      default: 0,
-      transformer: new ColumnNumericTransformer()
+    superParentId: {
+      type: "uuid",
+      nullable: true
+    },
+    superParentType:{
+      type: 'enum',
+      enum: [userRoleConstant.fairGameAdmin, userRoleConstant.fairGameWallet],
+      nullable: true
     },
     delayTime: {
       type: 'int',
       nullable: false,
       default: 5
     },
-    loginAt : {
+    loginAt: {
       type: 'timestamp with time zone',
       nullable: true,
-      default : null
+      default: null
     }
   },
   orderBy: {

@@ -1127,18 +1127,6 @@
                   },
                   "domain": {
                     "example": "any"
-                  },
-                  "isOldFairGame": {
-                    "example": "any"
-                  },
-                  "sessionCommission": {
-                    "example": "any"
-                  },
-                  "matchComissionType": {
-                    "example": "any"
-                  },
-                  "matchCommission": {
-                    "example": "any"
                   }
                 }
               }
