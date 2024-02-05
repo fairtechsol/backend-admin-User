@@ -43,7 +43,8 @@
     "userList": "User List Get Success.",
     "ExposureLimitExceed" : "User exposure is greater than exposure limit.",
     "credit/refrence" : "Credit refrence fetch successfully.",
-    "balance":"User balance fetch successfully."
+    "balance":"User balance fetch successfully.",
+    "matchLock": "You are block for this match action. Please contact your administrator."
   },
   "button" : {
     "InvalidUser" : "User is invalid."

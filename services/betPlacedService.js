@@ -13,6 +13,7 @@ exports.getBetById = async (id, select) => {
     select: select,
   });
 }
+
 exports.getBetByUserId = async (id, select) => {
   return await BetPlaced.find({
     where: { createBy: id },
@@ -53,8 +54,6 @@ exports.getBet = async (where, query,roleName, select) => {
     .getResult();
 }
 
-
-
 exports.getMatchBetPlaceWithUser = async (betId,select) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
   .where({ betId: In(betId), result: betResultStatus.PENDING, deleteReason: IsNull() })
@@ -64,8 +63,6 @@ exports.getMatchBetPlaceWithUser = async (betId,select) => {
   .getMany()
   return betPlaced;
 };
-
-
 
 exports.getMultipleAccountProfitLoss = async (betId, userId) => {
   let betPlaced = await BetPlaced.query(`SELECT Sum(CASE result WHEN '${betResultStatus.WIN}' then "winAmount" ELSE 0 END) AS winAmount, Sum(CASE result WHEN '${betResultStatus.LOSS}' then "lossAmount" ELSE 0 END) AS lossAmount from "betPlaceds" where "betId" ='${betId}' AND "userId"='${userId}' AND "deleteReason" IS NULL`)
@@ -120,7 +117,6 @@ exports.findAllPlacedBetWithUserIdAndBetId = async (userId, betId) => {
 exports.updatePlaceBet = async (conditionObj, updateColumsObj) => {
   return await BetPlaced.update(conditionObj, updateColumsObj);
 }
-
 
 exports.getDistinctUserBetPlaced= async (betId)=>{
   let betPlaced = await BetPlaced.createQueryBuilder()
