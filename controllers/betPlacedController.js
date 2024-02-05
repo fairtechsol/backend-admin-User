@@ -391,10 +391,10 @@ exports.sessionBetPlace = async (req, res, next) => {
         res
       );
     }
-    let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, sessionLock: true });
+    let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: id, sessionLock: true });
     if (getMatchLockData && getMatchLockData.sessionLock) {
       logger.info({
-        info: `user is blocked for the session ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
+        info: `user is blocked for the session ${id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
       })
       return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
