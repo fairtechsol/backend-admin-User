@@ -83,7 +83,8 @@ exports.createSuperAdmin = async (req, res) => {
       matchComissionType,
       matchCommission,
       superParentType,
-      superParentId
+      superParentId,
+      remark
     } = req.body;
 
     const isUserPresent = await getUserByUserName(userName, ["id"]);
@@ -164,6 +165,7 @@ exports.createSuperAdmin = async (req, res) => {
       createBy: id,
       superParentType,
       superParentId,
+      remark,
       ...(isOldFairGame ? {
         sessionCommission,
         matchComissionType,
@@ -2353,15 +2355,15 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
     let redisData = await calculateProfitLossForMatchToResult(betId, user.user?.id, matchData);
 
-    let teamARate = redisData?.teamARate ?? Number.MAX_VALUE;
-    let teamBRate = redisData?.teamBRate ?? Number.MAX_VALUE;
-    let teamCRate = redisData?.teamCRate ?? Number.MAX_VALUE;
+    let teamARate = parseFloat(parseFloat(redisData?.teamARate||0).toFixed(2)) ?? Number.MAX_VALUE;
+    let teamBRate = parseFloat(parseFloat(redisData?.teamBRate||0).toFixed(2)) ?? Number.MAX_VALUE;
+    let teamCRate = parseFloat(parseFloat(redisData?.teamCRate||0).toFixed(2)) ?? Number.MAX_VALUE;
 
-    let teamNoRateTie = redisData?.teamNoRateTie ?? Number.MAX_VALUE;
-    let teamYesRateTie = redisData?.teamYesRateTie ?? Number.MAX_VALUE;
+    let teamNoRateTie = parseFloat(parseFloat(redisData?.teamNoRateTie||0).toFixed(2)) ?? Number.MAX_VALUE;
+    let teamYesRateTie = parseFloat(parseFloat(redisData?.teamYesRateTie||0).toFixed(2)) ?? Number.MAX_VALUE;
 
-    let teamNoRateComplete = redisData?.teamNoRateComplete ?? Number.MAX_VALUE;
-    let teamYesRateComplete = redisData?.teamYesRateComplete ?? Number.MAX_VALUE;
+    let teamNoRateComplete = parseFloat(parseFloat(redisData?.teamNoRateComplete||0).toFixed(2)) ?? Number.MAX_VALUE;
+    let teamYesRateComplete = parseFloat(parseFloat(redisData?.teamYesRateComplete||0).toFixed(2)) ?? Number.MAX_VALUE;
 
     maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
 

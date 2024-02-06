@@ -39,7 +39,7 @@ exports.isUserExist = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission } = req.body;
+    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, remark, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission } = req.body;
     let reqUser = req.user || {};
     let creator = await getUserById(reqUser.id || createdBy);
     if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
@@ -81,7 +81,8 @@ exports.createUser = async (req, res) => {
       matchComissionType,
       matchCommission,
       superParentType: creator.superParentType,
-      superParentId: creator.superParentId
+      superParentId: creator.superParentId,
+      remark: remark
     }
     let partnerships = await calculatePartnership(userData, creator)
     userData = { ...userData, ...partnerships };
@@ -143,7 +144,7 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    let { fullName, phoneNumber, city, id, sessionCommission, matchComissionType, matchCommission } = req.body;
+    let { fullName, phoneNumber, city, id, remark, sessionCommission, matchComissionType, matchCommission } = req.body;
     let reqUser = req.user || {}
     let updateUser = await getUser({ id, createBy: reqUser.id }, ["id", "createBy", "fullName", "phoneNumber", "city", "sessionCommission", "matchComissionType", "matchCommission"]);
     if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
@@ -154,6 +155,7 @@ exports.updateUser = async (req, res) => {
     updateUser.sessionCommission = sessionCommission || updateUser.sessionCommission;
     updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
     updateUser.matchCommission = matchCommission || updateUser.matchCommission;
+    updateUser.remark= remark || updateUser.remark;
     updateUser = await addUser(updateUser);
 
     let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city", "sessionCommission", "matchComissionType", "matchCommission"])
@@ -549,9 +551,7 @@ exports.setExposureLimit = async (req, res, next) => {
     let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "exposureLimit", "roleName"]);
     if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
 
-    if (loginUser.exposureLimit < amount) {
-      return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
-    }
+    
     amount = parseInt(amount);
     user.exposureLimit = amount
     let childUsers = await getChildUser(user.id)
