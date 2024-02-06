@@ -569,7 +569,7 @@ exports.changePasswordSuperAdmin = async (req, res, next) => {
 exports.declareSessionResult = async (req, res) => {
   try {
 
-    const { betId, score, matchId, sessionDetails, userId } = req.body;
+    const { betId, score, matchId, sessionDetails, userId, match } = req.body;
 
     const betPlaced = await getMatchBetPlaceWithUser([betId])
 
@@ -639,7 +639,8 @@ exports.declareSessionResult = async (req, res) => {
       score,
       commissions,
       bulkCommission,
-      commissionReport
+      commissionReport,
+      match
     );
 
     insertTransactions(bulkWalletRecord);
@@ -669,7 +670,7 @@ exports.declareSessionResult = async (req, res) => {
       parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
       parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
       parentUser.exposure = parentExposure - value["exposure"];
-      parentUser.totalCommission = (parentUser.totalCommission||0) + (value["totalCommission"]||0);
+      parentUser.totalCommission = (parentUser.totalCommission || 0) + (value["totalCommission"] || 0);
       if (parentExposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
@@ -747,7 +748,7 @@ exports.declareSessionResult = async (req, res) => {
   }
 }
 
-const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, score, commission, bulkCommission, commissionReport) => {
+const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, score, commission, bulkCommission, commissionReport, match) => {
 
   let faAdminCal = {
     commission: [],
@@ -827,7 +828,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
 
 
     if (commission[user.user.id]) {
-      userBalanceData.totalCommission = Number(((parseFloat(user.user.userBalance.totalCommission) +parseFloat( commission[user.user.id]))).toFixed(2));
+      userBalanceData.totalCommission = Number(((parseFloat(user.user.userBalance.totalCommission) + parseFloat(commission[user.user.id]))).toFixed(2));
     }
 
     await updateUserBalanceByUserId(user.user.id, userBalanceData);
@@ -867,7 +868,9 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
             betType: item?.betType,
             stake: item?.stake,
             commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(user?.user?.sessionCommission) / 100).toFixed(2)),
-            partnerShip: 100
+            partnerShip: 100,
+            matchName: match?.title,
+            matchStartDate: match?.startAt
           });
         });
       }
@@ -966,7 +969,9 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
               betType: item?.betType,
               stake: item?.stake,
               commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(patentUser?.sessionCommission) / 100).toFixed(2)),
-              partnerShip: upLinePartnership
+              partnerShip: upLinePartnership,
+              matchName: match?.title,
+              matchStartDate: match?.startAt
             });
           });
         }
@@ -975,8 +980,8 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
     faAdminCal.userData[user.user.superParentId] = {
       profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
       exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: +(profitLoss) + parseFloat(parseFloat((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? (parseFloat(user.user.fwPartnership)/ 100) : 1) ).toFixed(2)),
-      totalCommission: parseFloat((parseFloat(getLossAmount + getWinAmount) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership)/ 100 : 1) ).toFixed(2)) + (faAdminCal.userData?.[user.user.superParentId]?.totalCommission || 0),
+      myProfitLoss: +(profitLoss) + parseFloat(parseFloat((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? (parseFloat(user.user.fwPartnership) / 100) : 1)).toFixed(2)),
+      totalCommission: parseFloat((parseFloat(getLossAmount + getWinAmount) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) / 100 : 1)).toFixed(2)) + (faAdminCal.userData?.[user.user.superParentId]?.totalCommission || 0),
       role: user.user.superParentType
     }
 
@@ -1570,7 +1575,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
     }
     if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
       if (!faAdminCal.userDate[user.user.superParentId]) {
-        faAdminCal.userDate[user.user.superParentId]={};
+        faAdminCal.userDate[user.user.superParentId] = {};
         const betPlaceProfitLoss = await calculatePLAllBet(
           betPlace,
           -user?.user[`faPartnership`]
@@ -1900,7 +1905,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
 
     }
-    
+
 
     user.user.userBalance.exposure = user.user.userBalance.exposure - maxLoss;
 
@@ -1993,7 +1998,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
               betType: item?.betType,
               stake: item?.stake,
               commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
-              partnerShip: 100
+              partnerShip: 100,
+              matchName: matchData?.title,
+              matchStartDate: matchData?.startAt
             });
           });
         }
@@ -2004,7 +2011,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             betId: currBetId,
             parentId: user.user.id,
             commissionAmount: parseFloat((parseFloat(Math.abs(profitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
-            partnerShip: 100
+            partnerShip: 100,
+            matchName: matchData?.title,
+            matchStartDate: matchData?.startAt
           });
         }
       }
@@ -2139,7 +2148,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
                 betType: item?.betType,
                 stake: item?.stake,
                 commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-                partnerShip: 100
+                partnerShip: 100,
+                matchName: matchData?.title,
+                matchStartDate: matchData?.startAt
               });
             });
           }
@@ -2150,7 +2161,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
               betId: currBetId,
               parentId: patentUser.id,
               commissionAmount: parseFloat((parseFloat(Math.abs(profitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
-              partnerShip: 100
+              partnerShip: 100,
+              matchName: matchData?.title,
+              matchStartDate: matchData?.startAt
             });
           }
         }
@@ -2172,7 +2185,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 exports.unDeclareMatchResult = async (req, res) => {
   try {
 
-    const { matchId, match, matchBetting, userId,matchOddId } = req.body;
+    const { matchId, match, matchBetting, userId, matchOddId } = req.body;
 
     const betIds = matchBetting?.map((item) => item?.id);
     let users = await getDistinctUserBetPlaced(In(betIds));
