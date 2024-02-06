@@ -12,6 +12,7 @@ module.exports.CreateUser = Joi.object({
   }),
   phoneNumber: Joi.string().allow(""),
   city: Joi.string().max(255).allow(""),
+  remark:Joi.string().trim().allow(""),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)).required(),
   myPartnership: Joi.number().required(),
   creditRefrence: Joi.number(),
@@ -29,7 +30,6 @@ module.exports.CreateUser = Joi.object({
   delayTime: Joi.string().allow(""),
   sessionCommission: Joi.number(),
   matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
-
   matchCommission: Joi.number(),
 });
 
@@ -74,6 +74,7 @@ module.exports.updateUserValid = Joi.object({
   //sessionCommission,matchComissionType,matchCommission,id,createBy
   fullName: Joi.string().allow(""),
   city: Joi.string().allow(""),
+  remark:Joi.string().trim().allow(""),
   phoneNumber: Joi.string().allow(""),
   id: Joi.string().guid({ version: 'uuidv4' }).required(),
   transactionPassword: Joi.string().required().messages({

@@ -31,6 +31,10 @@ const userSchema = new EntitySchema({
       type: 'varchar',
       nullable: true
     },
+    remark: {
+      type: 'varchar',
+      nullable: true
+    },
     roleName: {
       type: 'enum',
       enum: Object.values(userRoleConstant),

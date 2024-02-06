@@ -280,16 +280,16 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
             await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
 
             let teamRates = {
-              teamA: parseFloat(masterRedisData[jobData.teamArateRedisKey]) || 0.0,
-              teamB: parseFloat(masterRedisData[jobData.teamBrateRedisKey]) || 0.0,
-              teamC: jobData.teamCrateRedisKey ? parseFloat(masterRedisData[jobData.teamCrateRedisKey]) || 0.0 : 0.0
+              teamA: parseFloat((parseFloat(masterRedisData[jobData.teamArateRedisKey]) || 0.0).toFixed(2)),
+              teamB: parseFloat((parseFloat(masterRedisData[jobData.teamBrateRedisKey]) || 0.0).toFixed(2)),
+              teamC: jobData.teamCrateRedisKey ? parseFloat((parseFloat(masterRedisData[jobData.teamCrateRedisKey]) || 0.0).toFixed(2)) : 0.0
             }
             let teamData = await calculateExpertRate(teamRates, obj, partnership);
             let userRedisObj = {
               [redisKeys.userAllExposure]: partnerExposure,
-              [jobData.teamArateRedisKey]: teamData.teamA,
-              [jobData.teamBrateRedisKey]: teamData.teamB,
-              ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {})
+              [jobData.teamArateRedisKey]: parseFloat((teamData.teamA).toFixed(2)),
+              [jobData.teamBrateRedisKey]: parseFloat(parseFloat(teamData.teamB).toFixed(2)),
+              ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: parseFloat(parseFloat(teamData.teamC).toFixed(2)) } : {})
             }
             await updateUserDataRedis(partnershipId, userRedisObj);
             jobData.myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
