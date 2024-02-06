@@ -612,7 +612,8 @@ exports.declareSessionResult = async (req, res) => {
         odds: item?.odds,
         betType: item?.betType,
         stake: item?.amount,
-        superParent: item?.user?.superParentId
+        superParent: item?.user?.superParentId,
+        userName: item?.user.userName
       }
       ];
 
@@ -870,7 +871,8 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
             commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(user?.user?.sessionCommission) / 100).toFixed(2)),
             partnerShip: 100,
             matchName: match?.title,
-            matchStartDate: match?.startAt
+            matchStartDate: match?.startAt,
+            userName: user.user.userName
           });
         });
       }
@@ -971,7 +973,8 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
               commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(patentUser?.sessionCommission) / 100).toFixed(2)),
               partnerShip: upLinePartnership,
               matchName: match?.title,
-              matchStartDate: match?.startAt
+              matchStartDate: match?.startAt,
+              userName: user.user.userName
             });
           });
         }
@@ -2000,7 +2003,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
               commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
               partnerShip: 100,
               matchName: matchData?.title,
-              matchStartDate: matchData?.startAt
+              matchStartDate: matchData?.startAt,
+              userName: user.user.userName
+
             });
           });
         }
@@ -2013,7 +2018,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             commissionAmount: parseFloat((parseFloat(Math.abs(profitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
             partnerShip: 100,
             matchName: matchData?.title,
-            matchStartDate: matchData?.startAt
+            matchStartDate: matchData?.startAt,
+            userName: user.user.userName
+
           });
         }
       }
@@ -2150,7 +2157,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
                 commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
                 partnerShip: 100,
                 matchName: matchData?.title,
-                matchStartDate: matchData?.startAt
+                matchStartDate: matchData?.startAt,
+                userName: user.user.userName
+
               });
             });
           }
@@ -2163,7 +2172,9 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
               commissionAmount: parseFloat((parseFloat(Math.abs(profitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
               partnerShip: 100,
               matchName: matchData?.title,
-              matchStartDate: matchData?.startAt
+              matchStartDate: matchData?.startAt,
+              userName: user.user.userName
+
             });
           }
         }

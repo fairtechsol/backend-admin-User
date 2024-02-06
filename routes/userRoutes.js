@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
 const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate } = require('../validators/userValidator');
-const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate } = require('../controllers/userController');
+const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced } = require('../controllers/userController');
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 
 router.post('/add', isAuthenticate, checkTransactionPassword, validator(CreateUser), createUser);
@@ -24,6 +24,8 @@ router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), 
 router.get("/getMatchLockAllChild", isAuthenticate, getMatchLockAllChild);
 router.get("/getUserDetailsForParent", isAuthenticate, getUserDetailsForParent);
 router.get("/checkChildDeactivate", isAuthenticate, checkChildDeactivate);
+router.get("/commissionMatch/:userId", isAuthenticate, getCommissionReportsMatch);
+router.get("/commissionBetPlaced/:userId", isAuthenticate, getCommissionBetPlaced);
 
 module.exports = router;
 //https://3100dev.fairgame.club/fair-game-wallet/getUserBalanceDetails

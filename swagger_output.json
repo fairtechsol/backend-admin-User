@@ -884,6 +884,40 @@
         }
       }
     },
+    "/user/commissionMatch/{userId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/button/": {
       "get": {
         "description": "",
@@ -1427,6 +1461,9 @@
                   },
                   "userId": {
                     "example": "any"
+                  },
+                  "match": {
+                    "example": "any"
                   }
                 }
               }
@@ -1594,6 +1631,9 @@
                     "example": "any"
                   },
                   "userId": {
+                    "example": "any"
+                  },
+                  "matchOddId": {
                     "example": "any"
                   }
                 }
@@ -1806,6 +1846,33 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/fairgameWallet/commissionMatch/{userId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }
