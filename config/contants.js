@@ -1,6 +1,8 @@
 module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
 module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
+module.exports.oldBetFairDomain = process.env.OLD_BETFAIR_DOMAIN_URL || 'http://localhost:5001';
+
 
 module.exports.resultType = {
   tie: "Tie",
