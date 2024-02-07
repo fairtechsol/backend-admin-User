@@ -234,9 +234,9 @@ exports.matchBettingBetPlaced = async (req, res) => {
 
 
     let teamRates = {
-      teamA: Number(userRedisData[teamArateRedisKey]) || 0.0,
-      teamB: Number(userRedisData[teamBrateRedisKey]) || 0.0,
-      teamC: teamCrateRedisKey ? Number(userRedisData[teamCrateRedisKey]) || 0.0 : 0.0
+      teamA: parseFloat((Number(userRedisData[teamArateRedisKey]) || 0.0).toFixed(2)),
+      teamB:  parseFloat((Number(userRedisData[teamBrateRedisKey]) || 0.0).toFixed(2)),
+      teamC: teamCrateRedisKey ?  parseFloat((Number(userRedisData[teamCrateRedisKey]) || 0.0).toFixed(2)) : 0.0
     };
 
     let userPreviousExposure = parseFloat(userRedisData[redisKeys.userAllExposure]) || 0.0;

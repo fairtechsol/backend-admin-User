@@ -9,6 +9,7 @@ module.exports.CreateSuperAdmin = Joi.object({
   betBlock: Joi.boolean(),
   userBlock: Joi.boolean(),
   city: Joi.string().trim().allow("").max(255),
+  remark:Joi.string().trim().allow(""),
   roleName: Joi.string().valid(...Object.values(userRoleConstant)),
   fwPartnership: Joi.number(),
   faPartnership: Joi.number(),
@@ -44,7 +45,8 @@ module.exports.UpdateSuperAdmin = Joi.object({
     phoneNumber: Joi.string().trim().allow(""),
     fullName: Joi.string().trim().allow(""),
 
-    sessionCommission: Joi.number(),
+  remark:Joi.string().trim().allow(""),
+  sessionCommission: Joi.number(),
      matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
 
     matchCommission: Joi.number(),

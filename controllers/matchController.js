@@ -1,5 +1,8 @@
-const { expertDomain, redisKeys } = require("../config/contants");
+const { In } = require("typeorm");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain } = require("../config/contants");
+const { findAllPlacedBet } = require("../services/betPlacedService");
 const { getUserRedisKeys } = require("../services/redis/commonfunction");
+const { getChildsWithOnlyUserRole } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 
@@ -86,6 +89,7 @@ exports.matchDetails = async (req, res) => {
 
 exports.listMatch = async (req, res) => {
   try {
+    let user=req.user;
     let domain = expertDomain;
     let apiResponse = {};
     try {
@@ -98,6 +102,27 @@ exports.listMatch = async (req, res) => {
       );
     } catch (error) {
       throw error?.response?.data;
+    }
+
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
+
+
+    if (user.roleName != userRoleConstant.user && oldBetFairDomain == domainUrl) {
+      const users = await getChildsWithOnlyUserRole(user.id);
+
+      const betPlaced = await findAllPlacedBet({ createBy: In(users?.map((item) => item.id)) });
+
+      for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
+        let matchDetail = apiResponse.data?.matches[i];
+        apiResponse.data.matches[i].totalBet = betPlaced?.length;
+
+        const redisIds = [`${redisKeys.userTeamARate}${matchDetail?.id}`, `${redisKeys.userTeamBRate}${matchDetail?.id}`];
+
+        let redisData = await getUserRedisKeys(user.id, redisIds);
+
+        apiResponse.data.matches[i].teamARate = redisData?.[0];
+        apiResponse.data.matches[i].teamBRate = redisData?.[1];
+      }
     }
     return SuccessResponse(
       {
