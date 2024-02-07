@@ -84,12 +84,14 @@ exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
     'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes2) THEN "lossAmount" ELSE 0 END) AS "lossAmountTied"',
     'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes3) THEN "winAmount" ELSE 0 END) AS "winAmountComplete"',
     'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes3) THEN "lossAmount" ELSE 0 END) AS "lossAmountComplete"',
+    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes4) THEN "winAmount" ELSE 0 END) AS "winAmountMatchOdd"',
   ])
   .setParameter('winStatus', betResultStatus.WIN)
   .setParameter('lossStatus', betResultStatus.LOSS)
   .setParameter('matchTypes1', matchTypes[0])
   .setParameter('matchTypes2', matchTypes[1])
   .setParameter('matchTypes3', matchTypes[2])
+  .setParameter('matchTypes4', [matchBettingType.matchOdd])
   .andWhere('"betId" IN (:...betIds)', { betIds: betId })
   .andWhere('"userId" = :userId', { userId: userId })
   .andWhere('"deleteReason" IS NULL')
@@ -303,5 +305,15 @@ exports.getPlacedBetTotalLossAmount = (where) => {
   .where(where)
   .groupBy('placeBet.betId')
   .addGroupBy('placeBet.eventName')
+  .getRawMany();
+}
+
+exports.getBetsWithMatchId=(where)=>{
+
+  return BetPlaced.createQueryBuilder()
+  .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id'+where??"")
+  .where({ deleteReason: IsNull(), result: In([betResultStatus.PENDING, betResultStatus.UNDECLARE]), user: Not(IsNull()) })
+  .groupBy("betPlaced.matchId")
+  .select(['betPlaced.matchId as "matchId"', "COUNT(betPlaced.matchId) as count"])
   .getRawMany();
 }

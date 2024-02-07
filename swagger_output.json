@@ -157,6 +157,9 @@
                   "creditRefrence": {
                     "example": "any"
                   },
+                  "remark": {
+                    "example": "any"
+                  },
                   "exposureLimit": {
                     "example": "any"
                   },
@@ -291,6 +294,9 @@
                     "example": "any"
                   },
                   "id": {
+                    "example": "any"
+                  },
+                  "remark": {
                     "example": "any"
                   },
                   "sessionCommission": {
@@ -918,6 +924,47 @@
         }
       }
     },
+    "/user/commissionBetPlaced/{userId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "matchId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/button/": {
       "get": {
         "description": "",
@@ -1178,6 +1225,9 @@
                     "example": "any"
                   },
                   "superParentId": {
+                    "example": "any"
+                  },
+                  "remark": {
                     "example": "any"
                   }
                 }
@@ -1722,6 +1772,9 @@
                   },
                   "matchId": {
                     "example": "any"
+                  },
+                  "searchId": {
+                    "example": "any"
                   }
                 }
               }
@@ -1865,6 +1918,66 @@
           {
             "name": "x-forwarded-for",
             "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/fairgameWallet/commissionBetPlaced/{userId}": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "matchId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/fairgameWallet/betCounts": {
+      "get": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "x-forwarded-for",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "parentId",
+            "in": "query",
             "schema": {
               "type": "string"
             }

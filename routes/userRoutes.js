@@ -4,6 +4,7 @@ const validator = require('../middleware/joi.validator')
 const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate } = require('../validators/userValidator');
 const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced } = require('../controllers/userController');
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
+const { totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss } = require('../controllers/fairgameWalletController');
 
 router.post('/add', isAuthenticate, checkTransactionPassword, validator(CreateUser), createUser);
 router.get('/profile', isAuthenticate, getProfile);
@@ -24,6 +25,12 @@ router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), 
 router.get("/getMatchLockAllChild", isAuthenticate, getMatchLockAllChild);
 router.get("/getUserDetailsForParent", isAuthenticate, getUserDetailsForParent);
 router.get("/checkChildDeactivate", isAuthenticate, checkChildDeactivate);
+
+router.post("/total/profitLoss", isAuthenticate, totalProfitLossWallet);
+router.post("/total/matchWise/profitLoss", isAuthenticate, totalProfitLossByMatch);
+router.post("/total/bet/profitLoss", isAuthenticate, getResultBetProfitLoss);
+router.post("/total/session/profitLoss", isAuthenticate, getSessionBetProfitLoss);
+
 router.get("/commissionMatch/:userId", isAuthenticate, getCommissionReportsMatch);
 router.get("/commissionBetPlaced/:userId", isAuthenticate, getCommissionBetPlaced);
 
