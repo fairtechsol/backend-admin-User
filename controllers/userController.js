@@ -1200,8 +1200,11 @@ exports.getMatchLockAllChild = async (req, res) => {
 
 exports.userMatchLock = async (req, res) => {
   try {
-    let { userId, matchId, type, block, operationToAll } = req.body;
+    let { userId, matchId, type, block, operationToAll, isFromWallet = false } = req.body;
     let reqUser = req.user;
+    if(isFromWallet){
+      reqUser.id = userId;
+    }
     if (operationToAll) {
       userId = reqUser.id;
     }
@@ -1210,11 +1213,16 @@ exports.userMatchLock = async (req, res) => {
     if (!operationToAll) {
       allChildUserIds.push(userId);
     }
+    if(isFromWallet){
+      if(allChildUserIds.includes(userId)){
+        allChildUserIds.push(userId);
+      }
+    }
 
     let returnData;
     for (let i = 0; i < allChildUserIds.length; i++) {
       let blockUserId = allChildUserIds[i];
-      returnData = await userBlockUnlockMatch(blockUserId, matchId, reqUser, block, type);
+      returnData = await userBlockUnlockMatch(blockUserId, matchId, reqUser, block, type, isFromWallet);
     }
     let allChildMatchDeactive = true;
     let allChildSessionDeactive = true;
@@ -1235,14 +1243,14 @@ exports.userMatchLock = async (req, res) => {
 
     return SuccessResponse({
       statusCode: 200,
-      message: { msg: "updated", keys: { name: "User unlock" } },
+      message: { msg: "updated", keys: { name: "User" } },
       data: { returnData, allChildMatchDeactive, allChildSessionDeactive },
     }, req, res);
   } catch (error) {
     return ErrorResponse(error, req, res);
   }
 
-  async function userBlockUnlockMatch(userId, matchId, reqUser, block, type) {
+  async function userBlockUnlockMatch(userId, matchId, reqUser, block, type, isFromWallet) {
     let userAlreadyBlockExit = await getUserMatchLock({ userId, matchId, blockBy: reqUser.id });
     if (!userAlreadyBlockExit && !block) {
       throw { msg: "notUnblockFirst" };
