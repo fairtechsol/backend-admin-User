@@ -41,6 +41,7 @@ module.exports.redisTimeOut = 24 * 60 * 60;
 module.exports.matchComissionTypeConstant = {
   totalLoss: "totalLoss",
   entryWise: "entryWise",
+  settled: "settled"
 };
 
 module.exports.baseColumnsSchemaPart = {

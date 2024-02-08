@@ -322,3 +322,17 @@ exports.isAllChildDeactive = (where, select, matchId) => {
     throw error;
   }
 }
+
+
+exports.getUserDataWithUserBalance = async (where) => {
+  return await user
+  .createQueryBuilder()
+  .where(where)
+  .leftJoinAndMapOne(
+    "user.userBal",
+    "userBalances",
+    "UB",
+    "user.id = UB.userId"
+  )
+  .getOne();
+}

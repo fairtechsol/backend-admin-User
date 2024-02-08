@@ -33,6 +33,10 @@ const commissionSchema = new EntitySchema({
     parentId:{
       type: 'uuid',
       nullable: false,
+    },
+    settled:{
+      type:Boolean,
+      default:false
     }
   }
 });

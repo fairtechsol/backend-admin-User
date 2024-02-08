@@ -13,6 +13,7 @@
   "required" : "{name} is required.",
   "NoData" : "No data selected.",
   "notUnblockFirst" : "Can not unblock before block any user",
+  "settledCommission" : "Commission settled successfully.",
   "auth": {
     "loginSuccess": "Login successfully.",
     "invalidPass": "Invalid {type} password.",
@@ -52,7 +53,8 @@
   "userBalance" : {
     "insufficientBalance" : "Balance is insufficient to take this action.",
     "BalanceAddedSuccessfully" : "Balance Updated successfully.",
-    "InvalidTransactionType" : "Invalid transaction type."
+    "InvalidTransactionType" : "Invalid transaction type.",
+    "commissionAlreadySettled":"Commission is already settled."
   },
   "bet":{
     "notLive": "Bet Is currently not live.",

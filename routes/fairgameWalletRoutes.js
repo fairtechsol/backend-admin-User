@@ -4,6 +4,8 @@ const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposure
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword } = require("../validators/fairgameWalletValidator");
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock } = require("../controllers/userController");
+const { settleCommission } = require("../services/commissionService");
+const { settleCommissions } = require("../controllers/userBalanceController");
 
 router.post("/add/user", validator(CreateSuperAdmin), createSuperAdmin);
 router.post("/update/user", validator(UpdateSuperAdmin), updateSuperAdmin);
@@ -28,5 +30,6 @@ router.get("/commissionBetPlaced/:userId", getCommissionBetPlaced);
 router.get("/betCounts", getBetCount);
 router.get("/user/list", userList);
 router.post("/userMatchLock", userMatchLock);
+router.post("/settle/commission", validator(settleCommission), settleCommissions);
 
 module.exports = router;
