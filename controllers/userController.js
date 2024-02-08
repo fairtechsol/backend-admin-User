@@ -593,8 +593,8 @@ exports.userList = async (req, res, next) => {
   try {
     let reqUser = req.user;
     // let loginUser = await getUserById(reqUser.id)
-    const { type, userId, ...apiQuery } = req.query;
-    let userRole = reqUser.roleName;
+    const { type, userId, roleName, ...apiQuery } = req.query;
+    let userRole = roleName || reqUser?.roleName;
     let where = {
       createBy: userId || reqUser.id,
       roleName: Not(userRole)
@@ -797,7 +797,7 @@ exports.userList = async (req, res, next) => {
       }
     }
 
-    const totalBalance = await getUsersWithTotalUsersBalanceData(where, req.query, queryColumns);
+    const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
     totalBalance.availableBalance = parseFloat(totalBalance.availableBalance) - parseFloat(totalBalance.totalExposure);
     const adminBalance = await getUserBalanceDataByUserId(userId || reqUser.id);
     totalBalance.currBalance = parseFloat(adminBalance.downLevelBalance) + parseFloat(adminBalance.currentBalance);
@@ -812,7 +812,11 @@ exports.userList = async (req, res, next) => {
       res
     );
   } catch (error) {
-
+    logger.error({
+      message: "error at user list",
+      context: error.message,
+      stake: error.stack
+    })
     return ErrorResponse(error, req, res);
   }
 }
