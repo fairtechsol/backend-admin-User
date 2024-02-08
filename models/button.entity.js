@@ -17,7 +17,7 @@ const buttonSchema = new EntitySchema({
     },
     relations: {
         user: {
-            type: 'one-to-one',
+            type: 'one-to-many',
             target: 'user',
             joinColumn: {
                 name: 'createBy',
