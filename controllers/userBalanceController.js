@@ -134,7 +134,7 @@ exports.updateUserBalance = async (req, res) => {
     let transactionArray = [
       {
         actionBy: reqUser.id,
-        searchId: reqUser.id,
+        searchId: user.id,
         userId: user.id,
         amount: transactionType == transType.add ? amount : -amount,
         transType: transactionType,
@@ -143,7 +143,7 @@ exports.updateUserBalance = async (req, res) => {
       },
       {
         actionBy: reqUser.id,
-        searchId: user.id,
+        searchId: reqUser.id,
         userId: user.id,
         amount: transactionType == transType.add ? -amount : amount,
         transType:
