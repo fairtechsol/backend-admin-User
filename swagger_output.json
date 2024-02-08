@@ -2211,8 +2211,13 @@
         }
       }
     },
+<<<<<<< HEAD
     "/fairgameWallet/user/list": {
       "get": {
+=======
+    "/fairgameWallet/userMatchLock": {
+      "post": {
+>>>>>>> ddc2415cbaa2bbfefa362e4d7f9ac26fe9dbae9a
         "description": "",
         "parameters": [
           {
@@ -2221,6 +2226,7 @@
             "schema": {
               "type": "string"
             }
+<<<<<<< HEAD
           },
           {
             "name": "type",
@@ -2249,12 +2255,46 @@
             "schema": {
               "type": "string"
             }
+=======
+>>>>>>> ddc2415cbaa2bbfefa362e4d7f9ac26fe9dbae9a
           }
         ],
         "responses": {
           "default": {
             "description": ""
           }
+<<<<<<< HEAD
+=======
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  },
+                  "type": {
+                    "example": "any"
+                  },
+                  "block": {
+                    "example": "any"
+                  },
+                  "operationToAll": {
+                    "example": "any"
+                  },
+                  "isFromWallet": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
+          }
+>>>>>>> ddc2415cbaa2bbfefa362e4d7f9ac26fe9dbae9a
         }
       }
     },

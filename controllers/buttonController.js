@@ -9,7 +9,12 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 exports.getButton = async (req, res) => {
   try {
     const { id } = req.user;
-    const button = await buttonService.getButtonByUserId(id, [
+    let type = req.query?.type;
+    let where = { createBy: id };
+    if (type) {
+      where.type = type;
+    }
+    const button = await buttonService.getButtons(where, [
       "id",
       "type",
       "value",
@@ -66,7 +71,7 @@ exports.insertButtons = async (req, res) => {
       {
         statusCode: 200,
         message: { msg: "created", keys: { type: "Button" } },
-        data:value
+        data: value,
       },
       req,
       res

@@ -1262,7 +1262,7 @@ exports.userMatchLock = async (req, res) => {
   }
 
   async function userBlockUnlockMatch(userId, matchId, reqUser, block, type, isFromWallet) {
-    let userAlreadyBlockExit = await getUserMatchLock({ userId, matchId, blockBy: reqUser.id });
+    let userAlreadyBlockExit = await getUserMatchLock({ userId, matchId, blockBy: reqUser.id, isWalletLock: isFromWallet });
     if (!userAlreadyBlockExit && !block) {
       throw { msg: "notUnblockFirst" };
     }
@@ -1270,7 +1270,8 @@ exports.userMatchLock = async (req, res) => {
     if (!userAlreadyBlockExit && block) {
       let object = {
         userId, matchId,
-        blockBy: reqUser.id
+        blockBy: reqUser.id,
+        isWalletLock: isFromWallet
       };
       if (type == matchWiseBlockType.match) {
         object.matchLock = true;
