@@ -70,6 +70,7 @@ exports.insertButtons = async (req, res) => {
       {
         statusCode: 200,
         message: { msg: "created", keys: { type: "Button" } },
+        data:value
       },
       req,
       res
