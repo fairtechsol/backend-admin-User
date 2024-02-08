@@ -1,4 +1,4 @@
-const { transType, socketData } = require("../config/contants");
+const { transType, socketData, matchComissionTypeConstant } = require("../config/contants");
 const { getUser } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
@@ -13,6 +13,8 @@ const {
   hasUserInCache,
   updateUserDataRedis,
 } = require("../services/redis/commonfunction");
+const { logger } = require("../config/logger");
+const { settleCommission, insertCommissions } = require("../services/commissionService");
 
 exports.updateUserBalance = async (req, res) => {
   try {
@@ -170,3 +172,45 @@ exports.updateUserBalance = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 };
+
+exports.settleCommissions = async (req, res) => {
+  try {
+      const { userId } = req.body;
+      const userData = await getUserDataWithUserBalance({ id: userId });
+      if (userData?.userBal?.totalCommission == 0) {
+        return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.commissionAlreadySettled" } }, req, res);
+    }
+      if (userData) {
+          settleCommission(userId);
+          insertCommissions({
+              commissionAmount: userData.userBal.totalCommission,
+              createBy: userData.id,
+              parentId: userData.id,
+              commissionType: matchComissionTypeConstant.settled,
+              settled: true
+          });
+
+          userData.userBal.totalCommission = 0;
+
+          await addInitialUserBalance(userData.userBal);
+
+      }
+      return SuccessResponse(
+          {
+              statusCode: 200,
+              message: { msg: "settledCommission" },
+              data: userData,
+          },
+          req,
+          res
+      );
+
+  } catch (error) {
+      logger.error({
+          message: "Error in settle commission.",
+          context: error.message,
+          stake: error.stack
+      });
+      return ErrorResponse(error, req, res);
+  }
+}

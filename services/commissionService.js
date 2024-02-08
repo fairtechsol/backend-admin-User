@@ -34,3 +34,9 @@ exports.commissionMatchReport = (userId, matchId,queryColumns) => {
     .select(['user.userName as "userName"', 'betPlaced.marketBetType as "commissionType"', 'betPlaced.eventName as "name"', 'betPlaced.createdAt as "date"', 'betPlaced.teamName as "teamName"', 'betPlaced.odds as "odds"', 'betPlaced.betType as "betType"', 'betPlaced.amount as "stake"', 'commission.commissionAmount as "commissionAmount"','commission.commissionType as "commissionType"', ...(queryColumns != '' && queryColumns ? [`${queryColumns} as "partnerShip"`] : [])]);
   return commissionMatches.getRawMany();
 }
+
+exports.settleCommission = (userId) => {
+  Commission.update({ parentId: userId },{
+    settled:true
+  });
+}

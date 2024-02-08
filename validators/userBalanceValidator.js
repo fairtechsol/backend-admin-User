@@ -11,6 +11,5 @@ module.exports.SetUserBalance = Joi.object({
 });
 
 module.exports.settleCommission = Joi.object({
-    userId: Joi.string().guid({ version: 'uuidv4' }).required(),
-    domain: Joi.string()
+    userId: Joi.string().guid({ version: 'uuidv4' }).required()
 });
