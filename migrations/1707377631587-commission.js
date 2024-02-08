@@ -13,8 +13,6 @@ module.exports = class Commission1707377631587 {
         await queryRunner.query(`CREATE TYPE "public"."commissions_commissiontype_enum" AS ENUM('totalLoss', 'entryWise', 'settled')`);
         await queryRunner.query(`ALTER TABLE "commissions" ALTER COLUMN "commissionType" TYPE "public"."commissions_commissiontype_enum" USING "commissionType"::"text"::"public"."commissions_commissiontype_enum"`);
         await queryRunner.query(`DROP TYPE "public"."commissions_commissiontype_enum_old"`);
-        await queryRunner.query(`ALTER TABLE "buttons" ADD CONSTRAINT "UQ_1b57705131901411bf9ad8f9658" UNIQUE ("createBy")`);
-        await queryRunner.query(`ALTER TABLE "buttons" ADD CONSTRAINT "FK_1b57705131901411bf9ad8f9658" FOREIGN KEY ("createBy") REFERENCES "users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
     }
 
     async down(queryRunner) {
