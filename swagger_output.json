@@ -790,6 +790,9 @@
                   },
                   "operationToAll": {
                     "example": "any"
+                  },
+                  "isFromWallet": {
+                    "example": "any"
                   }
                 }
               }
@@ -1964,8 +1967,8 @@
         }
       }
     },
-    "/fairgameWallet/betCounts": {
-      "get": {
+    "/fairgameWallet/userMatchLock": {
+      "post": {
         "description": "",
         "parameters": [
           {
@@ -1974,18 +1977,40 @@
             "schema": {
               "type": "string"
             }
-          },
-          {
-            "name": "parentId",
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
           }
         ],
         "responses": {
           "default": {
             "description": ""
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "example": "any"
+                  },
+                  "matchId": {
+                    "example": "any"
+                  },
+                  "type": {
+                    "example": "any"
+                  },
+                  "block": {
+                    "example": "any"
+                  },
+                  "operationToAll": {
+                    "example": "any"
+                  },
+                  "isFromWallet": {
+                    "example": "any"
+                  }
+                }
+              }
+            }
           }
         }
       }
