@@ -763,7 +763,7 @@ exports.userList = async (req, res, next) => {
 
 
 
-    let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum, SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure"`;
+    let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum,SUM(UB.downLevelBalance) as "downLevelBalance", SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure",SUM(UB.totalCommission) as totalCommission`;
 
     switch (userRole) {
       case (userRoleConstant.fairGameWallet):
@@ -798,9 +798,9 @@ exports.userList = async (req, res, next) => {
     }
 
     const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
+    totalBalance.currBalance = parseFloat(totalBalance.downLevelBalance) + parseFloat(totalBalance.availableBalance);
     totalBalance.availableBalance = parseFloat(totalBalance.availableBalance) - parseFloat(totalBalance.totalExposure);
-    const adminBalance = await getUserBalanceDataByUserId(userId || reqUser.id);
-    totalBalance.currBalance = parseFloat(adminBalance.downLevelBalance) + parseFloat(adminBalance.currentBalance);
+    
 
     return SuccessResponse(
       {
