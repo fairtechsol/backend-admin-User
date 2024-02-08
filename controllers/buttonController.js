@@ -8,8 +8,12 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.getButton = async (req, res) => {
   try {
-    const { id } = req.user;
-    const button = await buttonService.getButtonByUserId(id, [
+    const { id, type } = req.user;
+    let where = { createBy: id }
+    if (type) {
+      where.type = type;
+    }
+    const button = await buttonService.getButtonByUserId(where, [
       "id",
       "type",
       "value",
