@@ -699,6 +699,10 @@ exports.userList = async (req, res, next) => {
           element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partnerShips).toFixed(2);
           element['commission'] = (element.userBal['totalCommission']).toFixed(2) + '(' + partnerShips + '%)';
         }
+
+        if(element?.roleName!=userRoleConstant.user){
+          element.exposureLimit = "NA";
+        }
         return element;
       })
     );
