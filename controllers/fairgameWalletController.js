@@ -1362,7 +1362,7 @@ exports.unDeclareSessionResult = async (req, res) => {
 
 const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, commissionData) => {
 
-  let faAdminCal = { userDate: {}, walletData: {} };
+  let faAdminCal = { userData: {}, walletData: {} };
   let superAdminData = {};
 
   for (const user of users) {
@@ -1579,13 +1579,13 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       }
     }
     if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-      if (!faAdminCal.userDate[user.user.superParentId]) {
-        faAdminCal.userDate[user.user.superParentId] = {};
+      if (!faAdminCal.userData[user.user.superParentId]) {
+        faAdminCal.userData[user.user.superParentId] = {};
         const betPlaceProfitLoss = await calculatePLAllBet(
           betPlace,
           -user?.user[`faPartnership`]
         );
-        faAdminCal.userDate[user.user.superParentId].profitLossData = {
+        faAdminCal.userData[user.user.superParentId].profitLossData = {
           upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
           lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
           betPlaced: betPlaceProfitLoss?.betData,
@@ -1594,8 +1594,8 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         };
       } else {
         for (const placedBets of betPlace) {
-          faAdminCal.userDate[user.user.superParentId].profitLossData = await calculateProfitLossSession(
-            faAdminCal.userDate[user.user.superParentId].profitLossData,
+          faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSession(
+            faAdminCal.userData[user.user.superParentId].profitLossData,
             {
               betPlacedData: {
                 betType: placedBets?.betType,
@@ -1610,11 +1610,11 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       }
     }
 
-    faAdminCal.userDate[user.user.superParentId] = {
-      ...faAdminCal.userDate[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.userDate[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userDate[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.userDate[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+    faAdminCal.userData[user.user.superParentId] = {
+      ...faAdminCal.userData[user.user.superParentId],
+      profitLoss: profitLoss + (faAdminCal.userData[user.user.superParentId]?.profitLoss || 0),
+      exposure: maxLoss + (faAdminCal.userData[user.user.superParentId]?.exposure || 0),
+      myProfitLoss: parseFloat((parseFloat(faAdminCal.userData[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
       role: user.user.superParentType
     }
 
