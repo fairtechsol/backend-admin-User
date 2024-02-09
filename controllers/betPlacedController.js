@@ -312,6 +312,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       partnerships: userRedisData.partnerShips,
       userId: reqUser.id,
       stake: jobData.stake,
+      userUpdatedExposure: Math.abs(parseFloat(newUserExposure) - parseFloat(userPreviousExposure)),
       newUserExposure, userPreviousExposure,
       winAmount, lossAmount, teamRates,
       bettingType, betOnTeam, teamA, teamB, teamC, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newBet
@@ -573,6 +574,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       partnership: userData?.partnerShips,
       placedBet: placedBet,
       newBalance: newBalance,
+      userUpdatedExposure: parseFloat(parseFloat(betPlaceObject.maxLoss).toFixed(2)),
       betPlaceObject: betPlaceObject,
       domainUrl: domainUrl
     });
