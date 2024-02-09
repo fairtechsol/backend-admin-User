@@ -13,6 +13,9 @@ const {
   tiedManualTeamName,
   marketBetType,
   matchComissionTypeConstant,
+  buttonType,
+  defaultButtonValue,
+  sessiontButtonValue,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId } = require("../services/betPlacedService");
@@ -55,6 +58,7 @@ const {
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertCommissions, getCombinedCommission, deleteCommission } = require("../services/commissionService");
+const { insertButton } = require("../services/buttonService");
 
 exports.createSuperAdmin = async (req, res) => {
   try {
@@ -198,6 +202,21 @@ exports.createSuperAdmin = async (req, res) => {
       exposure: 0,
     };
     insertUserBalanceData = await addInitialUserBalance(insertUserBalanceData);
+    if (insertUser.roleName == userRoleConstant.user) {
+      let buttonValue = [
+        {
+          type: buttonType.MATCH,
+          value: defaultButtonValue.buttons,
+          createBy: insertUser.id
+        },
+        {
+          type: buttonType.SESSION,
+          value: sessiontButtonValue.buttons,
+          createBy: insertUser.id
+        }
+      ]
+      await insertButton(buttonValue)
+    }
 
     return SuccessResponse(
       {

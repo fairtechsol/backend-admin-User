@@ -10,12 +10,6 @@ exports.getButtonById = async (id, select) => {
     select: select,
   });
 };
-exports.getButtonByUserId = async (id, select) => {
-  return await Button.find({
-    where: { createBy: id },
-    select: select,
-  });
-};
 
 exports.getButtons = async (where = {}, select) => {
   return await Button.find({
