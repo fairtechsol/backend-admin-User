@@ -1,4 +1,4 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue } = require('../config/contants');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain } = require('../config/contants');
 const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
@@ -667,6 +667,7 @@ exports.userList = async (req, res, next) => {
     if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
       partnershipCol = ["fwPartnership"];
     }
+    const domainUrl = `${req.protocol}://${req.get("host")}`;
 
     let data = await Promise.all(
       users[0].map(async (element) => {
@@ -698,6 +699,10 @@ exports.userList = async (req, res, next) => {
           let partnerShips = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
           element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partnerShips).toFixed(2);
           element['commission'] = (element.userBal['totalCommission']).toFixed(2) + '(' + partnerShips + '%)';
+        }
+
+        if (element?.roleName != userRoleConstant.user && domainUrl != oldBetFairDomain) {
+          element.exposureLimit="NA";
         }
         return element;
       })
