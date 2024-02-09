@@ -85,6 +85,7 @@ module.exports.partnershipPrefixByRole = {
   [this.userRoleConstant.superAdmin]: "sa",
   [this.userRoleConstant.fairGameAdmin]: "fa",
   [this.userRoleConstant.fairGameWallet]: "fw",
+  [this.userRoleConstant.expert]: "fw",
 };
 
 module.exports.differLoginTypeByRoles = {

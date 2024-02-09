@@ -53,7 +53,8 @@ exports.getBet = async (req, res) => {
           }
         }, req, res)
       }
-      select.push("user.id", "user.userName");
+      let partnershitColumn = partnershipPrefixByRole[reqUser.roleName] + 'Partnership';
+      select.push("user.id", "user.userName", `user.${partnershitColumn}`);
       where.createBy = In(childsId);
       result = await betPlacedService.getBet(where, query, reqUser.roleName, select);
     }
@@ -302,7 +303,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
       lossAmount, newUserExposure,
       userPreviousExposure,
       userCurrentBalance, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newTeamRateData,
-      newBet
+      newBet,
+      userName: user.userName
     }
 
     const domainUrl = `${req.protocol}://${req.get('host')}`;
@@ -314,7 +316,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
       stake: jobData.stake,
       newUserExposure, userPreviousExposure,
       winAmount, lossAmount, teamRates,
-      bettingType, betOnTeam, teamA, teamB, teamC, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newBet
+      bettingType, betOnTeam, teamA, teamB, teamC, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newBet,
+      userName: user.userName
     }
     //add redis queue function
     const job = MatchBetQueue.createJob(jobData);
