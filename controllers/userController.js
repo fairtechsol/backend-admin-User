@@ -336,6 +336,7 @@ const calculatePartnership = async (userData, creator) => {
         }
       }
     }
+    break;
     case (userRoleConstant.master): {
       switch (userData.roleName) {
 
