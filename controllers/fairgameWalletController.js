@@ -2634,7 +2634,8 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
       ...faAdminCal.admin[user.user.superParentId],
       profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0) - deductedAmount,
       exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss - deductedAmount) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2))
+      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss - deductedAmount) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+      role: user.user.superParentType
     }
 
     faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0) + deductedAmount;
