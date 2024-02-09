@@ -685,7 +685,7 @@ exports.declareSessionResult = async (req, res) => {
         });
         parentUser.exposure = 0;
       }
-      updateUserBalanceByUserId(parentUser?.id, {
+      updateUserBalanceByUserId(key, {
         profitLoss: parentUser.profitLoss,
         myProfitLoss: parentUser.myProfitLoss,
         exposure: parentUser.exposure,
