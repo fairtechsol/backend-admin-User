@@ -1614,7 +1614,8 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       ...faAdminCal.userDate[user.user.superParentId],
       profitLoss: profitLoss + (faAdminCal.userDate[user.user.superParentId]?.profitLoss || 0),
       exposure: maxLoss + (faAdminCal.userDate[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.userDate[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2))
+      myProfitLoss: parseFloat((parseFloat(faAdminCal.userDate[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+      role: user.user.superParentType
     }
 
   };
