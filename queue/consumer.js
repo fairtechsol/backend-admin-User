@@ -109,14 +109,14 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
           if (lodash.isEmpty(masterRedisData)) {
             // If masterRedisData is empty, update partner exposure
             let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = partnerUser.exposure + maxLossExposure;
+            let partnerExposure = (partnerUser.exposure || 0) + maxLossExposure;
             await updateUserBalanceByUserId(partnershipId, {
               exposure: partnerExposure,
             });
           } else {
             // If masterRedisData exists, update partner exposure and session data
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
-            let partnerExposure = masterExposure + maxLossExposure;
+            let partnerExposure = (masterExposure || 0) + maxLossExposure;
             updateUserBalanceByUserId(partnershipId, {
               exposure: partnerExposure,
             });
@@ -272,11 +272,11 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
           let masterRedisData = await getUserRedisData(partnershipId);
           if (lodash.isEmpty(masterRedisData)) {
             let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = partnerUser?.exposure - userOldExposure + userCurrentExposure;
+            let partnerExposure = (partnerUser?.exposure || 0) - userOldExposure + userCurrentExposure;
             await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
           } else {
             let masterExposure = masterRedisData?.exposure ? masterRedisData.exposure : 0;
-            let partnerExposure = masterExposure - userOldExposure + userCurrentExposure;
+            let partnerExposure = (masterExposure || 0) - userOldExposure + userCurrentExposure;
             await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
 
             let teamRates = {
