@@ -320,7 +320,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
         userId: userId,
         amount: transactionType == transType.add ? amount : -amount,
         transType: transactionType,
-        closingBalance: userBalanceData.currentBalance,
+        closingBalance: updateData.currentBalance,
         description: remark,
       },
     ];
