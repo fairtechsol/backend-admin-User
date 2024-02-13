@@ -170,6 +170,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
             sendMessageToUser(partnershipId, socketData.SessionBetPlaced, {
               userRedisData,
               jobData,
+              profitLoss: redisData
             });
           }
         } catch (error) {
