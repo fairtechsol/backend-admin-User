@@ -504,9 +504,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       (sessionExp + redisData?.maxLoss - maxSessionLoss).toFixed(2)
     );
 
-    totalExposure += parseFloat(parseFloat(
-      betPlaceObject.maxLoss
-    ).toFixed(2));
+    totalExposure = parseFloat(parseFloat(totalExposure + redisData.maxLoss - maxSessionLoss).toFixed(2)) ;
 
     let redisObject = {
       [`${redisKeys.userSessionExposure}${matchId}`]: redisSessionExp,
@@ -517,7 +515,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     let newBalance =
       parseFloat(userData?.currentBalance).toFixed(2) - totalExposure;
 
-    betPlaceObject.diffSessionExp = redisSessionExp - sessionExp;
+    betPlaceObject.diffSessionExp = redisData.maxLoss - maxSessionLoss;
 
     if (newBalance < 0) {
       return ErrorResponse(
@@ -1022,8 +1020,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   Object.keys(partnershipPrefixByRole)
     ?.filter(
       (item) =>
-        item != partnershipObj[userRoleConstant.fairGameAdmin] &&
-        item != partnershipObj[userRoleConstant.fairGameWallet]
+        item != userRoleConstant.fairGameAdmin &&
+        item != userRoleConstant.fairGameWallet
     )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;

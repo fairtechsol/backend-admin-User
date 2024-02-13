@@ -91,8 +91,8 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
   Object.keys(partnershipPrefixByRole)
     ?.filter(
       (item) =>
-        item != partnershipPrefixByRole[userRoleConstant.fairGameAdmin] &&
-        item != partnershipPrefixByRole[userRoleConstant.fairGameWallet]
+        item != userRoleConstant.fairGameAdmin &&
+        item != userRoleConstant.fairGameWallet
     )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
@@ -109,14 +109,14 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
           if (lodash.isEmpty(masterRedisData)) {
             // If masterRedisData is empty, update partner exposure
             let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = (partnerUser.exposure || 0) + maxLossExposure;
+            let partnerExposure = (parseFloat(partnerUser.exposure) || 0) + partnerSessionExposure;
             await updateUserBalanceByUserId(partnershipId, {
               exposure: partnerExposure,
             });
           } else {
             // If masterRedisData exists, update partner exposure and session data
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
-            let partnerExposure = (masterExposure || 0) + maxLossExposure;
+            let partnerExposure = (parseFloat(masterExposure) || 0) + partnerSessionExposure;
             updateUserBalanceByUserId(partnershipId, {
               exposure: partnerExposure,
             });
@@ -258,8 +258,8 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
   Object.keys(partnershipPrefixByRole)
     ?.filter(
       (item) =>
-        item != partnershipPrefixByRole[userRoleConstant.fairGameAdmin] &&
-        item != partnershipPrefixByRole[userRoleConstant.fairGameWallet]
+        item != userRoleConstant.fairGameAdmin &&
+        item != userRoleConstant.fairGameWallet
     )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
@@ -272,11 +272,11 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
           let masterRedisData = await getUserRedisData(partnershipId);
           if (lodash.isEmpty(masterRedisData)) {
             let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = (partnerUser?.exposure || 0) - userOldExposure + userCurrentExposure;
+            let partnerExposure = (parseFloat(partnerUser?.exposure) || 0) - userOldExposure + userCurrentExposure;
             await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
           } else {
             let masterExposure = masterRedisData?.exposure ? masterRedisData.exposure : 0;
-            let partnerExposure = (masterExposure || 0) - userOldExposure + userCurrentExposure;
+            let partnerExposure = (parseFloat(masterExposure) || 0) - userOldExposure + userCurrentExposure;
             await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
 
             let teamRates = {
