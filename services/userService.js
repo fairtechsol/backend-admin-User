@@ -267,8 +267,6 @@ exports.getUsersWithTotalUsersBalanceData = (where, query, select) => {
     .search()
     .filter();
 
-
-
   return transactionQuery.query.getRawOne();
 }
 
