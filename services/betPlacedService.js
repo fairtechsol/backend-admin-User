@@ -263,7 +263,6 @@ exports.getSessionsProfitLoss = async (where, totalLoss) => {
     .where(where)
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 
-
   query = query
     .select([
       totalLoss,
@@ -273,7 +272,6 @@ exports.getSessionsProfitLoss = async (where, totalLoss) => {
     .groupBy('placeBet.betId, placeBet.eventName');
 
     let result = await query.getRawMany();
-
     return result;
 }
 

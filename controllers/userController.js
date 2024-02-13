@@ -50,10 +50,10 @@ exports.createUser = async (req, res) => {
     userName = userName.toUpperCase();
     let userExist = await getUserByUserName(userName);
     if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
-    // if (creator.roleName != userRoleConstant.fairGameWallet) {
-    //   if (exposureLimit && exposureLimit > creator.exposureLimit)
-    //     return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
-    // }
+    if (creator.roleName != userRoleConstant.fairGameWallet) {
+      if (exposureLimit && exposureLimit > creator.exposureLimit)
+        return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
+    }
     password = await bcrypt.hash(
       password,
       process.env.BCRYPTSALT || 10
@@ -339,7 +339,6 @@ const calculatePartnership = async (userData, creator) => {
     break;
     case (userRoleConstant.master): {
       switch (userData.roleName) {
-
         case (userRoleConstant.agent): {
           agPartnership = 100 - parseInt(creator.myPartnership + fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership);
           break;
@@ -959,7 +958,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       amount: previousCreditReference,
       transType: transType.creditRefer,
       closingBalance: amount,
-      description: "CREDIT REFRENCE " + remark
+      description: "CREDIT REFRENCE " + (remark || '')
     }, {
       actionBy: reqUser.id,
       searchId: reqUser.id,
@@ -967,7 +966,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       amount: previousCreditReference,
       transType: transType.creditRefer,
       closingBalance: amount,
-      description: "CREDIT REFRENCE " + remark
+      description: "CREDIT REFRENCE " + (remark || '')
     }]
 
     const transactioninserted = await insertTransactions(transactionArray);
