@@ -773,16 +773,22 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
 }
 
 const checkRate = async (matchBettingDetail, betObj, teams) => {
-  if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && matchBettingDetail.backTeamA - teams.placeIndex != betObj.odds) {
+  if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && matchBettingDetail.statusTeamA != teamStatus.active && matchBettingDetail.backTeamA - teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.BACK && teams.teamB == betObj.teamName && matchBettingDetail.backTeamB - teams.placeIndex != betObj.odds) {
+  else if (betObj.betType == betType.BACK && teams.teamB == betObj.teamName && matchBettingDetail.statusTeamB != teamStatus.active && matchBettingDetail.backTeamB - teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.LAY && teams.teamA == betObj.teamName && +matchBettingDetail.layTeamA + teams.placeIndex != betObj.odds) {
+  else if (betObj.betType == betType.BACK && teams.teamC == betObj.teamName && matchBettingDetail.statusTeamC != teamStatus.active && matchBettingDetail.backTeamC - teams.placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.LAY && teams.teamB == betObj.teamName && +matchBettingDetail.layTeamB + teams.placeIndex != betObj.odds) {
+  else if (betObj.betType == betType.LAY && teams.teamA == betObj.teamName && matchBettingDetail.statusTeamA != teamStatus.active && +matchBettingDetail.layTeamA + teams.placeIndex != betObj.odds) {
+    return true;
+  }
+  else if (betObj.betType == betType.LAY && teams.teamB == betObj.teamName && matchBettingDetail.statusTeamB != teamStatus.active && +matchBettingDetail.layTeamB + teams.placeIndex != betObj.odds) {
+    return true;
+  }
+  else if (betObj.betType == betType.LAY && teams.teamC == betObj.teamName && matchBettingDetail.statusTeamC != teamStatus.active && +matchBettingDetail.layTeamC + teams.placeIndex != betObj.odds) {
     return true;
   }
   else {
