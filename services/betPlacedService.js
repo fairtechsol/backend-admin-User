@@ -27,6 +27,12 @@ exports.addNewBet = async (body) => {
   return userBet;
 }
 
+// delete bet in db on any error
+exports.deleteBetByEntityOnError = async (body) => {
+  let userBet = await BetPlaced.remove(body);
+  return userBet;
+}
+
 exports.getBet = async (where, query,roleName, select) => {
   let pgQuery = BetPlaced.createQueryBuilder().where(where);
   if (roleName != userRoleConstant.user) {

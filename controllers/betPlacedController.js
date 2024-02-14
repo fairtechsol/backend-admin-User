@@ -229,6 +229,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
     let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]) : 0.0;
+    let oldMatchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]) : 0.0;
     let sessionExposure = userRedisData[redisKeys.userSessionExposure + matchId] ? parseFloat(userRedisData[redisKeys.userSessionExposure + matchId]) : 0.0;
     let userTotalExposure = matchExposure + sessionExposure;
 
@@ -322,13 +323,55 @@ exports.matchBettingBetPlaced = async (req, res) => {
     }
     //add redis queue function
     const job = MatchBetQueue.createJob(jobData);
-    await job.save();
+    await job.save().then(data =>{
+      logger.info({
+        info: `add match betting job save in the redis for user ${reqUser.id}`,
+        data, matchId, jobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at match betting job save in the redis for user ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
+      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
+      betPlacedService.deleteBetByEntityOnError(newBet);
+      throw error;
+    });
 
     const walletJob = WalletMatchBetQueue.createJob(walletJobData);
-    await walletJob.save();
+    await walletJob.save().then(data =>{
+      logger.info({
+        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+        data, matchId, walletJobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
+    });
 
     const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
-    await expertJob.save();
+    await expertJob.save().then(data =>{
+      logger.info({
+        info: `add match betting job save in the redis for expert ${reqUser.id}`,
+        data, matchId, walletJobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
+      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
+      betPlacedService.deleteBetByEntityOnError(newBet);
+      throw error;
+    });
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -530,12 +573,6 @@ exports.sessionBetPlace = async (req, res, next) => {
       );
     }
 
-    await updateUserBalanceByUserId(id, {
-      exposure: totalExposure,
-    });
-
-    await updateUserDataRedis(id, redisObject);
-
     const placedBet = await betPlacedService.addNewBet({
       result: betResultStatus.PENDING,
       matchId: matchId,
@@ -557,20 +594,34 @@ exports.sessionBetPlace = async (req, res, next) => {
       createBy: id,
     });
 
-
-    //add redis queue function
-    const job = SessionMatchBetQueue.createJob({
+    let jobData = {
       userId: id,
       placedBet: placedBet,
       newBalance: newBalance,
       betPlaceObject: betPlaceObject
+    }
+    //add redis queue function
+    const job = SessionMatchBetQueue.createJob(jobData);
+    await job.save().then(data =>{
+      logger.info({
+        info: `add session betting job save in the redis for user ${reqUser.id}`,
+        data, matchId, jobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at session betting job save in the redis for user ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
+      betPlacedService.deleteBetByEntityOnError(placedBet);
+      throw error;
     });
-    await job.save();
 
 
     const domainUrl = `${req.protocol}://${req.get('host')}`;
 
-    const walletJob = WalletSessionBetQueue.createJob({
+    let walletJobData = {
       userId: id,
       partnership: userData?.partnerShips,
       placedBet: placedBet,
@@ -578,19 +629,50 @@ exports.sessionBetPlace = async (req, res, next) => {
       userUpdatedExposure: parseFloat(parseFloat(betPlaceObject.maxLoss).toFixed(2)),
       betPlaceObject: betPlaceObject,
       domainUrl: domainUrl
+    };
+    const walletJob = WalletSessionBetQueue.createJob(walletJobData);
+    await walletJob.save().then(data =>{
+      logger.info({
+        info: `add session betting job save in the redis for wallet ${reqUser.id}`,
+        data, matchId, walletJobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at session betting job save in the redis for walllet ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
     });
-    await walletJob.save();
 
-
-    const expertJob = ExpertSessionBetQueue.createJob({
+    let expertJobData = {
       userId: id,
       partnership: userData?.partnerShips,
       placedBet: placedBet,
       newBalance: newBalance,
       betPlaceObject: betPlaceObject,
       domainUrl: domainUrl
+    };
+    const expertJob = ExpertSessionBetQueue.createJob(expertJobData);
+    await expertJob.save().then(data =>{
+      logger.info({
+        info: `add session betting job save in the redis for expert ${reqUser.id}`,
+        data, matchId, expertJobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at session betting job save in the redis for expert ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
     });
-    await expertJob.save();
+    
+    await updateUserBalanceByUserId(id, {
+      exposure: totalExposure,
+    });
+
+    await updateUserDataRedis(id, redisObject);
 
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: placedBet }, req, res)
 
