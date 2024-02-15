@@ -326,7 +326,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     await job.save().then(data =>{
       logger.info({
         info: `add match betting job save in the redis for user ${reqUser.id}`,
-        data, matchId, jobData
+        matchId, jobData
       });
     }).catch(error => {
       logger.error({
@@ -344,7 +344,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     await walletJob.save().then(data =>{
       logger.info({
         info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        data, matchId, walletJobData
+        matchId, walletJobData
       });
     }).catch(error => {
       logger.error({
@@ -359,7 +359,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     await expertJob.save().then(data =>{
       logger.info({
         info: `add match betting job save in the redis for expert ${reqUser.id}`,
-        data, matchId, walletJobData
+        matchId, walletJobData
       });
     }).catch(error => {
       logger.error({
@@ -605,7 +605,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     await job.save().then(data =>{
       logger.info({
         info: `add session betting job save in the redis for user ${id}`,
-        data, matchId, jobData
+        matchId, jobData
       });
     }).catch(error => {
       logger.error({
@@ -634,7 +634,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     await walletJob.save().then(data =>{
       logger.info({
         info: `add session betting job save in the redis for wallet ${id}`,
-        data, matchId, walletJobData
+        matchId, walletJobData
       });
     }).catch(error => {
       logger.error({
@@ -657,7 +657,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     await expertJob.save().then(data =>{
       logger.info({
         info: `add session betting job save in the redis for expert ${id}`,
-        data, matchId, expertJobData
+        matchId, expertJobData
       });
     }).catch(error => {
       logger.error({
