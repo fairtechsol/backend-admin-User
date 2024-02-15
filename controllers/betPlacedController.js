@@ -604,12 +604,12 @@ exports.sessionBetPlace = async (req, res, next) => {
     const job = SessionMatchBetQueue.createJob(jobData);
     await job.save().then(data =>{
       logger.info({
-        info: `add session betting job save in the redis for user ${reqUser.id}`,
+        info: `add session betting job save in the redis for user ${id}`,
         data, matchId, jobData
       });
     }).catch(error => {
       logger.error({
-        error: `Error at session betting job save in the redis for user ${reqUser.id}.`,
+        error: `Error at session betting job save in the redis for user ${id}.`,
         stack: error.stack,
         message: error.message,
         errorFile: error
@@ -633,12 +633,12 @@ exports.sessionBetPlace = async (req, res, next) => {
     const walletJob = WalletSessionBetQueue.createJob(walletJobData);
     await walletJob.save().then(data =>{
       logger.info({
-        info: `add session betting job save in the redis for wallet ${reqUser.id}`,
+        info: `add session betting job save in the redis for wallet ${id}`,
         data, matchId, walletJobData
       });
     }).catch(error => {
       logger.error({
-        error: `Error at session betting job save in the redis for walllet ${reqUser.id}.`,
+        error: `Error at session betting job save in the redis for walllet ${id}.`,
         stack: error.stack,
         message: error.message,
         errorFile: error
@@ -656,12 +656,12 @@ exports.sessionBetPlace = async (req, res, next) => {
     const expertJob = ExpertSessionBetQueue.createJob(expertJobData);
     await expertJob.save().then(data =>{
       logger.info({
-        info: `add session betting job save in the redis for expert ${reqUser.id}`,
+        info: `add session betting job save in the redis for expert ${id}`,
         data, matchId, expertJobData
       });
     }).catch(error => {
       logger.error({
-        error: `Error at session betting job save in the redis for expert ${reqUser.id}.`,
+        error: `Error at session betting job save in the redis for expert ${id}.`,
         stack: error.stack,
         message: error.message,
         errorFile: error
