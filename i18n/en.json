@@ -22,7 +22,7 @@
     "logoutSuccess":"Logout successfully.",
     "passwordChanged":"Password changed successfully.",
     "unauthorize":"Unauthorized user.",
-    "unauthorizeRole" : "You are not autorize to take this action",
+    "unauthorizeRole" : "You are not authorize to take this action",
     "TransactionPasswordNotExist" : "Your transaction password not generated. Please contact your administrator."
   },
   "user" : {
@@ -33,7 +33,7 @@
     "InvalidExposureLimit" : "Given exposure limit is invalid.",
     "betBlockError": "Your bet are block by admin, Please contact to the administrator.",
     "userBlockError": "Your block by admin, Please contact to the administrator.",
-    "lock/unlockSuccessfully" : "User lock and unlock operation successfull.",
+    "lock/unlockSuccessfully" : "User lock and unlock operation successful.",
     "InvalidHierarchy" : "Invalid user role you given for creation.",
     "userExist" : "User already exist on given user name." ,
     "blockCantAccess":"You can not block this user.",

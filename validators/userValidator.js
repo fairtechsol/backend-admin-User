@@ -1,7 +1,6 @@
 const Joi = require('joi')
-const { userRoleConstant, matchComissionTypeConstant, matchWiseBlockType } = require('../config/contants')
+const { userRoleConstant, matchComissionTypeConstant, matchWiseBlockType, passwordRegex } = require('../config/contants')
 
-const passwordRegex = /^(?=.[A-Z])(?=.\d.\d.\d.\d)[a-zA-Z\d!@#$%^&()-_=+]{8,}$/;
 
 module.exports.CreateUser = Joi.object({
   userName: Joi.string().trim().required(),
