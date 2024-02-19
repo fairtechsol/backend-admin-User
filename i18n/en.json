@@ -27,7 +27,7 @@
   },
   "user" : {
     "blocked": "There is something wrong with your account. Please contact your administrator.",
-    "passwordMatch": "Password must contain at least one lowercase letter, one uppercase letter, one digit, and one special character (#$@!%&*?).",
+    "passwordMatch": "Password must contain at least four letters, one uppercase letter, four digits",
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
     "partnershipNotValid" : "Given partnership not valid.",
     "InvalidExposureLimit" : "Given exposure limit is invalid.",
