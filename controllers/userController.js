@@ -764,6 +764,35 @@ exports.userList = async (req, res, next) => {
     response.list = data;
 
 
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "user.userList" },
+        data: response,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      message: "error at user list",
+      context: error.message,
+      stake: error.stack
+    })
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.getTotalUserListBalance = async (req, res, next) => {
+  try {
+    let reqUser = req.user;
+
+    const { type, userId, roleName, ...apiQuery } = req.query;
+    let userRole = roleName || reqUser?.roleName;
+    let where = {
+      createBy: userId || reqUser.id,
+      roleName: Not(userRole)
+    };
 
     let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum,SUM(UB.downLevelBalance) as "downLevelBalance", SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure",SUM(UB.totalCommission) as totalCommission`;
 
@@ -805,23 +834,21 @@ exports.userList = async (req, res, next) => {
 
     totalBalance.currBalance = childUsersBalances?.[0]?.balance;
     totalBalance.availableBalance = parseFloat(totalBalance.availableBalance) - parseFloat(totalBalance.totalExposure);
-    
 
     return SuccessResponse(
       {
         statusCode: 200,
-        message: { msg: "user.userList" },
-        data: { ...response, totalBalance: totalBalance },
+        data: totalBalance,
       },
       req,
       res
     );
   } catch (error) {
     logger.error({
-      message: "error at user list",
+      message: "Error in user list total balance.",
       context: error.message,
       stake: error.stack
-    })
+    });
     return ErrorResponse(error, req, res);
   }
 }
