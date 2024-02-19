@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -678,16 +678,12 @@ exports.userList = async (req, res, next) => {
         }
         if (element.roleName != userRoleConstant.user) {
           element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2)) - Number(parseFloat(element.userBal["exposure"]).toFixed(2));
-          // let childUsers = await getChildUser(element.id)
-          // let allChildUserIds = childUsers.map(obj => obj.id)
-          // let balancesum = 0
+          let childUsersBalances = await getChildUserBalanceSum(element.id)
+         
+          let balanceSum = childUsersBalances?.[0]?.balance;
 
-          // if (allChildUserIds.length) {
-          //   let allChildBalanceData = await getAllChildCurrentBalanceSum(allChildUserIds)
-          //   balancesum = parseFloat(allChildBalanceData.allchildscurrentbalancesum) ? parseFloat(allChildBalanceData.allchildscurrentbalancesum) : 0;
-          // }
 
-          element['balance'] = Number((parseFloat(element.userBal["currentBalance"]) + parseFloat(element.userBal["downLevelBalance"])).toFixed(2));
+          element['balance'] = Number((parseFloat(balanceSum || 0)).toFixed(2));
         } else {
           element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
           element['balance'] = element.userBal['currentBalance'];
@@ -804,7 +800,10 @@ exports.userList = async (req, res, next) => {
     }
 
     const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
-    totalBalance.currBalance = parseFloat(totalBalance.downLevelBalance) + parseFloat(totalBalance.availableBalance);
+
+    let childUsersBalances = await getChildUserBalanceSum(userId || reqUser.id);
+
+    totalBalance.currBalance = childUsersBalances?.[0]?.balance;
     totalBalance.availableBalance = parseFloat(totalBalance.availableBalance) - parseFloat(totalBalance.totalExposure);
     
 
