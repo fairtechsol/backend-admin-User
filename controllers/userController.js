@@ -698,6 +698,7 @@ exports.userList = async (req, res, next) => {
           let partnerShips = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
           element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partnerShips).toFixed(2);
           element['commission'] = (element.userBal['totalCommission']).toFixed(2) + '(' + partnerShips + '%)';
+          element['upLinePartnership'] =  partnerShips;
         }
 
         if (element?.roleName != userRoleConstant.user && domainUrl != oldBetFairDomain) {
