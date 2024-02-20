@@ -784,7 +784,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       });
       throw error
     });
-    let filterData = data?.data?.find(
+    let filterData = data?.find(
       (d) => d.SelectionId == apiBetData.selectionId
     );
     if (
