@@ -189,7 +189,7 @@ module.exports.betResultStatus = {
   LOSS : "LOSS",
   TIE : "TIE"
 }
-module.exports.passwordRegex = /^(?=.[A-Z])(?=.\d.\d.\d.\d)[a-zA-Z\d!@#$%^&()-_=+]{8,}$/;
+module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;
 
 
 module.exports.socketData ={
