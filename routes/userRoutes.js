@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
 const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate } = require('../validators/userValidator');
-const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced } = require('../controllers/userController');
+const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance } = require('../controllers/userController');
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 const { totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss } = require('../controllers/fairgameWalletController');
 
@@ -13,7 +13,10 @@ router.post('/updateUser', isAuthenticate, checkTransactionPassword, validator(u
 router.post('/lockUnlockUser', isAuthenticate, checkTransactionPassword, validator(LockUnlockUser), lockUnlockUser);
 router.post('/changePassword', isAuthenticate, validator(ChangePassword), changePassword);
 router.post("/update/exposurelimit", isAuthenticate, checkTransactionPassword, validator(setExposureLimitValid), setExposureLimit);
+
 router.get("/list", isAuthenticate, userList);
+router.get("/child/totalBalance", isAuthenticate, getTotalUserListBalance);
+
 router.get("/searchlist", isAuthenticate, userSearchList);
 router.get("/balance", isAuthenticate, userBalanceDetails);
 router.post("/update/creditreferrence", isAuthenticate, checkTransactionPassword, validator(setCreditRefValidate), setCreditReferrence);

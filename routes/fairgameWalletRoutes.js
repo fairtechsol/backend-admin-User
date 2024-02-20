@@ -3,7 +3,7 @@ const router = express.Router();
 const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, declareMatchResult, unDeclareMatchResult, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword } = require("../validators/fairgameWalletValidator");
-const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock } = require("../controllers/userController");
+const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
 const { settleCommissions } = require("../controllers/userBalanceController");
 const { settleCommission } = require("../validators/userBalanceValidator");
 
@@ -29,6 +29,7 @@ router.get("/commissionMatch/:userId", getCommissionReportsMatch);
 router.get("/commissionBetPlaced/:userId", getCommissionBetPlaced);
 router.get("/betCounts", getBetCount);
 router.get("/user/list", userList);
+router.get("/child/totalBalance", getTotalUserListBalance);
 router.post("/userMatchLock", userMatchLock);
 router.post("/settle/commission", validator(settleCommission), settleCommissions);
 
