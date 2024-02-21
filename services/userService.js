@@ -204,6 +204,8 @@ SELECT SUM("userBalances"."currentBalance") as balance FROM p JOIN "userBalances
   return await user.query(query)
 }
 
+
+
 exports.getChildsWithOnlyUserRole = async (userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${userId}'
@@ -346,4 +348,19 @@ exports.getUserDataWithUserBalance = async (where) => {
     "user.id = UB.userId"
   )
   .getOne();
+}
+
+exports.getAllUsersBalanceSumByFgId = (parentId) => {
+  return user
+    .createQueryBuilder()
+    .where({ superParentId: parentId })
+    .leftJoinAndMapOne(
+      "user.userBal",
+      "userBalances",
+      "UB",
+      "user.id = UB.userId"
+    )
+    .select(["SUM(UB.currentBalance) as balance"])
+    .addOrderBy('1')
+    .getRawOne();
 }
