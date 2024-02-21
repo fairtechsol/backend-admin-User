@@ -53,3 +53,15 @@ exports.getAllChildCurrentBalanceSum = async (childUserIds) => {
    
     return childUserData;
   }
+
+
+  exports.getAllUsersBalanceSum = async () => {
+    queryColumns = 'SUM(userBalance.currentBalance) as balance';
+ 
+    let childUserData = await UserBalance
+     .createQueryBuilder('userBalance')
+     .select([queryColumns])
+     .getRawOne();
+  
+   return childUserData;
+ }

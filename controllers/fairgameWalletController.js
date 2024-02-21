@@ -39,6 +39,7 @@ const {
   addInitialUserBalance,
   getUserBalanceDataByUserId,
   updateUserBalanceByUserId,
+  getAllUsersBalanceSum,
 } = require("../services/userBalanceService");
 const {
   addUser,
@@ -54,6 +55,8 @@ const {
   getSuperAdminDataBalance,
   getChildsWithOnlyUserRole,
   getUsers,
+  getChildUserBalanceSum,
+  getAllUsersBalanceSumByFgId,
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -2976,6 +2979,52 @@ exports.getBetCount = async (req,res)=>{
   } catch (error) {
     logger.error({
       context: `Error in get bet count.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getAllUserBalance = async (req, res) => {
+  try {
+
+    const { roleName } = req.query;
+    const { id } = req.params;
+    let balanceSum = {};
+    if(roleName == userRoleConstant.fairGameWallet){
+      let childUsersBalances = await getAllUsersBalanceSum();
+      balanceSum[id] = parseFloat(parseFloat(childUsersBalances?.balance).toFixed(2));
+    }
+    else if (roleName == userRoleConstant.fairGameAdmin) {
+      let childUsersBalances = await getAllUsersBalanceSumByFgId(id);
+      balanceSum[id] = parseFloat(parseFloat(childUsersBalances?.balance).toFixed(2));
+    }
+    else{
+      balanceSum = {};
+      for (let item of id?.split(",")) {
+        let childUsersBalances = await getChildUserBalanceSum(item);
+        balanceSum[item] = parseFloat(parseFloat(childUsersBalances?.[0]?.balance).toFixed(2));
+      };
+    }
+   
+    return SuccessResponse(
+      {
+        statusCode: 200, data: { balance: balanceSum }
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get all user balance.`,
       error: error.message,
       stake: error.stack,
     });
