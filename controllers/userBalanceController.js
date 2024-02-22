@@ -72,6 +72,14 @@ exports.updateUserBalance = async (req, res) => {
         parseFloat(insertUserBalanceData.currentBalance) + parseFloat(amount);
       updatedUpdateUserBalanceData.profitLoss =
         parseFloat(insertUserBalanceData.profitLoss) + parseFloat(amount);
+
+      if (parseFloat(insertUserBalanceData.myProfitLoss) + parseFloat(amount) > 0) {
+        updatedUpdateUserBalanceData.myProfitLoss = 0;
+      }
+      else {
+        updatedUpdateUserBalanceData.myProfitLoss = parseFloat(insertUserBalanceData.myProfitLoss) + parseFloat(amount);
+      }
+
       let newUserBalanceData = await updateUserBalanceByUserId(
         user.id,
         updatedUpdateUserBalanceData
@@ -98,6 +106,15 @@ exports.updateUserBalance = async (req, res) => {
         parseFloat(insertUserBalanceData.currentBalance) - parseFloat(amount);
       updatedUpdateUserBalanceData.profitLoss =
         parseFloat(insertUserBalanceData.profitLoss) - parseFloat(amount);
+
+      if (parseFloat(insertUserBalanceData.myProfitLoss) - parseFloat(amount) < 0) {
+        updatedUpdateUserBalanceData.myProfitLoss = 0;
+      }
+      else {
+        updatedUpdateUserBalanceData.myProfitLoss = parseFloat(insertUserBalanceData.myProfitLoss) - parseFloat(amount);
+      }
+
+
       let newUserBalanceData = await updateUserBalanceByUserId(
         user.id,
         updatedUpdateUserBalanceData
@@ -175,42 +192,42 @@ exports.updateUserBalance = async (req, res) => {
 
 exports.settleCommissions = async (req, res) => {
   try {
-      const { userId } = req.body;
-      const userData = await getUserDataWithUserBalance({ id: userId });
-      if (userData?.userBal?.totalCommission == 0) {
-        return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.commissionAlreadySettled" } }, req, res);
+    const { userId } = req.body;
+    const userData = await getUserDataWithUserBalance({ id: userId });
+    if (userData?.userBal?.totalCommission == 0) {
+      return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.commissionAlreadySettled" } }, req, res);
     }
-      if (userData) {
-          settleCommission(userId);
-          insertCommissions({
-              commissionAmount: userData.userBal.totalCommission,
-              createBy: userData.id,
-              parentId: userData.id,
-              commissionType: matchComissionTypeConstant.settled,
-              settled: true
-          });
+    if (userData) {
+      settleCommission(userId);
+      insertCommissions({
+        commissionAmount: userData.userBal.totalCommission,
+        createBy: userData.id,
+        parentId: userData.id,
+        commissionType: matchComissionTypeConstant.settled,
+        settled: true
+      });
 
-          userData.userBal.totalCommission = 0;
+      userData.userBal.totalCommission = 0;
 
-          await addInitialUserBalance(userData.userBal);
+      await addInitialUserBalance(userData.userBal);
 
-      }
-      return SuccessResponse(
-          {
-              statusCode: 200,
-              message: { msg: "settledCommission" },
-              data: userData,
-          },
-          req,
-          res
-      );
+    }
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "settledCommission" },
+        data: userData,
+      },
+      req,
+      res
+    );
 
   } catch (error) {
-      logger.error({
-          message: "Error in settle commission.",
-          context: error.message,
-          stake: error.stack
-      });
-      return ErrorResponse(error, req, res);
+    logger.error({
+      message: "Error in settle commission.",
+      context: error.message,
+      stake: error.stack
+    });
+    return ErrorResponse(error, req, res);
   }
 }

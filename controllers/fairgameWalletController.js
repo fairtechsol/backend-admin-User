@@ -303,6 +303,14 @@ exports.updateSuperAdminBalance = async (req, res) => {
         currentBalance: parseFloat(userBalanceData.currentBalance) + parseFloat(amount),
         profitLoss: parseFloat(userBalanceData.profitLoss) + parseFloat(amount),
       }
+
+      if (parseFloat(userBalanceData.myProfitLoss) + parseFloat(amount) > 0) {
+        updateData.myProfitLoss = 0;
+      }
+      else {
+        updateData.myProfitLoss = parseFloat(userBalanceData.myProfitLoss) + parseFloat(amount);
+      }
+
       await updateUserBalanceByUserId(user.id, updateData);
       if (userExistRedis) {
 
@@ -322,6 +330,14 @@ exports.updateSuperAdminBalance = async (req, res) => {
         currentBalance: parseFloat(userBalanceData.currentBalance) - parseFloat(amount),
         profitLoss: parseFloat(userBalanceData.profitLoss) - parseFloat(amount),
       }
+
+      if (parseFloat(userBalanceData.myProfitLoss) - parseFloat(amount) < 0) {
+        updateData.myProfitLoss = 0;
+      }
+      else {
+        updateData.myProfitLoss = parseFloat(userBalanceData.myProfitLoss) - parseFloat(amount);
+      }
+
       await updateUserBalanceByUserId(user.id, updateData);
       if (userExistRedis) {
 
