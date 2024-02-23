@@ -2479,7 +2479,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
       transType: transType.loss,
       closingBalance: user.user.userBalance.currentBalance,
       description: `Deduct 1% for bet on match odds`,
-    })
+    });
   }
 
 
