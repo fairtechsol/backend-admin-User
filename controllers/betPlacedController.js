@@ -234,6 +234,18 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let userTotalExposure = matchExposure + sessionExposure;
 
 
+    if (parseFloat(userBalanceData?.exposure) + lossAmount >= parseFloat(userCurrentBalance)) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "userBalance.insufficientBalance",
+          },
+        },
+        req,
+        res
+      );
+    }
 
     let teamRates = {
       teamA: parseFloat((Number(userRedisData[teamArateRedisKey]) || 0.0).toFixed(2)),
