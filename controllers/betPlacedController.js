@@ -594,6 +594,13 @@ exports.sessionBetPlace = async (req, res, next) => {
       createBy: id,
     });
 
+    
+    await updateUserBalanceByUserId(id, {
+      exposure: totalExposure,
+    });
+
+    await updateUserDataRedis(id, redisObject);
+
     let jobData = {
       userId: id,
       placedBet: placedBet,
@@ -668,11 +675,6 @@ exports.sessionBetPlace = async (req, res, next) => {
       });
     });
     
-    await updateUserBalanceByUserId(id, {
-      exposure: totalExposure,
-    });
-
-    await updateUserDataRedis(id, redisObject);
 
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: placedBet }, req, res)
 
