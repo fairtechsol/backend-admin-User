@@ -168,6 +168,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
 
     winAmount = Number(winAmount.toFixed(2));
     lossAmount = Number(lossAmount.toFixed(2));
+    
 
     //fetched match details from expert
     let apiResponse = {};
