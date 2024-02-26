@@ -833,7 +833,7 @@ exports.getTotalUserListBalance = async (req, res, next) => {
     let childUsersBalances = await getChildUserBalanceSum(userId || reqUser.id);
 
     totalBalance.currBalance = childUsersBalances?.[0]?.balance;
-    totalBalance.availableBalance = parseFloat(totalBalance.availableBalance) - parseFloat(totalBalance.totalExposure);
+    totalBalance.availableBalance = parseFloat(totalBalance.availableBalance||0) - parseFloat(totalBalance.totalExposure||0);
 
     return SuccessResponse(
       {
