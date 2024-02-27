@@ -1112,7 +1112,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     ?.filter(
       (item) =>
         item != userRoleConstant.fairGameAdmin &&
-        item != userRoleConstant.fairGameWallet
+        item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
     )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
@@ -1347,7 +1347,7 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
     ?.filter(
       (item) =>
         item != userRoleConstant.fairGameAdmin &&
-        item != userRoleConstant.fairGameWallet
+        item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
     )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
