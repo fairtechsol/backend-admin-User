@@ -92,7 +92,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
     ?.filter(
       (item) =>
         item != userRoleConstant.fairGameAdmin &&
-        item != userRoleConstant.fairGameWallet
+        item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
     )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
@@ -260,7 +260,7 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
     ?.filter(
       (item) =>
         item != userRoleConstant.fairGameAdmin &&
-        item != userRoleConstant.fairGameWallet
+        item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
     )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
