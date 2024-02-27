@@ -278,7 +278,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
     }
     matchExposure = Math.abs(maximumLoss);
-    userCurrentBalance = userCurrentBalance - (userOtherMatchExposure + matchExposure + sessionExposure);
+    userCurrentBalance = userCurrentBalance - (newUserExposure);
     if (userCurrentBalance < 0) {
       logger.info({
         info: `user exposure balance insufficient to place this bet user id is ${reqUser.id}`,
