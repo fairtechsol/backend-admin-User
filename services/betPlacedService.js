@@ -148,7 +148,7 @@ exports.getUserDistinctBets = async (userId) => {
 exports.getBetsWithUserRole = async (ids) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
     .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
-    .where({ createBy: In(ids), result: In(betResultStatus.PENDING), deleteReason: IsNull() })
+    .where({ createBy: In(ids), result: betResultStatus.PENDING, deleteReason: IsNull() })
     .getMany()
   return betPlaced;
 }
