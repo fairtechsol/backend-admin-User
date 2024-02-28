@@ -213,18 +213,18 @@ exports.matchBettingBetPlaced = async (req, res) => {
       (matchBetType == matchBettingType.tiedMatch1 ||
         matchBetType == matchBettingType.tiedMatch2
         ? redisKeys.yesRateTie
-        : matchBetType == matchBettingType.completeMatch
+        : matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
           ? redisKeys.yesRateComplete
           : redisKeys.userTeamARate) + matchId;
     const teamBrateRedisKey = (
       matchBetType == matchBettingType.tiedMatch1 ||
         matchBetType == matchBettingType.tiedMatch2
         ? redisKeys.noRateTie
-        : matchBetType == matchBettingType.completeMatch
+        : matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
           ? redisKeys.noRateComplete
           : redisKeys.userTeamBRate) + matchId;
     const teamCrateRedisKey = matchBetType == matchBettingType.tiedMatch1 ||
-      matchBetType == matchBettingType.tiedMatch2 || matchBetType == matchBettingType.completeMatch ? null : redisKeys.userTeamCRate + matchId;
+      matchBetType == matchBettingType.tiedMatch2 || matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual? null : redisKeys.userTeamCRate + matchId;
 
 
     let userCurrentBalance = userBalanceData.currentBalance;
@@ -1229,16 +1229,16 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
   const teamArateRedisKey =
     (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2
       ? redisKeys.yesRateTie :
-      matchBetType == matchBettingType.completeMatch
+      matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
         ? redisKeys.yesRateComplete : redisKeys.userTeamARate) + matchId;
   const teamBrateRedisKey = (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2
     ? redisKeys.noRateTie :
-    matchBetType == matchBettingType.completeMatch
+    matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
       ? redisKeys.noRateComplete : redisKeys.userTeamBRate) + matchId;
-  const teamCrateRedisKey = matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2 || matchBetType == matchBettingType.completeMatch
+  const teamCrateRedisKey = matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2 || matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
     ? null : redisKeys.userTeamCRate + matchId;
 
-  let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch].includes(matchBetType);
+  let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch || matchBettingType.completeManual].includes(matchBetType);
 
   let teamA = isTiedOrCompMatch ? tiedManualTeamName.yes : matchDetails.teamA;
   let teamB = isTiedOrCompMatch ? tiedManualTeamName.no : matchDetails.teamB;
@@ -1261,8 +1261,8 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
 
     let redisData = await calculateProfitLossForMatchToResult([betId], userId, { teamA, teamB, teamC });
     teamRates = {
-      teamA: !isTiedOrCompMatch ? redisData.teamARate : (matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? teamYesRateTie : teamYesRateComplete,
-      teamB: !isTiedOrCompMatch ? redisData.teamBRate : (matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? teamNoRateTie : teamNoRateComplete,
+      teamA: !isTiedOrCompMatch ? redisData.teamARate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? teamYesRateTie : teamYesRateComplete,
+      teamB: !isTiedOrCompMatch ? redisData.teamBRate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? teamNoRateTie : teamNoRateComplete,
       teamC: !isTiedOrCompMatch ? redisData.teamCRate : 0
     };
   }

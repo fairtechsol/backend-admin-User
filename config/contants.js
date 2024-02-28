@@ -165,6 +165,7 @@ module.exports.matchBettingType = {
   tiedMatch1: "tiedMatch1",
   tiedMatch2: "tiedMatch2",
   completeMatch: "completeMatch",
+  completeManual: "completeManual",
 };
 
 module.exports.redisKeys = {

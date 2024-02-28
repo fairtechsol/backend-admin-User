@@ -80,7 +80,7 @@ exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
   const matchTypes = [
     [matchBettingType.bookmaker, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3, matchBettingType.matchOdd],
     [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2],
-    [matchBettingType.completeMatch],
+    [matchBettingType.completeMatch, matchBettingType.completeManual],
   ];
 
   const betPlaced = await BetPlaced.createQueryBuilder().select([
