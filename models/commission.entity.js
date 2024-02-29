@@ -21,6 +21,7 @@ const commissionSchema = new EntitySchema({
     commissionAmount: {
       type: 'decimal',
       precision: 13,
+      scale: 2,
       default: 0,
       nullable: false,
       transformer: new ColumnNumericTransformer()

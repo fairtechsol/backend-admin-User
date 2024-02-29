@@ -248,7 +248,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
 
     let userPreviousExposure = parseFloat(userRedisData[redisKeys.userAllExposure]) || 0.0;
     let userOtherMatchExposure = userPreviousExposure - userTotalExposure;
-    let userExposureLimit = parseFloat(userRedisData[redisKeys.userExposureLimit]);
+    let userExposureLimit = parseFloat(user.exposureLimit);
 
     logger.info({
       info: `User's match and session exposure and teams rate in redis with userId ${reqUser.id} `,
@@ -414,7 +414,8 @@ exports.sessionBetPlace = async (req, res, next) => {
     const { id } = req.user;
 
     // Fetch user details by ID
-    let user = await getUserById(id, ["userBlock", "betBlock", "userName"]);
+    let user = await getUserById(id, ["userBlock", "betBlock", "userName", "exposureLimit"]);
+    let userExposureLimit = parseFloat(user.exposureLimit);
 
     // Check if the user is blocked
     if (user?.userBlock) {
@@ -554,6 +555,15 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     totalExposure = parseFloat(parseFloat(totalExposure + redisData.maxLoss - maxSessionLoss).toFixed(2)) ;
 
+    if (totalExposure > userExposureLimit) {
+      logger.info({
+        info: `User exceeded the limit of total exposure for a day`,
+        totalExposure,
+        userExposureLimit
+      })
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
+    }
+    
     let redisObject = {
       [`${redisKeys.userSessionExposure}${matchId}`]: redisSessionExp,
       [`${betId}_profitLoss`]: JSON.stringify(redisData),

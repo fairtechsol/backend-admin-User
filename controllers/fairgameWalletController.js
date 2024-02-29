@@ -1309,7 +1309,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
       parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
       parentUser.exposure = parentExposure + value["exposure"];
-      parentUser.totalCommission = parentUser.totalCommission + value["totalCommission"];
+      parentUser.totalCommission = parentUser.totalCommission - value["totalCommission"];
       if (parentExposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
@@ -1553,7 +1553,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
         let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
         if (userCommission) {
-          upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(commissionData?.find((item) => item?.userId == patentUser.id)?.amount || 0) * parseFloat(upLinePartnership) / 10000).toFixed(2));
+          upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(commissionData?.find((item) => item?.userId == patentUser.id)?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
         }
 
         const betPlaceProfitLoss = await calculatePLAllBet(betPlace, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
@@ -1837,7 +1837,7 @@ exports.declareMatchResult = async (req, res) => {
       parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
       parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
       parentUser.exposure = parentExposure - value["exposure"];
-      parentUser.totalCommission = parentUser.totalCommission + value
+      parentUser.totalCommission = parentUser.totalCommission + value["totalCommission"]
       if (parentExposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
@@ -2164,7 +2164,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       let myProfitLoss = parseFloat(
         (((profitLoss + deductedAmount) * upLinePartnership) / 100).toString()
       );
-      let parentCommission = parseFloat(( ( (parseFloat(parentUsers?.matchCommission) * ((user.user.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : profitLoss < 0 ? Math.abs(profitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
+      let parentCommission = parseFloat(( ( (parseFloat(patentUser?.matchCommission) * ((user.user.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : profitLoss < 0 ? Math.abs(profitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
 
       
 
@@ -2173,11 +2173,11 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
-        if (parentUsers?.matchCommission && parseFloat(parentUsers?.matchCommission) != 0) {
+        if (patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0) {
           upperUserObj[patentUser.id].totalCommission += parentCommission;
         }
       } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss + deductedAmount, myProfitLoss: myProfitLoss, exposure: maxLoss, ...(parentUsers?.matchCommission && parseFloat(parentUsers?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) };
+        upperUserObj[patentUser.id] = { profitLoss: profitLoss + deductedAmount, myProfitLoss: myProfitLoss, exposure: maxLoss, ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) };
       }
 
       if (patentUser.createBy === patentUser.id) {
@@ -2339,7 +2339,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
       parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
       parentUser.exposure = parentExposure + value["exposure"];
-      parentUser.totalCommission = parseFloat(parentUser.totalCommission || 0) + parseFloat(value["totalCommission"] || 0);
+      parentUser.totalCommission = parseFloat(parentUser.totalCommission || 0) - parseFloat(value["totalCommission"] || 0);
       if (parentExposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
@@ -2350,7 +2350,7 @@ exports.unDeclareMatchResult = async (req, res) => {
         });
         parentUser.exposure = 0;
       }
-      addInitialUserBalance(parentUser);
+      updateUserBalanceByUserId(parentUser.userId, parentUser);
       logger.info({
         message: "Declare result db update for parent ",
         data: {
@@ -2542,13 +2542,14 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     }
 
     if (userRedisData?.exposure) {
+      const { totalCommission, ...balanceDate } = userBalanceData;
       updateUserDataRedis(user.user.id, {
         ...matchTeamRates,
-        ...userBalanceData,
+        ...balanceDate,
         [redisKeys.userMatchExposure + matchId]: maxLoss
       });
     }
-    await addUser(user.user);
+    await updateUserBalanceByUserId(user.user.id, userBalanceData);
     logger.info({
       message: "user save at un declare result",
       data: user
