@@ -15,9 +15,9 @@ exports.deleteCommission = (betId) => {
 }
 
 exports.commissionReport = (userId, query) => {
-  const commissionMatches = Commission.createQueryBuilder().where({ parentId: userId }).groupBy('"matchId"').addGroupBy("match.title").addGroupBy("match.startAt")
+  const commissionMatches = Commission.createQueryBuilder().where({ parentId: userId }).groupBy("match.id").addGroupBy("match.title").addGroupBy("match.startAt")
     .leftJoinAndMapOne("commission.match", "match", 'match', 'commission.matchId = match.id')
-    .select(['match.title as "matchName"', 'match.startAt as "matchStartDate"', 'match.matchId as "matchId"']);
+    .select(['match.title as "matchName"', 'match.startAt as "matchStartDate"', 'match.id as "matchId"']);
 
   if (query.page) {
     commissionMatches.skip((parseInt(query.page) - 1) * parseInt(query.limit || 10)).take(parseInt(query?.limit || 10));

@@ -63,6 +63,7 @@
     "marketRateChanged": "{marketType} rate has been changed.",
     "resultDeclared": "Result declared successfully.",
     "resultUnDeclared": "Result un declared successfully.",
-    "matchNotLive": "Match is currently not live."
+    "matchNotLive": "Match is currently not live.",
+    "oddNotAllow": "Bet not accpet rate over 5.01 on {gameType}"
   }
 }
