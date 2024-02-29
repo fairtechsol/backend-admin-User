@@ -1,5 +1,5 @@
 const { transType, socketData, matchComissionTypeConstant } = require("../config/contants");
-const { getUser } = require("../services/userService");
+const { getUser, getUserDataWithUserBalance } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
 const {

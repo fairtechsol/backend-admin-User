@@ -20,7 +20,7 @@ exports.getBet = async (req, res) => {
     let where = {};
     let result;
     let select = [
-      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason"
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaceds.bettingName"
     ];
 
     if (query.status && query.status == "MATCHED") {
@@ -110,7 +110,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       data: req.body
     });
     let reqUser = req.user;
-    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex } = req.body;
+    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     if (!userBalanceData || !userBalanceData.user) {
@@ -206,7 +206,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
       ipAddress: ipAddress || req.ip || req.connection.remoteAddress,
       browserDetail: browserDetail || req.headers['user-agent'],
       eventName: match.title,
-      eventType: match.matchType
+      eventType: match.matchType,
+      bettingName: bettingName
     }
     await validateMatchBettingDetails(matchBetting, betPlacedObj, { teamA, teamB, teamC, placeIndex });
     const teamArateRedisKey =
