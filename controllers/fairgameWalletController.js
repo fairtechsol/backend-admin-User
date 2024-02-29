@@ -918,7 +918,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
       }
     }
 
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, sessionExposure: redisSesionExposureValue });
+    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, sessionExposure: redisSesionExposureValue, userBalanceData });
 
     bulkWalletRecord.push(
       {
@@ -1047,6 +1047,8 @@ exports.declareSessionNoResult = async (req, res) => {
 
 
     let users = await getDistinctUserBetPlaced(betId);
+
+    await updatePlaceBet({ betId: betId }, { result: betResultStatus.TIE });
 
     let upperUserObj = {};
     const profitLossData = await calculateMaxLossSessionForUserNoResult(
@@ -1197,9 +1199,9 @@ const calculateMaxLossSessionForUserNoResult = async (
     logger.info({
       message: "Update user exposure.",
       data: {
-        userExposure: user.user.exposure,
+        userExposure: user.user.userBalance.exposure,
         maxLoss: maxLoss,
-        userExposure: redisSesionExposureValue,
+        userRedisExposure: redisSesionExposureValue,
       },
     });
 
@@ -1210,8 +1212,7 @@ const calculateMaxLossSessionForUserNoResult = async (
       });
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
     }
-    await addUser(user.user);
-
+    await updateUserBalanceByUserId(user.user.id, { exposure: user.user.userBalance.exposure });
 
     if (user.user.createBy === user.user.id) {
       superAdminData[user.user.id] = {
@@ -1224,6 +1225,7 @@ const calculateMaxLossSessionForUserNoResult = async (
       betId,
       matchId,
       sessionExposure: redisSesionExposureValue,
+      userBalanceData: user.user.userBalance
     });
 
     let parentUsers = await getParentsWithBalance(user.user.id);
@@ -1444,8 +1446,8 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       data: user.user.exposure
     });
 
-    getWinAmount = getMultipleAmount[0].winamount;
-    getLossAmount = getMultipleAmount[0].lossamount;
+    getWinAmount = getMultipleAmount?.[0]?.winamount || 0;
+    getLossAmount = getMultipleAmount?.[0]?.lossamount || 0;
     profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
 
 
@@ -1502,7 +1504,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       data: user
     })
 
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, sessionExposure: redisSesionExposureValue });
+    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, sessionExposure: redisSesionExposureValue, userBalanceData });
 
     bulkWalletRecord.push(
       {
@@ -1737,14 +1739,20 @@ exports.declareMatchResult = async (req, res) => {
         else if ((item.betType === betType.LAY && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.BACK && item.teamName === tiedManualTeamName.no)) {
           item.result = betResultStatus.LOSS;
         }
+        else{
+          item.result = betResultStatus.TIE;
+        }
       } else if (result === resultType.noResult) {
         if (!(item.marketBetType === matchBettingType.tiedMatch1 || item.marketBetType === matchBettingType.tiedMatch2)) {
           if ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName === tiedManualTeamName.no)) {
-            betResultStatus.LOSS;
+            item.result = betResultStatus.LOSS;
           }
           else if ((item.betType === betType.LAY && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.BACK && item.teamName === tiedManualTeamName.no)) {
-            betResultStatus.WIN
-          };
+            item.result = betResultStatus.WIN
+          }
+          else{
+            item.result = betResultStatus.TIE;
+          }
         }
       } else {
         const isWinCondition = (item.betType === betType.BACK && item.teamName === result) || (item.betType === betType.LAY && item.teamName !== result);
@@ -2081,30 +2089,30 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       }
     }
 
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId });
+    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, userBalanceData });
 
     let currBal = user.user.userBalance.currentBalance;
 
     bulkWalletRecord.push(
       ...[
-        ...(result != resultType.tie && result != resultType.noResult ? [{
+        ...(result != resultType.tie && result != resultType.noResult && (!parseFloat(getMultipleAmount.winAmount) || !parseFloat(getMultipleAmount.lossAmount)) ? [{
           winAmount: parseFloat(getMultipleAmount.winAmount),
           lossAmount: parseFloat(getMultipleAmount.lossAmount),
           type: "MATCH ODDS",
           result: result
         }] : []),
-        ...(result != resultType.noResult ? [{
+        ...(result != resultType.noResult && (!parseFloat(getMultipleAmount.winAmountTied) || !parseFloat(getMultipleAmount.lossAmountTied)) ? [{
           winAmount: parseFloat(getMultipleAmount.winAmountTied),
           lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
           type: "Tied Match",
           result: result == resultType.tie ? "YES" : "NO"
         }] : []),
-        {
+        ...((!parseFloat(getMultipleAmount.winAmountComplete) || !parseFloat(getMultipleAmount.lossAmountComplete)) ? [{
           winAmount: parseFloat(getMultipleAmount.winAmountComplete),
           lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
           type: "Complete Match",
           result: "YES"
-        }
+        }]:[])
       ]?.map((item) => {
         currBal = currBal + item.winAmount - item.lossAmount;
 
@@ -2535,7 +2543,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
       data: user
     })
 
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, matchExposure: maxLoss });
+    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData });
 
     let currBal = user.user.userBalance.currentBalance;
     bulkWalletRecord.push(
