@@ -1212,7 +1212,7 @@ const calculateMaxLossSessionForUserNoResult = async (
       });
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
     }
-    await addInitialUserBalance(user.user.userBalance);
+    await updateUserBalanceByUserId(user.user.id, { exposure: user.user.userBalance.exposure });
 
     if (user.user.createBy === user.user.id) {
       superAdminData[user.user.id] = {
