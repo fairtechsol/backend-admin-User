@@ -1352,7 +1352,11 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
       deleteReason: deleteReason,
       matchId: matchId,
       betPlacedId: betPlacedId,
-      matchBetType
+      matchBetType,
+      teamArateRedisKey: teamArateRedisKey,
+      teamBrateRedisKey: teamBrateRedisKey,
+      teamCrateRedisKey: teamCrateRedisKey,
+      redisObject
     });
   }
   await betPlacedService.updatePlaceBet({ matchId: matchId, id: In(betPlacedId) }, { deleteReason: deleteReason, result: betResultStatus.UNDECLARE });
@@ -1421,6 +1425,10 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
               matchId: matchId,
               betPlacedId: betPlacedId,
               matchBetType,
+              teamArateRedisKey: teamArateRedisKey,
+              teamBrateRedisKey: teamBrateRedisKey,
+              teamCrateRedisKey: teamCrateRedisKey,
+              redisObject: redisObj
             });
 
           }
