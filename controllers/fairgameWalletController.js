@@ -2588,7 +2588,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
           amount: -(item.winAmount - item.lossAmount),
           transType: transType.bet,
           closingBalance: currBal,
-          description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
+          description: `Revert ${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         }
       })
     );
