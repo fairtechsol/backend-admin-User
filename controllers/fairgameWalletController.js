@@ -1504,9 +1504,9 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         searchId: user.user.id,
         userId: user.user.id,
         amount: -profitLoss,
-        transType: transType.bet,
+        transType: -profitLoss < 0 ? transType.loss : transType.win,
         closingBalance: userCurrBalance,
-        description: `${user?.eventType}/${user?.eventName}/${resultDeclare?.type}`,
+        description: `Revert ${user?.eventType}/${user?.eventName}/session`,
       }
     );
 
@@ -2586,7 +2586,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
           searchId: user.user.id,
           userId: user.user.id,
           amount: -(item.winAmount - item.lossAmount),
-          transType: transType.bet,
+          transType: -(item.winAmount - item.lossAmount) < 0 ? transType.loss : transType.win,
           closingBalance: currBal,
           description: `Revert ${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         }
