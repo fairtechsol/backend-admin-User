@@ -118,12 +118,6 @@ module.exports.walletDescription = {
   userCreate: "CREDIT REFRENCE as user create",
 };
 
-module.exports.socketData = {
-  userBalanceUpdateEvent: "userBalanceUpdate",
-  logoutUserForceEvent: "logoutUserForce",
-  betBlockEvent: "userBetBlock",
-};
-
 module.exports.betType = {
   YES: "YES",
   NO: "NO",
@@ -192,20 +186,6 @@ module.exports.betResultStatus = {
 }
 module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;
 
-
-module.exports.socketData ={
-  expertRoomSocket : "expertRoom",
-  MatchBetPlaced : "userMatchBetPlaced",
-  userAllExposure: "exposure",
-  userMatchExposure: "matchExposure_",
-  userSessionExposure: "sessionExposure_",
-  userTeamARate: "teamARate_",
-  userTeamBRate: "teamBRate_",
-  userTeamCRate: "teamCRate_",
-  userExposureLimit: "exposureLimit",
-};
-
-
 module.exports.socketData = {
   expertRoomSocket: "expertRoom",
   MatchBetPlaced: "userMatchBetPlaced",
@@ -224,7 +204,10 @@ module.exports.socketData = {
   matchResult:"matchResult",
   matchResultUnDeclare:"matchResultUnDeclare",
   sessionDeleteBet: "sessionDeleteBet",
-  matchDeleteBet: "matchDeleteBet"
+  matchDeleteBet: "matchDeleteBet",
+  userBalanceUpdateEvent: "userBalanceUpdate",
+  logoutUserForceEvent: "logoutUserForce",
+  betBlockEvent: "userBetBlock",
 };
 
 exports.marketBetType = {
