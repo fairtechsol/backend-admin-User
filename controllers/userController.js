@@ -1420,8 +1420,6 @@ exports.getCommissionBetPlaced = async (req, res) => {
     const { matchId } = req.query;
     let commissionReportData = [];
 
-    
-
     const userData = await getUserById(userId, ["id","roleName"]);
 
     let queryColumns = ``;
@@ -1430,27 +1428,31 @@ exports.getCommissionBetPlaced = async (req, res) => {
       case (userRoleConstant.fairGameWallet):
       
       case (userRoleConstant.fairGameAdmin): {
-        queryColumns =  ` parentuse.fwPartnership`;
+        queryColumns =  ` parentuser.fwPartnership`;
         break;
       }
       case (userRoleConstant.superAdmin): {
-        queryColumns =` parentuse.faPartnership + parentuse.fwPartnership `;
+        queryColumns =` parentuser.faPartnership + parentuser.fwPartnership `;
         break;
       }
       case (userRoleConstant.admin): {
-        queryColumns = ` parentuse.saPartnership + parentuse.faPartnership + parentuse.fwPartnership `;
+        queryColumns = ` parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership `;
         break;
       }
       case (userRoleConstant.superMaster): {
-        queryColumns =` parentuse.aPartnership + parentuse.saPartnership + parentuse.faPartnership + parentuse.fwPartnership`;
+        queryColumns =` parentuser.aPartnership + parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership`;
         break;
       }
       case (userRoleConstant.master): {
-        queryColumns = ` parentuse.smPartnership + parentuse.aPartnership + parentuse.saPartnership + parentuse.faPartnership + parentuse.fwPartnership `;
+        queryColumns = ` parentuser.smPartnership + parentuser.aPartnership + parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership `;
         break;
       }
       case (userRoleConstant.agent): {
-        queryColumns = ` parentuse.mPartnership + parentuse.smPartnership + parentuse.aPartnership + parentuse.saPartnership + parentuse.faPartnership + parentuse.fwPartnership`;
+        queryColumns = ` parentuser.mPartnership + parentuser.smPartnership + parentuser.aPartnership + parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership`;
+        break;
+      }
+      case (userRoleConstant.user): {
+        queryColumns = `parentuser.agPartnership + parentuser.mPartnership + parentuser.smPartnership + parentuser.aPartnership + parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership`;
         break;
       }
     }
