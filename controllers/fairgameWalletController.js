@@ -1764,7 +1764,7 @@ exports.declareMatchResult = async (req, res) => {
         item.result = isWinCondition || isTiedMatchCondition || isCompleteMatchCondition ? betResultStatus.WIN : betResultStatus.LOSS;
       }
       if (item.user.matchCommission && item.result == betResultStatus.LOSS && item.user.matchComissionType == matchComissionTypeConstant.entryWise) {
-        let commissionAmount = Number((parseFloat(item.amount) * (parseFloat(item.user['matchCommission']) / 100)).toFixed(2));
+        let commissionAmount = Number((parseFloat(item.lossAmount) * (parseFloat(item.user['matchCommission']) / 100)).toFixed(2));
         commissionAmount = Math.abs(commissionAmount);
         if (commissions[item?.user?.id]) {
           commissions[item?.user?.id] = parseFloat(commissions[item?.user?.id]) + parseFloat(commissionAmount);

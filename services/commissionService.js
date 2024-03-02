@@ -15,7 +15,7 @@ exports.deleteCommission = (betId) => {
 }
 
 exports.commissionReport = (userId, query) => {
-  const commissionMatches = Commission.createQueryBuilder().where({ parentId: userId }).groupBy("match.id").addGroupBy("match.title").addGroupBy("match.startAt")
+  const commissionMatches = Commission.createQueryBuilder().where({ parentId: userId, settled : false  }).groupBy("match.id").addGroupBy("match.title").addGroupBy("match.startAt")
     .leftJoinAndMapOne("commission.match", "match", 'match', 'commission.matchId = match.id')
     .select(['match.title as "matchName"', 'match.startAt as "matchStartDate"', 'match.id as "matchId"']);
 
