@@ -16,6 +16,7 @@ const {
   buttonType,
   defaultButtonValue,
   sessiontButtonValue,
+  tieCompleteBetType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet } = require("../services/betPlacedService");
@@ -1745,9 +1746,9 @@ exports.declareMatchResult = async (req, res) => {
           }
         }
       } else {
-        const isWinCondition = (item.betType === betType.BACK && item.teamName === result) || (item.betType === betType.LAY && item.teamName !== result);
-        const isTiedMatchCondition = (item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch2) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.no) || (item.betType === betType.LAY && item.teamName !== tiedManualTeamName.yes));
-        const isCompleteMatchCondition = (item.marketType === matchBettingType.completeMatch || item.marketType === matchBettingType.completeManual) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName !== tiedManualTeamName.no));
+        const isWinCondition = !(Object.values(tieCompleteBetType).includes(item.marketType)) && ((item.betType === betType.BACK && item.teamName === result) || (item.betType === betType.LAY && item.teamName !== result));
+        const isTiedMatchCondition = (item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch2) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.no) || (item.betType === betType.LAY && item.teamName == tiedManualTeamName.yes));
+        const isCompleteMatchCondition = (item.marketType === matchBettingType.completeMatch || item.marketType === matchBettingType.completeManual) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName == tiedManualTeamName.no));
         item.result = isWinCondition || isTiedMatchCondition || isCompleteMatchCondition ? betResultStatus.WIN : betResultStatus.LOSS;
       }
       if (item.user.matchCommission && item.result == betResultStatus.LOSS && item.user.matchComissionType == matchComissionTypeConstant.entryWise) {
