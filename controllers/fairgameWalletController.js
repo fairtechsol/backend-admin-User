@@ -2657,7 +2657,9 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
           faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
         }
         else {
-          faAdminCal.admin[user.user.superParentId] = {};
+          if(!faAdminCal.admin[user.user.superParentId]){
+            faAdminCal.admin[user.user.superParentId] = {};
+          }
           faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
         }
       }
@@ -2672,7 +2674,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
     faAdminCal.admin[user.user.superParentId] = {
       ...faAdminCal.admin[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0) ,
+      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
       exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
       myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
       role: user.user.superParentType
