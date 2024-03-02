@@ -39,7 +39,7 @@ exports.isUserExist = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, remark, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission } = req.body;
+    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, remark, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission, delayTime } = req.body;
     let reqUser = req.user || {};
     let creator = await getUserById(reqUser.id || createdBy);
     if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
@@ -82,7 +82,8 @@ exports.createUser = async (req, res) => {
       matchCommission,
       superParentType: creator.superParentType,
       superParentId: creator.superParentId,
-      remark: remark
+      remark: remark,
+      delayTime: delayTime || 2
     }
     let partnerships = await calculatePartnership(userData, creator)
     userData = { ...userData, ...partnerships };

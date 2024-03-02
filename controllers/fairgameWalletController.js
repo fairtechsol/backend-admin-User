@@ -94,7 +94,8 @@ exports.createSuperAdmin = async (req, res) => {
       matchCommission,
       superParentType,
       superParentId,
-      remark
+      remark,
+      delayTime
     } = req.body;
 
     const isUserPresent = await getUserByUserName(userName, ["id"]);
@@ -176,6 +177,7 @@ exports.createSuperAdmin = async (req, res) => {
       superParentType,
       superParentId,
       remark,
+      delayTime: delayTime || 2,
       ...(isOldFairGame ? {
         sessionCommission,
         matchComissionType,
