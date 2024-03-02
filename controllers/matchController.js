@@ -115,8 +115,7 @@ exports.listMatch = async (req, res) => {
 
       for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
         let matchDetail = apiResponse.data?.matches[i];
-        apiResponse.data.matches[i].totalBet = betPlaced?.length;
-
+        apiResponse.data.matches[i].totalBet = betPlaced?.filter((match)=> match?.matchId === matchDetail?.id)?.length;
         const redisIds = [`${redisKeys.userTeamARate}${matchDetail?.id}`, `${redisKeys.userTeamBRate}${matchDetail?.id}`];
 
         let redisData = await getUserRedisKeys(user.id, redisIds);

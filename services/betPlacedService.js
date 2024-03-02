@@ -255,7 +255,8 @@ exports.getBetsProfitLoss = async (where, totalLoss) => {
       'placeBet.odds as "odds"',
       'placeBet.createdAt as "createdAt"',
       'user.userName as userName',
-      'placeBet.deleteReason as "deleteReason"'
+      'placeBet.deleteReason as "deleteReason"',
+      'placeBet.bettingName  as "bettingName"',
     ])
     .groupBy('placeBet.id, user.userName').orderBy('placeBet.createdAt', 'DESC');
 
