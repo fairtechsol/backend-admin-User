@@ -1997,6 +1997,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     // deducting 1% from match odd win amount 
     if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
       user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance - (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
+      profitLoss -= parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
     }
 
     const userCurrBalance = Number(user.user.userBalance.currentBalance + profitLoss).toFixed(2);
@@ -2155,21 +2156,16 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       else if (patentUser.roleName === userRoleConstant.agent) {
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
       }
-      let deductedAmount = 0;
-      // deducting 1% from match odd win amount 
-      if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-        deductedAmount = parseFloat(parseFloat((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100) * user.user[`${partnershipPrefixByRole[patentUser.roleName]}Partnership`]).toFixed(2));
-      }
 
       let myProfitLoss = parseFloat(
-        (((profitLoss + deductedAmount) * upLinePartnership) / 100).toString()
+        (((profitLoss) * upLinePartnership) / 100).toString()
       );
       let parentCommission = parseFloat(( ( (parseFloat(patentUser?.matchCommission) * ((user.user.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : profitLoss < 0 ? Math.abs(profitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
 
       
 
       if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss + deductedAmount;
+        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
         upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
@@ -2177,7 +2173,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
           upperUserObj[patentUser.id].totalCommission += parentCommission;
         }
       } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss + deductedAmount, myProfitLoss: myProfitLoss, exposure: maxLoss, ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) };
+        upperUserObj[patentUser.id] = { profitLoss: profitLoss , myProfitLoss: myProfitLoss, exposure: maxLoss, ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) };
       }
 
       if (patentUser.createBy === patentUser.id) {
@@ -2250,21 +2246,16 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       }
     }
 
-      let deductedAmount = 0;
-      // deducting 1% from match odd win amount 
-      if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-        deductedAmount = parseFloat(parseFloat((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100) * user.user[`${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership`]).toFixed(2));
-      }
 
     faAdminCal.userData[user.user.superParentId] = {
-      profitLoss: profitLoss + deductedAmount + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
+      profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
       exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0) + deductedAmount) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
+      myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0) ) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
       totalCommission: parseFloat((parseFloat((user.user.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : profitLoss < 0 ? Math.abs(profitLoss) : 0)) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100).toFixed(2)) + (faAdminCal.userData?.[user.user.superParentId]?.totalCommission || 0),
       role: user.user.superParentType
     }
 
-    faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0) + deductedAmount;
+    faAdminCal.fwWalletDeduction = 0;
 
   };
   return { fwProfitLoss, faAdminCal, superAdminData, bulkCommission };
@@ -2500,6 +2491,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
   // deducting 1% from match odd win amount 
   if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
     user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance + (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
+    profitLoss -=  parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
   }
 
     const userCurrBalance = Number(
@@ -2610,18 +2602,13 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
       }
 
-      let deductedAmount = 0;
-      // deducting 1% from match odd win amount 
-      if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-        deductedAmount = parseFloat(parseFloat((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100) * user.user[`${partnershipPrefixByRole[patentUser.roleName]}Partnership`]).toFixed(2));
-      }
 
       let myProfitLoss = parseFloat(
-        (((profitLoss-deductedAmount) * upLinePartnership) / 100).toString()
+        (((profitLoss) * upLinePartnership) / 100).toString()
       );
 
       if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss - deductedAmount;
+        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss ;
         upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
@@ -2640,7 +2627,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         });
 
       } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss - deductedAmount, myProfitLoss: myProfitLoss, exposure: maxLoss };
+        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
 
         let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
         if (userCommission) {
@@ -2682,21 +2669,16 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
       }
     });
 
-    let deductedAmount = 0;
-      // deducting 1% from match odd win amount 
-      if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-        deductedAmount = parseFloat(parseFloat((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100) * user.user[`${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}Partnership`]).toFixed(2));
-      }
 
     faAdminCal.admin[user.user.superParentId] = {
       ...faAdminCal.admin[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0) - deductedAmount,
+      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0) ,
       exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss - deductedAmount) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
       role: user.user.superParentType
     }
 
-    faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0) + deductedAmount;
+    faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
