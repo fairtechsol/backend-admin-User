@@ -1114,6 +1114,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       sessionExposure: redisObject[redisSesionExposureName],
       profitLoss: oldProfitLoss,
       bets: bets,
+      betId: betId,
       deleteReason: deleteReason,
       matchId: matchId,
       betPlacedId: betPlacedId
@@ -1189,6 +1190,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
               sessionExposure: redisObj[redisSesionExposureName],
               profitLoss: oldProfitLossParent,
               bets: bets,
+              betId: betId,
               deleteReason: deleteReason,
               matchId: matchId,
               betPlacedId: betPlacedId
