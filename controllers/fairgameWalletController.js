@@ -1498,7 +1498,15 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       data: user
     })
 
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, sessionExposure: redisSesionExposureValue, userBalanceData });
+    sendMessageToUser(user.user.id, redisEventName, {
+      ...user.user, betId, matchId, sessionExposure: redisSesionExposureValue, userBalanceData, profitLossData: JSON.stringify({
+        upperLimitOdds: redisData?.betData?.[redisData?.betData?.length - 1]?.odds,
+        lowerLimitOdds: redisData?.betData?.[0]?.odds,
+        betPlaced: redisData?.betData,
+        maxLoss: redisData?.maxLoss,
+        totalBet: redisData.total_bet
+      })
+    });
 
     bulkWalletRecord.push(
       {
@@ -2016,7 +2024,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         userBalanceData.totalCommission = parseFloat((parseFloat(user.user.userBalance.totalCommission) + parseFloat(getLossAmount) * parseFloat(user.user.matchCommission) / 100).toFixed(2));
       }
       else if (profitLoss < 0) {
-        userBalanceData.totalCommission = parseFloat((parseFloat(user.user.userBalance.totalCommission) + parseFloat(profitLoss) * parseFloat(user.user.matchCommission) / 100).toFixed(2));
+        userBalanceData.totalCommission = parseFloat((parseFloat(user.user.userBalance.totalCommission) + Math.abs(parseFloat(profitLoss)) * parseFloat(user.user.matchCommission) / 100).toFixed(2));
       }
     }
 
