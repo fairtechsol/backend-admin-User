@@ -162,6 +162,13 @@ module.exports.matchBettingType = {
   completeManual: "completeManual",
 };
 
+module.exports.tieCompleteBetType = {
+  tiedMatch1: "tiedMatch1",
+  tiedMatch2: "tiedMatch2",
+  completeMatch: "completeMatch",
+  completeManual: "completeManual",
+};
+
 module.exports.redisKeys = {
   userAllExposure : "exposure",
   userMatchExposure : "matchExposure_",
