@@ -2063,6 +2063,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
           betId: currBetId,
           commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
           parentId: user.user.id,
+          stake: userOriginalProfitLoss
         });
       }
       if (user?.user?.id == user?.user?.createBy) {
@@ -2098,7 +2099,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             partnerShip: 100,
             matchName: matchData?.title,
             matchStartDate: new Date(matchData?.startAt),
-            userName: user.user.userName
+            userName: user.user.userName,
+            stake: userOriginalProfitLoss
 
           });
         }
@@ -2219,6 +2221,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             betId: currBetId,
             commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
             parentId: patentUser.id,
+            stake: userOriginalProfitLoss
+
           });
         }
         if (patentUser?.id == patentUser?.createBy) {
@@ -2254,7 +2258,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
               partnerShip: upLinePartnership,
               matchName: matchData?.title,
               matchStartDate: matchData?.startAt,
-              userName: user.user.userName
+              userName: user.user.userName,
+              stake: userOriginalProfitLoss
 
             });
           }
