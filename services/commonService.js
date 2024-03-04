@@ -506,7 +506,8 @@ exports.settingBetsDataAtLogin = async (user) => {
           maxLoss: result.maxLoss,
           upperLimitOdds: result.upperLimitOdds,
           lowerLimitOdds: result.lowerLimitOdds,
-          betPlaced: result.betData
+          betPlaced: result.betData,
+          totalBet: result.total_bet
         };
         sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] = parseFloat((parseFloat(sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] || 0) + result.maxLoss).toFixed(2));
       }
@@ -607,6 +608,7 @@ exports.settingBetsDataAtLogin = async (user) => {
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
         betPlaced: betPlaceProfitLoss?.betData,
         maxLoss: betPlaceProfitLoss?.maxLoss,
+        totalBet: betPlaceProfitLoss?.total_bet
       };
       sessionExp[`${redisKeys.userSessionExposure}${betResult.session[placedBet]?.[0]?.matchId}`] = parseFloat((parseFloat(sessionExp[`${redisKeys.userSessionExposure}${betResult.session[placedBet]?.[0]?.matchId}`] || 0) + sessionResult?.[`${placedBet}${redisKeys.profitLoss}`].maxLoss).toFixed(2));
 
