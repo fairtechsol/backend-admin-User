@@ -42,7 +42,6 @@ module.exports.ChangePassword = Joi.object({
   transactionPassword: Joi.string()
   ,
   confirmPassword: Joi.string()
-    .required()
     .valid(Joi.ref("newPassword"))
     .label("Confirm Password")
     .messages({
