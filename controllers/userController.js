@@ -1396,12 +1396,48 @@ exports.getCommissionReportsMatch = async (req, res) => {
     const { userId } = req.params;
     let commissionReportData = [];
 
-    const userData = await getUserById(userId, ["id"]);
+    const userData = await getUserById(userId, ["id","roleName"]);
+
+    let queryColumns = ``;
+
+    switch (userData.roleName) {
+      case (userRoleConstant.fairGameWallet):
+      
+      case (userRoleConstant.fairGameAdmin): {
+        queryColumns =  ` parentuser.fwPartnership`;
+        break;
+      }
+      case (userRoleConstant.superAdmin): {
+        queryColumns =` parentuser.faPartnership + parentuser.fwPartnership `;
+        break;
+      }
+      case (userRoleConstant.admin): {
+        queryColumns = ` parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership `;
+        break;
+      }
+      case (userRoleConstant.superMaster): {
+        queryColumns =` parentuser.aPartnership + parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership`;
+        break;
+      }
+      case (userRoleConstant.master): {
+        queryColumns = ` parentuser.smPartnership + parentuser.aPartnership + parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership `;
+        break;
+      }
+      case (userRoleConstant.agent): {
+        queryColumns = ` parentuser.mPartnership + parentuser.smPartnership + parentuser.aPartnership + parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership`;
+        break;
+      }
+      case (userRoleConstant.user): {
+        queryColumns = `parentuser.agPartnership + parentuser.mPartnership + parentuser.smPartnership + parentuser.aPartnership + parentuser.saPartnership + parentuser.faPartnership + parentuser.fwPartnership`;
+        break;
+      }
+    }
+
     if (!userData) {
       return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "User" } } }, req, res)
     }
 
-    commissionReportData = await commissionReport(userId, req.query);
+    commissionReportData = await commissionReport(userId, req.query,queryColumns);
 
     return SuccessResponse({ statusCode: 200, data: commissionReportData, }, req, res);
 
