@@ -2117,7 +2117,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     let currBal = user.user.userBalance.currentBalance;
 
     const transactions=[
-      ...(result != resultType.tie && result != resultType.noResult && (!parseFloat(getMultipleAmount.winAmount) || !parseFloat(getMultipleAmount.lossAmount)) ? [{
+      ...(result != resultType.tie && result != resultType.noResult && (parseFloat(getMultipleAmount.winAmount) || parseFloat(getMultipleAmount.lossAmount)) ? [{
         winAmount: parseFloat(getMultipleAmount.winAmount),
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
         type: "MATCH ODDS",
