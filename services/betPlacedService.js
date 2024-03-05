@@ -181,12 +181,12 @@ exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss) => {
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 
   if (startDate) {
-    query = query.andWhere('placeBet.createdAt >= :startDate', { from: new Date(startDate) })
+    query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
   }
   if (endDate) {
     let newDate = new Date(endDate);
     newDate.setHours(23, 59, 59, 999);
-    query = query.andWhere('placeBet.createdAt <= :endDate', { to: newDate })
+    query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
   }
   query = query
     .select([
@@ -206,12 +206,12 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, sessionLo
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 
   if (startDate) {
-    query = query.andWhere('placeBet.createdAt >= :startDate', { from: new Date(startDate) })
+    query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
   }
   if (endDate) {
     let newDate = new Date(endDate);
     newDate.setHours(23, 59, 59, 999);
-    query = query.andWhere('placeBet.createdAt <= :endDate', { to: newDate })
+    query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
   }
   query = query
     .select([
