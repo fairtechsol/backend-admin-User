@@ -831,7 +831,7 @@ exports.getTotalUserListBalance = async (req, res, next) => {
 
     const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
 
-    let childUsersBalances = await getChildUserBalanceSum(userId || reqUser.id);
+    let childUsersBalances = await getChildUserBalanceSum(userId || reqUser.id, true);
 
     totalBalance.currBalance = childUsersBalances?.[0]?.balance;
     totalBalance.availableBalance = parseFloat(totalBalance.availableBalance||0) - parseFloat(totalBalance.totalExposure||0);

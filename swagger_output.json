@@ -177,6 +177,9 @@
                   },
                   "matchCommission": {
                     "example": "any"
+                  },
+                  "delayTime": {
+                    "example": "any"
                   }
                 }
               }
@@ -1534,6 +1537,9 @@
                     "example": "any"
                   },
                   "remark": {
+                    "example": "any"
+                  },
+                  "delayTime": {
                     "example": "any"
                   }
                 }
