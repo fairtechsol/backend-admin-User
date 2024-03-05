@@ -212,7 +212,6 @@ module.exports.socketData = {
   matchResultUnDeclare:"matchResultUnDeclare",
   sessionDeleteBet: "sessionDeleteBet",
   matchDeleteBet: "matchDeleteBet",
-  userBalanceUpdateEvent: "userBalanceUpdate",
   logoutUserForceEvent: "logoutUserForce",
   betBlockEvent: "userBetBlock",
 };
