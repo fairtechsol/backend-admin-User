@@ -317,8 +317,9 @@ exports.getBetsWithMatchId=(where)=>{
 
   return BetPlaced.createQueryBuilder()
   .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id'+where??"")
-  .where({ deleteReason: IsNull(), result: In([betResultStatus.PENDING, betResultStatus.UNDECLARE]), user: Not(IsNull()) })
+  .where({ deleteReason: IsNull(), result: In([betResultStatus.PENDING]) })
+  .andWhere("user.id IS NOT NULL")
   .groupBy("betPlaced.matchId")
-  .select(['betPlaced.matchId as "matchId"', "COUNT(betPlaced.matchId) as count"])
+  .select(['betPlaced.matchId as "matchId"', "COUNT(betPlaced.matchId) as count"])  
   .getRawMany();
 }

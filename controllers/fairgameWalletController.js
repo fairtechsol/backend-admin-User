@@ -2012,7 +2012,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
     // deducting 1% from match odd win amount 
     if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-      user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance - (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
       profitLoss -= parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
     }
 
@@ -2109,6 +2108,11 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
     sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, userBalanceData });
 
+    // deducting 1% from match odd win amount 
+    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
+      user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance - (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
+    }
+
     let currBal = user.user.userBalance.currentBalance;
 
     bulkWalletRecord.push(
@@ -2119,13 +2123,13 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
           type: "MATCH ODDS",
           result: result
         }] : []),
-        ...(result != resultType.noResult && (!parseFloat(getMultipleAmount.winAmountTied) || !parseFloat(getMultipleAmount.lossAmountTied)) ? [{
+        ...(result != resultType.noResult && (parseFloat(getMultipleAmount.winAmountTied) || parseFloat(getMultipleAmount.lossAmountTied)) ? [{
           winAmount: parseFloat(getMultipleAmount.winAmountTied),
           lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
           type: "Tied Match",
           result: result == resultType.tie ? "YES" : "NO"
         }] : []),
-        ...((!parseFloat(getMultipleAmount.winAmountComplete) || !parseFloat(getMultipleAmount.lossAmountComplete)) ? [{
+        ...((parseFloat(getMultipleAmount.winAmountComplete) || parseFloat(getMultipleAmount.lossAmountComplete)) ? [{
           winAmount: parseFloat(getMultipleAmount.winAmountComplete),
           lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
           type: "Complete Match",
@@ -2180,7 +2184,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       );
       let parentCommission = parseFloat(( ( (parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
 
-      
 
       if (upperUserObj[patentUser.id]) {
         upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
@@ -2513,7 +2516,6 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
   // deducting 1% from match odd win amount 
   if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-    user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance + (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
     profitLoss -=  parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
   }
 
@@ -2571,6 +2573,11 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     })
 
     sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData });
+
+    // deducting 1% from match odd win amount 
+    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
+      user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance + (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
+    }
 
     let currBal = user.user.userBalance.currentBalance;
     bulkWalletRecord.push(
@@ -2676,7 +2683,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
     Object.keys(matchTeamRates)?.forEach((item) => {
       if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-        if (faAdminCal.admin?.[user.user.superParentId]?.[item] && matchTeamRates[item]) {
+        if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
           faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
         }
         else {
@@ -2686,7 +2693,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
           faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
         }
       }
-      if (faAdminCal.wallet[item] && matchTeamRates[item]) {
+      if (faAdminCal.wallet[item]) {
         faAdminCal.wallet[item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
       }
       else {
