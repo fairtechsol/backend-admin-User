@@ -2683,7 +2683,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
     Object.keys(matchTeamRates)?.forEach((item) => {
       if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-        if (faAdminCal.admin?.[user.user.superParentId]?.[item] && matchTeamRates[item]) {
+        if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
           faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
         }
         else {
@@ -2693,7 +2693,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
           faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
         }
       }
-      if (faAdminCal.wallet[item] && matchTeamRates[item]) {
+      if (faAdminCal.wallet[item]) {
         faAdminCal.wallet[item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
       }
       else {
