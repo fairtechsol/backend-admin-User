@@ -1365,6 +1365,7 @@ exports.unDeclareSessionResult = async (req, res) => {
         betId,
         matchId,
         sessionExposure: sessionExposure,
+        profitLossData: value?.profitLossObj
       });
     }
 
@@ -2391,7 +2392,8 @@ exports.unDeclareMatchResult = async (req, res) => {
 
       sendMessageToUser(key, socketData.matchResultUnDeclare, {
         ...parentUser,
-        matchId
+        matchId,
+        profitLossData: value
       });
     }
 
