@@ -15,7 +15,7 @@ const { sendMessageToUser } = require('../sockets/socketManager');
 
 exports.getBet = async (req, res) => {
   try {
-    const reqUser = req.user
+    const reqUser = req.user;
     let query = req.query;
     let where = {};
     let result;

@@ -33,9 +33,17 @@ exports.deleteBetByEntityOnError = async (body) => {
   return userBet;
 }
 
-exports.getBet = async (where, query,roleName, select) => {
+exports.getBet = async (where, query, roleName, select, superParentId) => {
   let pgQuery = BetPlaced.createQueryBuilder().where(where);
-  if (roleName != userRoleConstant.user) {
+  if(roleName==userRoleConstant.fairGameAdmin){
+    pgQuery.leftJoinAndMapOne(
+      "betPlaced.user",
+      "user",
+      "user",
+      `betPlaced.createBy = user.id AND user.superParentId = '${superParentId}'`
+    )
+  }
+  else if (roleName != userRoleConstant.user) {
     pgQuery.leftJoinAndMapOne(
       "betPlaced.user",
       "user",
@@ -59,6 +67,7 @@ exports.getBet = async (where, query,roleName, select) => {
     .paginate()
     .getResult();
 }
+
 
 exports.getMatchBetPlaceWithUser = async (betId,select) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
