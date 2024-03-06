@@ -1,4 +1,4 @@
-const { transType, socketData, matchComissionTypeConstant } = require("../config/contants");
+const { transType, socketData, matchComissionTypeConstant, walletDomain } = require("../config/contants");
 const { getUser, getUserDataWithUserBalance } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
@@ -15,6 +15,7 @@ const {
 } = require("../services/redis/commonfunction");
 const { logger } = require("../config/logger");
 const { settleCommission, insertCommissions } = require("../services/commissionService");
+const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 
 exports.updateUserBalance = async (req, res) => {
   try {
@@ -89,8 +90,9 @@ exports.updateUserBalance = async (req, res) => {
         await updateUserDataRedis(userId, updatedUpdateUserBalanceData);
       }
 
-      updatedLoginUserBalanceData.currentBalance =
-        parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
+      updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
+    
+     
     } else if (transactionType == transType.withDraw) {
       insertUserBalanceData = usersBalanceData[1];
       if (amount > insertUserBalanceData.currentBalance)
@@ -146,6 +148,24 @@ exports.updateUserBalance = async (req, res) => {
 
     if (parentUserExistRedis) {
       await updateUserDataRedis(reqUser.id, updatedLoginUserBalanceData);
+    }
+    let parentUser = await getUser({ id: reqUser.id }, ["id", "createBy"]);
+    if (parentUser.id == parentUser.createBy) {
+      await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.WALLET.updateBalance,
+        {
+          userId: reqUser.id,
+          balance: updatedLoginUserBalanceData.currentBalance
+        }
+      ).catch(error => {
+        logger.error({
+          error: `Error at update balance sa.`,
+          stack: error.stack,
+          message: error.message,
+        });
+        throw error
+      });
     }
 
     let transactionArray = [
