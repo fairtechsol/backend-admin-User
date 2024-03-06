@@ -40,6 +40,9 @@ exports.allApiRoutes = {
     MatchBettingDetail : "/superAdmin/matchBetting/",
     sessionDetail: "/superAdmin/session/"
   },
+  WALLET:{
+    updateBalance:"/superAdmin/update/balance/SA"
+  },
   EXPERT:{
     partnershipId:"/superAdmin/partnershipId/"
   },
