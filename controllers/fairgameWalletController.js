@@ -1667,14 +1667,14 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
 
 exports.getBetWallet = async (req, res) => {
   try {
-    let query = req.query;
+    let {roleName,userId,...queryData} = req.query;
     let result;
     let select = [
       "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt"
     ];
 
     select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
-    result = await getBet({}, query, null, select);
+    result = await getBet("user.id is not null", queryData, roleName, select, userId);
 
 
     if (!result[1]) {
