@@ -100,6 +100,9 @@ exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
     'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes3) THEN "winAmount" ELSE 0 END) AS "winAmountComplete"',
     'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes3) THEN "lossAmount" ELSE 0 END) AS "lossAmountComplete"',
     'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes4) THEN "winAmount" ELSE 0 END) AS "winAmountMatchOdd"',
+    'SUM(CASE WHEN "marketType" IN (:...matchTypes1) THEN 1 ELSE 0 END) AS "matchOddBetsCount"',
+    'SUM(CASE WHEN "marketType" IN (:...matchTypes2) THEN 1 ELSE 0 END) AS "tiedBetsCount"',
+    'SUM(CASE WHEN "marketType" IN (:...matchTypes3) THEN 1 ELSE 0 END) AS "completeBetsCount"',
   ])
   .setParameter('winStatus', betResultStatus.WIN)
   .setParameter('lossStatus', betResultStatus.LOSS)
