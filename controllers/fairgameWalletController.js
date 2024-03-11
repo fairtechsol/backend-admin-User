@@ -2118,19 +2118,19 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     let currBal = user.user.userBalance.currentBalance;
 
     const transactions=[
-      ...(result != resultType.tie && result != resultType.noResult && (parseFloat(getMultipleAmount.winAmount) || parseFloat(getMultipleAmount.lossAmount)) ? [{
+      ...(result != resultType.tie && result != resultType.noResult && parseFloat(getMultipleAmount.matchOddBetsCount||0)>0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmount),
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
         type: "MATCH ODDS",
         result: result
       }] : []),
-      ...(result != resultType.noResult && (parseFloat(getMultipleAmount.winAmountTied) || parseFloat(getMultipleAmount.lossAmountTied)) ? [{
+      ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount||0)>0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountTied),
         lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO"
       }] : []),
-      ...((parseFloat(getMultipleAmount.winAmountComplete) || parseFloat(getMultipleAmount.lossAmountComplete)) ? [{
+      ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountComplete),
         lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
         type: "Complete Match",
@@ -2589,20 +2589,20 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     let currBal = user.user.userBalance.currentBalance;
 
     const transactions = [
-      ...(result != resultType.tie && result != resultType.noResult && (parseFloat(getMultipleAmount.winAmount) || parseFloat(getMultipleAmount.lossAmount)) ? [{
+      ...(result != resultType.tie && result != resultType.noResult && parseFloat(getMultipleAmount.matchOddBetsCount||0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmount).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
         type: "MATCH ODDS",
         result: result
       }] : []),
-      ...(result != resultType.noResult &&(parseFloat(getMultipleAmount.winAmountTied) || parseFloat(getMultipleAmount.lossAmountTied)) ? [{
+      ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountTied).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountTied).toFixed(2)),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO"
       }] : []),
       
-      ...((parseFloat(getMultipleAmount.winAmountComplete) || parseFloat(getMultipleAmount.lossAmountComplete)) ? [{
+      ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountComplete).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
         type: "Complete Match",
