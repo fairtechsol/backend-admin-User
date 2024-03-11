@@ -2589,25 +2589,27 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     let currBal = user.user.userBalance.currentBalance;
 
     const transactions = [
-      ...(result != resultType.tie && result != resultType.noResult ? [{
+      ...(result != resultType.tie && result != resultType.noResult && (parseFloat(getMultipleAmount.winAmount) || parseFloat(getMultipleAmount.lossAmount)) ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmount).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
         type: "MATCH ODDS",
         result: result
       }] : []),
-      ...(result != resultType.noResult ? [{
+      ...(result != resultType.noResult &&(parseFloat(getMultipleAmount.winAmountTied) || parseFloat(getMultipleAmount.lossAmountTied)) ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountTied).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountTied).toFixed(2)),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO"
       }] : []),
-      {
+      
+      ...((parseFloat(getMultipleAmount.winAmountComplete) || parseFloat(getMultipleAmount.lossAmountComplete)) ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountComplete).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
         type: "Complete Match",
         result: "YES"
-      }
+      }]:[])
     ];
+
 
     transactions?.forEach((item) => {
       currBal = currBal - item.winAmount + item.lossAmount;
