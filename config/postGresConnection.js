@@ -30,6 +30,12 @@ const dataSourceOption = {
   namingStrategy: new PluralNamingStrategy(),
 };
 
+if (process.env.NODE_ENV == 'production') {
+  dataSourceOption.ssl = {
+    rejectUnauthorized: false
+  }
+}
+
 const AppDataSource = new DataSource(dataSourceOption);
 
 AppDataSource.initialize()
@@ -37,25 +43,25 @@ AppDataSource.initialize()
     console.log("Database connected successfully");
     let isMigrationPending = await AppDataSource.showMigrations();
     console.log("is migration pending ", isMigrationPending);
-    if(isMigrationPending){
-        console.log("Database migration pending");
-        await AppDataSource.runMigrations().then(()=>{
-          console.log("Database migration run success");
+    if (isMigrationPending) {
+      console.log("Database migration pending");
+      await AppDataSource.runMigrations().then(() => {
+        console.log("Database migration run success");
 
-        }).catch(err=>{
-          console.log("error at migration run ",err);
-          process.exit(0);
-        });
+      }).catch(err => {
+        console.log("error at migration run ", err);
+        process.exit(0);
+      });
     }
   })
-  .catch((error) => console.log(`Error in connection:${error}`));
+  .catch((error) => console.log(`Error in connection: ${error}`));
 
 const getDataSource = () => {
   if (AppDataSource.isInitialized) return Promise.resolve(AppDataSource);
 
   return new Promise((resolve, reject) => {
-      if (AppDataSource.isInitialized) resolve(AppDataSource);
-      else reject("Failed to create connection with database");
+    if (AppDataSource.isInitialized) resolve(AppDataSource);
+    else reject("Failed to create connection with database");
   });
 };
 
