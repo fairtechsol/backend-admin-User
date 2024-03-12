@@ -226,6 +226,7 @@ module.exports.manualMatchBettingType = [
   "quickbookmaker2",
   "quickbookmaker3",
   "tiedMatch2",
+  "completeManual"
 ];
 
 module.exports.report = {
