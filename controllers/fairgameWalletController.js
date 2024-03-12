@@ -2523,7 +2523,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
   // deducting 1% from match odd win amount 
   if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-    profitLoss -=  parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
+    profitLoss +=  parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
   }
 
     const userCurrBalance = Number(
