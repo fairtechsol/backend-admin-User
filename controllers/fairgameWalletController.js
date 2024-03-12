@@ -2506,7 +2506,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
     let userCurrentBalance = parseFloat(user.user.userBalance.currentBalance);
     matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData) => {
-      userCurrentBalance -= parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
+      userCurrentBalance += parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
         matchId: matchId,
         actionBy: userId,
