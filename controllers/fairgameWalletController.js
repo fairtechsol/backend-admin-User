@@ -27,6 +27,7 @@ const {
   calculateProfitLossSession,
   calculateProfitLossForMatchToResult,
   profitLossPercentCol,
+  settingBetsDataAtLogin,
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -34,7 +35,7 @@ const {
   getDomainDataByDomain,
   getDomainDataByUserId,
 } = require("../services/domainDataService");
-const { updateUserDataRedis, hasUserInCache, getUserRedisData, deleteKeyFromUserRedis, getUserRedisKey } = require("../services/redis/commonfunction");
+const { updateUserDataRedis, hasUserInCache, getUserRedisData, deleteKeyFromUserRedis, getUserRedisKey, getUserRedisKeys } = require("../services/redis/commonfunction");
 const { insertTransactions } = require("../services/transactionService");
 const {
   addInitialUserBalance,
@@ -3089,6 +3090,58 @@ exports.getAllUserBalance = async (req, res) => {
   } catch (error) {
     logger.error({
       context: `Error in get all user balance.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getUsersProfitLoss = async (req, res) => {
+  try {
+    const { userIds } = req.query;
+    const { matchId } = req.params;
+
+    const resUserData=[];
+
+    for(let userData of userIds?.split("|")){
+      userData=JSON.parse(userData);
+      const isUserExist=await hasUserInCache(userData?.id);
+      let userProfitLossData={};
+
+      if (isUserExist) {
+        let betsData = await getUserRedisKeys(userData?.id, [redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId]);
+        userProfitLossData.tramRateA =betsData?.[0]? parseFloat(betsData?.[0])?.toFixed(2):0;
+        userProfitLossData.tramRateB = betsData?.[1]? parseFloat(betsData?.[1])?.toFixed(2):0;
+        userProfitLossData.tramRateC = betsData?.[2]? parseFloat(betsData?.[2])?.toFixed(2):0;
+      }
+      else {
+        let betsData = await settingBetsDataAtLogin(userData);
+        userProfitLossData = {
+          tramRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, tramRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamCRate: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0
+        }   
+      }
+      userProfitLossData.userName = userData?.userName;
+      resUserData.push(userProfitLossData);
+  }
+
+    return SuccessResponse(
+      {
+        statusCode: 200, data: resUserData
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get profit loss user data.`,
       error: error.message,
       stake: error.stack,
     });
