@@ -537,13 +537,13 @@ exports.settingBetsDataAtLogin = async (user) => {
         maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
         matchResult = {
           ...matchResult,
-          ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]: teamARate } : {}),
-          ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]: teamBRate } : {}),
-          ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]: teamCRate } : {}),
-          ...(teamYesRateTie != Number.MAX_VALUE && teamYesRateTie != null && teamYesRateTie != undefined ? { [redisKeys.yesRateTie + matchId]: teamYesRateTie } : {}),
-          ...(teamNoRateTie != Number.MAX_VALUE && teamNoRateTie != null && teamNoRateTie != undefined ? { [redisKeys.noRateTie + matchId]: teamNoRateTie } : {}),
-          ...(teamYesRateComplete != Number.MAX_VALUE && teamYesRateComplete != null && teamYesRateComplete != undefined ? { [redisKeys.yesRateComplete + matchId]: teamYesRateComplete } : {}),
-          ...(teamNoRateComplete != Number.MAX_VALUE && teamNoRateComplete != null && teamNoRateComplete != undefined ? { [redisKeys.noRateComplete + matchId]: teamNoRateComplete } : {})
+          ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]:parseFloat(parseFloat((matchResult[redisKeys.userTeamARate + matchId]||0)+ teamARate).toFixed(2)) } : {}),
+          ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]:parseFloat(parseFloat((matchResult[redisKeys.userTeamBRate + matchId]||0)+ teamBRate).toFixed(2)) } : {}),
+          ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]:parseFloat(parseFloat((matchResult[redisKeys.userTeamCRate + matchId]||0)+ teamCRate).toFixed(2)) } : {}),
+          ...(teamYesRateTie != Number.MAX_VALUE && teamYesRateTie != null && teamYesRateTie != undefined ? { [redisKeys.yesRateTie + matchId]:parseFloat(parseFloat((matchResult[redisKeys.yesRateTie + matchId]||0)+ teamYesRateTie).toFixed(2)) } : {}),
+          ...(teamNoRateTie != Number.MAX_VALUE && teamNoRateTie != null && teamNoRateTie != undefined ? { [redisKeys.noRateTie + matchId]:parseFloat(parseFloat((matchResult[redisKeys.noRateTie + matchId]||0)+ teamNoRateTie).toFixed(2)) } : {}),
+          ...(teamYesRateComplete != Number.MAX_VALUE && teamYesRateComplete != null && teamYesRateComplete != undefined ? { [redisKeys.yesRateComplete + matchId]:parseFloat(parseFloat((matchResult[redisKeys.yesRateComplete + matchId]||0)+ teamYesRateComplete).toFixed(2)) } : {}),
+          ...(teamNoRateComplete != Number.MAX_VALUE && teamNoRateComplete != null && teamNoRateComplete != undefined ? { [redisKeys.noRateComplete + matchId]:parseFloat(parseFloat((matchResult[redisKeys.noRateComplete + matchId]||0)+ teamNoRateComplete).toFixed(2)) } : {})
         }
         matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] || 0) + maxLoss).toFixed(2));
       }
