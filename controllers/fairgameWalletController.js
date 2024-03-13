@@ -3125,7 +3125,7 @@ exports.getUsersProfitLoss = async (req, res) => {
       else {
         let betsData = await settingBetsDataAtLogin(userData);
         userProfitLossData = {
-          tramRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, tramRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamCRate: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0
+          tramRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, tramRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0
         }   
       }
       userProfitLossData.userName = userData?.userName;
