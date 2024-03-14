@@ -160,6 +160,15 @@ module.exports.matchBettingType = {
   tiedMatch2: "tiedMatch2",
   completeMatch: "completeMatch",
   completeManual: "completeManual",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = `firstHalfGoal${curr}.5`
+    return prev;
+  }, {})),
+  halfTime: "halfTime"
 };
 
 module.exports.tieCompleteBetType = {
