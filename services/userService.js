@@ -230,7 +230,7 @@ exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, userName: true, roleName: true } });
 }
 exports.getFirstLevelChildUserWithPartnership = async (id,partnership) => {
-  return await user.find({ where: { createBy: id }, select: { id: true, roleName: true, userName: true, [partnership]: true } })
+  return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, roleName: true, userName: true, [partnership]: true } })
 
 }
 
