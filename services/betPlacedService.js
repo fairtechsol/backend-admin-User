@@ -150,7 +150,7 @@ exports.getDistinctUserBetPlaced= async (betId)=>{
 
 exports.getUserDistinctBets = async (userId) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
-    .where({ createBy: userId, result: In(betResultStatus.PENDING), deleteReason: IsNull() })
+    .where({ createBy: userId, result: In([betResultStatus.PENDING]), deleteReason: IsNull() })
     .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType","betPlaced.marketType"])
     .distinctOn(['betPlaced.betId'])
     .getMany()

@@ -1,17 +1,17 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, } = require('../services/userService');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, redisKeys, partnershipPrefixByRole } = require('../config/contants');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
 const { getTotalProfitLoss, findAllPlacedBet, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
-const { forceLogoutUser, profitLossPercentCol } = require("../services/commonService");
+const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
-const { hasUserInCache, updateUserDataRedis } = require('../services/redis/commonfunction');
+const { hasUserInCache, updateUserDataRedis, getUserRedisKeys } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 
@@ -1509,5 +1509,67 @@ exports.getCommissionBetPlaced = async (req, res) => {
       stake: error.stack,
     });
     return ErrorResponse(error, req, res);
+  }
+}
+
+exports.getUserProfitLossForMatch = async (req, res, next) => {
+  try {
+    const { matchId } = req.params;
+    const { id ,roleName} = req.user;
+
+    const users = await getFirstLevelChildUserWithPartnership(id,partnershipPrefixByRole[roleName] + "Partnership");
+
+    const userProfitLossData = [];
+    for (let element of users) {
+      element.partnerShip = element[partnershipPrefixByRole[roleName] + "Partnership"];
+        const isUserExist=await hasUserInCache(element?.id);
+        let currUserProfitLossData={};
+  
+        if (isUserExist) {
+          let betsData = await getUserRedisKeys(element?.id, [redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId]);
+          currUserProfitLossData.teamRateA =betsData?.[0]? parseFloat(betsData?.[0])?.toFixed(2):0;
+          currUserProfitLossData.teamRateB = betsData?.[1]? parseFloat(betsData?.[1])?.toFixed(2):0;
+          currUserProfitLossData.teamRateC = betsData?.[2]? parseFloat(betsData?.[2])?.toFixed(2):0;
+
+          currUserProfitLossData.percentTeamRateA = betsData?.[0] ? parseFloat(parseFloat(parseFloat(betsData?.[0])?.toFixed(2))*parseFloat(element?.partnerShip)/100).toFixed(2) : 0;
+          currUserProfitLossData.percentTeamRateB = betsData?.[1] ? parseFloat(parseFloat(parseFloat(betsData?.[1])?.toFixed(2))*parseFloat(element?.partnerShip)/100).toFixed(2) : 0;
+          currUserProfitLossData.percentTeamRateC = betsData?.[2] ? parseFloat(parseFloat(parseFloat(betsData?.[2])?.toFixed(2))*parseFloat(element?.partnerShip)/100).toFixed(2) : 0;
+        }
+        else {
+          let betsData = await settingBetsDataAtLogin(element);
+          currUserProfitLossData = {
+            teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamCRate: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
+            percentTeamRateA: betsData?.[redisKeys.userTeamARate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2))*parseFloat(element.partnerShip)/100).toFixed(2) : 0, percentTeamRateB: betsData?.[redisKeys.userTeamBRate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2))*parseFloat(element.partnerShip)/100).toFixed(2) : 0, percentTeamRateC: betsData?.[redisKeys.userTeamCRate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2))*parseFloat(element.partnerShip)/100).toFixed(2) : 0
+
+          }
+      }
+      currUserProfitLossData.userName = element?.userName;
+      userProfitLossData.push(currUserProfitLossData);
+    
+  }
+   
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data:userProfitLossData
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at get user profit loss match.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
   }
 }
