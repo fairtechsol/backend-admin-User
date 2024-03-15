@@ -2119,12 +2119,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     let currBal = user.user.userBalance.currentBalance;
 
     const transactions=[
-      ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
-        winAmount: parseFloat(getMultipleAmount.winAmountComplete),
-        lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
-        type: "Complete Match",
-        result: "YES"
-      }]:[]),
       ...(result != resultType.tie && result != resultType.noResult && parseFloat(getMultipleAmount.matchOddBetsCount||0)>0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmount),
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
@@ -2137,7 +2131,12 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO"
       }] : []),
-     
+      ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
+        winAmount: parseFloat(getMultipleAmount.winAmountComplete),
+        lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
+        type: "Complete Match",
+        result: "YES"
+      }]:[])
     ];
 
     transactions.forEach((item)=>{
@@ -2591,12 +2590,6 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     let currBal = user.user.userBalance.currentBalance;
 
     const transactions = [
-      ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
-        winAmount: parseFloat(getMultipleAmount.winAmountComplete),
-        lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
-        type: "Complete Match",
-        result: "YES"
-      }]:[]),
       ...(result != resultType.tie && result != resultType.noResult && parseFloat(getMultipleAmount.matchOddBetsCount||0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmount).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
@@ -2609,7 +2602,13 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO"
       }] : []),
-    
+      
+      ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
+        winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountComplete).toFixed(2)),
+        lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
+        type: "Complete Match",
+        result: "YES"
+      }]:[])
     ];
 
 
