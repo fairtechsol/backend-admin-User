@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
 const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate } = require('../validators/userValidator');
-const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch } = require('../controllers/userController');
+const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch, deleteUser } = require('../controllers/userController');
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 const { totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss } = require('../controllers/fairgameWalletController');
 
@@ -37,6 +37,8 @@ router.post("/total/session/profitLoss", isAuthenticate, getSessionBetProfitLoss
 router.get("/commissionMatch/:userId", isAuthenticate, getCommissionReportsMatch);
 router.get("/commissionBetPlaced/:userId", isAuthenticate, getCommissionBetPlaced);
 router.get("/profitLossData/:matchId", isAuthenticate, getUserProfitLossForMatch);
+
+router.delete("/delete/:id", isAuthenticate, deleteUser);
 
 module.exports = router;
 //https://3100dev.fairgame.club/fair-game-wallet/getUserBalanceDetails

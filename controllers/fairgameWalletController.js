@@ -1,4 +1,4 @@
-const { IsNull, In } = require("typeorm");
+const { IsNull, In, MoreThan } = require("typeorm");
 const {
   transType,
   walletDescription,
@@ -60,6 +60,7 @@ const {
   getChildUserBalanceSum,
   getAllUsersBalanceSumByFgId,
   getAllUsers,
+  updateUserExposureLimit,
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -433,17 +434,15 @@ exports.setExposureLimitByFGAdmin = async (req, res, next) => {
     exposureLimit = parseInt(exposureLimit);
     let childUsers = await getAllUsers(roleName == userRoleConstant.fairGameAdmin ? { superParentId: id } : {}, ["id", "exposureLimit"]);
 
-    childUsers.map(async (childObj) => {
+    const childUsersId = childUsers.map((childObj) => {
+      return childObj.id;
 
-      if (
-        childObj.exposureLimit > exposureLimit ||
-        childObj.exposureLimit == 0
-      ) {
-        await updateUser(childObj.id, {
-          exposureLimit: exposureLimit
-        });
-      }
     });
+
+
+    await updateUserExposureLimit(exposureLimit, childUsersId);
+
+
     return SuccessResponse(
       {
         statusCode: 200,
@@ -453,6 +452,12 @@ exports.setExposureLimitByFGAdmin = async (req, res, next) => {
       res
     );
   } catch (error) {
+    console.log(error);
+    logger.error({
+      error: `Error in exposure limit.`,
+      stack: error.stack,
+      message: error.message,
+    });
     return ErrorResponse(error, req, res);
   }
 };
@@ -3151,12 +3156,12 @@ exports.getUsersProfitLoss = async (req, res) => {
 
       if (isUserExist) {
         let betsData = await getUserRedisKeys(userData?.id, [redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId]);
-        userProfitLossData.teamRateA =betsData?.[0]? parseFloat(betsData?.[0])?.toFixed(2):0;
-        userProfitLossData.teamRateB = betsData?.[1]? parseFloat(betsData?.[1])?.toFixed(2):0;
-        userProfitLossData.teamRateC = betsData?.[2]? parseFloat(betsData?.[2])?.toFixed(2):0;
+        userProfitLossData.teamRateA = betsData?.[0] ? parseFloat(betsData?.[0])?.toFixed(2) : 0;
+        userProfitLossData.teamRateB = betsData?.[1] ? parseFloat(betsData?.[1])?.toFixed(2) : 0;
+        userProfitLossData.teamRateC = betsData?.[2] ? parseFloat(betsData?.[2])?.toFixed(2) : 0;
 
-        userProfitLossData.percentTeamRateA = betsData?.[0] ? parseFloat(parseFloat(parseFloat(betsData?.[0])?.toFixed(2))*parseFloat(userData?.partnerShip)/100).toFixed(2) : 0;
-        userProfitLossData.percentTeamRateB = betsData?.[1] ? parseFloat(parseFloat(parseFloat(betsData?.[1])?.toFixed(2))*parseFloat(userData?.partnerShip)/100).toFixed(2) : 0;
+        userProfitLossData.percentTeamRateA = betsData?.[0] ? parseFloat(parseFloat(parseFloat(betsData?.[0])?.toFixed(2)) * parseFloat(userData?.partnerShip) / 100).toFixed(2) : 0;
+        userProfitLossData.percentTeamRateB = betsData?.[1] ? parseFloat(parseFloat(parseFloat(betsData?.[1])?.toFixed(2)) * parseFloat(userData?.partnerShip) / 100).toFixed(2) : 0;
         userProfitLossData.percentTeamRateC = betsData?.[2] ? parseFloat(parseFloat(parseFloat(betsData?.[2])?.toFixed(2))*parseFloat(userData?.partnerShip)/100).toFixed(2) : 0;
       }
       else {
@@ -3167,7 +3172,10 @@ exports.getUsersProfitLoss = async (req, res) => {
         }   
       }
       userProfitLossData.userName = userData?.userName;
-      resUserData.push(userProfitLossData);
+
+      if (userProfitLossData.teamRateA || userProfitLossData.teamRateB || userProfitLossData.teamRateC) {
+        resUserData.push(userProfitLossData);
+      }
   }
 
     return SuccessResponse(
