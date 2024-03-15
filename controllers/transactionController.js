@@ -15,7 +15,7 @@ exports.getAccountStatement = async (req, res) => {
      * if you want query like username=="client" then give the filter like username : eqclient
      *   **/
     const { type, ...query } = req.query;
-    
+
     if (!userId) {
       return ErrorResponse(
         {
@@ -43,6 +43,7 @@ exports.getAccountStatement = async (req, res) => {
       "transaction.transType",
       "transaction.actionBy",
       "transaction.description",
+      "transaction.uniqueId",
       "user.id",
       "user.userName",
       "user.phoneNumber",
@@ -63,9 +64,9 @@ exports.getAccountStatement = async (req, res) => {
         { excelHeader: "Fromto", dbKey: "fromTo" },
       ];
 
-      let data = transaction.transactions?.map((item)=>{
-        let date=new Date(item?.createdAt);
-        return{
+      let data = transaction.transactions?.map((item) => {
+        let date = new Date(item?.createdAt);
+        return {
           date: `${date.getDate()}-${date.getMonth() + 1}-${date.getFullYear()}`,
           credit: parseFloat(item?.amount) > 0 ? parseFloat(item.amount).toFixed(2) : 0,
           debit: parseFloat(item?.amount) < 0 ? parseFloat(item.amount).toFixed(2) : 0,
@@ -82,7 +83,7 @@ exports.getAccountStatement = async (req, res) => {
       return SuccessResponse(
         {
           statusCode: 200,
-          message: { msg: "fetched", keys:{ type:"Transactions" }},
+          message: { msg: "fetched", keys: { type: "Transactions" } },
           data: { file: file, fileName: fileName },
         },
         req,
