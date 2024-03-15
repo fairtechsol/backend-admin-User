@@ -59,6 +59,7 @@ const {
   getUsers,
   getChildUserBalanceSum,
   getAllUsersBalanceSumByFgId,
+  getAllUsers,
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -411,6 +412,38 @@ exports.setExposureLimitSuperAdmin = async (req, res, next) => {
       }
     });
     await addUser(user);
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "user.ExposurelimitSet" },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+};
+
+
+exports.setExposureLimitByFGAdmin = async (req, res, next) => {
+  try {
+    let { exposureLimit, id, roleName } = req.body;
+
+    exposureLimit = parseInt(exposureLimit);
+    let childUsers = await getAllUsers(roleName == userRoleConstant.fairGameAdmin ? { superParentId: id } : {}, ["id", "exposureLimit"]);
+
+    childUsers.map(async (childObj) => {
+
+      if (
+        childObj.exposureLimit > exposureLimit ||
+        childObj.exposureLimit == 0
+      ) {
+        await updateUser(childObj.id, {
+          exposureLimit: exposureLimit
+        });
+      }
+    });
     return SuccessResponse(
       {
         statusCode: 200,
