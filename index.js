@@ -3,7 +3,7 @@ const cors = require("cors");
 const bodyParser = require("body-parser");
 const app = express();
 const http = require("http");
-const {socketManager} = require("./sockets/socketManager.js");
+const { socketManager } = require("./sockets/socketManager.js");
 const route = require("./routes/index.js");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger_output.json");
@@ -12,10 +12,22 @@ const i18n = require("./config/i18n");
 const setI18Language = require("./middleware/setI18Language.js");
 const { logger } = require("./config/logger.js");
 
-/**
- * Enable Cross-Origin Resource Sharing (CORS)
- */
-app.use(cors({ origin: "*" }));
+const allowSubdomainsAndLocalhost = (origin, callback) => {
+  // Check if the request comes from the specified domain or localhost
+  if (!origin || origin.includes("fairgame7.com")) {
+    callback(null, true); // Allow the request
+  } else {
+    callback(new Error("Not allowed by CORS")); // Deny the request
+  }
+};
+
+if (process.env.NODE_ENV == 'production') {
+  // Enable CORS with the custom origin function
+  app.use(cors({ credentials: true, origin: allowSubdomainsAndLocalhost }));
+} else {
+  app.use(cors({ origin: "*" }));
+}
+
 app.enable('trust proxy');
 
 /**
