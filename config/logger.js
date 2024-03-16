@@ -56,7 +56,7 @@ const debugLogger = winston.createLogger({
   ]
 });
 
-if (process.env.NODE_ENV != 'prod') {
+if (process.env.NODE_ENV != 'production') {
   infoLogger.add(new winston.transports.Console());
   errorLogger.add(new winston.transports.Console());
   debugLogger.add(new winston.transports.Console());
