@@ -1,12 +1,12 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, redisKeys, partnershipPrefixByRole } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
 const { getTotalProfitLoss, findAllPlacedBet, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
-const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin } = require("../services/commonService");
+const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin, forceLogoutIfLogin } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
@@ -1538,13 +1538,16 @@ exports.getUserProfitLossForMatch = async (req, res, next) => {
         else {
           let betsData = await settingBetsDataAtLogin(element);
           currUserProfitLossData = {
-            teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamCRate: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
+            teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
             percentTeamRateA: betsData?.[redisKeys.userTeamARate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2))*parseFloat(element.partnerShip)/100).toFixed(2) : 0, percentTeamRateB: betsData?.[redisKeys.userTeamBRate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2))*parseFloat(element.partnerShip)/100).toFixed(2) : 0, percentTeamRateC: betsData?.[redisKeys.userTeamCRate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2))*parseFloat(element.partnerShip)/100).toFixed(2) : 0
 
           }
       }
       currUserProfitLossData.userName = element?.userName;
-      userProfitLossData.push(currUserProfitLossData);
+
+      if(currUserProfitLossData.teamRateA || currUserProfitLossData.teamRateB || currUserProfitLossData.teamRateC){
+        userProfitLossData.push(currUserProfitLossData);
+      }
     
   }
    
@@ -1571,5 +1574,70 @@ exports.getUserProfitLossForMatch = async (req, res, next) => {
       req,
       res
     );
+  }
+}
+
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const userData = await getUserDataWithUserBalance({ id: id });
+
+    if (!userData) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } },
+        req,
+        res
+      );
+    }
+    if (parseFloat(userData?.userBal?.exposure || 0) != 0 || parseFloat(userData?.userBal?.currentBalance || 0) != 0 || parseFloat(userData?.userBal?.profitLoss || 0) != 0 || parseFloat(userData.creditRefrence || 0) != 0 || parseFloat(userData?.userBal?.totalCommission || 0) != 0) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "settleAccount",keys:{
+          name:"your"
+        } } },
+        req,
+        res
+      );
+    }
+
+    const childUsers = await getChildUserBalanceAndData(id);
+
+    for (let childData of childUsers) {
+      if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
+        return ErrorResponse(
+          {
+            statusCode: 400, message: {
+              msg: "settleAccount", keys: {
+                name: childData?.userName
+              }
+            }
+          },
+          req,
+          res
+        );
+      }
+
+      forceLogoutIfLogin(childData.id);
+
+    }
+    await softDeleteAllUsers(id);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { "msg": "deleted", keys: { name: "User" } }
+      },
+      req,
+      res
+    );
+  }
+  catch (error) {
+    logger.error({
+      context: `error in delete user`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(error, req, res);
   }
 }

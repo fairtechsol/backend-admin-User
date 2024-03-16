@@ -6,7 +6,7 @@ const userMatchLockSchema = require("../models/userMatchLock.entity");
 const user = AppDataSource.getRepository(userSchema);
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
 const userMatchLock = AppDataSource.getRepository(userMatchLockSchema);
-const { ILike, In, Not } = require("typeorm");
+const { ILike, In, Not, MoreThan } = require("typeorm");
 const ApiFeature = require("../utils/apiFeatures");
 
 // id is required and select is optional parameter is an type or array
@@ -25,6 +25,15 @@ exports.addUser = async (body) => {
 
 exports.updateUser = async (id, body) => {
   let updateUser = await user.update(id, body);
+  return updateUser;
+};
+
+exports.updateUserExposureLimit = async (exposureLimit, userIds) => {
+  let updateUser = await user.createQueryBuilder()
+  .update(user)
+    .set({ exposureLimit: exposureLimit })
+    .where(`("id" = ANY(:userIds)) AND (("exposureLimit" > :exposureLimit) OR ("exposureLimit" = 0))`, { userIds, exposureLimit })
+    .execute();
   return updateUser;
 };
 
@@ -162,6 +171,15 @@ exports.getUsers = async (where, select, offset, limit, relations) => {
 
 };
 
+
+exports.getAllUsers = async (where, select) => {
+
+  return await user.find({
+    where: where,
+    select: select
+  });
+
+};
 exports.getUsersWithUserBalance = async (where, offset, limit) => {
   //get all users with user balance according to pagoination
 
@@ -367,4 +385,34 @@ exports.getAllUsersBalanceSumByFgId = (parentId) => {
     .select(["SUM(UB.currentBalance) as balance"])
     .addOrderBy('1')
     .getRawOne();
+}
+
+exports.getChildUserBalanceAndData = async (id) => {
+  let query = `WITH RECURSIVE p AS (
+    SELECT * FROM "users" WHERE "users"."id" = '${id}'
+    UNION
+    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+  )
+SELECT p.*,"userBalances".*  FROM p JOIN "userBalances" ON "userBalances"."userId" = "p"."id" where "deletedAt" IS NULL;
+`
+
+  return await user.query(query)
+}
+
+
+exports.softDeleteAllUsers = (id) => {
+  const query = `WITH RECURSIVE p AS (
+    SELECT * FROM "users" WHERE "users"."id" = '${id}'
+    UNION
+    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+  )
+  UPDATE "users" AS u
+  SET "deletedAt" = NOW(), -- Assuming "deletedAt" is the column for soft deletion
+      "userName" = CONCAT('deleted_', u."userName", '_', EXTRACT(EPOCH FROM NOW()))
+  WHERE u."id" IN (
+    SELECT "id" FROM p
+  )
+  AND "deletedAt" IS NULL -- Only soft delete if not already deleted;  
+  `
+  return user.query(query);
 }
