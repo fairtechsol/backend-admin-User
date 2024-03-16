@@ -1277,8 +1277,8 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
 
     let redisData = await calculateProfitLossForMatchToResult([betId], userId, { teamA, teamB, teamC });
     teamRates = {
-      teamA: !isTiedOrCompMatch ? redisData.teamARate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? teamYesRateTie : teamYesRateComplete,
-      teamB: !isTiedOrCompMatch ? redisData.teamBRate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? teamNoRateTie : teamNoRateComplete,
+      teamA: !isTiedOrCompMatch ? redisData.teamARate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? redisData.teamYesRateTie : redisData.teamYesRateComplete,
+      teamB: !isTiedOrCompMatch ? redisData.teamBRate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? redisData.teamNoRateTie : redisData.teamNoRateComplete,
       teamC: !isTiedOrCompMatch ? redisData.teamCRate : 0
     };
   }
