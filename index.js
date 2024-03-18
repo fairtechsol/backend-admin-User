@@ -6,7 +6,6 @@ const http = require("http");
 const { socketManager } = require("./sockets/socketManager.js");
 const route = require("./routes/index.js");
 const swaggerUi = require("swagger-ui-express");
-const swaggerDocument = require("./swagger_output.json");
 const error = require("./utils/error.js");
 const i18n = require("./config/i18n");
 const setI18Language = require("./middleware/setI18Language.js");
@@ -55,6 +54,7 @@ app.use((req, res, next) => {
 // Routes
 app.use("/", route);
 if (process.env.NODE_ENV != 'production') {
+  const swaggerDocument = require("./swagger_output.json");
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
 app.use(error);
