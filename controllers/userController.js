@@ -960,8 +960,6 @@ exports.userBalanceDetails = async (req, res, next) => {
   }
 };
 
-
-
 exports.setCreditReferrence = async (req, res, next) => {
   try {
 
@@ -1226,6 +1224,8 @@ exports.totalProfitLoss = async (req, res) => {
       }
       where.createBy = In(childsId)
     }
+    
+    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
     const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss)
     return SuccessResponse(
       {
