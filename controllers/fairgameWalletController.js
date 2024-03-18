@@ -29,6 +29,7 @@ const {
   profitLossPercentCol,
   settingBetsDataAtLogin,
   getUserProfitLossForUpperLevel,
+  forceLogoutIfLogin,
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -62,6 +63,12 @@ const {
   getAllUsersBalanceSumByFgId,
   getAllUsers,
   updateUserExposureLimit,
+  getChildUserBalanceAndData,
+  getUserBalance,
+  getUsersWithUserBalances,
+  getUserDataWithUserBalance,
+  softDeleteAllUsers,
+  deleteUserByDirectParent,
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -3188,5 +3195,125 @@ exports.getUsersProfitLoss = async (req, res) => {
       req,
       res
     );
+  }
+}
+
+
+
+exports.checkUserBalance = async (req, res) => {
+  try {
+    const { roleName, id } = req.body;
+
+    if (roleName == userRoleConstant.fairGameAdmin) {
+      const childUsers = await getUsersWithUserBalances({ superParentId: id });
+      for (let childData of childUsers) {
+        if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
+          return ErrorResponse(
+            {
+              statusCode: 400, message: {
+                msg: "settleAccount", keys: {
+                  name: childData?.userName
+                }
+              }
+            },
+            req,
+            res
+          );
+        }
+
+        forceLogoutIfLogin(childData.id);
+
+      }
+    }
+    else {
+      const userData = await getUserDataWithUserBalance({ id: id });
+
+      if (!userData) {
+        return ErrorResponse(
+          { statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } },
+          req,
+          res
+        );
+      }
+      if (parseFloat(userData?.userBal?.exposure || 0) != 0 || parseFloat(userData?.userBal?.currentBalance || 0) != 0 || parseFloat(userData?.userBal?.profitLoss || 0) != 0 || parseFloat(userData.creditRefrence || 0) != 0 || parseFloat(userData?.userBal?.totalCommission || 0) != 0) {
+        return ErrorResponse(
+          {
+            statusCode: 400, message: {
+              msg: "settleAccount", keys: {
+                name: "your"
+              }
+            }
+          },
+          req,
+          res
+        );
+      }
+
+      const childUsers = await getChildUserBalanceAndData(id);
+      for (let childData of childUsers) {
+        if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
+          return ErrorResponse(
+            {
+              statusCode: 400, message: {
+                msg: "settleAccount", keys: {
+                  name: childData?.userName
+                }
+              }
+            },
+            req,
+            res
+          );
+        }
+
+        forceLogoutIfLogin(childData.id);
+
+      }
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200
+      },
+      req,
+      res
+    );
+  }
+  catch (error) {
+    logger.error({
+      context: `error in delete user`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.deleteWalletUsers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { roleName } = req.body;
+
+    if (roleName == userRoleConstant.fairGameAdmin) {
+      await deleteUserByDirectParent(id);
+    }
+    else {
+     await softDeleteAllUsers(id);
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200
+      },
+      req,
+      res
+    );
+  }
+  catch (error) {
+    logger.error({
+      context: `error in delete user`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(error, req, res);
   }
 }
