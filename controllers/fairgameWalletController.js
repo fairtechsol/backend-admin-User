@@ -68,6 +68,7 @@ const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertCommissions, getCombinedCommission, deleteCommission } = require("../services/commissionService");
 const { insertButton } = require("../services/buttonService");
 
+
 exports.createSuperAdmin = async (req, res) => {
   try {
     const {
@@ -2035,7 +2036,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     fwProfitLoss = parseFloat(fwProfitLoss.toString()) + parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString());
 
     let userCurrentBalance = parseFloat(user.user.userBalance.currentBalance);
-    matchOddWinBets?.filter((item) => item.user.id == user.user.id)?.forEach((matchOddData) => {
+    matchOddWinBets?.filter((item) => item.user.id == user.user.id)?.forEach((matchOddData,uniqueId) => {
       userCurrentBalance -= parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
         matchId: matchId,
@@ -2047,6 +2048,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         closingBalance: userCurrentBalance,
         description: `Deduct 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
         createdAt: new Date(),
+        uniqueId:uniqueId
       });
     });
 
@@ -2162,23 +2164,26 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         winAmount: parseFloat(getMultipleAmount.winAmount),
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
         type: "MATCH ODDS",
-        result: result
+        result: result,
+        
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount||0)>0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountTied),
         lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
         type: "Tied Match",
-        result: result == resultType.tie ? "YES" : "NO"
+        result: result == resultType.tie ? "YES" : "NO",
+      
       }] : []),
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountComplete),
         lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
         type: "Complete Match",
-        result: "YES"
+        result: "YES",
+        
       }]:[])
     ];
 
-    transactions.forEach((item)=>{
+    transactions.forEach((item,uniqueId)=>{
       currBal = currBal + item.winAmount - item.lossAmount;
 
       bulkWalletRecord.push({
@@ -2191,6 +2196,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         closingBalance: currBal,
         description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
+        uniqueId:uniqueId
       });
     });
 
@@ -2545,7 +2551,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     fwProfitLoss = parseFloat((parseFloat(fwProfitLoss.toString()) - parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString())).toFixed(2));
 
     let userCurrentBalance = parseFloat(user.user.userBalance.currentBalance);
-    matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData) => {
+    matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData,uniqueId) => {
       userCurrentBalance += parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
         matchId: matchId,
@@ -2557,6 +2563,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         closingBalance: userCurrentBalance,
         createdAt:new Date(),
         description: `Revert deducted 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
+       uniqueId:uniqueId
       });
     });
 
@@ -2633,25 +2640,28 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmount).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
         type: "MATCH ODDS",
-        result: result
+        result: result,
+       
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountTied).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountTied).toFixed(2)),
         type: "Tied Match",
-        result: result == resultType.tie ? "YES" : "NO"
+        result: result == resultType.tie ? "YES" : "NO",
+       
       }] : []),
       
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountComplete).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
         type: "Complete Match",
-        result: "YES"
+        result: "YES",
+   
       }]:[])
     ];
 
 
-    transactions?.forEach((item) => {
+    transactions?.forEach((item,uniqueId) => {
       currBal = currBal - item.winAmount + item.lossAmount;
       bulkWalletRecord.push({
         matchId: matchId,
@@ -2663,6 +2673,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         closingBalance: currBal,
         description: `Revert ${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
+        uniqueId:uniqueId
       });
     });
 

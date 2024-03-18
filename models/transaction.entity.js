@@ -51,6 +51,10 @@ const transactionSchema = new EntitySchema({
             type: 'uuid',
             nullable: true
         },
+        uniqueId:{
+            type:'int',
+            nullable:true
+        }
     },
     relations: {
         user: {
