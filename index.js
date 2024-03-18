@@ -54,7 +54,9 @@ app.use((req, res, next) => {
 });
 // Routes
 app.use("/", route);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+if (process.env.NODE_ENV != 'production') {
+  app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+}
 app.use(error);
 
 //connect http
