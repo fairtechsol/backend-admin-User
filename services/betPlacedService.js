@@ -211,7 +211,7 @@ exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss) => {
   return result
 }
 
-exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, sessionLoss, matchLoss) => {
+exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArray) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
     .where(where)
@@ -227,8 +227,7 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, sessionLo
   }
   query = query
     .select([
-      sessionLoss,
-      matchLoss,
+      ...selectArray,
       'placeBet.eventType as "eventType"',
       'COUNT(placeBet.id) as "totalBet"',
       'match.startAt as "startAt"',
@@ -236,8 +235,7 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, sessionLo
       'match.id as "matchId"'
     ])
     .groupBy('placeBet.matchId, match.id, placeBet.eventType').orderBy('match.startAt', 'DESC');
-
- 
+    
   let result = await query.getRawMany();
 
   return { result };

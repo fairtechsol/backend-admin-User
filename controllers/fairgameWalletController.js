@@ -2794,6 +2794,7 @@ exports.totalProfitLossWallet = async (req, res) => {
     if(user.roleName == userRoleConstant.user){
       totalLoss = '-' + totalLoss;
     }
+    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
 
     let childrenId = []
     if(user.roleName == userRoleConstant.fairGameWallet){
@@ -2869,7 +2870,7 @@ exports.totalProfitLossByMatch = async (req, res) => {
       rateProfitLoss = '-' + rateProfitLoss;
       sessionProfitLoss = '-' + sessionProfitLoss;
     }
-
+    let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
     let childrenId = [];
     if(user.roleName == userRoleConstant.fairGameWallet){
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
@@ -2894,7 +2895,7 @@ exports.totalProfitLossByMatch = async (req, res) => {
     }
     where.createBy = In(childrenId);
 
-    const { result } = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss);
+    const { result } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction]);
     return SuccessResponse(
       {
         statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result }
