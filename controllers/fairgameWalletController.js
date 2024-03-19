@@ -214,7 +214,7 @@ exports.createSuperAdmin = async (req, res) => {
     let insertUserBalanceData = {
       currentBalance: 0,
       userId: insertUser.id,
-      profitLoss: 0,
+      profitLoss: -creditRefrence,
       myProfitLoss: 0,
       downLevelBalance: 0,
       exposure: 0,
