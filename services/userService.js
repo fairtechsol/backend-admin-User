@@ -274,6 +274,21 @@ exports.getUserWithUserBalance = async (userName) => {
   return userData;
 }
 
+exports.getMultipleUsersWithUserBalances = async (where) => {
+  let userData = user
+    .createQueryBuilder()
+    .where(where)
+    .leftJoinAndMapOne(
+      "user.userBal",
+      "userBalances",
+      "UB",
+      "user.id = UB.userId"
+    )
+    .getMany();
+
+  return userData;
+}
+
 exports.getUserWithUserBalanceData = async (where, select) => {
   const users = await UserBalance.findOne({
     relations: ["user"],
@@ -416,3 +431,14 @@ exports.softDeleteAllUsers = (id) => {
   `
   return user.query(query);
 }
+
+exports.deleteUserByDirectParent = async (id) => {
+  const query = `
+  UPDATE "users" 
+  SET "deletedAt" = NOW(), -- Assuming "deletedAt" is the column for soft deletion
+      "userName" = CONCAT('deleted_', "users"."userName", '_', EXTRACT(EPOCH FROM NOW()))
+  WHERE "users"."superParentId" = '${id}'
+  AND "deletedAt" IS NULL -- Only soft delete if not already deleted;  
+  `
+  return user.query(query);
+};
