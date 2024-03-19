@@ -274,7 +274,7 @@ exports.getUserWithUserBalance = async (userName) => {
   return userData;
 }
 
-exports.getUsersWithUserBalances = async (where) => {
+exports.getMultipleUsersWithUserBalances = async (where) => {
   let userData = user
     .createQueryBuilder()
     .where(where)
@@ -309,7 +309,7 @@ exports.getUsersWithUsersBalanceData = async (where, query) => {
 
 }
 
-exports.getMultipleUserWithTotalUsersBalanceData = (where, query, select) => {
+exports.getUsersWithTotalUsersBalanceData = (where, query, select) => {
   //get all users with user balance according to pagoination
   let transactionQuery = new ApiFeature(user.createQueryBuilder()
     .where(where)

@@ -65,7 +65,7 @@ const {
   updateUserExposureLimit,
   getChildUserBalanceAndData,
   getUserBalance,
-  getUsersWithUserBalances,
+  getMultipleUsersWithUserBalances,
   getUserDataWithUserBalance,
   softDeleteAllUsers,
   deleteUserByDirectParent,
@@ -3215,7 +3215,7 @@ exports.checkUserBalance = async (req, res) => {
     const { roleName, id } = req.body;
 
     if (roleName == userRoleConstant.fairGameAdmin) {
-      const childUsers = await getUsersWithUserBalances({ superParentId: id });
+      const childUsers = await getMultipleUsersWithUserBalances({ superParentId: id });
       for (let childData of childUsers) {
         if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
           return ErrorResponse(
