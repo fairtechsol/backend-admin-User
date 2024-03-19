@@ -3210,8 +3210,6 @@ exports.getUsersProfitLoss = async (req, res) => {
   }
 }
 
-
-
 exports.checkUserBalance = async (req, res) => {
   try {
     const { roleName, id } = req.body;
@@ -3221,74 +3219,31 @@ exports.checkUserBalance = async (req, res) => {
       for (let childData of childUsers) {
         if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
           return ErrorResponse(
-            {
-              statusCode: 400, message: {
-                msg: "settleAccount", keys: {
-                  name: childData?.userName
-                }
-              }
-            },
-            req,
-            res
-          );
+            { statusCode: 400, message: { msg: "settleAccount", keys: { name: childData?.userName } } }, req, res);
         }
-
         forceLogoutIfLogin(childData.id);
-
       }
     }
     else {
       const userData = await getUserDataWithUserBalance({ id: id });
 
       if (!userData) {
-        return ErrorResponse(
-          { statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } },
-          req,
-          res
-        );
+        return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
       }
       if (parseFloat(userData?.userBal?.exposure || 0) != 0 || parseFloat(userData?.userBal?.currentBalance || 0) != 0 || parseFloat(userData?.userBal?.profitLoss || 0) != 0 || parseFloat(userData.creditRefrence || 0) != 0 || parseFloat(userData?.userBal?.totalCommission || 0) != 0) {
-        return ErrorResponse(
-          {
-            statusCode: 400, message: {
-              msg: "settleAccount", keys: {
-                name: "your"
-              }
-            }
-          },
-          req,
-          res
-        );
+        return ErrorResponse({ statusCode: 400, message: { msg: "settleAccount", keys: { name: "your" } } }, req, res);
       }
 
       const childUsers = await getChildUserBalanceAndData(id);
       for (let childData of childUsers) {
         if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
-          return ErrorResponse(
-            {
-              statusCode: 400, message: {
-                msg: "settleAccount", keys: {
-                  name: childData?.userName
-                }
-              }
-            },
-            req,
-            res
-          );
+          return ErrorResponse({ statusCode: 400, message: { msg: "settleAccount", keys: { name: childData?.userName } } }, req, res);
         }
-
         forceLogoutIfLogin(childData.id);
-
       }
     }
 
-    return SuccessResponse(
-      {
-        statusCode: 200
-      },
-      req,
-      res
-    );
+    return SuccessResponse({ statusCode: 200 }, req, res);
   }
   catch (error) {
     logger.error({
@@ -3309,16 +3264,10 @@ exports.deleteWalletUsers = async (req, res) => {
       await deleteUserByDirectParent(id);
     }
     else {
-     await softDeleteAllUsers(id);
+      await softDeleteAllUsers(id);
     }
 
-    return SuccessResponse(
-      {
-        statusCode: 200
-      },
-      req,
-      res
-    );
+    return SuccessResponse({ statusCode: 200 }, req, res);
   }
   catch (error) {
     logger.error({
