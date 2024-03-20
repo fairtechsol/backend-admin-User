@@ -514,7 +514,7 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
         userId: user.id,
         amount: previousCreditReference,
         transType: transType.creditRefer,
-        closingBalance: user.creditRefrence,
+        closingBalance: updateData.creditRefrence,
         description: "CREDIT REFRENCE " + remark,
       },
     ];
