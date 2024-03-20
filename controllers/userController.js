@@ -1053,12 +1053,12 @@ exports.lockUnlockUser = async (req, res, next) => {
 
     // Check if the current user is already blocked
     if (userDetails?.userBlock) {
-      throw { msg: "user.userBlockError" };
+      throw { message: { msg: "user.userBlockError" } };
     }
 
     // Check if the block type is 'betBlock' and the user is already bet-blocked
     if (!betBlock && userDetails?.betBlock) {
-      throw { msg: "user.betBlockError" };
+      throw { message: { msg: "user.betBlockError" } };
     }
 
     // Check if the user performing the block/unblock operation has the right access
@@ -1310,7 +1310,7 @@ exports.userMatchLock = async (req, res) => {
   async function userBlockUnlockMatch(userId, matchId, reqUser, block, type, isFromWallet) {
     let userAlreadyBlockExit = await getUserMatchLock({ userId, matchId, blockBy: reqUser.id, isWalletLock: isFromWallet });
     if (!userAlreadyBlockExit && !block) {
-      throw { msg: "notUnblockFirst" };
+      throw { message: { msg: "notUnblockFirst" } };
     }
 
     if (!userAlreadyBlockExit && block) {
