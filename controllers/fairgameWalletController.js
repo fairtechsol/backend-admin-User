@@ -2815,10 +2815,10 @@ exports.totalProfitLossWallet = async (req, res) => {
     totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
 
     let childrenId = []
-    if(user.roleName == userRoleConstant.fairGameWallet){
+    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
-    else if(user.roleName == userRoleConstant.fairGameAdmin){
+    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
       childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
       childrenId = childrenId[0];
     }
@@ -2890,10 +2890,10 @@ exports.totalProfitLossByMatch = async (req, res) => {
     }
     let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
     let childrenId = [];
-    if(user.roleName == userRoleConstant.fairGameWallet){
+    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
-    else if(user.roleName == userRoleConstant.fairGameAdmin){
+    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
       childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
       childrenId = childrenId[0];
     }
@@ -2968,10 +2968,10 @@ exports.getResultBetProfitLoss = async (req, res) => {
     }
 
     let childrenId = []
-    if(user.roleName == userRoleConstant.fairGameWallet){
+    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
-    else if(user.roleName == userRoleConstant.fairGameAdmin){
+    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
       childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
       childrenId = childrenId[0];
     }
@@ -3040,10 +3040,10 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     }
 
     let childrenId = []
-    if(user.roleName == userRoleConstant.fairGameWallet){
+    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
-    else if(user.roleName == userRoleConstant.fairGameAdmin){
+    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
       childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
       childrenId = childrenId[0];
     }
