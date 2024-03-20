@@ -719,7 +719,7 @@ exports.getUserProfitLossForUpperLevel = async (user)=>{
 }
 
 exports.profitLossPercentCol = (body, queryColumns) => {
-  switch (body.role) {
+  switch (body.roleName) {
     case (userRoleConstant.fairGameWallet):
     case (userRoleConstant.expert): {
       queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership)`;

@@ -189,6 +189,7 @@ exports.allChildsProfitLoss = async (where, startDate, endDate) => {
 
 exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
     .where(where)
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 
@@ -214,6 +215,7 @@ exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss) => {
 exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArray) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
     .where(where)
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 
@@ -277,6 +279,7 @@ exports.getBetsProfitLoss = async (where, totalLoss) => {
 
 exports.getSessionsProfitLoss = async (where, totalLoss) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
     .where(where)
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 
