@@ -1,4 +1,4 @@
-const { IsNull, In, MoreThan } = require("typeorm");
+const { IsNull, In, MoreThan, ILike } = require("typeorm");
 const {
   transType,
   walletDescription,
@@ -3268,6 +3268,30 @@ exports.deleteWalletUsers = async (req, res) => {
     }
 
     return SuccessResponse({ statusCode: 200 }, req, res);
+  }
+  catch (error) {
+    logger.error({
+      context: `error in delete user`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.getAllChildSearchList = async (req, res) => {
+  try {
+    const { roleName, userName, id } = req.query;
+
+    let users = [];
+    if (roleName == userRoleConstant.fairGameAdmin) {
+      users = await getAllUsers({ superParentId: id, userName: ILike(`%${userName}%`) }, ["id", "userName"]);
+    }
+    else {
+      users = await getAllUsers({ userName: ILike(`%${userName}%`) }, ["id", "userName"]);
+    }
+
+    return SuccessResponse({ statusCode: 200, data: users }, req, res);
   }
   catch (error) {
     logger.error({
