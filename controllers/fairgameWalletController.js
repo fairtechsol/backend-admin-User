@@ -1,4 +1,4 @@
-const { IsNull, In, MoreThan, ILike } = require("typeorm");
+const { IsNull, In, MoreThan, ILike, Not } = require("typeorm");
 const {
   transType,
   walletDescription,
@@ -3120,6 +3120,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
         })
         : await getAllUsers({
           createBy: user.id,
+          id: Not(user.id)
         });
     let result = [];
     for(let directUser of getAllDirectUsers){
