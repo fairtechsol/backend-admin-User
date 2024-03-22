@@ -3135,7 +3135,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
       where.createBy = In(childrenId);
   
       const userData = await getUserWiseProfitLoss(where, totalLoss);
-      result.push({ ...userData, id: directUser.id, roleName: directUser.roleName, matchId: matchId, userName: directUser.userName });
+      result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, matchId: matchId, userName: directUser.userName });
     }
 
     
