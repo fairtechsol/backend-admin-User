@@ -306,6 +306,8 @@ exports.getUserWiseProfitLoss = async (where, totalLoss) => {
       totalLoss,
       'user.userName as "userName"',
       'user.id as "userId"',
+      'placeBet.matchId as "matchId"' ,
+      'user.roleName as "roleName"' ,
     ])
     .groupBy('placeBet.matchId')
     .addGroupBy("user.id")
