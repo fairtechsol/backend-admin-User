@@ -3108,40 +3108,36 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
       );
     }
     queryColumns = await profitLossPercentCol(user, queryColumns);
-    let totalLoss;
-      if(req.user.roleName == userRoleConstant.user){
-        totalLoss = `-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss", Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win"`;
-    }
-    else{
-      totalLoss = `Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win", -Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss"`;
-    }
+    let totalLoss = `-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss", -Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win"`;
 
- 
-    let childrenId = [];
-    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
-      childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
-    }
-    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
-      childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
-      childrenId = childrenId[0];
-    }
-     else {
-      let userId = user.id;
-      if (searchId){
-        userId = searchId;
+    const getAllDirectUsers = (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
+      await getAllUsers({
+        superParentId: user.id,
+      }) :
+      searchId ?
+        await getAllUsers({
+          id: user.id,
+        })
+        : await getAllUsers({
+          createBy: user.id,
+        });
+    let result = [];
+    for(let directUser of getAllDirectUsers){
+      let childrenId  = await getChildsWithOnlyUserRole(directUser.id);
+  
+      childrenId = childrenId.map(item => item.id);
+      if (!childrenId.length) {
+        return SuccessResponse({
+          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
+        }, req, res);
       }
-      childrenId = await getChildsWithOnlyUserRole(userId);
+      where.createBy = In(childrenId);
+  
+      const userData = await getUserWiseProfitLoss(where, totalLoss);
+      result.push({ ...userData, id: directUser.id, roleName: directUser.roleName, matchId: matchId });
     }
 
-    childrenId = childrenId.map(item => item.id);
-    if (!childrenId.length) {
-      return SuccessResponse({
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
-      }, req, res);
-    }
-    where.createBy = In(childrenId);
-
-    const result = await getUserWiseProfitLoss(where, totalLoss);
+    
     return SuccessResponse(
       {
         statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result

@@ -303,17 +303,10 @@ exports.getUserWiseProfitLoss = async (where, totalLoss) => {
 
   query = query
     .select([
-      totalLoss,
-      'user.userName as "userName"',
-      'user.id as "userId"',
-      'placeBet.matchId as "matchId"' ,
-      'user.roleName as "roleName"' ,
-    ])
-    .groupBy('placeBet.matchId')
-    .addGroupBy("user.id")
-    .addGroupBy("user.userName");
+      totalLoss
+    ]);
 
-    let result = await query.getRawMany();
+    let result = await query.getRawOne();
     return result;
 }
 
