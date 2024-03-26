@@ -3109,7 +3109,15 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
     }
     queryColumns = await profitLossPercentCol(user, queryColumns);
     let totalLoss = `-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss", -Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win"`;
-
+    let rateProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "rateProfitLoss"`;
+    let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss"`;
+   
+    if(req.user.roleName&&req.user.roleName==userRoleConstant.user){
+      rateProfitLoss = "-" + rateProfitLoss;
+      sessionProfitLoss = "-" + sessionProfitLoss;
+    }
+    
+   
     const getAllDirectUsers = (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
       await getAllUsers({
         superParentId: user.id,
@@ -3133,12 +3141,13 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
         }, req, res);
       }
       where.createBy = In(childrenId);
-  
-      const userData = await getUserWiseProfitLoss(where, totalLoss);
-      result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, matchId: matchId, userName: directUser.userName });
+
+      const userData = await getUserWiseProfitLoss(where, totalLoss, rateProfitLoss, sessionProfitLoss);
+      if (userData.loss != null && userData.win != null && userData.loss != undefined && userData.win != undefined) {
+        result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, matchId: matchId, userName: directUser.userName });
+      }
     }
 
-    
     return SuccessResponse(
       {
         statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result

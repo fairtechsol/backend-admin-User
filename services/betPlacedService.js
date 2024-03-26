@@ -295,7 +295,7 @@ exports.getSessionsProfitLoss = async (where, totalLoss) => {
     return result;
 }
 
-exports.getUserWiseProfitLoss = async (where, totalLoss) => {
+exports.getUserWiseProfitLoss = async (where, totalLoss,rateProfitLoss, sessionProfitLoss) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
     .where(where)
@@ -303,7 +303,7 @@ exports.getUserWiseProfitLoss = async (where, totalLoss) => {
 
   query = query
     .select([
-      totalLoss
+      totalLoss, rateProfitLoss, sessionProfitLoss
     ]);
 
     let result = await query.getRawOne();
