@@ -1,12 +1,12 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, walletDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, updateUserDataRedis, getUserRedisKey } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult } = require('../services/commonService');
+const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
@@ -1049,18 +1049,22 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   let socketSessionEvent = socketData.sessionDeleteBet;
   let redisSesionExposureName = redisKeys.userSessionExposure + matchId;
   let oldProfitLoss;
+  let currUserBalance;
 
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
     partnershipObj = JSON.parse(userRedisData.partnerShips);
     oldSessionExposure = userRedisData[redisSesionExposureName];
     oldProfitLoss = userRedisData[redisName];
+    currUserBalance = parseFloat(userRedisData.currentBalance);
   } else {
     let user = await getUserById(userId);
     let partnership = await findUserPartnerShipObj(user);
     partnershipObj = JSON.parse(partnership);
     let userBalance = await getUserBalanceDataByUserId(userId);
     userOldExposure = userBalance.exposure;
+    currUserBalance = parseFloat(userBalance.currentBalance);
+
 
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, betId: betId, createBy: userId, deleteReason: IsNull() });
     let userAllBetProfitLoss = await calculatePLAllBet(placedBet, 100);
@@ -1101,6 +1105,62 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   await updateUserBalanceByUserId(userId, {
     exposure: userOldExposure - exposureDiff,
   });
+
+  // blocking user if its exposure would increase by current balance
+  const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock"]);
+  if (userOldExposure - exposureDiff > currUserBalance && !userCreatedBy.userBlock) {
+    await userService.updateUser(userId,{
+      autoBlock: true,
+      userBlock: true,
+      userBlockedBy: userCreatedBy?.createBy
+    });
+
+    if (userCreatedBy?.createBy == userId) {
+      await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+        {
+          userId: userId, userBlock: true, parentId: userCreatedBy.superParentId, autoBlock: true
+        }
+      ).catch(error => {
+        logger.error({
+          error: `Error at auto block user.`,
+          stack: error.stack,
+          message: error.message,
+        });
+        throw error
+      });
+    }
+    
+    if (isUserLogin) {
+      forceLogoutUser(userId);
+    }
+  }
+  else if (userCreatedBy.autoBlock && userCreatedBy.userBlock && userOldExposure - exposureDiff <= currUserBalance) {
+    await userService.updateUser(userId,{
+      autoBlock: false,
+      userBlock: false,
+      userBlockedBy: null
+    });
+
+    if (userCreatedBy?.createBy == userId) {
+      await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+        {
+          userId: userId, userBlock: false, parentId: null, autoBlock: false
+        }
+      ).catch(error => {
+        logger.error({
+          error: `Error at auto block user.`,
+          stack: error.stack,
+          message: error.message,
+        });
+        throw error
+      });
+    }
+  }
+
   if (isUserLogin) {
     let redisObject = {
       [redisSesionExposureName]: oldSessionExposure - exposureDiff,
@@ -1241,6 +1301,7 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
     teamC: 0
   };
   let matchBetType = bets?.[0].marketType;
+  let currUserBalance;
 
   const teamArateRedisKey =
     (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2
@@ -1268,13 +1329,14 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
       teamB: Number(userRedisData[teamBrateRedisKey]) || 0.0,
       teamC: teamCrateRedisKey ? Number(userRedisData[teamCrateRedisKey]) || 0.0 : 0.0
     };
+    currUserBalance = parseFloat(userRedisData.currentBalance);
   } else {
     let user = await getUserById(userId);
     let partnership = await findUserPartnerShipObj(user);
     partnershipObj = JSON.parse(partnership);
     let userBalance = await getUserBalanceDataByUserId(userId);
     userOldExposure = userBalance.exposure;
-
+    currUserBalance = parseFloat(userBalance.currentBalance);
     let redisData = await calculateProfitLossForMatchToResult([betId], userId, { teamA, teamB, teamC });
     teamRates = {
       teamA: !isTiedOrCompMatch ? redisData.teamARate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? redisData.teamYesRateTie : redisData.teamYesRateComplete,
@@ -1334,6 +1396,61 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
   await updateUserBalanceByUserId(userId, {
     exposure: userOldExposure - exposureDiff,
   });
+
+    // blocking user if its exposure would increase by current balance
+    const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock","superParentId"]);
+    if (userOldExposure - exposureDiff > currUserBalance && !userCreatedBy.userBlock) {
+      await userService.updateUser(userId,{
+        autoBlock: true,
+        userBlock: true,
+        userBlockedBy: userCreatedBy?.createBy == userId ? userCreatedBy.superParentId : userCreatedBy.createBy
+      });
+
+      if (userCreatedBy?.createBy == userId) {
+        await apiCall(
+          apiMethod.post,
+          walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+          {
+            userId: userId, userBlock: true, parentId: userCreatedBy.superParentId, autoBlock: true
+          }
+        ).catch(error => {
+          logger.error({
+            error: `Error at auto block user.`,
+            stack: error.stack,
+            message: error.message,
+          });
+          throw error
+        });
+      }
+
+      if (isUserLogin) {
+        forceLogoutUser(userId);
+      }
+    }
+    else if (userCreatedBy.autoBlock && userCreatedBy.userBlock && userOldExposure - exposureDiff <= currUserBalance) {
+      await userService.updateUser(userId, {
+        autoBlock: false,
+        userBlock: false,
+        userBlockedBy: null
+      });
+
+      if (userCreatedBy?.createBy == userId) {
+        await apiCall(
+          apiMethod.post,
+          walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+          {
+            userId: userId, userBlock: false, parentId: null, autoBlock: false
+          }
+        ).catch(error => {
+          logger.error({
+            error: `Error at auto block user.`,
+            stack: error.stack,
+            message: error.message,
+          });
+          throw error
+        });
+      }
+    }
 
   if (isUserLogin) {
     let matchExposure = parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]);

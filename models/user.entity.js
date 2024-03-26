@@ -159,6 +159,11 @@ const userSchema = new EntitySchema({
       enum: [userRoleConstant.fairGameAdmin, userRoleConstant.fairGameWallet],
       nullable: true
     },
+    autoBlock:{
+      type: 'boolean',
+      nullable: false,
+      default: false
+    },
     delayTime: {
       type: 'int',
       nullable: false,

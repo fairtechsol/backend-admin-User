@@ -104,7 +104,7 @@ ${getUserChild}
     : `
 ${getUserChild}
     UPDATE users
-    SET "userBlock" = false, "userBlockedBy" = NULL
+    SET "userBlock" = false, "userBlockedBy" = NULL, "autoBlock" = false
     WHERE id IN (SELECT id FROM RoleHierarchy) AND "userBlockedBy" = '${blockBy}' RETURNING id;
     `;
 
@@ -256,7 +256,7 @@ exports.getUserBalanceDataByUserIds = async (userIds, select) => {
   return await UserBalance.find({
     where: { userId: In(userIds) },
     select: select
-  })
+  });
 }
 
 exports.getUserWithUserBalance = async (userName) => {

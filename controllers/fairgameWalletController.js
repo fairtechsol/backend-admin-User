@@ -1,4 +1,4 @@
-const { IsNull, In, MoreThan, ILike } = require("typeorm");
+const { IsNull, In, MoreThan, ILike, Not } = require("typeorm");
 const {
   transType,
   walletDescription,
@@ -19,7 +19,7 @@ const {
   tieCompleteBetType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -3087,6 +3087,91 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     );
   }
 }
+
+exports.getUserWiseTotalProfitLoss = async (req, res) => {
+  try {
+    let { user, matchId, searchId } = req.body;
+    user = user || req.user;
+
+    let queryColumns = ``;
+    let where={};
+
+    if (matchId) {
+      where.matchId = matchId;
+    }
+   
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await profitLossPercentCol(user, queryColumns);
+    let totalLoss = `-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss", -Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win"`;
+    let rateProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "rateProfitLoss"`;
+    let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss"`;
+   
+    if(req.user.roleName&&req.user.roleName==userRoleConstant.user){
+      rateProfitLoss = "-" + rateProfitLoss;
+      sessionProfitLoss = "-" + sessionProfitLoss;
+    }
+    
+   
+    const getAllDirectUsers = (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
+      await getAllUsers({
+        superParentId: user.id,
+      }) :
+      searchId ?
+        await getAllUsers({
+          id: user.id,
+        })
+        : await getAllUsers({
+          createBy: user.id,
+          id: Not(user.id)
+        });
+    let result = [];
+    for(let directUser of getAllDirectUsers){
+      let childrenId  = await getChildsWithOnlyUserRole(directUser.id);
+  
+      childrenId = childrenId.map(item => item.id);
+      if (!childrenId.length) {
+        return SuccessResponse({
+          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
+        }, req, res);
+      }
+      where.createBy = In(childrenId);
+
+      const userData = await getUserWiseProfitLoss(where, [totalLoss, rateProfitLoss, sessionProfitLoss]);
+      if (userData.loss != null && userData.win != null && userData.loss != undefined && userData.win != undefined) {
+        result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, matchId: matchId, userName: directUser.userName });
+      }
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get bet profit loss.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
 
 exports.getBetCount = async (req,res)=>{
   try {
