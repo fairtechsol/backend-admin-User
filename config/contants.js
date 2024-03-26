@@ -219,10 +219,18 @@ module.exports.redisKeys = {
   noRateTie: "noRateTie_",
   yesRateComplete: "yesRateComplete_",
   noRateComplete: "noRateComplete_",
-  yesRateFirstHalfGoal: "yesRateFirstHalfGoal_",
-  noRateFirstHalfGoal: "noRateFirstHalfGoal_",
-  yesRateUnderOver: "yesRateUnderOver_",
-  noRateUnderOver: "noRateUnderOver_",
+
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`yesRateUnderOver${curr}.5`] = `yesRateUnderOver${curr}.5_`;
+    prev[`noRateUnderOver${curr}.5`] = `noRateUnderOver${curr}.5_`;
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`yesRateFirstHalfGoal${curr}.5`] = `yesRateFirstHalfGoal${curr}.5_`;
+    prev[`noRateFirstHalfGoal${curr}.5`] = `noRateFirstHalfGoal${curr}.5_`;
+    return prev;
+  }, {})),
+
   userTeamARateHalfTime: "userTeamARateHalfTime_",
   userTeamBRateHalfTime: "userTeamBRateHalfTime_",
   userTeamCRateHalfTime: "userTeamCRateHalfTime_",
@@ -273,15 +281,15 @@ module.exports.otherEventMatchBettingRedisKey = {
   },
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = {
-      "a":this.redisKeys.yesRateUnderOver,
-      "b":this.redisKeys.noRateUnderOver
+      "a":this.redisKeys[`yesRateUnderOver${curr}.5`],
+      "b":this.redisKeys[`noRateUnderOver${curr}.5`]
     }
     return prev;
   }, {})),
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`firstHalfGoal${curr}.5`] = {
-      "a":this.redisKeys.yesRateFirstHalfGoal,
-      "b":this.redisKeys.noRateFirstHalfGoal
+      "a":this.redisKeys[`yesRateFirstHalfGoal${curr}.5`],
+      "b":this.redisKeys[`noRateFirstHalfGoal${curr}.5`]
     }
     return prev;
   }, {})),
