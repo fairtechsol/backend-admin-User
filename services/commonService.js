@@ -4,7 +4,7 @@ const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole } = require("./betPlacedService");
-const { getUserById, getChildsWithOnlyUserRole } = require("./userService");
+const { getUserById, getChildsWithOnlyUserRole, getAllUsers } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
 
@@ -661,10 +661,65 @@ exports.settingBetsDataAtLogin = async (user) => {
   }
 }
 
+exports.getUserProfitLossForUpperLevel = async (user)=>{
+  let users=[];
+  if (user.roleName == userRoleConstant.fairGameAdmin) {
+    users = await getAllUsers({ superParentId: user.id });
+  }
+  else{
+    users = await getChildsWithOnlyUserRole(user.id);
+  }
+  let betResult = { match: {} };
+
+  let matchResult = {};
+
+  const bets = await getBetsWithUserRole(users?.map((item) => item.id));
+  bets?.forEach((item) => {
+    let itemData = {
+      ...item,
+      winAmount: -parseFloat((parseFloat(item.winAmount)).toFixed(2)),
+      lossAmount: -parseFloat((parseFloat(item.lossAmount)).toFixed(2))
+    };
+    if (betResult.match[item.betId]) {
+      betResult.match[item.betId].push(itemData);
+    }
+    else {
+      betResult.match[item.betId] = [itemData];
+    }
+  });
+
+  for (const placedBet of Object.keys(betResult.match)) {
+    const matchId = betResult.match[placedBet]?.[0]?.matchId;
+
+    let apiResponse;
+    try {
+      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "?type=" + matchBettingType.quickbookmaker1;
+      apiResponse = await apiCall(apiMethod.get, url);
+    } catch (error) {
+      logger.info({
+        info: `Error at get match details in login.`
+      });
+      return;
+    }
+    let redisData = await this.calculateRatesMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
+
+    let teamARate = redisData?.teamARate ?? Number.MAX_VALUE;
+    let teamBRate = redisData?.teamBRate ?? Number.MAX_VALUE;
+    let teamCRate = redisData?.teamCRate ?? Number.MAX_VALUE;
+    matchResult = {
+      ...matchResult,
+      ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]: teamARate + (matchResult[redisKeys.userTeamARate + matchId] || 0) } : {}),
+      ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]: teamBRate + (matchResult[redisKeys.userTeamBRate + matchId] || 0) } : {}),
+      ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]: teamCRate + (matchResult[redisKeys.userTeamCRate + matchId] || 0) } : {}),
+    }
+  }
+  return {
+    ...matchResult
+  }
+}
+
 exports.profitLossPercentCol = (body, queryColumns) => {
-  // queryColumns = '(user.m_partnership + user.sm_partnership + user.a_partnership + user.sa_partnership + user.fa_partnership + user.fw_partnership)';
-  // return queryColumns;
-  switch (body.role) {
+  switch (body.roleName) {
     case (userRoleConstant.fairGameWallet):
     case (userRoleConstant.expert): {
       queryColumns = `(user.${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}Partnership)`;

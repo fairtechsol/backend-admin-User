@@ -41,7 +41,8 @@ exports.allApiRoutes = {
     sessionDetail: "/superAdmin/session/"
   },
   WALLET:{
-    updateBalance:"/superAdmin/update/balance/SA"
+    updateBalance:"/superAdmin/update/balance/SA",
+    autoLockUnlockUser:"/superAdmin/auto/lockUnlockUser"
   },
   EXPERT:{
     partnershipId:"/superAdmin/partnershipId/"

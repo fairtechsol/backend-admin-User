@@ -1,4 +1,4 @@
-const { IsNull, In } = require("typeorm");
+const { IsNull, In, MoreThan, ILike, Not } = require("typeorm");
 const {
   transType,
   walletDescription,
@@ -19,7 +19,7 @@ const {
   tieCompleteBetType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -28,6 +28,8 @@ const {
   calculateProfitLossForMatchToResult,
   profitLossPercentCol,
   settingBetsDataAtLogin,
+  getUserProfitLossForUpperLevel,
+  forceLogoutIfLogin,
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -59,11 +61,20 @@ const {
   getUsers,
   getChildUserBalanceSum,
   getAllUsersBalanceSumByFgId,
+  getAllUsers,
+  updateUserExposureLimit,
+  getChildUserBalanceAndData,
+  getUserBalance,
+  getMultipleUsersWithUserBalances,
+  getUserDataWithUserBalance,
+  softDeleteAllUsers,
+  deleteUserByDirectParent,
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertCommissions, getCombinedCommission, deleteCommission } = require("../services/commissionService");
 const { insertButton } = require("../services/buttonService");
+
 
 exports.createSuperAdmin = async (req, res) => {
   try {
@@ -203,7 +214,7 @@ exports.createSuperAdmin = async (req, res) => {
     let insertUserBalanceData = {
       currentBalance: 0,
       userId: insertUser.id,
-      profitLoss: 0,
+      profitLoss: -creditRefrence,
       myProfitLoss: 0,
       downLevelBalance: 0,
       exposure: 0,
@@ -424,6 +435,42 @@ exports.setExposureLimitSuperAdmin = async (req, res, next) => {
   }
 };
 
+
+exports.setExposureLimitByFGAdmin = async (req, res, next) => {
+  try {
+    let { exposureLimit, id, roleName } = req.body;
+
+    exposureLimit = parseInt(exposureLimit);
+    let childUsers = await getAllUsers(roleName == userRoleConstant.fairGameAdmin ? { superParentId: id } : {}, ["id", "exposureLimit"]);
+
+    const childUsersId = childUsers.map((childObj) => {
+      return childObj.id;
+
+    });
+
+
+    await updateUserExposureLimit(exposureLimit, childUsersId);
+
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "user.ExposurelimitSet" },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    console.log(error);
+    logger.error({
+      error: `Error in exposure limit.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
+};
+
 exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
   try {
     let { userId, amount, remark } = req.body;
@@ -467,7 +514,7 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
         userId: user.id,
         amount: previousCreditReference,
         transType: transType.creditRefer,
-        closingBalance: user.creditRefrence,
+        closingBalance: updateData.creditRefrence,
         description: "CREDIT REFRENCE " + remark,
       },
     ];
@@ -1996,7 +2043,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     fwProfitLoss = parseFloat(fwProfitLoss.toString()) + parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString());
 
     let userCurrentBalance = parseFloat(user.user.userBalance.currentBalance);
-    matchOddWinBets?.filter((item) => item.user.id == user.user.id)?.forEach((matchOddData) => {
+    matchOddWinBets?.filter((item) => item.user.id == user.user.id)?.forEach((matchOddData,uniqueId) => {
       userCurrentBalance -= parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
         matchId: matchId,
@@ -2008,6 +2055,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         closingBalance: userCurrentBalance,
         description: `Deduct 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
         createdAt: new Date(),
+        uniqueId:uniqueId
       });
     });
 
@@ -2123,23 +2171,26 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         winAmount: parseFloat(getMultipleAmount.winAmount),
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
         type: "MATCH ODDS",
-        result: result
+        result: result,
+        
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount||0)>0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountTied),
         lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
         type: "Tied Match",
-        result: result == resultType.tie ? "YES" : "NO"
+        result: result == resultType.tie ? "YES" : "NO",
+      
       }] : []),
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountComplete),
         lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
         type: "Complete Match",
-        result: "YES"
+        result: "YES",
+        
       }]:[])
     ];
 
-    transactions.forEach((item)=>{
+    transactions.forEach((item,uniqueId)=>{
       currBal = currBal + item.winAmount - item.lossAmount;
 
       bulkWalletRecord.push({
@@ -2152,6 +2203,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         closingBalance: currBal,
         description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
+        uniqueId:uniqueId
       });
     });
 
@@ -2506,7 +2558,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     fwProfitLoss = parseFloat((parseFloat(fwProfitLoss.toString()) - parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString())).toFixed(2));
 
     let userCurrentBalance = parseFloat(user.user.userBalance.currentBalance);
-    matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData) => {
+    matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData,uniqueId) => {
       userCurrentBalance += parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
         matchId: matchId,
@@ -2518,6 +2570,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         closingBalance: userCurrentBalance,
         createdAt:new Date(),
         description: `Revert deducted 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
+       uniqueId:uniqueId
       });
     });
 
@@ -2594,25 +2647,28 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmount).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
         type: "MATCH ODDS",
-        result: result
+        result: result,
+       
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountTied).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountTied).toFixed(2)),
         type: "Tied Match",
-        result: result == resultType.tie ? "YES" : "NO"
+        result: result == resultType.tie ? "YES" : "NO",
+       
       }] : []),
       
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountComplete).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
         type: "Complete Match",
-        result: "YES"
+        result: "YES",
+   
       }]:[])
     ];
 
 
-    transactions?.forEach((item) => {
+    transactions?.forEach((item,uniqueId) => {
       currBal = currBal - item.winAmount + item.lossAmount;
       bulkWalletRecord.push({
         matchId: matchId,
@@ -2624,6 +2680,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         closingBalance: currBal,
         description: `Revert ${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
+        uniqueId:uniqueId
       });
     });
 
@@ -2755,12 +2812,13 @@ exports.totalProfitLossWallet = async (req, res) => {
     if(user.roleName == userRoleConstant.user){
       totalLoss = '-' + totalLoss;
     }
+    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
 
     let childrenId = []
-    if(user.roleName == userRoleConstant.fairGameWallet){
+    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
-    else if(user.roleName == userRoleConstant.fairGameAdmin){
+    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
       childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
       childrenId = childrenId[0];
     }
@@ -2830,12 +2888,12 @@ exports.totalProfitLossByMatch = async (req, res) => {
       rateProfitLoss = '-' + rateProfitLoss;
       sessionProfitLoss = '-' + sessionProfitLoss;
     }
-
+    let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
     let childrenId = [];
-    if(user.roleName == userRoleConstant.fairGameWallet){
+    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
-    else if(user.roleName == userRoleConstant.fairGameAdmin){
+    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
       childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
       childrenId = childrenId[0];
     }
@@ -2855,7 +2913,7 @@ exports.totalProfitLossByMatch = async (req, res) => {
     }
     where.createBy = In(childrenId);
 
-    const { result } = await getAllMatchTotalProfitLoss(where, startDate, endDate, sessionProfitLoss, rateProfitLoss);
+    const { result } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction]);
     return SuccessResponse(
       {
         statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result }
@@ -2910,10 +2968,10 @@ exports.getResultBetProfitLoss = async (req, res) => {
     }
 
     let childrenId = []
-    if(user.roleName == userRoleConstant.fairGameWallet){
+    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
-    else if(user.roleName == userRoleConstant.fairGameAdmin){
+    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
       childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
       childrenId = childrenId[0];
     }
@@ -2982,10 +3040,10 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     }
 
     let childrenId = []
-    if(user.roleName == userRoleConstant.fairGameWallet){
+    if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
-    else if(user.roleName == userRoleConstant.fairGameAdmin){
+    else if (user.roleName == userRoleConstant.fairGameAdmin && !searchId) {
       childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user });
       childrenId = childrenId[0];
     }
@@ -3029,6 +3087,91 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     );
   }
 }
+
+exports.getUserWiseTotalProfitLoss = async (req, res) => {
+  try {
+    let { user, matchId, searchId } = req.body;
+    user = user || req.user;
+
+    let queryColumns = ``;
+    let where={};
+
+    if (matchId) {
+      where.matchId = matchId;
+    }
+   
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await profitLossPercentCol(user, queryColumns);
+    let totalLoss = `-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss", -Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win"`;
+    let rateProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "rateProfitLoss"`;
+    let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss"`;
+   
+    if(req.user.roleName&&req.user.roleName==userRoleConstant.user){
+      rateProfitLoss = "-" + rateProfitLoss;
+      sessionProfitLoss = "-" + sessionProfitLoss;
+    }
+    
+   
+    const getAllDirectUsers = (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
+      await getAllUsers({
+        superParentId: user.id,
+      }) :
+      searchId ?
+        await getAllUsers({
+          id: user.id,
+        })
+        : await getAllUsers({
+          createBy: user.id,
+          id: Not(user.id)
+        });
+    let result = [];
+    for(let directUser of getAllDirectUsers){
+      let childrenId  = await getChildsWithOnlyUserRole(directUser.id);
+  
+      childrenId = childrenId.map(item => item.id);
+      if (!childrenId.length) {
+        return SuccessResponse({
+          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
+        }, req, res);
+      }
+      where.createBy = In(childrenId);
+
+      const userData = await getUserWiseProfitLoss(where, [totalLoss, rateProfitLoss, sessionProfitLoss]);
+      if (userData.loss != null && userData.win != null && userData.loss != undefined && userData.win != undefined) {
+        result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, matchId: matchId, userName: directUser.userName });
+      }
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get bet profit loss.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
 
 exports.getBetCount = async (req,res)=>{
   try {
@@ -3111,31 +3254,22 @@ exports.getUsersProfitLoss = async (req, res) => {
 
     const resUserData=[];
 
-    for(let userData of userIds?.split("|")){
-      userData=JSON.parse(userData);
-      const isUserExist=await hasUserInCache(userData?.id);
-      let userProfitLossData={};
+    for (let userData of userIds?.split("|")) {
+      userData = JSON.parse(userData);
+      let userProfitLossData = {};
 
-      if (isUserExist) {
-        let betsData = await getUserRedisKeys(userData?.id, [redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId]);
-        userProfitLossData.teamRateA =betsData?.[0]? parseFloat(betsData?.[0])?.toFixed(2):0;
-        userProfitLossData.teamRateB = betsData?.[1]? parseFloat(betsData?.[1])?.toFixed(2):0;
-        userProfitLossData.teamRateC = betsData?.[2]? parseFloat(betsData?.[2])?.toFixed(2):0;
 
-        userProfitLossData.percentTeamRateA = betsData?.[0] ? parseFloat(parseFloat(parseFloat(betsData?.[0])?.toFixed(2))*parseFloat(userData?.partnerShip)/100).toFixed(2) : 0;
-        userProfitLossData.percentTeamRateB = betsData?.[1] ? parseFloat(parseFloat(parseFloat(betsData?.[1])?.toFixed(2))*parseFloat(userData?.partnerShip)/100).toFixed(2) : 0;
-        userProfitLossData.percentTeamRateC = betsData?.[2] ? parseFloat(parseFloat(parseFloat(betsData?.[2])?.toFixed(2))*parseFloat(userData?.partnerShip)/100).toFixed(2) : 0;
-      }
-      else {
-        let betsData = await settingBetsDataAtLogin(userData);
-        userProfitLossData = {
-          teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
-          percentTeamRateA: betsData?.[redisKeys.userTeamARate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2))*parseFloat(userData.partnerShip)/100).toFixed(2) : 0, percentTeamRateB: betsData?.[redisKeys.userTeamBRate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2))*parseFloat(userData.partnerShip)/100).toFixed(2) : 0, percentTeamRateC: betsData?.[redisKeys.userTeamCRate + matchId]? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2))*parseFloat(userData.partnerShip)/100).toFixed(2) : 0
-        }   
+      let betsData = await getUserProfitLossForUpperLevel(userData);
+      userProfitLossData = {
+        teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
+        percentTeamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0, percentTeamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0, percentTeamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0
       }
       userProfitLossData.userName = userData?.userName;
-      resUserData.push(userProfitLossData);
-  }
+
+      if (userProfitLossData.teamRateA || userProfitLossData.teamRateB || userProfitLossData.teamRateC) {
+        resUserData.push(userProfitLossData);
+      }
+    }
 
     return SuccessResponse(
       {
@@ -3158,5 +3292,98 @@ exports.getUsersProfitLoss = async (req, res) => {
       req,
       res
     );
+  }
+}
+
+exports.checkUserBalance = async (req, res) => {
+  try {
+    const { roleName, id } = req.body;
+
+    if (roleName == userRoleConstant.fairGameAdmin) {
+      const childUsers = await getMultipleUsersWithUserBalances({ superParentId: id });
+      for (let childData of childUsers) {
+        if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
+          return ErrorResponse(
+            { statusCode: 400, message: { msg: "settleAccount", keys: { name: childData?.userName } } }, req, res);
+        }
+        forceLogoutIfLogin(childData.id);
+      }
+    }
+    else {
+      const userData = await getUserDataWithUserBalance({ id: id });
+
+      if (!userData) {
+        return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
+      }
+      if (parseFloat(userData?.userBal?.exposure || 0) != 0 || parseFloat(userData?.userBal?.currentBalance || 0) != 0 || parseFloat(userData?.userBal?.profitLoss || 0) != 0 || parseFloat(userData.creditRefrence || 0) != 0 || parseFloat(userData?.userBal?.totalCommission || 0) != 0) {
+        return ErrorResponse({ statusCode: 400, message: { msg: "settleAccount", keys: { name: "your" } } }, req, res);
+      }
+
+      const childUsers = await getChildUserBalanceAndData(id);
+      for (let childData of childUsers) {
+        if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
+          return ErrorResponse({ statusCode: 400, message: { msg: "settleAccount", keys: { name: childData?.userName } } }, req, res);
+        }
+        forceLogoutIfLogin(childData.id);
+      }
+    }
+
+    return SuccessResponse({ statusCode: 200 }, req, res);
+  }
+  catch (error) {
+    logger.error({
+      context: `error in delete user`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.deleteWalletUsers = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { roleName } = req.body;
+
+    if (roleName == userRoleConstant.fairGameAdmin) {
+      await deleteUserByDirectParent(id);
+    }
+    else {
+      await softDeleteAllUsers(id);
+    }
+
+    return SuccessResponse({ statusCode: 200 }, req, res);
+  }
+  catch (error) {
+    logger.error({
+      context: `error in delete user`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.getAllChildSearchList = async (req, res) => {
+  try {
+    const { roleName, userName, id } = req.query;
+
+    let users = [];
+    if (roleName == userRoleConstant.fairGameAdmin) {
+      users = await getAllUsers({ superParentId: id, userName: ILike(`%${userName}%`) }, ["id", "userName"]);
+    }
+    else {
+      users = await getAllUsers({ userName: ILike(`%${userName}%`) }, ["id", "userName"]);
+    }
+
+    return SuccessResponse({ statusCode: 200, data: users }, req, res);
+  }
+  catch (error) {
+    logger.error({
+      context: `error in delete user`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(error, req, res);
   }
 }
