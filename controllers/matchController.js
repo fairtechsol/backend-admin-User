@@ -98,7 +98,7 @@ exports.matchDetailsForFootball = async (req, res) => {
     try {
       apiResponse = await apiCall(
         apiMethod.get,
-        domain + allApiRoutes.MATCHES.matchDetails + matchId
+        domain + allApiRoutes.MATCHES.matchDetailsForFootball + matchId
       );
     } catch (error) {
       throw error?.response?.data;
