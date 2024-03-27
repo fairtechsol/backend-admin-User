@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey,walletDomain  } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, updateUserDataRedis, getUserRedisKey } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -1854,38 +1854,36 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       newBet,
       userName: user.userName
     }
+    
+     //add redis queue function
+     const job = MatchBetQueue.createJob(jobData);
+     await job.save().then(data =>{
+       logger.info({
+         info: `add match betting job save in the redis for user ${reqUser.id}`,
+         matchId, jobData
+       });
+     }).catch(error => {
+       logger.error({
+         error: `Error at match betting job save in the redis for user ${reqUser.id}.`,
+         stack: error.stack,
+         message: error.message,
+         errorFile: error
+       });
+       updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
+       betPlacedService.deleteBetByEntityOnError(newBet);
+       throw error;
+     });
 
     const domainUrl = `${req.protocol}://${req.get('host')}`;
 
     let walletJobData = {
+      ...jobData,
       domainUrl: domainUrl,
       partnerships: userRedisData.partnerShips,
-      userId: reqUser.id,
-      stake: jobData.stake,
       userUpdatedExposure: Math.abs(parseFloat(newUserExposure) - parseFloat(userPreviousExposure)),
-      newUserExposure, userPreviousExposure,
-      winAmount, lossAmount, teamRates,
-      bettingType, betOnTeam, teamA, teamB, teamC, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newBet,
-      userName: user.userName
+      teamRates,
     }
-    //add redis queue function
-    const job = MatchBetQueue.createJob(jobData);
-    await job.save().then(data =>{
-      logger.info({
-        info: `add match betting job save in the redis for user ${reqUser.id}`,
-        matchId, jobData
-      });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for user ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+   
 
     const walletJob = WalletMatchBetQueue.createJob(walletJobData);
     await walletJob.save().then(data =>{
