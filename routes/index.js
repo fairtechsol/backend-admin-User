@@ -11,6 +11,7 @@ const fairgameWalletRoutes = require('./fairgameWalletRoutes');
 const expertRoutes = require('./expertRoutes.js');
 const matchRoutes = require("./matchRoutes");
 const betRoutes = require("./betRoutes.js");
+const footballRoutes=require("./footballRoutes.js")
 
 // Define routes
 router.use('/auth', authRoutes);
@@ -22,5 +23,6 @@ router.use('/fairgameWallet', fairgameWalletRoutes);
 router.use('/expert', expertRoutes);
 router.use("/match",matchRoutes);
 router.use("/bet",betRoutes);
+router.use("/football",footballRoutes)
 
 module.exports = router;

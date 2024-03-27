@@ -74,7 +74,7 @@ exports.matchDetails = async (req, res) => {
       }
     }
 
-    
+
     return SuccessResponse(
       {
         statusCode: 200,
@@ -84,12 +84,94 @@ exports.matchDetails = async (req, res) => {
       req,
       res
     );
-    
+
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
 };
+exports.matchDetailsForFootball = async (req, res) => {
+  try {
+    const matchId = req.params.id;
+    let domain = expertDomain;
+    let apiResponse = {};
+    const { id: userId } = req.user;
+    try {
+      apiResponse = await apiCall(
+        apiMethod.get,
+        domain + allApiRoutes.MATCHES.matchDetails + matchId
+      );
+    } catch (error) {
+      throw error?.response?.data;
+    }
 
+    if (apiResponse?.data) {
+      if (Array.isArray(apiResponse?.data)) {
+        for (let i = 0; i < apiResponse?.data?.length; i++) {
+          const matchId = apiResponse?.data?.[i]?.id;
+          const redisIds = [];
+          redisIds.push(...[`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`]);
+
+          let redisData = await getUserRedisKeys(userId, redisIds);
+          let sessionResult = [];
+          let matchResult = {};
+          redisData?.forEach((item, index) => {
+            if (item) {
+              if (index >= redisData?.length - 7) {
+                matchResult[redisIds?.[index]?.split("_")[0]] = item;
+              } else {
+                sessionResult.push({
+                  betId: redisIds?.[index]?.split("_")[0],
+                  maxLoss: JSON.parse(item)?.maxLoss,
+                  totalBet: JSON.parse(item)?.totalBet
+
+                });
+              }
+            }
+          });
+          // apiResponse.data[i].profitLossDataSession = sessionResult;
+          apiResponse.data[i].profitLossDataMatch = matchResult;
+        }
+      }
+      else {
+        const redisIds = [];
+        redisIds.push(...[`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`]);
+        let redisData = await getUserRedisKeys(userId, redisIds);
+
+        let sessionResult = [];
+        let matchResult = {};
+        redisData?.forEach((item, index) => {
+          if (item) {
+            if (index >= redisData?.length - 7) {
+              matchResult[redisIds?.[index]?.split("_")[0]] = item;
+            } else {
+              sessionResult.push({
+                betId: redisIds?.[index]?.split("_")[0],
+                maxLoss: JSON.parse(item)?.maxLoss,
+                totalBet: JSON.parse(item)?.totalBet
+              });
+            }
+          }
+        });
+        // apiResponse.data.profitLossDataSession = sessionResult;
+        apiResponse.data.profitLossDataMatch = matchResult;
+      }
+    }
+
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "match details", keys: { name: "Match" } },
+        data: apiResponse.data,
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
 exports.listMatch = async (req, res) => {
   try {
     let user=req.user;
