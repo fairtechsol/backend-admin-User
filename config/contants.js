@@ -14,6 +14,13 @@ module.exports.tiedManualTeamName = {
   no: "NO"
 }
 
+module.exports.matchBettingsTeamName = {
+  over: "OVER",
+  under: "UNDER",
+  yes: "YES",
+  no: "NO"
+}
+
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",
   fairGameAdmin: "fairGameAdmin",
@@ -207,6 +214,62 @@ module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.halfTime]: "halfTime"
 }
 
+module.exports.profitLossKeys={
+  [this.matchBettingType.matchOdd]: "matchPL",
+  [this.matchBettingType.bookmaker]: "matchPL",
+  [this.matchBettingType.quickbookmaker1]:  "matchPL",
+  [this.matchBettingType.quickbookmaker2]:  "matchPL",
+  [this.matchBettingType.quickbookmaker3]:  "matchPL",
+  [this.matchBettingType.tiedMatch1]:  "tiePL",
+  [this.matchBettingType.tiedMatch2]: "tiePL",
+  [this.matchBettingType.completeMatch]: "completePL",
+  [this.matchBettingType.completeManual]: "completePL",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = `overUnderPL${curr}.5`
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = `overUnderPL${curr}.5`
+    return prev;
+  }, {})),
+  [this.matchBettingType.halfTime]:  "halfTimePL"
+}
+
+module.exports.matchesTeamName={
+  
+  [this.matchBettingType.tiedMatch1]: {
+    a:this.matchBettingsTeamName.yes,
+    b:this.matchBettingsTeamName.no
+  },
+  [this.matchBettingType.tiedMatch2]: {
+    a:this.matchBettingsTeamName.yes,
+    b:this.matchBettingsTeamName.no
+  },
+  [this.matchBettingType.completeMatch]: {
+    a:this.matchBettingsTeamName.yes,
+    b:this.matchBettingsTeamName.no
+  },
+  [this.matchBettingType.completeManual]: {
+    a:this.matchBettingsTeamName.yes,
+    b:this.matchBettingsTeamName.no
+  },
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`overUnder${curr}.5`] = {
+      a:this.matchBettingsTeamName.under,
+      b:this.matchBettingsTeamName.over
+    }
+    return prev;
+  }, {})),
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`firstHalfGoal${curr}.5`] = {
+      a:this.matchBettingsTeamName.under,
+      b:this.matchBettingsTeamName.over
+    }
+    return prev;
+  }, {})),
+
+}
+
 module.exports.redisKeys = {
   userAllExposure : "exposure",
   userMatchExposure : "matchExposure_",
@@ -299,6 +362,7 @@ module.exports.otherEventMatchBettingRedisKey = {
     "c":this.redisKeys.userTeamCRateHalfTime,
   }
 };
+
 
 module.exports.betResultStatus = {
   UNDECLARE : "UNDECLARE",
