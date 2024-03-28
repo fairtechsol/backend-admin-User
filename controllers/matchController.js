@@ -118,22 +118,11 @@ exports.matchDetailsForFootball = async (req, res) => {
 
 
           let redisData = await getUserRedisKeys(userId, redisIds);
-          let sessionResult = [];
+
           let matchResult = {};
           redisData?.forEach((item, index) => {
             if (item) {
-              const dataLength = redisKeysMatchWise[matchType].length;
-              const startIndex = redisData?.length - dataLength;
-              if (index >= startIndex) {
-                matchResult[redisIds?.[index]?.split("_")[0]] = item;
-              } else {
-                sessionResult.push({
-                  betId: redisIds?.[index]?.split("_")[0],
-                  maxLoss: JSON.parse(item)?.maxLoss,
-                  totalBet: JSON.parse(item)?.totalBet
-
-                });
-              }
+              matchResult[redisIds?.[index]?.split("_")[0]] = item;
             }
           });
           apiResponse.data[i].profitLossDataMatch = matchResult;
@@ -148,24 +137,12 @@ exports.matchDetailsForFootball = async (req, res) => {
         );
         let redisData = await getUserRedisKeys(userId, redisIds);
 
-        let sessionResult = [];
         let matchResult = {};
         redisData?.forEach((item, index) => {
           if (item) {
-            const dataLength = redisKeysMatchWise[matchType].length;
-            const startIndex = redisData?.length - dataLength;
-            if (index >= startIndex) {
-              matchResult[redisIds?.[index]?.split("_")[0]] = item;
-            } else {
-              sessionResult.push({
-                betId: redisIds?.[index]?.split("_")[0],
-                maxLoss: JSON.parse(item)?.maxLoss,
-                totalBet: JSON.parse(item)?.totalBet
-              });
-            }
+            matchResult[redisIds?.[index]?.split("_")[0]] = item;
           }
         });
-
         apiResponse.data.profitLossDataMatch = matchResult;
       }
     }
