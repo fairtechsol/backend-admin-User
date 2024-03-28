@@ -3135,7 +3135,9 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
       let childrenId  = await getChildsWithOnlyUserRole(directUser.id);
   
       childrenId = childrenId.map(item => item.id);
-     
+      if (!childrenId.length) {
+       continue;
+      }
       where.createBy = In(childrenId);
 
       const userData = await getUserWiseProfitLoss(where, [totalLoss, rateProfitLoss, sessionProfitLoss]);
