@@ -381,15 +381,15 @@ exports.calculateRatesOtherMatch = async (betPlace, partnerShip = 100, matchData
       {
         teamA: teamRate?.rates?.a || 0,
         teamB: teamRate?.rates?.b || 0,
-        teamC: matchData?.teamC ? (teamRate?.rates?.c || 0) : 0,
+        teamC: matchData?.teamC && !matchesTeamName[betType] ? (teamRate?.rates?.c || 0) : 0,
       },
       {
         teamA: matchesTeamName[betType]?.a ?? matchData?.teamA,
         teamB: matchesTeamName[betType]?.b ?? matchData?.teamB,
-        teamC: matchesTeamName[betType]?.c ?? matchData?.teamC,
+        teamC: !matchesTeamName[betType] ? matchData?.teamC : matchesTeamName[betType]?.c,
         winAmount: placedBets?.winAmount,
         lossAmount: placedBets?.lossAmount,
-        bettingType: betType,
+        bettingType: placedBets?.betType,
         betOnTeam: placedBets?.teamName
       },
       partnerShip
@@ -400,7 +400,7 @@ exports.calculateRatesOtherMatch = async (betPlace, partnerShip = 100, matchData
         ...teamRate.rates,
         a: calculatedRates.teamA,
         b: calculatedRates.teamB,
-        ...(matchData?.teamC && { c: calculatedRates.teamC }),
+        ...(matchData?.teamC && !matchesTeamName[betType] ? { c: calculatedRates.teamC }:{}),
       },
       type: betType
     };
@@ -835,7 +835,7 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
         });
         return;
       }
-      let redisData = await this.calculateRatesMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
+      let redisData = await this.calculateRatesOtherMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
 
       Object.values(redisData)?.forEach((plData) => {
         maxLoss += Math.abs(Math.min(...Object.values(plData?.rates), 0));
