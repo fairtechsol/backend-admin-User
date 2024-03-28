@@ -1,5 +1,5 @@
 const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, gameType } = require("../config/contants");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise } = require("../config/contants");
 const { findAllPlacedBet } = require("../services/betPlacedService");
 const { getUserRedisKeys } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole } = require("../services/userService");
@@ -110,16 +110,12 @@ exports.matchDetailsForFootball = async (req, res) => {
         for (let i = 0; i < apiResponse?.data?.length; i++) {
           const matchId = apiResponse?.data?.[i]?.id;
           const redisIds = [];
-          switch (matchType) {
-            case gameType.football:
+          redisIds.push(
+            ...redisKeysMatchWise[matchType].map(
+              (key) => key + matchId
+            )
+          );
 
-              redisIds.push(
-                ...redisKeysMatchWise[gameType.football].map(
-                  (key) => key + matchId
-                )
-              );
-              break;
-          }
 
           let redisData = await getUserRedisKeys(userId, redisIds);
           let sessionResult = [];
@@ -145,15 +141,11 @@ exports.matchDetailsForFootball = async (req, res) => {
       }
       else {
         const redisIds = [];
-        switch (matchType) {
-          case gameType.football:
-            redisIds.push(
-              ...redisKeysMatchWise[gameType.football].map(
-                (key) => key + matchId
-              )
-            );
-            break;
-        }
+        redisIds.push(
+          ...redisKeysMatchWise[matchType].map(
+            (key) => key + matchId
+          )
+        );
         let redisData = await getUserRedisKeys(userId, redisIds);
 
         let sessionResult = [];
