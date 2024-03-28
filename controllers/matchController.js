@@ -1,5 +1,5 @@
 const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain } = require("../config/contants");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise } = require("../config/contants");
 const { findAllPlacedBet } = require("../services/betPlacedService");
 const { getUserRedisKeys } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole } = require("../services/userService");
@@ -74,7 +74,7 @@ exports.matchDetails = async (req, res) => {
       }
     }
 
-    
+
     return SuccessResponse(
       {
         statusCode: 200,
@@ -84,15 +84,87 @@ exports.matchDetails = async (req, res) => {
       req,
       res
     );
-    
+
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
 };
+exports.matchDetailsForFootball = async (req, res) => {
+  try {
+    const matchId = req.params.id;
+    const matchType = req.query.matchType
+    let domain = expertDomain;
+    let apiResponse = {};
+    const { id: userId } = req.user;
+    try {
+      apiResponse = await apiCall(
+        apiMethod.get,
+        domain + allApiRoutes.MATCHES.matchDetailsForFootball + matchId
+      );
+    } catch (error) {
+      throw error?.response?.data;
+    }
 
+    if (apiResponse?.data) {
+      if (Array.isArray(apiResponse?.data)) {
+        for (let i = 0; i < apiResponse?.data?.length; i++) {
+          const matchId = apiResponse?.data?.[i]?.id;
+          const redisIds = [];
+          redisIds.push(
+            ...redisKeysMatchWise[matchType].map(
+              (key) => key + matchId
+            )
+          );
+
+
+          let redisData = await getUserRedisKeys(userId, redisIds);
+
+          let matchResult = {};
+          redisData?.forEach((item, index) => {
+            if (item) {
+              matchResult[redisIds?.[index]?.split("_")[0]] = item;
+            }
+          });
+          apiResponse.data[i].profitLossDataMatch = matchResult;
+        }
+      }
+      else {
+        const redisIds = [];
+        redisIds.push(
+          ...redisKeysMatchWise[matchType].map(
+            (key) => key + matchId
+          )
+        );
+        let redisData = await getUserRedisKeys(userId, redisIds);
+
+        let matchResult = {};
+        redisData?.forEach((item, index) => {
+          if (item) {
+            matchResult[redisIds?.[index]?.split("_")[0]] = item;
+          }
+        });
+        apiResponse.data.profitLossDataMatch = matchResult;
+      }
+    }
+
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "match details", keys: { name: "Match" } },
+        data: apiResponse.data,
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
 exports.listMatch = async (req, res) => {
   try {
-    let user=req.user;
+    let user = req.user;
     let domain = expertDomain;
     let apiResponse = {};
     try {
@@ -117,7 +189,7 @@ exports.listMatch = async (req, res) => {
 
       for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
         let matchDetail = apiResponse.data?.matches[i];
-        apiResponse.data.matches[i].totalBet = betPlaced?.filter((match)=> match?.matchId === matchDetail?.id)?.length;
+        apiResponse.data.matches[i].totalBet = betPlaced?.filter((match) => match?.matchId === matchDetail?.id)?.length;
         const redisIds = [`${redisKeys.userTeamARate}${matchDetail?.id}`, `${redisKeys.userTeamBRate}${matchDetail?.id}`];
 
         let redisData = await getUserRedisKeys(user.id, redisIds);
