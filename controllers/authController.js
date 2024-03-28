@@ -11,7 +11,7 @@ const {
   getUserWithUserBalance,
 } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin } = require("../services/commonService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
 
@@ -51,7 +51,7 @@ const setUserDetailsRedis = async (user) => {
   if (!redisUserData) {
     // Fetch and set betting data at login
     let betData = await settingBetsDataAtLogin(user);
-
+    let otherMatchBetData = await settingOtherMatchBetsDataAtLogin(user);
     // Set user details and partnerships in Redis
     await updateUserDataRedis(user.id, {
       exposure: user?.userBal?.exposure || 0,
@@ -61,6 +61,7 @@ const setUserDetailsRedis = async (user) => {
       currentBalance: user?.userBal?.currentBalance || 0,
       roleName: user.roleName,
       ...(betData || {}),
+      ...(otherMatchBetData||{}),
       ...(user.roleName === userRoleConstant.user
         ? {
           partnerShips: await findUserPartnerShipObj(user),

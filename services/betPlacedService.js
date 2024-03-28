@@ -124,12 +124,13 @@ exports.findAllPlacedBet = async (whereObj) => {
   });
 }
 
-exports.findAllPlacedBetWithUserIdAndBetId = async (userId, betId) => {
+exports.findAllPlacedBetWithUserIdAndBetId = async (userId, betId,where) => {
   return await BetPlaced.find({
     where: {
       betId: betId,
       createBy: userId,
-      deleteReason: IsNull()
+      deleteReason: IsNull(),
+      ...(where || {})
     }
   });
 }
@@ -148,19 +149,19 @@ exports.getDistinctUserBetPlaced= async (betId)=>{
   return betPlaced;
 }
 
-exports.getUserDistinctBets = async (userId) => {
+exports.getUserDistinctBets = async (userId,where) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
-    .where({ createBy: userId, result: In([betResultStatus.PENDING]), deleteReason: IsNull() })
+    .where({ createBy: userId, result: In([betResultStatus.PENDING]), deleteReason: IsNull(), ...(where || {}) })
     .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType","betPlaced.marketType"])
     .distinctOn(['betPlaced.betId'])
     .getMany()
   return betPlaced;
 }
 
-exports.getBetsWithUserRole = async (ids) => {
+exports.getBetsWithUserRole = async (ids,where) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
     .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
-    .where({ createBy: In(ids), result: betResultStatus.PENDING, deleteReason: IsNull() })
+    .where({ createBy: In(ids), result: betResultStatus.PENDING, deleteReason: IsNull(), ...(where || {}) })
     .getMany()
   return betPlaced;
 }
