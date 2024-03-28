@@ -8,7 +8,10 @@ module.exports.resultType = {
   tie: "Tie",
   noResult: "No Result",
 };
-
+module.exports.gameType = {
+  cricket: "cricket",
+  football: "football",
+}
 module.exports.tiedManualTeamName = {
   yes: "YES",
   no: "NO"
@@ -74,7 +77,7 @@ module.exports.transType = {
   win: "win",
   loss: "loss",
   creditRefer: "creditReference",
-  bet:'bet'
+  bet: 'bet'
 };
 
 module.exports.partnershipPrefixByRole = {
@@ -178,7 +181,7 @@ module.exports.tieCompleteBetType = {
   completeManual: "completeManual",
 };
 
-module.exports.rateCuttingBetType={
+module.exports.rateCuttingBetType = {
   matchOdd: "matchOdd",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
@@ -208,13 +211,13 @@ module.exports.marketBettingTypeByBettingType = {
 }
 
 module.exports.redisKeys = {
-  userAllExposure : "exposure",
-  userMatchExposure : "matchExposure_",
-  userSessionExposure : "sessionExposure_",
-  userTeamARate : "teamARate_",
-  userTeamBRate : "teamBRate_",
-  userTeamCRate : "teamCRate_",
-  userExposureLimit : "exposureLimit",
+  userAllExposure: "exposure",
+  userMatchExposure: "matchExposure_",
+  userSessionExposure: "sessionExposure_",
+  userTeamARate: "teamARate_",
+  userTeamBRate: "teamBRate_",
+  userTeamCRate: "teamCRate_",
+  userExposureLimit: "exposureLimit",
   yesRateTie: "yesRateTie_",
   noRateTie: "noRateTie_",
   yesRateComplete: "yesRateComplete_",
@@ -234,78 +237,85 @@ module.exports.redisKeys = {
   userTeamARateHalfTime: "userTeamARateHalfTime_",
   userTeamBRateHalfTime: "userTeamBRateHalfTime_",
   userTeamCRateHalfTime: "userTeamCRateHalfTime_",
-  profitLoss:"_profitLoss"
+  profitLoss: "_profitLoss"
+}
+module.exports.redisKeysMatchWise = {
+  [this.gameType.cricket]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete, this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
+  [this.gameType.football]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.userTeamARateHalfTime, this.redisKeys.userTeamBRateHalfTime, this.redisKeys.userTeamCRateHalfTime, ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateUnderOver${index}.5`]),
+  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateUnderOver${index}.5`]),
+  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateFirstHalfGoal${index}.5`]),
+  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateFirstHalfGoal${index}.5`])]
 }
 
 module.exports.otherEventMatchBettingRedisKey = {
   [this.matchBettingType.matchOdd]: {
-    "a":this.redisKeys.userTeamARate,
-    "b":this.redisKeys.userTeamBRate,
-    "c":this.redisKeys.userTeamCRate,
+    "a": this.redisKeys.userTeamARate,
+    "b": this.redisKeys.userTeamBRate,
+    "c": this.redisKeys.userTeamCRate,
   },
-  [this.matchBettingType.bookmaker]:{
-    "a":this.redisKeys.userTeamARate,
-    "b":this.redisKeys.userTeamBRate,
-    "c":this.redisKeys.userTeamCRate,
+  [this.matchBettingType.bookmaker]: {
+    "a": this.redisKeys.userTeamARate,
+    "b": this.redisKeys.userTeamBRate,
+    "c": this.redisKeys.userTeamCRate,
   },
   [this.matchBettingType.quickbookmaker1]: {
-    "a":this.redisKeys.userTeamARate,
-    "b":this.redisKeys.userTeamBRate,
-    "c":this.redisKeys.userTeamCRate,
+    "a": this.redisKeys.userTeamARate,
+    "b": this.redisKeys.userTeamBRate,
+    "c": this.redisKeys.userTeamCRate,
   },
   [this.matchBettingType.quickbookmaker2]: {
-    "a":this.redisKeys.userTeamARate,
-    "b":this.redisKeys.userTeamBRate,
-    "c":this.redisKeys.userTeamCRate,
+    "a": this.redisKeys.userTeamARate,
+    "b": this.redisKeys.userTeamBRate,
+    "c": this.redisKeys.userTeamCRate,
   },
   [this.matchBettingType.quickbookmaker3]: {
-    "a":this.redisKeys.userTeamARate,
-    "b":this.redisKeys.userTeamBRate,
-    "c":this.redisKeys.userTeamCRate,
+    "a": this.redisKeys.userTeamARate,
+    "b": this.redisKeys.userTeamBRate,
+    "c": this.redisKeys.userTeamCRate,
   },
   [this.matchBettingType.tiedMatch1]: {
-    "a":this.redisKeys.yesRateTie,
-    "b":this.redisKeys.noRateTie
+    "a": this.redisKeys.yesRateTie,
+    "b": this.redisKeys.noRateTie
   },
   [this.matchBettingType.tiedMatch2]: {
-    "a":this.redisKeys.yesRateTie,
-    "b":this.redisKeys.noRateTie
+    "a": this.redisKeys.yesRateTie,
+    "b": this.redisKeys.noRateTie
   },
   [this.matchBettingType.completeMatch]: {
-    "a":this.redisKeys.yesRateComplete,
-    "b":this.redisKeys.noRateComplete
+    "a": this.redisKeys.yesRateComplete,
+    "b": this.redisKeys.noRateComplete
   },
   [this.matchBettingType.completeManual]: {
-    "a":this.redisKeys.yesRateComplete,
-    "b":this.redisKeys.noRateComplete
+    "a": this.redisKeys.yesRateComplete,
+    "b": this.redisKeys.noRateComplete
   },
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = {
-      "a":this.redisKeys[`yesRateUnderOver${curr}.5`],
-      "b":this.redisKeys[`noRateUnderOver${curr}.5`]
+      "a": this.redisKeys[`yesRateUnderOver${curr}.5`],
+      "b": this.redisKeys[`noRateUnderOver${curr}.5`]
     }
     return prev;
   }, {})),
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`firstHalfGoal${curr}.5`] = {
-      "a":this.redisKeys[`yesRateFirstHalfGoal${curr}.5`],
-      "b":this.redisKeys[`noRateFirstHalfGoal${curr}.5`]
+      "a": this.redisKeys[`yesRateFirstHalfGoal${curr}.5`],
+      "b": this.redisKeys[`noRateFirstHalfGoal${curr}.5`]
     }
     return prev;
   }, {})),
   [this.matchBettingType.halfTime]: {
-    "a":this.redisKeys.userTeamARateHalfTime,
-    "b":this.redisKeys.userTeamBRateHalfTime,
-    "c":this.redisKeys.userTeamCRateHalfTime,
+    "a": this.redisKeys.userTeamARateHalfTime,
+    "b": this.redisKeys.userTeamBRateHalfTime,
+    "c": this.redisKeys.userTeamCRateHalfTime,
   }
 };
 
 module.exports.betResultStatus = {
-  UNDECLARE : "UNDECLARE",
-  PENDING : "PENDING",
-  WIN : "WIN",
-  LOSS : "LOSS",
-  TIE : "TIE"
+  UNDECLARE: "UNDECLARE",
+  PENDING: "PENDING",
+  WIN: "WIN",
+  LOSS: "LOSS",
+  TIE: "TIE"
 }
 module.exports.passwordRegex = /^(?=.*[A-Z])(?=.*[a-zA-Z].*[a-zA-Z].*[a-zA-Z].*[a-zA-Z])(?=.*\d.*\d.*\d.*\d).{8,}$/;
 
@@ -321,11 +331,11 @@ module.exports.socketData = {
   userTeamBRate: "teamBRate_",
   userTeamCRate: "teamCRate_",
   userExposureLimit: "exposureLimit",
-  sessionResult:"sessionResult",
-  sessionNoResult:"sessionNoResult",
-  sessionResultUnDeclare:"sessionResultUnDeclare",
-  matchResult:"matchResult",
-  matchResultUnDeclare:"matchResultUnDeclare",
+  sessionResult: "sessionResult",
+  sessionNoResult: "sessionNoResult",
+  sessionResultUnDeclare: "sessionResultUnDeclare",
+  matchResult: "matchResult",
+  matchResultUnDeclare: "matchResultUnDeclare",
   sessionDeleteBet: "sessionDeleteBet",
   matchDeleteBet: "matchDeleteBet",
   logoutUserForceEvent: "logoutUserForce",
@@ -346,7 +356,7 @@ module.exports.manualMatchBettingType = [
 ];
 
 module.exports.report = {
-  queryType : "creditRefrence"
+  queryType: "creditRefrence"
 }
 
 module.exports.matchWiseBlockType = {

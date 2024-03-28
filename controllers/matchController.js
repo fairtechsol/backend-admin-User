@@ -1,5 +1,5 @@
 const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain } = require("../config/contants");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, gameType } = require("../config/contants");
 const { findAllPlacedBet } = require("../services/betPlacedService");
 const { getUserRedisKeys } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole } = require("../services/userService");
@@ -92,6 +92,7 @@ exports.matchDetails = async (req, res) => {
 exports.matchDetailsForFootball = async (req, res) => {
   try {
     const matchId = req.params.id;
+    const matchType = req.query.matchType
     let domain = expertDomain;
     let apiResponse = {};
     const { id: userId } = req.user;
@@ -109,14 +110,25 @@ exports.matchDetailsForFootball = async (req, res) => {
         for (let i = 0; i < apiResponse?.data?.length; i++) {
           const matchId = apiResponse?.data?.[i]?.id;
           const redisIds = [];
-          redisIds.push(...[`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`]);
+          switch (matchType) {
+            case gameType.football:
+
+              redisIds.push(
+                ...redisKeysMatchWise[gameType.football].map(
+                  (key) => key + matchId
+                )
+              );
+              break;
+          }
 
           let redisData = await getUserRedisKeys(userId, redisIds);
           let sessionResult = [];
           let matchResult = {};
           redisData?.forEach((item, index) => {
             if (item) {
-              if (index >= redisData?.length - 7) {
+              const dataLength = redisKeysMatchWise[matchType].length;
+              const startIndex = redisData?.length - dataLength;
+              if (index >= startIndex) {
                 matchResult[redisIds?.[index]?.split("_")[0]] = item;
               } else {
                 sessionResult.push({
@@ -128,20 +140,29 @@ exports.matchDetailsForFootball = async (req, res) => {
               }
             }
           });
-          // apiResponse.data[i].profitLossDataSession = sessionResult;
           apiResponse.data[i].profitLossDataMatch = matchResult;
         }
       }
       else {
         const redisIds = [];
-        redisIds.push(...[`${redisKeys.userTeamARate}${matchId}`, `${redisKeys.userTeamBRate}${matchId}`, `${redisKeys.userTeamCRate}${matchId}`, `${redisKeys.yesRateComplete}${matchId}`, `${redisKeys.noRateComplete}${matchId}`, `${redisKeys.yesRateTie}${matchId}`, `${redisKeys.noRateTie}${matchId}`]);
+        switch (matchType) {
+          case gameType.football:
+            redisIds.push(
+              ...redisKeysMatchWise[gameType.football].map(
+                (key) => key + matchId
+              )
+            );
+            break;
+        }
         let redisData = await getUserRedisKeys(userId, redisIds);
 
         let sessionResult = [];
         let matchResult = {};
         redisData?.forEach((item, index) => {
           if (item) {
-            if (index >= redisData?.length - 7) {
+            const dataLength = redisKeysMatchWise[matchType].length;
+            const startIndex = redisData?.length - dataLength;
+            if (index >= startIndex) {
               matchResult[redisIds?.[index]?.split("_")[0]] = item;
             } else {
               sessionResult.push({
@@ -152,7 +173,7 @@ exports.matchDetailsForFootball = async (req, res) => {
             }
           }
         });
-        // apiResponse.data.profitLossDataSession = sessionResult;
+
         apiResponse.data.profitLossDataMatch = matchResult;
       }
     }
@@ -174,7 +195,7 @@ exports.matchDetailsForFootball = async (req, res) => {
 };
 exports.listMatch = async (req, res) => {
   try {
-    let user=req.user;
+    let user = req.user;
     let domain = expertDomain;
     let apiResponse = {};
     try {
@@ -199,7 +220,7 @@ exports.listMatch = async (req, res) => {
 
       for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
         let matchDetail = apiResponse.data?.matches[i];
-        apiResponse.data.matches[i].totalBet = betPlaced?.filter((match)=> match?.matchId === matchDetail?.id)?.length;
+        apiResponse.data.matches[i].totalBet = betPlaced?.filter((match) => match?.matchId === matchDetail?.id)?.length;
         const redisIds = [`${redisKeys.userTeamARate}${matchDetail?.id}`, `${redisKeys.userTeamBRate}${matchDetail?.id}`];
 
         let redisData = await getUserRedisKeys(user.id, redisIds);
