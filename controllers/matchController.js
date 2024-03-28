@@ -5,6 +5,7 @@ const { getUserRedisKeys } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
+const { logger } = require("../config/logger");
 
 exports.matchDetails = async (req, res) => {
   try {
@@ -90,9 +91,13 @@ exports.matchDetails = async (req, res) => {
   }
 };
 exports.matchDetailsForFootball = async (req, res) => {
+  const matchType = req.query.matchType
   try {
     const matchId = req.params.id;
-    const matchType = req.query.matchType
+
+    if (!matchType) {
+      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
+    }
     let domain = expertDomain;
     let apiResponse = {};
     const { id: userId } = req.user;
@@ -158,8 +163,13 @@ exports.matchDetailsForFootball = async (req, res) => {
       res
     );
 
-  } catch (err) {
-    return ErrorResponse(err, req, res);
+  } catch (error) {
+    logger.error({
+      error: `Error at get match details for ${matchType}`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
   }
 };
 exports.listMatch = async (req, res) => {
