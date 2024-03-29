@@ -188,7 +188,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     }
     let { match, matchBetting } = apiResponse.data;
 
-    if(match.matchType!=gameType.cricket){
+    if(match.matchType != gameType.cricket){
       return ErrorResponse({ statusCode: 400, message: { msg: "bet.validGameType" } }, req, res);
     }
 
