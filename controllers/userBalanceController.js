@@ -218,8 +218,8 @@ exports.settleCommissions = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.commissionAlreadySettled" } }, req, res);
     }
     if (userData) {
-      settleCommission(userId);
-      insertCommissions({
+      await settleCommission(userId);
+      await insertCommissions({
         commissionAmount: userData.userBal.totalCommission,
         createBy: userData.id,
         parentId: userData.id,
