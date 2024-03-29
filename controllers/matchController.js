@@ -91,7 +91,7 @@ exports.matchDetails = async (req, res) => {
   }
 };
 exports.matchDetailsForFootball = async (req, res) => {
-  const matchType = req.query.matchType
+  const matchType = req.query.matchType;
   try {
     const matchId = req.params.id;
 
