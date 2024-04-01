@@ -1570,6 +1570,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         transType: -profitLoss < 0 ? transType.loss : transType.win,
         closingBalance: userCurrBalance,
         description: `Revert ${user?.eventType}/${user?.eventName}/session`,
+        betId: [betId]
       }
     );
 
@@ -1961,7 +1962,7 @@ exports.declareMatchResult = async (req, res) => {
 };
 
 
-const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, commission, bulkCommission, commissionReport, currBetId, matchOddWinBets,matchDetailsBetIds) => {
+const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, commission, bulkCommission, commissionReport, currBetId, matchOddWinBets, matchDetailsBetIds) => {
 
   let faAdminCal = {
     commission: [],
@@ -2183,7 +2184,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO",
         betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2)?.map((item) => item?.id)
-      
       }] : []),
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountComplete),
@@ -2334,7 +2334,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       }
     }
 
-
     faAdminCal.userData[user.user.superParentId] = {
       profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
       exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
@@ -2385,7 +2384,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       bulkWalletRecord,
       upperUserObj,
       match,
-      commissionData,matchOddsWinBets
+      commissionData, matchOddsWinBets, matchBetting
     );
     deleteCommission(matchOddId);
 
@@ -2490,7 +2489,7 @@ exports.unDeclareMatchResult = async (req, res) => {
   }
 }
 
-const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, matchData, commissionData, matchOddsWinBets) => {
+const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, matchData, commissionData, matchOddsWinBets, matchDetailsBetIds) => {
 
   let faAdminCal = {
     admin: {},
@@ -2576,7 +2575,8 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         closingBalance: userCurrentBalance,
         createdAt:new Date(),
         description: `Revert deducted 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
-       uniqueId:uniqueId
+       uniqueId:uniqueId,
+       betId: [matchDetailsBetIds?.find((item) => item?.type == matchBettingType.matchOdd)?.id]
       });
     });
 
@@ -2654,14 +2654,14 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
         type: "MATCH ODDS",
         result: result,
-       
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.matchOdd || item?.type == matchBettingType.quickbookmaker1 || item?.type == matchBettingType.quickbookmaker2 || item?.type == matchBettingType.quickbookmaker3 || item?.type == matchBettingType.bookmaker)?.map((item) => item?.id)
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountTied).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountTied).toFixed(2)),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO",
-       
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2)?.map((item) => item?.id)
       }] : []),
       
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
@@ -2669,7 +2669,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
         type: "Complete Match",
         result: "YES",
-   
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeMatch)?.map((item) => item?.id)
       }]:[])
     ];
 
@@ -2686,7 +2686,8 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         closingBalance: currBal,
         description: `Revert ${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
-        uniqueId:uniqueId
+        uniqueId:uniqueId,
+        betId: item?.betId
       });
     });
 
