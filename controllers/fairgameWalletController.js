@@ -980,6 +980,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
         transType: transTypes,
         closingBalance: userCurrBalance,
         description: description,
+        betId: [betId]
       }
     );
 
@@ -1870,7 +1871,8 @@ exports.declareMatchResult = async (req, res) => {
       bulkCommission,
       commissionReport,
       matchDetails?.find((items) => items.type == matchBettingType.quickbookmaker1)?.id,
-      matchOddWinBets
+      matchOddWinBets,
+      matchDetails
     );
 
     insertTransactions(bulkWalletRecord);
@@ -1959,7 +1961,7 @@ exports.declareMatchResult = async (req, res) => {
 };
 
 
-const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, commission, bulkCommission, commissionReport, currBetId, matchOddWinBets) => {
+const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, commission, bulkCommission, commissionReport, currBetId, matchOddWinBets,matchDetailsBetIds) => {
 
   let faAdminCal = {
     commission: [],
@@ -2055,7 +2057,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         closingBalance: userCurrentBalance,
         description: `Deduct 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
         createdAt: new Date(),
-        uniqueId:uniqueId
+        uniqueId: uniqueId,
+        betId: [matchDetailsBetIds?.find((item) => item?.type == matchBettingType.matchOdd)?.id]
       });
     });
 
@@ -2172,13 +2175,14 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
         type: "MATCH ODDS",
         result: result,
-        
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.matchOdd || item?.type == matchBettingType.quickbookmaker1 || item?.type == matchBettingType.quickbookmaker2 || item?.type == matchBettingType.quickbookmaker3 || item?.type == matchBettingType.bookmaker)?.map((item) => item?.id)
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount||0)>0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountTied),
         lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO",
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2)?.map((item) => item?.id)
       
       }] : []),
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
@@ -2186,6 +2190,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
         type: "Complete Match",
         result: "YES",
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeManual || item?.type == matchBettingType.completeMatch)?.map((item) => item?.id)
         
       }]:[])
     ];
@@ -2203,7 +2208,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         closingBalance: currBal,
         description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
-        uniqueId:uniqueId
+        uniqueId:uniqueId,
+        betId: item?.betId
       });
     });
 
