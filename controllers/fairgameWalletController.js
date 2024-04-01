@@ -763,7 +763,7 @@ exports.declareSessionResult = async (req, res) => {
       parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
       parentUser.exposure = parentExposure - value["exposure"];
       parentUser.totalCommission = (parentUser.totalCommission || 0) + (value["totalCommission"] || 0);
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -1128,7 +1128,7 @@ exports.declareSessionNoResult = async (req, res) => {
       }
 
       parentUser.exposure = parentExposure - value["exposure"];
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -1362,7 +1362,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
       parentUser.exposure = parentExposure + value["exposure"];
       parentUser.totalCommission = parentUser.totalCommission - value["totalCommission"];
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -1904,7 +1904,7 @@ exports.declareMatchResult = async (req, res) => {
       parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
       parentUser.exposure = parentExposure - value["exposure"];
       parentUser.totalCommission = parentUser.totalCommission + value["totalCommission"]
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -2417,7 +2417,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
       parentUser.exposure = parentExposure + value["exposure"];
       parentUser.totalCommission = parseFloat(parentUser.totalCommission || 0) - parseFloat(value["totalCommission"] || 0);
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
