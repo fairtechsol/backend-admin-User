@@ -69,6 +69,7 @@ const {
   getUserDataWithUserBalance,
   softDeleteAllUsers,
   deleteUserByDirectParent,
+  getUsersByWallet,
 } = require("../services/userService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -3096,16 +3097,16 @@ exports.getSessionBetProfitLoss = async (req, res) => {
 
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {
-    let { user, matchId, searchId } = req.body;
+    let { user, matchId, searchId, userIds } = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
-    let where={};
+    let where = {};
 
     if (matchId) {
       where.matchId = matchId;
     }
-   
+
     if (!user) {
       return ErrorResponse(
         { statusCode: 400, message: { msg: "invalidData" } },
@@ -3117,32 +3118,35 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
     let totalLoss = `-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss", Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win"`;
     let rateProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "rateProfitLoss"`;
     let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss"`;
-   
-    if(req.user.roleName&&req.user.roleName==userRoleConstant.user){
+
+    if (user?.roleName && user?.roleName == userRoleConstant.user) {
       rateProfitLoss = "-" + rateProfitLoss;
       sessionProfitLoss = "-" + sessionProfitLoss;
     }
-    
-   
-    const getAllDirectUsers = (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
+
+    const getAllDirectUsers = userIds ?
       await getAllUsers({
-        superParentId: user.id,
-      }) :
-      searchId ?
-        await getAllUsers({
-          id: user.id,
-        })
-        : await getAllUsers({
-          createBy: user.id,
-          id: Not(user.id)
-        });
+        id: In(userIds?.split(",")),
+      })
+      : (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
+        await getUsersByWallet({
+          superParentId: user.id,
+        }) :
+        searchId ?
+          await getAllUsers({
+            id: user.id,
+          })
+          : await getAllUsers({
+            createBy: user.id,
+            id: Not(user.id)
+          });
     let result = [];
-    for(let directUser of getAllDirectUsers){
-      let childrenId  = await getChildsWithOnlyUserRole(directUser.id);
-  
+    for (let directUser of getAllDirectUsers) {
+      let childrenId = await getChildsWithOnlyUserRole(directUser.id);
+
       childrenId = childrenId.map(item => item.id);
       if (!childrenId.length) {
-       continue;
+        continue;
       }
       where.createBy = In(childrenId);
 
@@ -3175,7 +3179,6 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
     );
   }
 }
-
 
 exports.getBetCount = async (req,res)=>{
   try {
