@@ -49,7 +49,8 @@ const transactionSchema = new EntitySchema({
         },
         betId : {      // will add the relation in the future while add the match table
             type: 'uuid',
-            nullable: true
+            nullable: true,
+            array: true,
         },
         uniqueId:{
             type:'int',

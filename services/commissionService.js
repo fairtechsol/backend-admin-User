@@ -3,8 +3,8 @@ const { AppDataSource } = require("../config/postGresConnection");
 const commissionSchema = require("../models/commission.entity");
 const Commission = AppDataSource.getRepository(commissionSchema);
 
-exports.insertCommissions = (data) => {
-  Commission.insert(data);
+exports.insertCommissions = async (data) => {
+  await Commission.insert(data);
 };
 
 exports.getCombinedCommission = (betId) => {
@@ -37,8 +37,8 @@ exports.commissionMatchReport = (userId, matchId,queryColumns) => {
   return commissionMatches.getRawMany();
 }
 
-exports.settleCommission = (userId) => {
-  Commission.update({ parentId: userId },{
+exports.settleCommission = async (userId) => {
+  await Commission.update({ parentId: userId },{
     settled:true
   });
 }

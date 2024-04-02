@@ -763,7 +763,7 @@ exports.declareSessionResult = async (req, res) => {
       parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
       parentUser.exposure = parentExposure - value["exposure"];
       parentUser.totalCommission = (parentUser.totalCommission || 0) + (value["totalCommission"] || 0);
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -980,6 +980,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
         transType: transTypes,
         closingBalance: userCurrBalance,
         description: description,
+        betId: [betId]
       }
     );
 
@@ -1127,7 +1128,7 @@ exports.declareSessionNoResult = async (req, res) => {
       }
 
       parentUser.exposure = parentExposure - value["exposure"];
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -1361,7 +1362,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
       parentUser.exposure = parentExposure + value["exposure"];
       parentUser.totalCommission = parentUser.totalCommission - value["totalCommission"];
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -1569,6 +1570,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         transType: -profitLoss < 0 ? transType.loss : transType.win,
         closingBalance: userCurrBalance,
         description: `Revert ${user?.eventType}/${user?.eventName}/session`,
+        betId: [betId]
       }
     );
 
@@ -1870,7 +1872,8 @@ exports.declareMatchResult = async (req, res) => {
       bulkCommission,
       commissionReport,
       matchDetails?.find((items) => items.type == matchBettingType.quickbookmaker1)?.id,
-      matchOddWinBets
+      matchOddWinBets,
+      matchDetails
     );
 
     insertTransactions(bulkWalletRecord);
@@ -1901,7 +1904,7 @@ exports.declareMatchResult = async (req, res) => {
       parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
       parentUser.exposure = parentExposure - value["exposure"];
       parentUser.totalCommission = parentUser.totalCommission + value["totalCommission"]
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -1959,7 +1962,7 @@ exports.declareMatchResult = async (req, res) => {
 };
 
 
-const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, commission, bulkCommission, commissionReport, currBetId, matchOddWinBets) => {
+const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, commission, bulkCommission, commissionReport, currBetId, matchOddWinBets, matchDetailsBetIds) => {
 
   let faAdminCal = {
     commission: [],
@@ -2055,7 +2058,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         closingBalance: userCurrentBalance,
         description: `Deduct 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
         createdAt: new Date(),
-        uniqueId:uniqueId
+        uniqueId:uniqueId,
+        betId: [matchDetailsBetIds?.find((item) => item?.type == matchBettingType.matchOdd)?.id]
       });
     });
 
@@ -2172,21 +2176,21 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
         type: "MATCH ODDS",
         result: result,
-        
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.matchOdd || item?.type == matchBettingType.quickbookmaker1 || item?.type == matchBettingType.quickbookmaker2 || item?.type == matchBettingType.quickbookmaker3 || item?.type == matchBettingType.bookmaker)?.map((item) => item?.id)
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount||0)>0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountTied),
         lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO",
-      
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2)?.map((item) => item?.id)
       }] : []),
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountComplete),
         lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
         type: "Complete Match",
         result: "YES",
-        
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeMatch)?.map((item) => item?.id)
       }]:[])
     ];
 
@@ -2203,7 +2207,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         closingBalance: currBal,
         description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
-        uniqueId:uniqueId
+        uniqueId:uniqueId,
+        betId: item?.betId
       });
     });
 
@@ -2328,7 +2333,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       }
     }
 
-
     faAdminCal.userData[user.user.superParentId] = {
       profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
       exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
@@ -2379,7 +2383,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       bulkWalletRecord,
       upperUserObj,
       match,
-      commissionData,matchOddsWinBets
+      commissionData, matchOddsWinBets, matchBetting
     );
     deleteCommission(matchOddId);
 
@@ -2413,7 +2417,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
       parentUser.exposure = parentExposure + value["exposure"];
       parentUser.totalCommission = parseFloat(parentUser.totalCommission || 0) - parseFloat(value["totalCommission"] || 0);
-      if (parentExposure < 0) {
+      if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
           data: {
@@ -2484,7 +2488,7 @@ exports.unDeclareMatchResult = async (req, res) => {
   }
 }
 
-const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, matchData, commissionData, matchOddsWinBets) => {
+const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, matchData, commissionData, matchOddsWinBets, matchDetailsBetIds) => {
 
   let faAdminCal = {
     admin: {},
@@ -2570,7 +2574,8 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         closingBalance: userCurrentBalance,
         createdAt:new Date(),
         description: `Revert deducted 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
-       uniqueId:uniqueId
+       uniqueId:uniqueId,
+       betId: [matchDetailsBetIds?.find((item) => item?.type == matchBettingType.matchOdd)?.id]
       });
     });
 
@@ -2648,14 +2653,14 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
         type: "MATCH ODDS",
         result: result,
-       
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.matchOdd || item?.type == matchBettingType.quickbookmaker1 || item?.type == matchBettingType.quickbookmaker2 || item?.type == matchBettingType.quickbookmaker3 || item?.type == matchBettingType.bookmaker)?.map((item) => item?.id)
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountTied).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountTied).toFixed(2)),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO",
-       
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2)?.map((item) => item?.id)
       }] : []),
       
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
@@ -2663,7 +2668,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
         type: "Complete Match",
         result: "YES",
-   
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeMatch)?.map((item) => item?.id)
       }]:[])
     ];
 
@@ -2680,7 +2685,8 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         closingBalance: currBal,
         description: `Revert ${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
-        uniqueId:uniqueId
+        uniqueId:uniqueId,
+        betId: item?.betId
       });
     });
 
@@ -3108,7 +3114,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
       );
     }
     queryColumns = await profitLossPercentCol(user, queryColumns);
-    let totalLoss = `-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss", -Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win"`;
+    let totalLoss = `-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "loss", Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) as "win"`;
     let rateProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "rateProfitLoss"`;
     let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.YES}' or placeBet.betType = '${betType.NO}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss"`;
    
@@ -3136,9 +3142,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
   
       childrenId = childrenId.map(item => item.id);
       if (!childrenId.length) {
-        return SuccessResponse({
-          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
-        }, req, res);
+       continue;
       }
       where.createBy = In(childrenId);
 
