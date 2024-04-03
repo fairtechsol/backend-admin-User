@@ -240,7 +240,7 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArr
     .groupBy('placeBet.matchId, match.id, placeBet.eventType').orderBy('match.startAt', 'DESC');
 
   if (page) {
-    query.skip((parseInt(page) - 1) * parseInt(limit || 10)).take(parseInt(limit || 10));
+    query.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
   }
 
   let result = await query.getRawMany();
