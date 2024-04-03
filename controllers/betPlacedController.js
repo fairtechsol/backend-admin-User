@@ -10,7 +10,7 @@ const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfi
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
-const { updateUserBalanceByUserId, getUserBalanceDataByUserId } = require('../services/userBalanceService');
+const { updateUserBalanceByUserId, getUserBalanceDataByUserId, updateUserExposure } = require('../services/userBalanceService');
 const { sendMessageToUser } = require('../sockets/socketManager');
 
 exports.getBet = async (req, res) => {
@@ -1203,18 +1203,13 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
           if (lodash.isEmpty(masterRedisData)) {
             // If masterRedisData is empty, update partner exposure
-            let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = (partnerUser.exposure || 0) - exposureDiff;
-            await updateUserBalanceByUserId(partnershipId, {
-              exposure: partnerExposure,
-            });
+            await updateUserExposure( partnershipId, (-exposureDiff) );
           } else {
             // If masterRedisData exists, update partner exposure and session data
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
             let partnerExposure = (masterExposure || 0) - exposureDiff;
-            await updateUserBalanceByUserId(partnershipId, {
-              exposure: partnerExposure,
-            });
+            await updateUserDataRedis(partnershipId, { exposure: partnerExposure });
+            await updateUserExposure( partnershipId, (-exposureDiff) );
 
             let oldProfitLossParent = JSON.parse(masterRedisData[redisName]);
             let parentPLbetPlaced = oldProfitLossParent?.betPlaced || [];
@@ -1239,11 +1234,10 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             let sessionExposure = parseFloat(masterRedisData[redisSesionExposureName]) - oldMaxLossParent + newMaxLossParent;
             let redisObj = {
               [redisName]: JSON.stringify(oldProfitLossParent),
-              exposure: partnerExposure,
               [redisSesionExposureName]: sessionExposure
             };
 
-            updateUserDataRedis(partnershipId, redisObj);
+            await updateUserDataRedis(partnershipId, redisObj);
             // Send data to socket for session bet placement
             sendMessageToUser(partnershipId, socketSessionEvent, {
               exposure: redisObj?.exposure,
@@ -1393,9 +1387,8 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
   maximumLossOld = Math.abs(maximumLossOld);
 
   let exposureDiff = maximumLossOld - maximumLoss;
-  await updateUserBalanceByUserId(userId, {
-    exposure: userOldExposure - exposureDiff,
-  });
+  await updateUserDataRedis(userId, { [redisKeys.userAllExposure]: userOldExposure - exposureDiff });
+  await updateUserExposure( userId, (-exposureDiff) );
 
     // blocking user if its exposure would increase by current balance
     const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock","superParentId"]);
@@ -1456,7 +1449,6 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
     let matchExposure = parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]);
     await updateMatchExposure(userId, matchId, matchExposure - exposureDiff);
     let redisObject = {
-      [redisKeys.userAllExposure]: userOldExposure - exposureDiff,
       [teamArateRedisKey]: teamRates.teamA,
       [teamBrateRedisKey]: teamRates.teamB,
       ...(teamCrateRedisKey ? { [teamCrateRedisKey]: teamRates.teamC } : {})
@@ -1500,18 +1492,13 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
 
           if (lodash.isEmpty(masterRedisData)) {
             // If masterRedisData is empty, update partner exposure
-            let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = partnerUser.exposure - exposureDiff;
-            await updateUserBalanceByUserId(partnershipId, {
-              exposure: partnerExposure,
-            });
+            await updateUserExposure( partnershipId, (-exposureDiff) );
           } else {
             // If masterRedisData exists, update partner exposure and session data
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
             let partnerExposure = masterExposure - exposureDiff;
-            await updateUserBalanceByUserId(partnershipId, {
-              exposure: partnerExposure,
-            });
+            updateUserDataRedis(partnershipId, { [redisKeys.userAllExposure]: partnerExposure });
+            await updateUserExposure( partnershipId, (-exposureDiff) );
 
             let masterTeamRates = {
               teamA: Number(masterRedisData[teamArateRedisKey]) || 0,
@@ -1527,7 +1514,6 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
             masterTeamRates.teamC = parseFloat((masterTeamRates.teamC).toFixed(2));
 
             let redisObj = {
-              [redisKeys.userAllExposure]: partnerExposure,
               [teamArateRedisKey]: masterTeamRates.teamA,
               [teamBrateRedisKey]: masterTeamRates.teamB,
               ...(teamCrateRedisKey ? { [teamCrateRedisKey]: masterTeamRates.teamC } : {})
