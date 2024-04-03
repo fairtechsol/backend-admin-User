@@ -214,6 +214,8 @@ module.exports.socketData = {
   matchDeleteBet: "matchDeleteBet",
   logoutUserForceEvent: "logoutUserForce",
   betBlockEvent: "userBetBlock",
+  declaredMatchResultAllUser:"matchResultDeclareAllUser",
+  unDeclaredMatchResultAllUser:"matchResultUnDeclareAllUser",
 };
 
 exports.marketBetType = {

@@ -70,7 +70,7 @@ const {
   softDeleteAllUsers,
   deleteUserByDirectParent,
 } = require("../services/userService");
-const { sendMessageToUser } = require("../sockets/socketManager");
+const { sendMessageToUser, broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertCommissions, getCombinedCommission, deleteCommission } = require("../services/commissionService");
 const { insertButton } = require("../services/buttonService");
@@ -1940,6 +1940,7 @@ exports.declareMatchResult = async (req, res) => {
       });
     }
     insertCommissions(commissionReport);
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId });
 
     return SuccessResponse(
       {
@@ -2454,7 +2455,6 @@ exports.unDeclareMatchResult = async (req, res) => {
       });
     }
 
-
     await updatePlaceBet(
       {
         betId: In(betIds),
@@ -2465,6 +2465,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       }
     );
 
+    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId });
 
     return SuccessResponse(
       {
