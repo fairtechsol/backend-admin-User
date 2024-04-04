@@ -28,6 +28,9 @@ exports.updateUserBalanceByUserId = async(userId,body) =>{
     let updateUserBalance = await UserBalance.update({ userId: userId },body);
     return updateUserBalance;
 }
+exports.updateUserExposure =async (userId, exposure) => {
+  await UserBalance.query(`update "userBalances" set "exposure" = "exposure" + $2 where "userId" = $1`, [userId, exposure || 0]);
+}
 
 exports.getAllChildProfitLossSum = async(childUserIds)=>{
     let queryColumns = 'SUM(userBalance.profitLoss) as firstLevelChildsProfitLossSum';

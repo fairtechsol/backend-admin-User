@@ -3,7 +3,7 @@ const lodash = require('lodash');
 const { getUserRedisData, updateUserDataRedis } = require('../services/redis/commonfunction');
 const { redisKeys, userRoleConstant, socketData, partnershipPrefixByRole } = require('../config/contants');
 const { logger } = require('../config/logger');
-const { getUserBalanceDataByUserId, updateUserBalanceByUserId } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, updateUserBalanceByUserId, updateUserExposure } = require('../services/userBalanceService');
 const { calculateExpertRate, calculateProfitLossSession } = require('../services/commonService');
 const { sendMessageToUser } = require('../sockets/socketManager');
 
@@ -108,18 +108,13 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
 
           if (lodash.isEmpty(masterRedisData)) {
             // If masterRedisData is empty, update partner exposure
-            let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = (parseFloat(partnerUser.exposure) || 0) + partnerSessionExposure;
-            await updateUserBalanceByUserId(partnershipId, {
-              exposure: partnerExposure,
-            });
+            await updateUserExposure(partnershipId, partnerSessionExposure);
           } else {
             // If masterRedisData exists, update partner exposure and session data
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
             let partnerExposure = (parseFloat(masterExposure) || 0) + partnerSessionExposure;
-            updateUserBalanceByUserId(partnershipId, {
-              exposure: partnerExposure,
-            });
+            await updateUserDataRedis(partnershipId, { exposure: partnerExposure });
+            await updateUserExposure(partnershipId, partnerSessionExposure);
 
             // Calculate profit loss session and update Redis data
             const redisBetData = masterRedisData[
@@ -141,7 +136,6 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
             updateUserDataRedis(partnershipId, {
               [`${placedBetObject?.betPlacedData?.betId}_profitLoss`]:
                 JSON.stringify(redisData),
-              exposure: partnerExposure,
               [`${redisKeys.userSessionExposure}${placedBetObject?.betPlacedData?.matchId}`]:
                 parseFloat(
                   masterRedisData?.[
@@ -272,13 +266,12 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
           // Get user data from Redis or balance data by userId
           let masterRedisData = await getUserRedisData(partnershipId);
           if (lodash.isEmpty(masterRedisData)) {
-            let partnerUser = await getUserBalanceDataByUserId(partnershipId);
-            let partnerExposure = (parseFloat(partnerUser?.exposure) || 0) - userOldExposure + userCurrentExposure;
-            await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
+            await updateUserExposure(partnershipId, (- userOldExposure + userCurrentExposure));
           } else {
             let masterExposure = masterRedisData?.exposure ? masterRedisData.exposure : 0;
             let partnerExposure = (parseFloat(masterExposure) || 0) - userOldExposure + userCurrentExposure;
-            await updateUserBalanceByUserId(partnershipId, { exposure: partnerExposure });
+            await updateUserDataRedis(partnershipId, { [redisKeys.userAllExposure]: partnerExposure });
+            await updateUserExposure(partnershipId, (- userOldExposure + userCurrentExposure));
 
             let teamRates = {
               teamA: parseFloat((parseFloat(masterRedisData[jobData.teamArateRedisKey]) || 0.0).toFixed(2)),
@@ -287,7 +280,6 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
             }
             let teamData = await calculateExpertRate(teamRates, obj, partnership);
             let userRedisObj = {
-              [redisKeys.userAllExposure]: partnerExposure,
               [jobData.teamArateRedisKey]: parseFloat((teamData.teamA).toFixed(2)),
               [jobData.teamBrateRedisKey]: parseFloat(parseFloat(teamData.teamB).toFixed(2)),
               ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: parseFloat(parseFloat(teamData.teamC).toFixed(2)) } : {})

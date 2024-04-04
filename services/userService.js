@@ -234,8 +234,6 @@ SELECT SUM("userBalances"."currentBalance") as balance FROM p JOIN "userBalances
   return await user.query(query)
 }
 
-
-
 exports.getChildsWithOnlyUserRole = async (userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${userId}'
