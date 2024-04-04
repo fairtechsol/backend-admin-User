@@ -1151,7 +1151,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       upperLimitOdds: userAllBetProfitLoss.upperLimitOdds,
       maxLoss: userAllBetProfitLoss.maxLoss,
       betPlaced: userAllBetProfitLoss.betData,
-      totalBet : userAllBetProfitLoss.total_bet
+      totalBet: userAllBetProfitLoss.total_bet
     }
     oldProfitLoss = JSON.stringify(oldProfitLoss);
   }
@@ -1187,7 +1187,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   // blocking user if its exposure would increase by current balance
   const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock"]);
   if (userOldExposure - exposureDiff > currUserBalance && !userCreatedBy.userBlock) {
-    await userService.updateUser(userId,{
+    await userService.updateUser(userId, {
       autoBlock: true,
       userBlock: true,
       userBlockedBy: userCreatedBy?.createBy
@@ -1215,7 +1215,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     }
   }
   else if (userCreatedBy.autoBlock && userCreatedBy.userBlock && userOldExposure - exposureDiff <= currUserBalance) {
-    await userService.updateUser(userId,{
+    await userService.updateUser(userId, {
       autoBlock: false,
       userBlock: false,
       userBlockedBy: null
@@ -1696,7 +1696,7 @@ exports.profitLoss = async (req, res) => {
     }
     total = {};
     result.map((arr, index) => {
-      if(total[arr.marketType]){
+      if (total[arr.marketType]) {
         total[arr.marketType] += parseFloat(arr.aggregateAmount);
       } else {
         total[arr.marketType] = parseFloat(arr.aggregateAmount);
@@ -2082,13 +2082,9 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
   }
 
   // do not chagne any value in newTeamRate object this is using for parent calculation
-  teamRates.teamA = teamRates.teamA - newTeamRate.teamA;
-  teamRates.teamB = teamRates.teamB - newTeamRate.teamB;
-  teamRates.teamC = teamRates.teamC - newTeamRate.teamC;
-
-  teamRates.teamA = parseFloat((teamRates.teamA).toFixed(2));
-  teamRates.teamB = parseFloat((teamRates.teamB).toFixed(2));
-  teamRates.teamC = parseFloat((teamRates.teamC).toFixed(2));
+  teamRates.teamA = parseFloat((teamRates.teamA - newTeamRate.teamA).toFixed(2));
+  teamRates.teamB = parseFloat((teamRates.teamB - newTeamRate.teamB).toFixed(2))
+  teamRates.teamC = parseFloat((teamRates.teamC - newTeamRate.teamC).toFixed(2))
 
   let maximumLoss = 0;
   if (teamC && teamC != '') {
