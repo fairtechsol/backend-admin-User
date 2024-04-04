@@ -36,13 +36,14 @@ const {
   getDomainDataByDomain,
   getDomainDataByUserId,
 } = require("../services/domainDataService");
-const { updateUserDataRedis, hasUserInCache, getUserRedisData, deleteKeyFromUserRedis } = require("../services/redis/commonfunction");
+const { updateUserDataRedis, hasUserInCache, getUserRedisData, deleteKeyFromUserRedis, incrementValuesRedis } = require("../services/redis/commonfunction");
 const { insertTransactions } = require("../services/transactionService");
 const {
   addInitialUserBalance,
   getUserBalanceDataByUserId,
   updateUserBalanceByUserId,
   getAllUsersBalanceSum,
+  updateUserBalanceData,
 } = require("../services/userBalanceService");
 const {
   addUser,
@@ -772,12 +773,14 @@ exports.declareSessionResult = async (req, res) => {
         });
         parentUser.exposure = 0;
       }
-      updateUserBalanceByUserId(key, {
-        profitLoss: parentUser.profitLoss,
-        myProfitLoss: parentUser.myProfitLoss,
-        exposure: parentUser.exposure,
-        totalCommission: parentUser.totalCommission
+
+      await updateUserBalanceData(key, {
+        profitLoss: value?.["profitLoss"],
+        myProfitLoss: - value["myProfitLoss"],
+        exposure: - value["exposure"],
+        totalCommission: value["totalCommission"] || 0
       });
+
       logger.info({
         message: "Declare result db update for parent ",
         data: {
@@ -786,11 +789,12 @@ exports.declareSessionResult = async (req, res) => {
         },
       });
       if (parentUserRedisData?.exposure) {
-        updateUserDataRedis(key, {
-          exposure: parentUser.exposure,
-          profitLoss: parentUser.profitLoss,
-          myProfitLoss: parentUser.myProfitLoss,
+        await incrementValuesRedis(key, {
+          profitLoss: value?.["profitLoss"],
+          myProfitLoss: - value["myProfitLoss"],
+          exposure: - value["exposure"]
         });
+
       }
       const redisSessionExposureName =
         redisKeys.userSessionExposure + matchId;
@@ -897,8 +901,6 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
     let totalStack = getMultipleAmount[0].totalStack;
     profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
 
-
-
     fwProfitLoss = parseFloat(fwProfitLoss.toString()) + parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString());
 
     if (profitLoss > 0) {
@@ -911,20 +913,19 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
 
     const userCurrBalance = Number(user.user.userBalance.currentBalance + profitLoss).toFixed(2);
     let userBalanceData = {
-      currentBalance: parseFloat(userCurrBalance),
-      profitLoss: user.user.userBalance.profitLoss + profitLoss,
-      myProfitLoss: user.user.userBalance.myProfitLoss + profitLoss,
-      exposure: user.user.userBalance.exposure
+      profitLoss: profitLoss,
+      myProfitLoss: profitLoss,
+      exposure: -maxLoss
     };
 
     if (commission[user.user.id]) {
-      userBalanceData.totalCommission = Number(((parseFloat(user.user.userBalance.totalCommission) + parseFloat(commission[user.user.id]))).toFixed(2));
+      userBalanceData.totalCommission = Number((parseFloat(commission[user.user.id])).toFixed(2));
     }
-    await updateUserBalanceByUserId(user.user.id, userBalanceData);
+    await updateUserBalanceData(user.user.id, userBalanceData);
 
     if (userRedisData?.exposure) {
       let { totalCommission, ...userBalance } = userBalanceData;
-      updateUserDataRedis(user.user.id, userBalance);
+      await incrementValuesRedis(user.user.id, userBalance);
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
 
     }

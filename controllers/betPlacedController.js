@@ -113,7 +113,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
-    if (!userBalanceData || !userBalanceData.user) {
+    if (!userBalanceData?.user) {
       logger.info({
         info: `user not found for login id ${reqUser.id}`,
         data: req.body
@@ -137,7 +137,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
     let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
-    if (getMatchLockData && getMatchLockData.matchLock) {
+    if (getMatchLockData?.matchLock) {
       logger.info({
         info: `user is blocked for the match ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
@@ -299,8 +299,9 @@ exports.matchBettingBetPlaced = async (req, res) => {
       matchId,
       userCurrentBalance,
       matchExposure, maximumLoss
-    })
-    await updateMatchExposure(reqUser.id, matchId, matchExposure);
+    });
+
+    // await updateMatchExposure(reqUser.id, matchId, matchExposure);
     let newBet = await betPlacedService.addNewBet(betPlacedObj);
     let jobData = {
       userId: reqUser.id,
@@ -310,7 +311,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
       userPreviousExposure,
       userCurrentBalance, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newTeamRateData,
       newBet,
-      userName: user.userName
+      userName: user.userName,
+      matchExposure: matchExposure
     }
 
     const domainUrl = `${req.protocol}://${req.get('host')}`;
@@ -340,7 +342,6 @@ exports.matchBettingBetPlaced = async (req, res) => {
         message: error.message,
         errorFile: error
       });
-      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
       betPlacedService.deleteBetByEntityOnError(newBet);
       throw error;
     });
@@ -373,7 +374,6 @@ exports.matchBettingBetPlaced = async (req, res) => {
         message: error.message,
         errorFile: error
       });
-      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
       betPlacedService.deleteBetByEntityOnError(newBet);
       throw error;
     });
@@ -566,8 +566,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     
     let redisObject = {
       [`${redisKeys.userSessionExposure}${matchId}`]: redisSessionExp,
-      [`${betId}_profitLoss`]: JSON.stringify(redisData),
-      exposure: totalExposure,
+      [`${betId}_profitLoss`]: JSON.stringify(redisData)
     };
 
     let newBalance =
@@ -609,18 +608,12 @@ exports.sessionBetPlace = async (req, res, next) => {
       createBy: id,
     });
 
-    
-    await updateUserBalanceByUserId(id, {
-      exposure: totalExposure,
-    });
-
-    await updateUserDataRedis(id, redisObject);
-
     let jobData = {
       userId: id,
       placedBet: placedBet,
       newBalance: newBalance,
-      betPlaceObject: betPlaceObject
+      betPlaceObject: betPlaceObject,
+      redisObject: redisObject
     }
     //add redis queue function
     const job = SessionMatchBetQueue.createJob(jobData);
