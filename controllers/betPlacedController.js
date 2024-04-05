@@ -1066,13 +1066,13 @@ exports.deleteMultipleBetForOther = async (req, res) => {
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, id: In(placedBetIdArray) });
 
     let updateObj = {};
-    let isAnyMatchBet = true;
+   
     placedBet.map(bet => {
       if (!updateObj[bet.createBy]) {
-        updateObj[bet.createBy] = { [bet.betId]: { isAnyMatchBet: isAnyMatchBet, array: [bet] } };
+        updateObj[bet.createBy] = { [bet.betId]: {  array: [bet] } };
       } else {
         if (!updateObj[bet.createBy][bet.betId]) {
-          updateObj[bet.createBy][bet.betId] = { isAnyMatchBet: isAnyMatchBet, array: [bet] };
+          updateObj[bet.createBy][bet.betId] = { array: [bet] };
         } else {
           updateObj[bet.createBy][bet.betId].array.push(bet);
         }
