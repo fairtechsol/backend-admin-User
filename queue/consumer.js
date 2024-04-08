@@ -80,7 +80,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
   if (userRedisData?.roleName == userRoleConstant.user) {
     sendMessageToUser(userId, socketData.SessionBetPlaced, {
       currentBalance: userRedisData?.currentBalance,
-      exposure: userRedisData?.exposure,
+      exposure: (parseFloat(userRedisData?.exposure)+parseFloat(maxLossExposure)).toFixed(2),
       myProfitLoss: userRedisData?.myProfitLoss,
       profitLoss: userRedisData?.profitLoss,
       profitLossData: userRedisData?.[`${jobData?.placedBet?.betId}_profitLoss`],
@@ -91,6 +91,16 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
     await updateUserExposure(userId, partnerSessionExposure);
     // updating redis
     await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: partnerSessionExposure }, redisObj);
+  
+    logger.info({
+      message: "User exposure for session",
+      data: {
+        matchId: jobData?.matchId,
+        userId: userId,
+        exposure: userRedisData?.exposure,
+        userRedisObj: redisObj
+      }
+    });
   }
 
   // Iterate through partnerships based on role and update exposure
@@ -238,9 +248,19 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
 
     // updating redis
     await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure }, userRedisObj);
-    
+
     // updating db
     await updateUserExposure(userId, (userCurrentExposure - userOldExposure));
+
+    logger.info({
+      message: "User exposure for match",
+      data: {
+        matchId: jobData?.matchId,
+        userId: userId,
+        exposure: userCurrentExposure,
+        userRedisObj: userRedisObj
+      }
+    });
     //send socket to user
     sendMessageToUser(userId, socketData.MatchBetPlaced, { userRedisData, jobData, ...teamData })
   }

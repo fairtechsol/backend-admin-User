@@ -1375,7 +1375,7 @@ exports.unDeclareSessionResult = async (req, res) => {
         };
         const redisSessionExposureName = redisKeys.userSessionExposure + matchId;
 
-        await incrementValuesRedis(user.user.id, {
+        await incrementValuesRedis(key, {
           profitLoss: -value?.["profitLoss"],
           myProfitLoss: value["myProfitLoss"],
           exposure: value["exposure"],
