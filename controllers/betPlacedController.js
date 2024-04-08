@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, updateUserDataRedis, getUserRedisKey } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -1068,7 +1068,7 @@ exports.deleteMultipleBetForOther = async (req, res) => {
     let updateObj = {};
     placedBet.map(bet => {
       if (!updateObj[bet.createBy]) {
-        updateObj[bet.createBy] = { [bet.betId]: {  array: [bet] } };
+        updateObj[bet.createBy] = { [bet.betId]: { array: [bet] } };
       } else {
         if (!updateObj[bet.createBy][bet.betId]) {
           updateObj[bet.createBy][bet.betId] = { array: [bet] };
@@ -2027,10 +2027,12 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
     otherEventMatchBettingRedisKey[matchBetType]?.b + matchId;
   const teamCrateRedisKey = otherEventMatchBettingRedisKey[matchBetType]?.c + matchId;
 
-  let teamA = matchDetails?.teamA;
-  let teamB = matchDetails?.teamB;
-  let teamC = matchDetails?.teamC;
+  let isOddOrBookMakerMatch = [matchBettingType.matchOdd || matchBettingType.bookmaker , matchBettingType.quickbookmaker1,matchBettingType.quickbookmaker2,matchBettingType.quickbookmaker3].includes(matchBetType)
 
+
+  let teamA = !isOddOrBookMakerMatch ? matchBettingsTeamName.under : matchDetails.teamA;
+  let teamB = !isOddOrBookMakerMatch ? matchBettingsTeamName.over : matchDetails.teamB;
+  let teamC = !isOddOrBookMakerMatch ? null : matchDetails.teamC;
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
     partnershipObj = JSON.parse(userRedisData.partnerShips);
