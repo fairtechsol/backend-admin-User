@@ -777,6 +777,7 @@ exports.declareSessionResult = async (req, res) => {
       }
 
       await updateUserBalanceData(key, {
+        balance: 0,
         profitLoss: value?.["profitLoss"],
         myProfitLoss: -value["myProfitLoss"],
         exposure: -value["exposure"],
@@ -1355,6 +1356,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       }
 
       await updateUserBalanceData(key, {
+        balance: 0,
         profitLoss: -value?.["profitLoss"],
         myProfitLoss: +value["myProfitLoss"],
         exposure: +value["exposure"],
@@ -1898,12 +1900,13 @@ exports.declareMatchResult = async (req, res) => {
       }
 
       
-    await updateUserBalanceData(key, {
-      profitLoss: value?.["profitLoss"],
-      myProfitLoss: - value["myProfitLoss"],
-      exposure: -value["exposure"],
-      totalCommission: value["totalCommission"]
-    });
+      await updateUserBalanceData(key, {
+        balance: 0,
+        profitLoss: value?.["profitLoss"],
+        myProfitLoss: - value["myProfitLoss"],
+        exposure: -value["exposure"],
+        totalCommission: value["totalCommission"]
+      });
 
       logger.info({
         message: "Declare result db update for parent ",
@@ -2426,7 +2429,8 @@ exports.unDeclareMatchResult = async (req, res) => {
         parentUser.exposure = 0;
       }
 
-      updateUserBalanceData(parentUser.userId, {
+      await updateUserBalanceData(parentUser.userId, {
+        balance: 0,
         profitLoss: -value?.["profitLoss"],
         myProfitLoss: value["myProfitLoss"],
         exposure: value["exposure"],
@@ -2621,21 +2625,23 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
       ...(teamNoRateComplete != Number.MAX_VALUE && teamNoRateComplete != null && teamNoRateComplete != undefined ? { [redisKeys.noRateComplete + matchId]: teamNoRateComplete } : {})
     }
 
+    await updateUserBalanceData(user.user.id, {
+      profitLoss: -profitLoss,
+      myProfitLoss: -profitLoss,
+      exposure: maxLoss,
+    });
+
     if (userRedisData?.exposure) {
 
       await incrementValuesRedis(user.user.id, {
         currentBalance: -profitLoss,
-        profitLoss: - profitLoss,
-        myProfitLoss: - profitLoss,
+        profitLoss: -profitLoss,
+        myProfitLoss: -profitLoss,
         exposure: maxLoss,
         [redisKeys.userMatchExposure + matchId]: maxLoss
       }, matchTeamRates);
     }
-    await updateUserBalanceData(user.user.id, {
-      profitLoss: - profitLoss,
-      myProfitLoss: - profitLoss,
-      exposure: maxLoss,
-    });
+
     logger.info({
       message: "user save at un declare result",
       data: user

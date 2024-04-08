@@ -23,8 +23,9 @@ exports.addInitialUserBalance = async (body) => {
     let insertUserBalance = await UserBalance.save(body);
     return insertUserBalance;
 }
+
 exports.updateUserBalanceData =async (userId, data) => {
-  await UserBalance.query(`update "userBalances" set "currentBalance" = "currentBalance" + $2, "profitLoss" = "profitLoss" + $2, "myProfitLoss" = "myProfitLoss" + $3, "exposure" = "exposure" + $4, "totalCommission" = "totalCommission" + $5 where "userId" = $1`, [userId, (data.profitLoss || 0), (data.myProfitLoss || 0), (data.exposure || 0), (data.totalCommission || 0)]);
+  await UserBalance.query(`update "userBalances" set "currentBalance" = "currentBalance" + $2, "profitLoss" = "profitLoss" + $2, "myProfitLoss" = "myProfitLoss" + $3, "exposure" = "exposure" + $4, "totalCommission" = "totalCommission" + $5 where "userId" = $1`, [userId, (data.profitLoss || 0), (data.myProfitLoss || 0), (data.exposure || 0), (data.totalCommission || 0), (data?.balance || data?.profitLoss || 0)]);
 }
 
 exports.updateUserBalanceByUserId = async(userId,body) =>{
