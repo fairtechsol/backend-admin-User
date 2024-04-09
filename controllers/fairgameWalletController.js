@@ -1953,7 +1953,7 @@ exports.declareMatchResult = async (req, res) => {
   }
 };
 
-const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, commission, bulkCommission, commissionReport, currBetId, matchOddWinBets, matchDetailsBetIds,matchDetailsBetIds) => {
+const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, commission, bulkCommission, commissionReport, currBetId, matchOddWinBets, matchDetailsBetIds) => {
 
   let faAdminCal = {
     commission: [],
