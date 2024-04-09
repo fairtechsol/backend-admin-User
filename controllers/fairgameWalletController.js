@@ -2856,7 +2856,7 @@ exports.totalProfitLossWallet = async (req, res) => {
     const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss);
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result   
+        statusCode: 200, data: result   
       },
       req,
       res
@@ -2928,10 +2928,10 @@ exports.totalProfitLossByMatch = async (req, res) => {
     }
     where.createBy = In(childrenId);
 
-    const { result } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit);
+    const { result, count } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit);
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result }
+        statusCode: 200, data: { result, count }
       },
       req,
       res
@@ -3009,7 +3009,7 @@ exports.getResultBetProfitLoss = async (req, res) => {
     const result = await getBetsProfitLoss(where, totalLoss);
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result
+        statusCode: 200, data: result
       },
       req,
       res
@@ -3081,7 +3081,7 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     const result = await getSessionsProfitLoss(where, totalLoss);
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Session profit loss" } }, data: result
+        statusCode: 200, data: result
       },
       req,
       res
@@ -3167,7 +3167,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
 
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: result
+        statusCode: 200, data: result
       },
       req,
       res

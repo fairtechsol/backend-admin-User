@@ -228,6 +228,9 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArr
     newDate.setHours(23, 59, 59, 999);
     query = query.andWhere('match.startAt <= :to', { to: newDate })
   }
+
+  const count = (await query.select(["match.id"]).groupBy("match.id").getRawMany())?.length;
+
   query = query
     .select([
       ...selectArray,
@@ -245,7 +248,7 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArr
 
   let result = await query.getRawMany();
 
-  return { result };
+  return { result, count };
 }
 
 exports.getBetsProfitLoss = async (where, totalLoss) => {
