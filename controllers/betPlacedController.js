@@ -126,7 +126,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       logger.info({
         info: `user is blocked for login id ${reqUser.id}`,
         data: req.body
-      })
+      });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.blocked" } }, req, res);
     }
     if (user?.betBlock) {

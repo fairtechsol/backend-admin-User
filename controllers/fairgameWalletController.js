@@ -1931,7 +1931,7 @@ exports.declareMatchResult = async (req, res) => {
       });
     }
     insertCommissions(commissionReport);
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId });
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType });
 
     return SuccessResponse(
       {
@@ -2470,7 +2470,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       }
     );
 
-    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId });
+    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType });
 
     return SuccessResponse(
       {
