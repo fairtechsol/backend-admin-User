@@ -1233,7 +1233,7 @@ exports.totalProfitLoss = async (req, res) => {
     const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss)
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Total profit loss" } }, data: { result, },
+        statusCode: 200, data: { result },
       },
       req,
       res
