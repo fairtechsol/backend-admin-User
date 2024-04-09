@@ -25,6 +25,8 @@ router.post("/total/profitLoss", totalProfitLossWallet);
 router.post("/total/matchWise/profitLoss", totalProfitLossByMatch);
 router.post("/total/bet/profitLoss", getResultBetProfitLoss);
 router.post("/total/session/profitLoss", getSessionBetProfitLoss);
+router.post("/userwise/profitLoss", getUserWiseTotalProfitLoss);
+
 router.get("/commissionMatch/:userId", getCommissionReportsMatch);
 router.get("/commissionBetPlaced/:userId", getCommissionBetPlaced);
 router.get("/betCounts", getBetCount);
@@ -38,6 +40,5 @@ router.post("/user/exposureLimitCheck", setExposureLimitByFGAdmin);
 router.post("/check/userBalance", checkUserBalance);
 router.delete("/user/delete/:id", deleteWalletUsers);
 router.get("/user/searchList", getAllChildSearchList);
-router.post("/userwise/profitLoss", getUserWiseTotalProfitLoss);
 
 module.exports = router;
