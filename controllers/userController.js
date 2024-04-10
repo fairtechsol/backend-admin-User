@@ -698,9 +698,9 @@ exports.userList = async (req, res, next) => {
           element['upLinePartnership'] =  partnerShips;
         }
 
-        if (element?.roleName != userRoleConstant.user && domainUrl != oldBetFairDomain) {
-          element.exposureLimit="NA";
-        }
+        // if (element?.roleName != userRoleConstant.user && domainUrl != oldBetFairDomain) {
+        //   element.exposureLimit="NA";
+        // }
         return element;
       })
     );
