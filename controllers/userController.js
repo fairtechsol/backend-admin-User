@@ -938,7 +938,7 @@ exports.userBalanceDetails = async (req, res, next) => {
     // Calculate various balance-related metrics
     const response = {
       userCreditReference: parseFloat(loginUser?.creditRefrence),
-      downLevelOccupyBalance: parseFloat(allChildBalance?.value?.balance || 0),
+      downLevelOccupyBalance: parseFloat(allChildBalance?.value?.[0]?.balance || 0),
       downLevelCreditReference: loginUser?.downLevelCreditRefrence,
       availableBalance: parseFloat(userBalance?.value?.currentBalance || 0),
       totalMasterBalance: parseFloat(userBalance?.value?.currentBalance || 0) + parseFloat(allChildBalance.value.balance || 0),

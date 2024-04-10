@@ -83,7 +83,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
       exposure: (parseFloat(userRedisData?.exposure)+parseFloat(maxLossExposure)).toFixed(2),
       myProfitLoss: userRedisData?.myProfitLoss,
       profitLoss: userRedisData?.profitLoss,
-      profitLossData: userRedisData?.[`${jobData?.placedBet?.betId}_profitLoss`],
+      profitLossData: redisObj,
       betPlaced: jobData
     });
 
