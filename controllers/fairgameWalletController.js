@@ -959,7 +959,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
       ...user.user, betId, matchId, sessionExposure: redisSesionExposureValue, userBalanceData: {
         profitLoss: parseFloat(parseFloat(parseFloat(user.user.userBalance.profitLoss) + parseFloat(profitLoss)).toFixed(2)),
         myProfitLoss: parseFloat(parseFloat(parseFloat(user.user.userBalance.myProfitLoss) + parseFloat(profitLoss)).toFixed(2)),
-        exposure: parseFloat(parseFloat(parseFloat(user.user.userBalance.exposure) - parseFloat(maxLoss)).toFixed(2)),
+        exposure: parseFloat(parseFloat(parseFloat(user.user.userBalance.exposure))),
         currentBalance: parseFloat(parseFloat(parseFloat(user.user.userBalance.currentBalance) + parseFloat(profitLoss)).toFixed(2))
       }
     });
