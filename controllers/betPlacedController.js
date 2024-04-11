@@ -1386,7 +1386,7 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
   maximumLossOld = Math.abs(maximumLossOld);
 
   let exposureDiff = maximumLossOld - maximumLoss;
-  await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: - exposureDiff });
+  
   await updateUserExposure( userId,(-exposureDiff));
 
     // blocking user if its exposure would increase by current balance
@@ -1451,7 +1451,8 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
       ...(teamCrateRedisKey ? { [teamCrateRedisKey]: teamRates.teamC } : {})
     }
     await incrementValuesRedis(userId, {
-      [redisKeys.userMatchExposure + matchId]: -exposureDiff
+      [redisKeys.userMatchExposure + matchId]: -exposureDiff,
+      [redisKeys.userAllExposure]: -exposureDiff
     }, redisObject);
 
     sendMessageToUser(userId, socketSessionEvent, {
