@@ -243,11 +243,10 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
       [jobData.teamArateRedisKey]: teamData.teamA,
       [jobData.teamBrateRedisKey]: teamData.teamB,
       ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {}),
-      [redisKeys.userMatchExposure + jobData?.matchId]: jobData?.matchExposure
     }
 
     // updating redis
-    await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure }, userRedisObj);
+    await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure, [redisKeys.userMatchExposure + jobData?.matchId]: userCurrentExposure - userOldExposure }, userRedisObj);
 
     // updating db
     await updateUserExposure(userId, (userCurrentExposure - userOldExposure));
@@ -270,7 +269,7 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
       (item) =>
         item != userRoleConstant.fairGameAdmin &&
         item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
-    )
+  )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
       // Check if partnershipId exists in partnershipObj
