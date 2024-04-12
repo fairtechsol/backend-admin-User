@@ -199,6 +199,18 @@ exports.getUsersWithUserBalance = async (where, offset, limit) => {
   return result;
 
 }
+
+exports.getUsersByWallet = async (where, select) => {
+  let userData = user
+    .createQueryBuilder()
+    .where(where)
+    .andWhere("user.id = user.createBy")
+    .select(select)
+    .getMany();
+
+  return userData;
+}
+
 exports.getChildUser = async (id) => {
   let query = `WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${id}'
@@ -221,8 +233,6 @@ SELECT SUM("userBalances"."currentBalance") as balance FROM p JOIN "userBalances
 
   return await user.query(query)
 }
-
-
 
 exports.getChildsWithOnlyUserRole = async (userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
