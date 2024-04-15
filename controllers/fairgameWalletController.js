@@ -2631,6 +2631,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
       profitLoss: -profitLoss,
       myProfitLoss: -profitLoss,
       exposure: maxLoss,
+      totalCommission: -totalCommissionData
     });
 
     if (userRedisData?.exposure) {
