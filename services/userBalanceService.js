@@ -52,7 +52,7 @@ exports.getAllChildProfitLossSum = async (childUserIds, roleName) => {
 }
 
 exports.getAllChildCurrentBalanceSum = async (childUserIds) => {
-     queryColumns = 'SUM(userBalance.currentBalance) as allChildsCurrentBalanceSum';
+     const queryColumns = 'SUM(userBalance.currentBalance) as allChildsCurrentBalanceSum';
   
      let childUserData = await UserBalance
       .createQueryBuilder('userBalance')
@@ -65,7 +65,7 @@ exports.getAllChildCurrentBalanceSum = async (childUserIds) => {
 
 
   exports.getAllUsersBalanceSum = async () => {
-    queryColumns = 'SUM(userBalance.currentBalance) as balance';
+    const queryColumns = 'SUM(userBalance.currentBalance) as balance';
  
     let childUserData = await UserBalance
      .createQueryBuilder('userBalance')
