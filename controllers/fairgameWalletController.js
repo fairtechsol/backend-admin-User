@@ -797,7 +797,7 @@ exports.declareSessionResult = async (req, res) => {
       if (parentUserRedisData?.exposure) {
         await incrementValuesRedis(key, {
           profitLoss: value?.["profitLoss"],
-          myProfitLoss: - value["myProfitLoss"],
+          myProfitLoss: -value["myProfitLoss"],
           exposure: -value["exposure"],
           [redisSessionExposureName]: -value["exposure"]
         });
@@ -1903,7 +1903,7 @@ exports.declareMatchResult = async (req, res) => {
       await updateUserBalanceData(key, {
         balance: 0,
         profitLoss: value?.["profitLoss"],
-        myProfitLoss: - value["myProfitLoss"],
+        myProfitLoss: -value["myProfitLoss"],
         exposure: -value["exposure"],
         totalCommission: value["totalCommission"]
       });
@@ -2088,10 +2088,11 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     });
 
     if (userRedisData?.exposure) {
-      const { totalCommission, ...userBalance } = userBalanceData;
 
       await incrementValuesRedis(user.user.id, {
-        ...userBalance,
+        profitLoss: profitLoss,
+        myProfitLoss: profitLoss,
+        exposure: -maxLoss,
         currentBalance: profitLoss
       });
     }
@@ -2434,6 +2435,7 @@ exports.unDeclareMatchResult = async (req, res) => {
         profitLoss: -value?.["profitLoss"],
         myProfitLoss: value["myProfitLoss"],
         exposure: value["exposure"],
+        totalCommission: -parseFloat(value["totalCommission"] || 0)
       });
 
       logger.info({

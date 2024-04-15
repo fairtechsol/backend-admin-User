@@ -1283,7 +1283,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
 const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails) => {
   let userRedisData = await getUserRedisData(userId);
-  let isUserLogin = userRedisData ? true : false;
+  let isUserLogin = !!userRedisData;
   let userOldExposure = 0;
   let betPlacedId = bets.map(bet => bet.id);
   let partnershipObj = {};
