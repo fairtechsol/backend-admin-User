@@ -289,7 +289,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
         betId,
         matchId,
         userCurrentBalance,
-        maximumLoss
+        maximumLoss,
+        newUserExposure
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
     }
@@ -579,7 +580,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     if (newBalance < 0) {
       logger.info({
-        info: `user exposure balance insufficient to place this bet user id is ${reqUser.id}`,
+        info: `user exposure balance insufficient to place this bet user id is ${id}`,
         betId,
         matchId,
         userCurrentBalance: userData?.currentBalance,

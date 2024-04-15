@@ -9,7 +9,7 @@ exports.getUserBalanceDataByUserId = async(userId,select) =>{
     return await UserBalance.findOne({
         where: {userId},
         select: select
-      })
+      });
 }
 
 //get usersbalance data from array of userids
@@ -17,7 +17,7 @@ exports.getUserBalanceDataByUserIds = async(userIds,select) =>{
     return await UserBalance.find({
         where: {userId: In(userIds)},
         select: select
-      })
+      });
 }
 
 exports.addInitialUserBalance = async (body) => {
