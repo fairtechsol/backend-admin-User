@@ -416,7 +416,10 @@ exports.sessionBetPlace = async (req, res, next) => {
     // Fetch user details by ID
     let user = await getUserById(id, ["userBlock", "betBlock", "userName", "exposureLimit"]);
     let userExposureLimit = parseFloat(user.exposureLimit);
-
+    logger.info({
+      info: `Bet placed for session matchId ${matchId}, betId ${betId}, userId ${id}`,
+      data: req.body
+    });
     // Check if the user is blocked
     if (user?.userBlock) {
       return ErrorResponse(
@@ -449,7 +452,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       logger.info({
         info: `user is blocked for the session ${id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
-      })
+      });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
     }
 
@@ -575,6 +578,13 @@ exports.sessionBetPlace = async (req, res, next) => {
     betPlaceObject.diffSessionExp = redisData.maxLoss - maxSessionLoss;
 
     if (newBalance < 0) {
+      logger.info({
+        info: `user exposure balance insufficient to place this bet user id is ${reqUser.id}`,
+        betId,
+        matchId,
+        userCurrentBalance: userData?.currentBalance,
+        exposure: betPlaceObject.diffSessionExp
+      });
       return ErrorResponse(
         {
           statusCode: 400,
