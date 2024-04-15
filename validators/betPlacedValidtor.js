@@ -17,8 +17,9 @@ module.exports.MatchBetPlacedValidator = Joi.object({
     placeIndex : Joi.number().required(),
     ipAddress : Joi.string().allow(""),
     browserDetail :  Joi.string().allow(""),
-    bettingName: Joi.string().allow("")
-  })
+    bettingName: Joi.string().allow(""),
+    userId: Joi.string().allow("")
+  });
   
   module.exports.SessionBetPlacedValidator = Joi.object({
     matchId: Joi.string().required(),
@@ -28,7 +29,8 @@ module.exports.MatchBetPlacedValidator = Joi.object({
     betType : Joi.string().valid(...Object.values(betType)).required(),
     ipAddress : Joi.string().allow(""),
     browserDetail :  Joi.string().allow(""),
-    eventName:Joi.string().required(),
-    eventType:Joi.string().required(),
-    ratePercent:Joi.number()
-  })
+    eventName: Joi.string().required(),
+    eventType: Joi.string().required(),
+    ratePercent: Joi.number(),
+    userId: Joi.string().allow("")
+  });
