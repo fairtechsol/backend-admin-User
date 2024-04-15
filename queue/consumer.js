@@ -71,7 +71,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
 
   // Extract relevant data from jobData
   const placedBetObject = jobData.betPlaceObject;
-  let maxLossExposure = placedBetObject.maxLoss;
+  // let maxLossExposure = placedBetObject.maxLoss;
   let partnerSessionExposure = placedBetObject.diffSessionExp;
   let stake = placedBetObject?.betPlacedData?.stake;
   let redisObj = jobData?.redisObject;
@@ -80,7 +80,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
   if (userRedisData?.roleName == userRoleConstant.user) {
     sendMessageToUser(userId, socketData.SessionBetPlaced, {
       currentBalance: userRedisData?.currentBalance,
-      exposure: (parseFloat(userRedisData?.exposure)+parseFloat(maxLossExposure)).toFixed(2),
+      exposure: (parseFloat(userRedisData?.exposure) + parseFloat(partnerSessionExposure)).toFixed(2),
       myProfitLoss: userRedisData?.myProfitLoss,
       profitLoss: userRedisData?.profitLoss,
       profitLossData: redisObj?.[`${jobData?.placedBet?.betId}_profitLoss`],
