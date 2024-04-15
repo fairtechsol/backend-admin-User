@@ -1110,12 +1110,12 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   await updateUserExposure(userId, -exposureDiff);
 
   // blocking user if its exposure would increase by current balance
-  const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock"]);
+  const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock", "superParentId"]);
   if (userOldExposure - exposureDiff > currUserBalance && !userCreatedBy.userBlock) {
     await userService.updateUser(userId,{
       autoBlock: true,
       userBlock: true,
-      userBlockedBy: userCreatedBy?.createBy
+      userBlockedBy: userCreatedBy?.createBy == userId ? userCreatedBy?.superParentId : userCreatedBy?.createBy
     });
 
     if (userCreatedBy?.createBy == userId) {
@@ -1123,7 +1123,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
         apiMethod.post,
         walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
         {
-          userId: userId, userBlock: true, parentId: userCreatedBy.superParentId, autoBlock: true
+          userId: userId, userBlock: true, parentId:  userCreatedBy?.superParentId, autoBlock: true
         }
       ).catch(error => {
         logger.error({
