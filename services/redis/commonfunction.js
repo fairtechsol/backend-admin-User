@@ -36,7 +36,7 @@ exports.incrementValuesRedis = async (userId, value, updateValues) => {
   const pipeline = internalRedis.pipeline();
   // Queue up HINCRBY commands for each field in 'value' object
   Object.entries(value).forEach(([field, increment]) => {
-    pipeline.hincrby(userId, field, increment);
+    pipeline.hincrbyfloat(userId, field, increment);
   });
   // If there are additional values to update, queue an HMSET command
   if (updateValues) {
