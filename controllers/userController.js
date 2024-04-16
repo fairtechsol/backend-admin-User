@@ -672,6 +672,8 @@ exports.userList = async (req, res, next) => {
     let data = await Promise.all(
       users[0].map(async (element) => {
         element['percentProfitLoss'] = element.userBal['myProfitLoss'];
+        element["profit_loss"] = element?.userBal?.["profitLoss"];
+        element["exposure"] = element?.userBal?.["exposure"]
         let partner_ships = 100;
         if (partnershipCol && partnershipCol.length) {
           partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
