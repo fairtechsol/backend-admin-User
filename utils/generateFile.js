@@ -48,9 +48,18 @@ class FileGenerate {
     if (formattedData && formattedData?.length > 0) {
       const rows = formattedData.map((row) =>
         headers.map((item) => {
-          return (row[item.dbKey]??"");
+          // Check if dbKey includes 'userBal.'
+          if (item.dbKey.includes("userBal.")) {
+            // Extract the property name after 'userBal.'
+            const key = item.dbKey.split("userBal.")[1];
+            // Access the nested property using dot notation
+            return row.userBal[key] ?? "";
+          } else {
+            return row[item.dbKey] ?? "";
+          }
         })
       );
+
 
       var docDefinition = {
         pageSize: "A3",
@@ -74,10 +83,10 @@ class FileGenerate {
 
       const pdfBuffer = await new Promise((resolve, reject) => {
         pdfDocGenerator.getBuffer((buffer) => {
-            
-                resolve(buffer);
+
+          resolve(buffer);
         });
-    });
+      });
 
       const base64PDF = pdfBuffer.toString("base64");
       return base64PDF;

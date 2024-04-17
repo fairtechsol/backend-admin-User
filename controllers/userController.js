@@ -711,10 +711,10 @@ exports.userList = async (req, res, next) => {
         { excelHeader: "Role", dbKey: "roleName" },
         { excelHeader: "Credit Ref", dbKey: "creditRefrence" },
         { excelHeader: "Balance", dbKey: "balance" },
-        { excelHeader: "Client P/L", dbKey: "profit_loss" },
+        { excelHeader: "Client P/L", dbKey: "userBal.profitLoss" },
         { excelHeader: "% P/L", dbKey: "percentProfitLoss" },
         { excelHeader: "Comission", dbKey: "commission" },
-        { excelHeader: "Exposure", dbKey: "exposure" },
+        { excelHeader: "Exposure", dbKey: "userBal.exposure" },
         { excelHeader: "Available Balance", dbKey: "availableBalance" },
         { excelHeader: "UL", dbKey: "userBlock" },
         { excelHeader: "BL", dbKey: "betBlock" },
@@ -746,10 +746,7 @@ exports.userList = async (req, res, next) => {
           ]
           : []),
       ];
-      data.forEach(element => {
-        element.profit_loss = element.userBal?.profitLoss || 0;
-        element.exposure = element.userBal?.exposure || 0;
-      });
+ 
 
       const fileGenerate = new FileGenerate(type);
       const file = await fileGenerate.generateReport(data, header);
