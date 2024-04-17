@@ -2,6 +2,7 @@ const XLSX = require("xlsx");
 const pdfMake = require("pdfmake/build/pdfmake");
 const pdfFonts = require("pdfmake/build/vfs_fonts");
 const { fileType } = require("../config/contants");
+const ld =require('lodash')
 
 /**
  * A class for generating PDF and Excel reports.
@@ -47,15 +48,11 @@ class FileGenerate {
 
     if (formattedData && formattedData?.length > 0) {
       const rows = formattedData.map((row) =>
-      headers.map((item) => {
-        const keys = item.dbKey.split('.');
-        let value = row;
-        for (const key of keys) {
-          value = value[key];
-        }
-        return value ?? "";
-      })
-    );
+        headers.map((item) => {
+          const value = ld.get(row, item.dbKey);
+          return value ?? "";
+        })
+      );
     
 
 
@@ -106,15 +103,11 @@ class FileGenerate {
 
     if (formattedData && formattedData?.length > 0) {
       const rows = formattedData.map((row) =>
-      headers.map((item) => {
-        const keys = item.dbKey.split('.');
-        let value = row;
-        for (const key of keys) {
-          value = value[key];
-        }
-        return value ?? "";
-      })
-    );
+        headers.map((item) => {
+          const value = ld.get(row, item.dbKey);
+          return value ?? "";
+        })
+      );
     
 
       rows.unshift(excelHeaders);
