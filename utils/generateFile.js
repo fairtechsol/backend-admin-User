@@ -52,7 +52,7 @@ class FileGenerate {
         })
       );
 
-      var docDefinition = {
+      const docDefinition = {
         pageSize: "A3",
         pageOrientation: "landscape",
         content: [
