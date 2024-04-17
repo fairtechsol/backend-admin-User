@@ -47,18 +47,17 @@ class FileGenerate {
 
     if (formattedData && formattedData?.length > 0) {
       const rows = formattedData.map((row) =>
-        headers.map((item) => {
-          // Check if dbKey includes 'userBal.'
-          if (item.dbKey.includes("userBal.")) {
-            // Extract the property name after 'userBal.'
-            const key = item.dbKey.split("userBal.")[1];
-            // Access the nested property using dot notation
-            return row.userBal[key] ?? "";
-          } else {
-            return row[item.dbKey] ?? "";
-          }
-        })
-      );
+      headers.map((item) => {
+        const keys = item.dbKey.split('.');
+        let value = row;
+        for (const key of keys) {
+          value = value[key];
+        }
+        return value ?? "";
+      })
+    );
+    
+
 
 
       var docDefinition = {
@@ -107,10 +106,16 @@ class FileGenerate {
 
     if (formattedData && formattedData?.length > 0) {
       const rows = formattedData.map((row) =>
-        headers.map((item) => {
-          return row[item.dbKey];
-        })
-      );
+      headers.map((item) => {
+        const keys = item.dbKey.split('.');
+        let value = row;
+        for (const key of keys) {
+          value = value[key];
+        }
+        return value ?? "";
+      })
+    );
+    
 
       rows.unshift(excelHeaders);
       const excelWs = XLSX.utils.aoa_to_sheet(rows);
