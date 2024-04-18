@@ -2,6 +2,7 @@ const XLSX = require("xlsx");
 const pdfMake = require("pdfmake/build/pdfmake");
 const pdfFonts = require("pdfmake/build/vfs_fonts");
 const { fileType } = require("../config/contants");
+const ld =require('lodash')
 
 /**
  * A class for generating PDF and Excel reports.
@@ -48,9 +49,13 @@ class FileGenerate {
     if (formattedData && formattedData?.length > 0) {
       const rows = formattedData.map((row) =>
         headers.map((item) => {
-          return (row[item.dbKey]??"");
+          const value = ld.get(row, item.dbKey);
+          return value ?? "";
         })
       );
+    
+
+
 
       const docDefinition = {
         pageSize: "A3",
@@ -74,10 +79,10 @@ class FileGenerate {
 
       const pdfBuffer = await new Promise((resolve, reject) => {
         pdfDocGenerator.getBuffer((buffer) => {
-            
-                resolve(buffer);
+
+          resolve(buffer);
         });
-    });
+      });
 
       const base64PDF = pdfBuffer.toString("base64");
       return base64PDF;
@@ -99,9 +104,11 @@ class FileGenerate {
     if (formattedData && formattedData?.length > 0) {
       const rows = formattedData.map((row) =>
         headers.map((item) => {
-          return row[item.dbKey];
+          const value = ld.get(row, item.dbKey);
+          return value ?? "";
         })
       );
+    
 
       rows.unshift(excelHeaders);
       const excelWs = XLSX.utils.aoa_to_sheet(rows);
