@@ -1,3 +1,4 @@
+const { partnershipPrefixByRole } = require("../config/contants");
 const { AppDataSource } = require("../config/postGresConnection");
 const userBalanceSchema = require("../models/userBalance.entity");
 const { In } = require('typeorm');
@@ -8,7 +9,7 @@ exports.getUserBalanceDataByUserId = async(userId,select) =>{
     return await UserBalance.findOne({
         where: {userId},
         select: select
-      })
+      });
 }
 
 //get usersbalance data from array of userids
@@ -16,7 +17,7 @@ exports.getUserBalanceDataByUserIds = async(userIds,select) =>{
     return await UserBalance.find({
         where: {userId: In(userIds)},
         select: select
-      })
+      });
 }
 
 exports.addInitialUserBalance = async (body) => {
@@ -36,11 +37,12 @@ exports.updateUserExposure =async (userId, exposure) => {
   await UserBalance.query(`update "userBalances" set "exposure" = "exposure" + $2 where "userId" = $1`, [userId, exposure || 0]);
 }
 
-exports.getAllChildProfitLossSum = async(childUserIds)=>{
-    let queryColumns = 'SUM(userBalance.profitLoss) as firstLevelChildsProfitLossSum';
+exports.getAllChildProfitLossSum = async (childUserIds, roleName) => {
+    let queryColumns = `SUM(userBalance.profitLoss * user.${partnershipPrefixByRole[roleName] + "Partnership"} /100) as firstLevelChildsProfitLossSum`;
   
     let childUserData = await UserBalance
       .createQueryBuilder('userBalance')
+      .leftJoinAndMapOne("userBalance.user", "users", "user", "user.id = userBalance.userId")
       .select([queryColumns])
       .where('userBalance.userId IN (:...childUserIds)', { childUserIds })
       .getRawOne();
@@ -50,7 +52,7 @@ exports.getAllChildProfitLossSum = async(childUserIds)=>{
 }
 
 exports.getAllChildCurrentBalanceSum = async (childUserIds) => {
-     queryColumns = 'SUM(userBalance.currentBalance) as allChildsCurrentBalanceSum';
+     const queryColumns = 'SUM(userBalance.currentBalance) as allChildsCurrentBalanceSum';
   
      let childUserData = await UserBalance
       .createQueryBuilder('userBalance')
@@ -63,7 +65,7 @@ exports.getAllChildCurrentBalanceSum = async (childUserIds) => {
 
 
   exports.getAllUsersBalanceSum = async () => {
-    queryColumns = 'SUM(userBalance.currentBalance) as balance';
+    const queryColumns = 'SUM(userBalance.currentBalance) as balance';
  
     let childUserData = await UserBalance
      .createQueryBuilder('userBalance')

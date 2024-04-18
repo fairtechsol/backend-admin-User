@@ -289,7 +289,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
         betId,
         matchId,
         userCurrentBalance,
-        maximumLoss
+        maximumLoss,
+        newUserExposure
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
     }
@@ -416,7 +417,10 @@ exports.sessionBetPlace = async (req, res, next) => {
     // Fetch user details by ID
     let user = await getUserById(id, ["userBlock", "betBlock", "userName", "exposureLimit"]);
     let userExposureLimit = parseFloat(user.exposureLimit);
-
+    logger.info({
+      info: `Bet placed for session matchId ${matchId}, betId ${betId}, userId ${id}`,
+      data: req.body
+    });
     // Check if the user is blocked
     if (user?.userBlock) {
       return ErrorResponse(
@@ -449,7 +453,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       logger.info({
         info: `user is blocked for the session ${id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
-      })
+      });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
     }
 
@@ -575,6 +579,13 @@ exports.sessionBetPlace = async (req, res, next) => {
     betPlaceObject.diffSessionExp = redisData.maxLoss - maxSessionLoss;
 
     if (newBalance < 0) {
+      logger.info({
+        info: `user exposure balance insufficient to place this bet user id is ${id}`,
+        betId,
+        matchId,
+        userCurrentBalance: userData?.currentBalance,
+        exposure: betPlaceObject.diffSessionExp
+      });
       return ErrorResponse(
         {
           statusCode: 400,
@@ -744,7 +755,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
           message: {
             msg: "bet.marketRateChanged",
             keys: {
-              marketType: "Session",
+              marketType: "Session rate or %",
             },
           },
         };
@@ -761,10 +772,8 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       };
     }
     if (
-      (betDetails.betType == betType.NO &&
-        betDetails.odds != apiBetData.noRate) ||
-      (betDetails.betType == betType.YES &&
-        betDetails.odds != apiBetData.yesRate) ||
+      (betDetails.betType == betType.NO && (betDetails.odds != apiBetData.noRate || betDetails.ratePercent != apiBetData.noPercent) ) ||
+      (betDetails.betType == betType.YES && (betDetails.odds != apiBetData.yesRate || betDetails.ratePercent != apiBetData.yesPercent) ) ||
       (apiBetData.status != null && apiBetData.status != teamStatus.active)
     ) {
       throw {
@@ -772,7 +781,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
         message: {
           msg: "bet.marketRateChanged",
           keys: {
-            marketType: "Session",
+            marketType: "Session rate or %",
           },
         },
       };
@@ -794,17 +803,16 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       });
       throw error
     });
+    betDetail.ratePercent = 90
     let filterData = data?.find(
       (d) => d.SelectionId == apiBetData.selectionId
     );
     if (
-      betDetail.betType == betType.NO &&
-      betDetail.odds != filterData["LayPrice1"]
+      betDetail.betType == betType.NO && (betDetail.odds != filterData["LayPrice1"] || betDetail.ratePercent != filterData["LaySize1"])
     ) {
       return true;
     } else if (
-      betDetail.betType == betType.YES &&
-      betDetail.odds != filterData["BackPrice1"]
+      betDetail.betType == betType.YES && (betDetail.odds != filterData["BackPrice1"] || betDetail.ratePercent != filterData["BackSize1"])
     ) {
       return true;
     } else {
@@ -1099,12 +1107,12 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   await updateUserExposure(userId, -exposureDiff);
 
   // blocking user if its exposure would increase by current balance
-  const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock"]);
+  const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock", "superParentId"]);
   if (userOldExposure - exposureDiff > currUserBalance && !userCreatedBy.userBlock) {
     await userService.updateUser(userId,{
       autoBlock: true,
       userBlock: true,
-      userBlockedBy: userCreatedBy?.createBy
+      userBlockedBy: userCreatedBy?.createBy == userId ? userCreatedBy?.superParentId : userCreatedBy?.createBy
     });
 
     if (userCreatedBy?.createBy == userId) {
@@ -1112,7 +1120,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
         apiMethod.post,
         walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
         {
-          userId: userId, userBlock: true, parentId: userCreatedBy.superParentId, autoBlock: true
+          userId: userId, userBlock: true, parentId:  userCreatedBy?.superParentId, autoBlock: true
         }
       ).catch(error => {
         logger.error({
@@ -1283,7 +1291,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
 const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails) => {
   let userRedisData = await getUserRedisData(userId);
-  let isUserLogin = userRedisData ? true : false;
+  let isUserLogin = !!userRedisData;
   let userOldExposure = 0;
   let betPlacedId = bets.map(bet => bet.id);
   let partnershipObj = {};
