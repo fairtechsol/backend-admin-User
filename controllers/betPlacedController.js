@@ -755,7 +755,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
           message: {
             msg: "bet.marketRateChanged",
             keys: {
-              marketType: "Session",
+              marketType: "Session rate or %",
             },
           },
         };
@@ -772,10 +772,8 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       };
     }
     if (
-      (betDetails.betType == betType.NO &&
-        betDetails.odds != apiBetData.noRate) ||
-      (betDetails.betType == betType.YES &&
-        betDetails.odds != apiBetData.yesRate) ||
+      (betDetails.betType == betType.NO && (betDetails.odds != apiBetData.noRate || betDetails.ratePercent != apiBetData.noPercent) ) ||
+      (betDetails.betType == betType.YES && (betDetails.odds != apiBetData.yesRate || betDetails.ratePercent != apiBetData.yesPercent) ) ||
       (apiBetData.status != null && apiBetData.status != teamStatus.active)
     ) {
       throw {
@@ -783,7 +781,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
         message: {
           msg: "bet.marketRateChanged",
           keys: {
-            marketType: "Session",
+            marketType: "Session rate or %",
           },
         },
       };
@@ -805,17 +803,16 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       });
       throw error
     });
+    betDetail.ratePercent = 90
     let filterData = data?.find(
       (d) => d.SelectionId == apiBetData.selectionId
     );
     if (
-      betDetail.betType == betType.NO &&
-      betDetail.odds != filterData["LayPrice1"]
+      betDetail.betType == betType.NO && (betDetail.odds != filterData["LayPrice1"] || betDetail.ratePercent != filterData["LaySize1"])
     ) {
       return true;
     } else if (
-      betDetail.betType == betType.YES &&
-      betDetail.odds != filterData["BackPrice1"]
+      betDetail.betType == betType.YES && (betDetail.odds != filterData["BackPrice1"] || betDetail.ratePercent != filterData["BackSize1"])
     ) {
       return true;
     } else {
