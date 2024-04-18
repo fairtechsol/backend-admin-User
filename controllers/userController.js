@@ -943,7 +943,7 @@ exports.userBalanceDetails = async (req, res, next) => {
       downLevelCreditReference: loginUser?.downLevelCreditRefrence,
       availableBalance: parseFloat(userBalance?.value?.currentBalance || 0),
       totalMasterBalance: parseFloat(userBalance?.value?.currentBalance || 0) + parseFloat(allChildBalance.value.balance || 0),
-      upperLevelBalance: -parseFloat((parseFloat(firstLevelChildBalance?.value?.profitLoss) * parseFloat(uplinePartnerShipForAllUsers[loginUser.roleName]?.reduce((prev, curr) => {
+      upperLevelBalance: -parseFloat((parseFloat(userBalance?.value?.profitLoss) * parseFloat(uplinePartnerShipForAllUsers[loginUser.roleName]?.reduce((prev, curr) => {
         return (parseFloat(loginUser[`${curr}Partnership`]) + prev);
       }, 0)) / 100).toFixed(2)),
       downLevelProfitLoss: -parseFloat((parseFloat(firstLevelChildBalance?.value?.firstlevelchildsprofitlosssum || 0) + parseFloat((parseFloat(firstLevelChildBalance?.value?.profitLoss) * parseFloat(uplinePartnerShipForAllUsers[loginUser.roleName]?.reduce((prev, curr) => {
@@ -951,7 +951,8 @@ exports.userBalanceDetails = async (req, res, next) => {
       }, 0)) / 100).toFixed(2))).toFixed(2)),
       availableBalanceWithProfitLoss: ((parseFloat(userBalance?.value?.currentBalance || 0) + parseFloat(userBalance?.value?.profitLoss || 0))),
       profitLoss: -firstLevelChildBalance?.value?.firstlevelchildsprofitlosssum || 0,
-      totalProfitLoss: parseFloat(userBalance?.value?.profitLoss || 0),
+      totalProfitLossUpperlevel: parseFloat(userBalance?.value?.profitLoss || 0),
+      totalProfitLossDownlevel: parseFloat((parseFloat(firstLevelChildBalance?.value?.firstlevelchildsprofitlosssum || 0) + parseFloat((parseFloat(firstLevelChildBalance?.value?.profitLoss)))).toFixed(2)),
       upperLevelProfitLossPercent: parseFloat(uplinePartnerShipForAllUsers[loginUser.roleName]?.reduce((prev, curr) => {
         return (parseFloat(loginUser[`${curr}Partnership`]) + prev);
       }, 0))
@@ -1650,7 +1651,7 @@ exports.checkOldPasswordData = async (req, res) => {
     let isOldPassword = await checkOldPassword(id, oldPassword);
 
     return SuccessResponse({ statusCode: 200, data: { isPasswordMatch: isOldPassword } }, req, res);
-    
+
   } catch (error) {
     logger.error({ message: "Error in checking old password.", stack: error?.stack, context: error?.message });
     return ErrorResponse(error, req, res);
