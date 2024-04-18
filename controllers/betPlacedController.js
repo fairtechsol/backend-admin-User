@@ -1590,7 +1590,7 @@ exports.profitLoss = async (req, res) => {
     let where = {
       result: In([betResultStatus.LOSS, betResultStatus.WIN])
     }
-    let result, total, user
+    let result, total, user;
     let userId = req.body.userId;
 
     if (userId != "") {
