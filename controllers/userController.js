@@ -931,7 +931,7 @@ exports.userBalanceDetails = async (req, res, next) => {
     const firstLevelChildBalanceData = getAllChildProfitLossSum(firstLevelChildUserIds, reqUser.roleName);
 
     // Fetch balance data for all child users
-    const allChildBalanceData = getChildUserBalanceSum(userId);
+    const allChildBalanceData = getChildUserBalanceSum(userId, true);
 
     // Wait for all promises to settle
     const [userBalance, firstLevelChildBalance, allChildBalance] = await Promise.allSettled([userBalanceData, firstLevelChildBalanceData, allChildBalanceData]);
@@ -942,7 +942,7 @@ exports.userBalanceDetails = async (req, res, next) => {
       downLevelOccupyBalance: parseFloat(allChildBalance?.value?.[0]?.balance || 0),
       downLevelCreditReference: loginUser?.downLevelCreditRefrence,
       availableBalance: parseFloat(userBalance?.value?.currentBalance || 0),
-      totalMasterBalance: parseFloat(userBalance?.value?.currentBalance || 0) + parseFloat(allChildBalance.value.balance || 0),
+      totalMasterBalance: parseFloat(userBalance?.value?.currentBalance || 0) + parseFloat(allChildBalance.value?.[0]?.balance || 0),
       upperLevelBalance: -parseFloat((parseFloat(userBalance?.value?.profitLoss) * parseFloat(uplinePartnerShipForAllUsers[loginUser.roleName]?.reduce((prev, curr) => {
         return (parseFloat(loginUser[`${curr}Partnership`]) + prev);
       }, 0)) / 100).toFixed(2)),
