@@ -2806,7 +2806,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
 exports.totalProfitLossWallet = async (req, res) => {
   try {
-    let { user, startDate, endDate, matchId, searchId, partnerShipRoleName } = req.body;
+    let { user, startDate, endDate, matchId, searchId, partnerShipRoleName ,searchUser} = req.body;
     user = user || req.user;
     let totalLoss;
     let queryColumns = ``;
@@ -2833,6 +2833,10 @@ exports.totalProfitLossWallet = async (req, res) => {
     totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
 
     let childrenId = []
+    if (searchUser == userRoleConstant.fairGameAdmin && searchId) {
+      childrenId = await getUsers({ superParentId: searchId, roleName: userRoleConstant.user });
+      childrenId = childrenId[0];
+    }else{
     if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
@@ -2847,7 +2851,7 @@ exports.totalProfitLossWallet = async (req, res) => {
       }
       childrenId = await getChildsWithOnlyUserRole(userId);
     }
-
+  }
     childrenId = childrenId.map(item => item.id);
     if (!childrenId.length) {
       return SuccessResponse({
@@ -2883,7 +2887,7 @@ exports.totalProfitLossWallet = async (req, res) => {
 
 exports.totalProfitLossByMatch = async (req, res) => {
   try {
-    let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit } = req.body;
+    let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit,searchUser } = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
@@ -2908,6 +2912,10 @@ exports.totalProfitLossByMatch = async (req, res) => {
     }
     let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
     let childrenId = [];
+    if (searchUser == userRoleConstant.fairGameAdmin && searchId) {
+      childrenId = await getUsers({ superParentId: searchId, roleName: userRoleConstant.user });
+      childrenId = childrenId[0];
+    }else{
     if (user.roleName == userRoleConstant.fairGameWallet && !searchId) {
       childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
     }
@@ -2922,7 +2930,7 @@ exports.totalProfitLossByMatch = async (req, res) => {
       }
       childrenId = await getChildsWithOnlyUserRole(userId);
     }
-
+  }
     childrenId = childrenId.map(item => item.id);
     if (!childrenId.length) {
       return SuccessResponse({
