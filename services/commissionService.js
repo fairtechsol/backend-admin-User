@@ -19,7 +19,8 @@ exports.commissionReport = (userId, query,queryColumns) => {
   const commissionMatches = Commission.createQueryBuilder().where({ parentId: userId ,matchId : Not(IsNull()) }).groupBy("match.id").addGroupBy("match.title").addGroupBy("match.startAt")
     .leftJoinAndMapOne("commission.match", "match", 'match', 'commission.matchId = match.id')
     .leftJoinAndMapOne("commission.parentuser", "user", 'parentuser', 'commission.createBy = parentuser.id')
-  .select(['match.title as "matchName"', 'match.startAt as "matchStartDate"', 'match.id as "matchId"',`ROUND((Sum(commission.commissionAmount * (${queryColumns}))  / 100)::numeric, 2) as amount`]);
+  .select(['match.title as "matchName"', 'match.startAt as "matchStartDate"', 'match.id as "matchId"',`ROUND((Sum(commission.commissionAmount * (${queryColumns}))  / 100)::numeric, 2) as amount`])
+  .orderBy('match.startAt', 'DESC');
 
   if (query.page) {
     commissionMatches.skip((parseInt(query.page) - 1) * parseInt(query.limit || 10)).take(parseInt(query?.limit || 10));
