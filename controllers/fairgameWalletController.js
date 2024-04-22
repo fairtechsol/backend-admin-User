@@ -3065,8 +3065,7 @@ const getChildrenId = async (user, searchId, searchUserRole) => {
       childrenId = await getChildsWithOnlyUserRole(userId);
     }
   }
-  console.log(childrenId, "childrenId")
-  return childrenId.map(item => item.id);
+   return childrenId.map(item => item.id);
 
 }
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
