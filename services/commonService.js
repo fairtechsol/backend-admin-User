@@ -283,9 +283,9 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
     }
 
     let i = 0;
-    for (var j = first - 5 > 0 ? first - 5 : 0; j <= last + 5; j++) {
+    for (let j = first - 5 > 0 ? first - 5 : 0; j <= last + 5; j++) {
       let profitLoss = 0.0;
-      for (var key in betPlace) {
+      for (let key in betPlace) {
         let partnership = 100;
         if (userPartnerShip) {
           partnership = userPartnerShip;
@@ -534,7 +534,7 @@ exports.settingBetsDataAtLogin = async (user) => {
         let teamNoRateComplete = redisData?.teamNoRateComplete ?? Number.MAX_VALUE;
         let teamYesRateComplete = redisData?.teamYesRateComplete ?? Number.MAX_VALUE;
         const matchId = currBets.matchId;
-        maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
+      maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
         matchResult = {
           ...matchResult,
           ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]:parseFloat(parseFloat((matchResult[redisKeys.userTeamARate + matchId]||0)+ teamARate).toFixed(2)) } : {}),

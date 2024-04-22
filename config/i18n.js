@@ -12,13 +12,13 @@ i18n.configure({
   syncFiles: true,
   objectNotation: true,
   logDebugFn: function (msg) {
-    // console.log("debug", msg);
+  
   },
   logWarnFn: function (msg) {
-    // console.log("warn", msg);
+ 
   },
   logErrorFn: function (msg) {
-    // console.log("error", msg);
+   
   },
 });
 

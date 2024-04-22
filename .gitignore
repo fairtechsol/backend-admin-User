@@ -130,3 +130,5 @@ dist
 .pnp.*
 dump.rdb
 swagger_output.json
+.scannerwork
+
