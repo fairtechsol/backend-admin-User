@@ -755,7 +755,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
           message: {
             msg: "bet.marketRateChanged",
             keys: {
-              marketType: "Session",
+              marketType: "Session rate or %",
             },
           },
         };
@@ -772,10 +772,8 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       };
     }
     if (
-      (betDetails.betType == betType.NO &&
-        betDetails.odds != apiBetData.noRate) ||
-      (betDetails.betType == betType.YES &&
-        betDetails.odds != apiBetData.yesRate) ||
+      (betDetails.betType == betType.NO && (betDetails.odds != apiBetData.noRate || betDetails.ratePercent != apiBetData.noPercent) ) ||
+      (betDetails.betType == betType.YES && (betDetails.odds != apiBetData.yesRate || betDetails.ratePercent != apiBetData.yesPercent) ) ||
       (apiBetData.status != null && apiBetData.status != teamStatus.active)
     ) {
       throw {
@@ -783,7 +781,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
         message: {
           msg: "bet.marketRateChanged",
           keys: {
-            marketType: "Session",
+            marketType: "Session rate or %",
           },
         },
       };
@@ -805,17 +803,17 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       });
       throw error
     });
+    
     let filterData = data?.find(
       (d) => d.SelectionId == apiBetData.selectionId
     );
+
     if (
-      betDetail.betType == betType.NO &&
-      betDetail.odds != filterData["LayPrice1"]
+      betDetail.betType == betType.NO && (betDetail.odds != filterData["LayPrice1"] || betDetail.ratePercent != filterData["LaySize1"])
     ) {
       return true;
     } else if (
-      betDetail.betType == betType.YES &&
-      betDetail.odds != filterData["BackPrice1"]
+      betDetail.betType == betType.YES && (betDetail.odds != filterData["BackPrice1"] || betDetail.ratePercent != filterData["BackSize1"])
     ) {
       return true;
     } else {
@@ -875,7 +873,16 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
 
 }
 
-const checkRate = async (matchBettingDetail, betObj, teams) => {
+const checkRate = async (bettingDetail, betObj, teams) => {
+  const matchBettingDetail = JSON.parse(JSON.stringify(bettingDetail));
+  if (teams.placeIndex != 0) {
+    matchBettingDetail.backTeamA = parseInt(matchBettingDetail.backTeamA);
+    matchBettingDetail.backTeamB = parseInt(matchBettingDetail.backTeamB);
+    matchBettingDetail.backTeamC = parseInt(matchBettingDetail.backTeamC);
+    matchBettingDetail.layTeamA = parseInt(matchBettingDetail.layTeamA);
+    matchBettingDetail.layTeamB = parseInt(matchBettingDetail.layTeamB);
+    matchBettingDetail.layTeamC = parseInt(matchBettingDetail.layTeamC);
+  }
   if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && !(matchBettingDetail.statusTeamA == teamStatus.active && matchBettingDetail.backTeamA - teams.placeIndex == betObj.odds)) {
     return true;
   }
@@ -982,7 +989,7 @@ exports.deleteMultipleBet = async (req, res) => {
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, id: In(placedBetIdArray) });
     let updateObj = {};
     let isAnyMatchBet = false;
-    placedBet.map(bet => {
+    placedBet.forEach(bet => {
       let isSessionBet = false;
       if (bet.betType == betType.YES || bet.betType == betType.NO) {
         isSessionBet = true;
@@ -1226,7 +1233,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
             await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
 
-            userDeleteProfitLoss.betData.map((ob, index) => {
+            userDeleteProfitLoss.betData.forEach((ob, index) => {
               let partnershipData = (ob.profitLoss * partnership) / 100;
               if (ob.odds == parentPLbetPlaced[index].odds) {
                 parentPLbetPlaced[index].profitLoss = parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData;
@@ -1593,7 +1600,7 @@ exports.profitLoss = async (req, res) => {
     let where = {
       result: In([betResultStatus.LOSS, betResultStatus.WIN])
     }
-    let result, total, user
+    let result, total, user;
     let userId = req.body.userId;
 
     if (userId != "") {
@@ -1617,7 +1624,7 @@ exports.profitLoss = async (req, res) => {
       result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
     }
     total = {};
-    result.map((arr, index) => {
+    result.forEach((arr, index) => {
       if(total[arr.marketType]){
         total[arr.marketType] += parseFloat(arr.aggregateAmount);
       } else {

@@ -351,7 +351,7 @@ exports.getPlacedBetTotalLossAmount = (where) => {
 exports.getBetsWithMatchId=(where)=>{
 
   return BetPlaced.createQueryBuilder()
-  .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id'+where??"")
+    .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id' + (where ?? ""))
   .where({ deleteReason: IsNull(), result: In([betResultStatus.PENDING]) })
   .andWhere("user.id IS NOT NULL")
   .groupBy("betPlaced.matchId")
