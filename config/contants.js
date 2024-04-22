@@ -89,6 +89,7 @@ module.exports.partnershipPrefixByRole = {
 };
 
 module.exports.uplinePartnerShipForAllUsers = {
+  [this.userRoleConstant.fairGameWallet]: [],
   [this.userRoleConstant.fairGameAdmin]: ["fw"],
   [this.userRoleConstant.superAdmin]: ["fw", "fa"],
   [this.userRoleConstant.admin]: ["fw", "fa", "sa"],
