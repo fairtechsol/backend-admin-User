@@ -1163,7 +1163,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       userBlockedBy: null
     });
 
-    if (userCreatedBy.createBy == userId) {
+    if (userCreatedBy?.createBy == userId) {
       await apiCall(
         apiMethod.post,
         walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
