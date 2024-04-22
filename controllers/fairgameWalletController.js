@@ -29,6 +29,8 @@ const {
   profitLossPercentCol,
   getUserProfitLossForUpperLevel,
   forceLogoutIfLogin,
+  insertBulkTransactions,
+  insertBulkCommissions,
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -735,7 +737,7 @@ exports.declareSessionResult = async (req, res) => {
       match
     );
 
-    insertTransactions(bulkWalletRecord);
+    insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
       data: { upperUserObj, betId }
@@ -810,7 +812,7 @@ exports.declareSessionResult = async (req, res) => {
         matchId
       });
     }
-    insertCommissions(commissionReport);
+    insertBulkCommissions(commissionReport);
 
     return SuccessResponse(
       {
@@ -1312,7 +1314,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       commissionData
     );
     deleteCommission(betId);
-    insertTransactions(bulkWalletRecord);
+    insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
       data: { upperUserObj, betId }
@@ -1858,7 +1860,7 @@ exports.declareMatchResult = async (req, res) => {
       matchDetails
     );
 
-    insertTransactions(bulkWalletRecord);
+    insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
       data: { upperUserObj, betIds },
@@ -1930,7 +1932,7 @@ exports.declareMatchResult = async (req, res) => {
         matchId
       });
     }
-    insertCommissions(commissionReport);
+    insertBulkCommissions(commissionReport);
     broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType });
 
     return SuccessResponse(
@@ -2388,7 +2390,7 @@ exports.unDeclareMatchResult = async (req, res) => {
     );
     deleteCommission(matchOddId);
 
-    insertTransactions(bulkWalletRecord);
+    insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
       data: { upperUserObj, betIds }

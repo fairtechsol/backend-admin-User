@@ -316,7 +316,6 @@ exports.getUsersWithUsersBalanceData = async (where, query) => {
     , query).search().filter().sort().paginate().getResult();
 
   return await transactionQuery;
-
 }
 
 exports.getUsersWithTotalUsersBalanceData = (where, query, select) => {
