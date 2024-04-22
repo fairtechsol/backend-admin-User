@@ -1790,6 +1790,9 @@ exports.declareMatchResult = async (req, res) => {
             item.result = betResultStatus.TIE;
           }
         }
+        else{
+          item.result = betResultStatus.TIE;
+        }
       } else {
         const isWinCondition = !(Object.values(tieCompleteBetType).includes(item.marketType)) && ((item.betType === betType.BACK && item.teamName === result) || (item.betType === betType.LAY && item.teamName !== result));
         const isTiedMatchCondition = (item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch2) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.no) || (item.betType === betType.LAY && item.teamName == tiedManualTeamName.yes));
