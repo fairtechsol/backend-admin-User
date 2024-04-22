@@ -803,10 +803,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       });
       throw error
     });
-    betDetail.ratePercent = 90
+    
     let filterData = data?.find(
       (d) => d.SelectionId == apiBetData.selectionId
     );
+
     if (
       betDetail.betType == betType.NO && (betDetail.odds != filterData["LayPrice1"] || betDetail.ratePercent != filterData["LaySize1"])
     ) {
