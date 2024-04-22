@@ -3155,23 +3155,23 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
       sessionProfitLoss = "-" + sessionProfitLoss;
     }
 
-    const getAllDirectUsers = userIds ?
+    const getAllDirectUsers = searchId ?
       await getAllUsers({
-        id: In(userIds?.split(",")),
+        id: searchId,
       })
-      : (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
-        await getUsersByWallet({
-          superParentId: user.id,
+      : userIds ?
+        await getAllUsers({
+          id: In(userIds?.split(",")),
         })
-        // :
-        // searchId ?
-        //   await getAllUsers({
-        //     id: user.id,
-        //   })
-        : await getAllUsers({
-          createBy: user.id,
-          id: Not(user.id)
-        });
+        : (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
+          await getUsersByWallet({
+            superParentId: user.id,
+          })
+          :
+          await getAllUsers({
+            createBy: user.id,
+            id: Not(user.id)
+          });
     let result = [];
     for (let directUser of getAllDirectUsers) {
       let childrenId = await getChildsWithOnlyUserRole(directUser.id);
