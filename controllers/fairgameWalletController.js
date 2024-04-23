@@ -1790,7 +1790,7 @@ exports.declareMatchResult = async (req, res) => {
             item.result = betResultStatus.TIE;
           }
         }
-        else{
+        else {
           item.result = betResultStatus.TIE;
         }
       } else {
@@ -2835,15 +2835,7 @@ exports.totalProfitLossWallet = async (req, res) => {
     }
     totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
 
-    let childrenId = await getChildrenId(user, searchId, searchUserRole);
-    if (!childrenId.length) {
-      return SuccessResponse({
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
-      }, req, res);
-    }
-    where.createBy = In(childrenId);
-
-    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss);
+    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, user, searchId, searchUserRole);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -2894,15 +2886,8 @@ exports.totalProfitLossByMatch = async (req, res) => {
       sessionProfitLoss = '-' + sessionProfitLoss;
     }
     let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
-    let childrenId = await getChildrenId(user, searchId, searchUserRole);
-    if (!childrenId.length) {
-      return SuccessResponse({
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
-      }, req, res);
-    }
-    where.createBy = In(childrenId);
 
-    const { result, count } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit);
+    const { result, count } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, user, searchId, searchUserRole);
     return SuccessResponse(
       {
         statusCode: 200, data: { result, count }
@@ -2955,16 +2940,7 @@ exports.getResultBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-
-    let childrenId = await getChildrenId(user, searchId, searchUserRole);
-    if (!childrenId.length) {
-      return SuccessResponse({
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
-      }, req, res);
-    }
-    where.createBy = In(childrenId);
-
-    const result = await getBetsProfitLoss(where, totalLoss);
+    const result = await getBetsProfitLoss(where, totalLoss, user, searchId, searchUserRole);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -3011,16 +2987,7 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-
-    let childrenId = await getChildrenId(user, searchId, searchUserRole);
-    if (!childrenId.length) {
-      return SuccessResponse({
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: []
-      }, req, res);
-    }
-    where.createBy = In(childrenId);
-
-    const result = await getSessionsProfitLoss(where, totalLoss);
+    const result = await getSessionsProfitLoss(where, totalLoss, user, searchId, searchUserRole);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -3047,27 +3014,7 @@ exports.getSessionBetProfitLoss = async (req, res) => {
 const getQueryColumns = async (user, partnerShipRoleName) => {
   return partnerShipRoleName ? await profitLossPercentCol({ roleName: partnerShipRoleName }) : await profitLossPercentCol(user);
 }
-const getChildrenId = async (user, searchId, searchUserRole) => {
-  let childrenId = [];
 
-  if (searchUserRole === userRoleConstant.fairGameAdmin && searchId) {
-    childrenId = await getUsers({ superParentId: searchId, roleName: userRoleConstant.user }, ["id"]);
-    childrenId = childrenId[0]
-  } else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
-    childrenId = await getAllUsersByRole(userRoleConstant.user, ["id"]);
-  } else {
-    let userId = searchId || user.id;
-
-    if (user.roleName === userRoleConstant.fairGameAdmin && !searchId) {
-      childrenId = await getUsers({ superParentId: user.id, roleName: userRoleConstant.user }, ["id"]);
-      childrenId = childrenId[0]
-    } else {
-      childrenId = await getChildsWithOnlyUserRole(userId);
-    }
-  }
-   return childrenId.map(item => item.id);
-
-}
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {
     let { user, matchId, searchId, userIds, partnerShipRoleName } = req.body;
@@ -3105,7 +3052,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
         await getUsersByWallet({
           superParentId: user.id,
         })
-    
+
         : await getAllUsers({
           createBy: user.id,
           id: Not(user.id)
@@ -3247,7 +3194,6 @@ exports.getUsersProfitLoss = async (req, res) => {
         resUserData.push(userProfitLossData);
       }
     }
-
     return SuccessResponse(
       {
         statusCode: 200, data: resUserData
