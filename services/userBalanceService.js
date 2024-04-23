@@ -24,9 +24,16 @@ exports.addInitialUserBalance = async (body) => {
     return insertUserBalance;
 }
 
+exports.updateUserBalanceData =async (userId, data) => {
+  await UserBalance.query(`update "userBalances" set "currentBalance" = "currentBalance" + $6, "profitLoss" = "profitLoss" + $2, "myProfitLoss" = "myProfitLoss" + $3, "exposure" = "exposure" + $4, "totalCommission" = "totalCommission" + $5 where "userId" = $1`, [userId, (data.profitLoss || 0), (data.myProfitLoss || 0), (data.exposure || 0), (data.totalCommission || 0), (data?.balance ?? data?.profitLoss ?? 0)]);
+}
+
 exports.updateUserBalanceByUserId = async(userId,body) =>{
     let updateUserBalance = await UserBalance.update({ userId: userId },body);
     return updateUserBalance;
+}
+exports.updateUserExposure =async (userId, exposure) => {
+  await UserBalance.query(`update "userBalances" set "exposure" = "exposure" + $2 where "userId" = $1`, [userId, exposure || 0]);
 }
 
 exports.getAllChildProfitLossSum = async(childUserIds)=>{
