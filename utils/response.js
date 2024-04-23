@@ -22,12 +22,15 @@ module.exports.ErrorResponse = (errorData, req, res) => {
       message: __mf(i18Code, keys || undefined), // Using i18n to get the translated message
       stack: errorData.stack,
     };
+
+    logger.error(errorObj);
+
     res.status(errorData.statusCode).json(errorObj);
   } catch (err) {
     logger.error({
       message:"Error at error response.",
       stack: err.stack,
-      message: err.message,
+      context: err.message,
     });
     res.status(500).json({ message: "Internal server error" });
   }
