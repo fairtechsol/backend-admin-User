@@ -212,22 +212,6 @@ exports.matchBettingBetPlaced = async (req, res) => {
       bettingName: bettingName
     }
     await validateMatchBettingDetails(matchBetting, betPlacedObj, { teamA, teamB, teamC, placeIndex });
-    // const teamArateRedisKey =
-    //   (matchBetType == matchBettingType.tiedMatch1 ||
-    //     matchBetType == matchBettingType.tiedMatch2
-    //     ? redisKeys.yesRateTie
-    //     : matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
-    //       ? redisKeys.yesRateComplete
-    //       : redisKeys.userTeamARate) + matchId;
-    // const teamBrateRedisKey = (
-    //   matchBetType == matchBettingType.tiedMatch1 ||
-    //     matchBetType == matchBettingType.tiedMatch2
-    //     ? redisKeys.noRateTie
-    //     : matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
-    //       ? redisKeys.noRateComplete
-    //       : redisKeys.userTeamBRate) + matchId;
-    // const teamCrateRedisKey = matchBetType == matchBettingType.tiedMatch1 ||
-    //   matchBetType == matchBettingType.tiedMatch2 || matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual ? null : redisKeys.userTeamCRate + matchId;
 
 
     const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys);
@@ -1325,17 +1309,7 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
   let matchBetType = bets?.[0].marketType;
   let currUserBalance;
 
-  // const teamArateRedisKey =
-  //   (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2
-  //     ? redisKeys.yesRateTie :
-  //     matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
-  //       ? redisKeys.yesRateComplete : redisKeys.userTeamARate) + matchId;
-  // const teamBrateRedisKey = (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2
-  //   ? redisKeys.noRateTie :
-  //   matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
-  //     ? redisKeys.noRateComplete : redisKeys.userTeamBRate) + matchId;
-  // const teamCrateRedisKey = matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2 || matchBetType == matchBettingType.completeMatch || matchBetType == matchBettingType.completeManual
-  //   ? null : redisKeys.userTeamCRate + matchId;
+
   const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys);
 
   let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch || matchBettingType.completeManual].includes(matchBetType);
