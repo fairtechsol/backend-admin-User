@@ -7,6 +7,8 @@ const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets,
 const { getUserById, getChildsWithOnlyUserRole, getAllUsers } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
+const { insertTransactions } = require("./transactionService");
+const { insertCommissions } = require("./commissionService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -755,4 +757,22 @@ exports.profitLossPercentCol = (body, queryColumns) => {
       break;
   }
   return queryColumns;
+}
+
+exports.insertBulkTransactions = async (bulkWalletRecord) => {
+  const chunkSize = 5000;
+  const totalRecords = bulkWalletRecord.length;
+  for (let i = 0; i < totalRecords; i += chunkSize) {
+    const chunk = bulkWalletRecord.slice(i, i + chunkSize);
+    await insertTransactions(chunk);
+  }
+}
+
+exports.insertBulkCommissions = async (bulkWalletRecord) => {
+  const chunkSize = 5000;
+  const totalRecords = bulkWalletRecord.length;
+  for (let i = 0; i < totalRecords; i += chunkSize) {
+    const chunk = bulkWalletRecord.slice(i, i + chunkSize);
+    await insertCommissions(chunk);
+  }
 }
