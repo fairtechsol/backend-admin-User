@@ -2159,7 +2159,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             matchStartDate: new Date(matchData?.startAt),
             userName: user.user.userName,
             stake: userOriginalProfitLoss
-
           });
         }
       }
