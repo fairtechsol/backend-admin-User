@@ -29,6 +29,8 @@ const {
   profitLossPercentCol,
   getUserProfitLossForUpperLevel,
   forceLogoutIfLogin,
+  insertBulkTransactions,
+  insertBulkCommissions,
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -736,7 +738,7 @@ exports.declareSessionResult = async (req, res) => {
       match
     );
 
-    insertTransactions(bulkWalletRecord);
+    insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
       data: { upperUserObj, betId }
@@ -811,7 +813,7 @@ exports.declareSessionResult = async (req, res) => {
         matchId
       });
     }
-    insertCommissions(commissionReport);
+    insertBulkCommissions(commissionReport);
 
     return SuccessResponse(
       {
@@ -1313,7 +1315,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       commissionData
     );
     deleteCommission(betId);
-    insertTransactions(bulkWalletRecord);
+    insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
       data: { upperUserObj, betId }
@@ -1862,7 +1864,7 @@ exports.declareMatchResult = async (req, res) => {
       matchDetails
     );
 
-    insertTransactions(bulkWalletRecord);
+    insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
       data: { upperUserObj, betIds },
@@ -1934,7 +1936,7 @@ exports.declareMatchResult = async (req, res) => {
         matchId
       });
     }
-    insertCommissions(commissionReport);
+    insertBulkCommissions(commissionReport);
     broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType });
 
     return SuccessResponse(
@@ -2392,7 +2394,7 @@ exports.unDeclareMatchResult = async (req, res) => {
     );
     deleteCommission(matchOddId);
 
-    insertTransactions(bulkWalletRecord);
+    insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
       data: { upperUserObj, betIds }
@@ -3077,19 +3079,23 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
       sessionProfitLoss = "-" + sessionProfitLoss;
     }
 
-    const getAllDirectUsers = userIds ?
+    const getAllDirectUsers = searchId ?
       await getAllUsers({
-        id: In(userIds?.split(",")),
+        id: searchId,
       })
-      : (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
-        await getUsersByWallet({
-          superParentId: user.id,
+      : userIds ?
+        await getAllUsers({
+          id: In(userIds?.split(",")),
         })
-
-        : await getAllUsers({
-          createBy: user.id,
-          id: Not(user.id)
-        });
+        : (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
+          await getUsersByWallet({
+            superParentId: user.id,
+          })
+          :
+          await getAllUsers({
+            createBy: user.id,
+            id: Not(user.id)
+          });
     let result = [];
     for (let directUser of getAllDirectUsers) {
       let childrenId = await getChildsWithOnlyUserRole(directUser.id);
