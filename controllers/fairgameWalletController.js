@@ -76,6 +76,7 @@ const { insertCommissions, getCombinedCommission, deleteCommission } = require("
 const { insertButton } = require("../services/buttonService");
 
 
+
 exports.createSuperAdmin = async (req, res) => {
   try {
     const {
@@ -2809,7 +2810,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
 exports.totalProfitLossWallet = async (req, res) => {
   try {
-    let { user, startDate, endDate, matchId, searchId, partnerShipRoleName, searchUserRole } = req.body;
+    let { user, startDate, endDate, matchId, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
     let totalLoss;
     let queryColumns = ``;
@@ -2834,8 +2835,8 @@ exports.totalProfitLossWallet = async (req, res) => {
       totalLoss = '-' + totalLoss;
     }
     totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
-
-    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, user, searchId, searchUserRole);
+    let subQuery = await exports.childIdquery(user, searchId)
+    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, subQuery);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -2862,7 +2863,7 @@ exports.totalProfitLossWallet = async (req, res) => {
 
 exports.totalProfitLossByMatch = async (req, res) => {
   try {
-    let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit, searchUserRole } = req.body;
+    let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit } = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
@@ -2886,8 +2887,8 @@ exports.totalProfitLossByMatch = async (req, res) => {
       sessionProfitLoss = '-' + sessionProfitLoss;
     }
     let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
-
-    const { result, count } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, user, searchId, searchUserRole);
+    let subQuery = await exports.childIdquery(user, searchId)
+    const { result, count } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, subQuery);
     return SuccessResponse(
       {
         statusCode: 200, data: { result, count }
@@ -2914,7 +2915,7 @@ exports.totalProfitLossByMatch = async (req, res) => {
 
 exports.getResultBetProfitLoss = async (req, res) => {
   try {
-    let { user, matchId, betId, isSession, searchId, partnerShipRoleName, searchUserRole } = req.body;
+    let { user, matchId, betId, isSession, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
@@ -2940,7 +2941,8 @@ exports.getResultBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    const result = await getBetsProfitLoss(where, totalLoss, user, searchId, searchUserRole);
+    let subQuery = await exports.childIdquery(user, searchId)
+    const result = await getBetsProfitLoss(where, totalLoss, subQuery);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -2967,7 +2969,7 @@ exports.getResultBetProfitLoss = async (req, res) => {
 
 exports.getSessionBetProfitLoss = async (req, res) => {
   try {
-    let { user, matchId, searchId, partnerShipRoleName, searchUserRole } = req.body;
+    let { user, matchId, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
@@ -2987,7 +2989,8 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    const result = await getSessionsProfitLoss(where, totalLoss, user, searchId, searchUserRole);
+    let subQuery = await exports.childIdquery(user, searchId);
+    const result = await getSessionsProfitLoss(where, totalLoss, subQuery);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -3013,6 +3016,36 @@ exports.getSessionBetProfitLoss = async (req, res) => {
 }
 const getQueryColumns = async (user, partnerShipRoleName) => {
   return partnerShipRoleName ? await profitLossPercentCol({ roleName: partnerShipRoleName }) : await profitLossPercentCol(user);
+}
+
+exports.childIdquery = async (user, searchId) => {
+  let subquery;
+  if (user.roleName === userRoleConstant.user) {
+    subquery = `(user.id)`
+  }
+  else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
+    subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}')`;
+
+  } else {
+    let userId = searchId || user.id;
+
+    if (user.roleName === userRoleConstant.fairGameAdmin && !searchId) {
+      subquery = `(SELECT id FROM "users" WHERE "superParentId" = '${user.id}' AND "roleName" = '${userRoleConstant.user}')`;
+
+    } else {
+      const recursiveSubquery = `
+      WITH RECURSIVE p AS (
+        SELECT * FROM "users" WHERE "users"."id" = '${userId}'
+        UNION
+        SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+      )
+      SELECT "id" FROM p WHERE "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}'
+    `;
+      subquery = `(${recursiveSubquery})`;
+
+    }
+  }
+  return subquery;
 }
 
 exports.getUserWiseTotalProfitLoss = async (req, res) => {

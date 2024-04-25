@@ -186,38 +186,10 @@ exports.allChildsProfitLoss = async (where, startDate, endDate) => {
   let profitLossData = await profitLoss.getRawMany();
   return profitLossData
 }
-const childIdquery = async (user, searchId, searchUserRole) => {
-  let subquery = null;
 
-  if (searchUserRole === userRoleConstant.fairGameAdmin && searchId) {
-    subquery = `(SELECT id FROM "users" WHERE "superParentId" = '${searchId}' AND "roleName" = '${userRoleConstant.user}')`;
-    return subquery
-  } else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
-    subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}')`;
-    return subquery;
-  } else {
-    let userId = searchId || user.id;
-
-    if (user.roleName === userRoleConstant.fairGameAdmin && !searchId) {
-      subquery = `(SELECT id FROM "users" WHERE "superParentId" = '${user.id}' AND "roleName" = '${userRoleConstant.user}')`;
-      return subquery;
-    } else {
-      const recursiveSubquery = `
-      WITH RECURSIVE p AS (
-        SELECT * FROM "users" WHERE "users"."id" = '${userId}'
-        UNION
-        SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
-      )
-      SELECT "id" FROM p WHERE "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}'
-    `;
-      subquery = `(${recursiveSubquery})`;
-      return subquery;
-    } }
-}
-exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss, user, searchId, searchUserRole) => {
-  let subquery = await childIdquery(user, searchId, searchUserRole)
+exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
-    .leftJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subquery})`)
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
     .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
     .where(where)
     .andWhere({
@@ -239,16 +211,14 @@ exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss, user, 
       'COUNT(placeBet.id) as "totalBet"'
     ])
     .groupBy('placeBet.eventType')
-
   let result = await query.getRawMany();
   return result
 }
 
-exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, page, limit, user, searchId, searchUserRole) => {
-  let subquery = await childIdquery(user, searchId, searchUserRole)
+exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, page, limit, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
-    .leftJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subquery})`)
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
     .where(where)
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 
@@ -283,10 +253,9 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArr
   return { result, count };
 }
 
-exports.getBetsProfitLoss = async (where, totalLoss, user, searchId, searchUserRole) => {
-  let subquery = await childIdquery(user, searchId, searchUserRole)
+exports.getBetsProfitLoss = async (where, totalLoss, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
-    .leftJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subquery})`)
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
     .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
     .where(where)
     .andWhere({ result: Not(betResultStatus.PENDING) })
@@ -318,10 +287,9 @@ exports.getBetsProfitLoss = async (where, totalLoss, user, searchId, searchUserR
   return result;
 }
 
-exports.getSessionsProfitLoss = async (where, totalLoss, user, searchId, searchUserRole) => {
-  let subquery = await childIdquery(user, searchId, searchUserRole)
+exports.getSessionsProfitLoss = async (where, totalLoss, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
-    .leftJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subquery})`)
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
     .where(where)
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 

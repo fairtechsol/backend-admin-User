@@ -11,15 +11,6 @@ i18n.configure({
   updateFiles: false,
   syncFiles: true,
   objectNotation: true,
-  logDebugFn: function (msg) {
-  
-  },
-  logWarnFn: function (msg) {
- 
-  },
-  logErrorFn: function (msg) {
-   
-  },
 });
 
 module.exports = i18n;
