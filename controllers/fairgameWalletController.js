@@ -2815,6 +2815,7 @@ exports.totalProfitLossWallet = async (req, res) => {
   try {
     let { user, startDate, endDate, matchId, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
+    partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
     let totalLoss;
     let queryColumns = ``;
     let where = {}
@@ -2868,6 +2869,7 @@ exports.totalProfitLossByMatch = async (req, res) => {
   try {
     let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit } = req.body;
     user = user || req.user;
+    partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
     let queryColumns = ``;
     let where = {
@@ -2920,6 +2922,7 @@ exports.getResultBetProfitLoss = async (req, res) => {
   try {
     let { user, matchId, betId, isSession, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
+    partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
     let queryColumns = ``;
     let where = { marketBetType: isSession ? marketBetType.SESSION : marketBetType.MATCHBETTING };
@@ -2974,6 +2977,7 @@ exports.getSessionBetProfitLoss = async (req, res) => {
   try {
     let { user, matchId, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
+    partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
     let queryColumns = ``;
     let where = { marketBetType: marketBetType.SESSION, matchId: matchId };

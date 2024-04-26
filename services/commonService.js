@@ -801,7 +801,7 @@ exports.parseRedisData = (redisKey, userRedisData) => {
 exports.childIdquery = async (user, searchId) => {
   let subquery;
   if (user.roleName === userRoleConstant.user) {
-    subquery = `(user.id)`
+    subquery = `'${user.id}'`
   }
   else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
     subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}')`;
