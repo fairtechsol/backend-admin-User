@@ -190,9 +190,10 @@ module.exports.matchBettingType = {
     return prev;
   }, {})),
   halfTime: "halfTime",
-  
-  setWinner1:"setWinner1",
-  setWinner2:"setWinner2",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `setWinner${curr}`
+    return prev;
+  }, {}))
 };
 
 module.exports.tieCompleteBetType = {
@@ -213,8 +214,10 @@ module.exports.rateCuttingBetType = {
     return prev;
   }, {})),
   halfTime: "halfTime",
-  setWinner1:"setWinner1",
-  setWinner2:"setWinner2",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `setWinner${curr}`
+    return prev;
+  }, {})),
 }
 
 module.exports.marketBettingTypeByBettingType = {
@@ -231,8 +234,10 @@ module.exports.marketBettingTypeByBettingType = {
     return prev;
   }, {})),
   [this.matchBettingType.halfTime]: "halfTime",
-  [this.matchBettingType.setWinner1]: "setWinner1",
-  [this.matchBettingType.setWinner2]: "setWinner2",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `setWinner${curr}`
+    return prev;
+  }, {})),
 }
 
 module.exports.profitLossKeys={
@@ -254,8 +259,10 @@ module.exports.profitLossKeys={
     return prev;
   }, {})),
   [this.matchBettingType.halfTime]:  "halfTimePL",
-  [this.matchBettingType.setWinner1]: "setWinner1PL",
-  [this.matchBettingType.setWinner2]: "setWinner2PL",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = `setWinner${curr}PL`
+    return prev;
+  }, {}))
 }
 
 module.exports.matchesTeamName={
@@ -321,13 +328,13 @@ module.exports.redisKeys = {
   userTeamBRateHalfTime: "userTeamBRateHalfTime_",
   userTeamCRateHalfTime: "userTeamCRateHalfTime_",
 
-  userTeamARateSetWinner1: "userTeamARateSetWinner1_",
-  userTeamBRateSetWinner1: "userTeamBRateSetWinner1_",
-  userTeamCRateSetWinner1: "userTeamCRateSetWinner1_",
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`userTeamARateSetWinner${curr}`] = `userTeamARateSetWinner${curr}_`;
+    prev[`userTeamBRateSetWinner${curr}`] = `userTeamBRateSetWinner${curr}_`;
+    prev[`userTeamCRateSetWinner${curr}`] = `userTeamCRateSetWinner${curr}_`;
+    return prev;
+  }, {})),
 
-  userTeamARateSetWinner2: "userTeamARateSetWinner2_",
-  userTeamBRateSetWinner2: "userTeamBRateSetWinner2_",
-  userTeamCRateSetWinner2: "userTeamCRateSetWinner2_",
   profitLoss: "_profitLoss"
 }
 module.exports.redisKeysMatchWise = {
@@ -336,7 +343,8 @@ module.exports.redisKeysMatchWise = {
   ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateUnderOver${index}.5`]),
   ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`yesRateFirstHalfGoal${index}.5`]),
   ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`noRateFirstHalfGoal${index}.5`])],
-  [this.gameType.tennis]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.userTeamARateSetWinner1, this.redisKeys.userTeamBRateSetWinner1, this.redisKeys.userTeamCRateSetWinner1, this.redisKeys.userTeamARateSetWinner2, this.redisKeys.userTeamBRateSetWinner2, this.redisKeys.userTeamCRateSetWinner2],
+  [this.gameType.tennis]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate,  ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamARateSetWinner${index}`]),
+    ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamBRateSetWinner${index}`]), ...Array.from({ length: 20 }, (_, index) => this.redisKeys[`userTeamCRateSetWinner${index}`])],
 }
 
 module.exports.otherEventMatchBettingRedisKey = {
@@ -400,16 +408,15 @@ module.exports.otherEventMatchBettingRedisKey = {
     "b": this.redisKeys.userTeamBRateHalfTime,
     "c": this.redisKeys.userTeamCRateHalfTime,
   },
-  [this.matchBettingType.setWinner1]: {
-    "a": this.redisKeys.userTeamARateSetWinner1,
-    "b": this.redisKeys.userTeamBRateSetWinner1,
-    "c": this.redisKeys.userTeamCRateSetWinner1,
-  },
-  [this.matchBettingType.setWinner2]: {
-    "a": this.redisKeys.userTeamARateSetWinner2,
-    "b": this.redisKeys.userTeamBRateSetWinner2,
-    "c": this.redisKeys.userTeamCRateSetWinner2,
-  }
+  ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
+    prev[`setWinner${curr}`] = {
+      "a": this.redisKeys[`userTeamARateSetWinner${curr}`],
+      "b": this.redisKeys[`userTeamBRateSetWinner${curr}`],
+      "c": this.redisKeys[`userTeamCRateSetWinner${curr}`]
+    }
+    return prev;
+  }, {})),
+  
 };
 
 
