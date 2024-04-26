@@ -949,7 +949,7 @@ exports.userBalanceDetails = async (req, res, next) => {
       downLevelProfitLoss: -parseFloat((parseFloat(firstLevelChildBalance?.value?.firstlevelchildsprofitlosssum || 0) + parseFloat((parseFloat(firstLevelChildBalance?.value?.profitLoss) * parseFloat(uplinePartnerShipForAllUsers[loginUser.roleName]?.reduce((prev, curr) => {
         return (parseFloat(loginUser[`${curr}Partnership`]) + prev);
       }, 0)) / 100).toFixed(2))).toFixed(2)),
-      availableBalanceWithProfitLoss: ((parseFloat(userBalance?.value?.currentBalance || 0) + parseFloat(userBalance?.value?.profitLoss || 0))),
+      availableBalanceWithProfitLoss: ((parseFloat(userBalance?.value?.currentBalance || 0) + parseFloat(-firstLevelChildBalance?.value?.firstlevelchildsprofitlosssum || 0))),
       profitLoss: -firstLevelChildBalance?.value?.firstlevelchildsprofitlosssum || 0,
       totalProfitLossUpperlevel: parseFloat(userBalance?.value?.profitLoss || 0),
       totalProfitLossDownlevel: parseFloat(firstLevelChildBalance?.value?.profitLoss),
