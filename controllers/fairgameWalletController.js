@@ -31,6 +31,7 @@ const {
   forceLogoutIfLogin,
   insertBulkTransactions,
   insertBulkCommissions,
+  childIdquery
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -74,7 +75,7 @@ const {
 } = require("../services/userService");
 const { sendMessageToUser, broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { insertCommissions, getCombinedCommission, deleteCommission } = require("../services/commissionService");
+const { insertCommissions, getCombinedCommission, deleteCommission} = require("../services/commissionService");
 const { insertButton } = require("../services/buttonService");
 
 
@@ -2837,7 +2838,7 @@ exports.totalProfitLossWallet = async (req, res) => {
       totalLoss = '-' + totalLoss;
     }
     totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
-    let subQuery = await exports.childIdquery(user, searchId)
+    let subQuery = await childIdquery(user, searchId)
     const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, subQuery);
     return SuccessResponse(
       {
@@ -2889,7 +2890,7 @@ exports.totalProfitLossByMatch = async (req, res) => {
       sessionProfitLoss = '-' + sessionProfitLoss;
     }
     let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
-    let subQuery = await exports.childIdquery(user, searchId)
+    let subQuery = await childIdquery(user, searchId)
     const { result, count } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, subQuery);
     return SuccessResponse(
       {
@@ -2943,7 +2944,7 @@ exports.getResultBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    let subQuery = await exports.childIdquery(user, searchId)
+    let subQuery = await childIdquery(user, searchId)
     const result = await getBetsProfitLoss(where, totalLoss, subQuery);
     return SuccessResponse(
       {
@@ -2991,7 +2992,7 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    let subQuery = await exports.childIdquery(user, searchId);
+    let subQuery = await childIdquery(user, searchId);
     const result = await getSessionsProfitLoss(where, totalLoss, subQuery);
     return SuccessResponse(
       {
@@ -3020,35 +3021,7 @@ const getQueryColumns = async (user, partnerShipRoleName) => {
   return partnerShipRoleName ? await profitLossPercentCol({ roleName: partnerShipRoleName }) : await profitLossPercentCol(user);
 }
 
-exports.childIdquery = async (user, searchId) => {
-  let subquery;
-  if (user.roleName === userRoleConstant.user) {
-    subquery = `(user.id)`
-  }
-  else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
-    subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}')`;
 
-  } else {
-    let userId = searchId || user.id;
-
-    if (user.roleName === userRoleConstant.fairGameAdmin && !searchId) {
-      subquery = `(SELECT id FROM "users" WHERE "superParentId" = '${user.id}' AND "roleName" = '${userRoleConstant.user}')`;
-
-    } else {
-      const recursiveSubquery = `
-      WITH RECURSIVE p AS (
-        SELECT * FROM "users" WHERE "users"."id" = '${userId}'
-        UNION
-        SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
-      )
-      SELECT "id" FROM p WHERE "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}'
-    `;
-      subquery = `(${recursiveSubquery})`;
-
-    }
-  }
-  return subquery;
-}
 
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {

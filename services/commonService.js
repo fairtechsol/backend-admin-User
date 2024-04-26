@@ -798,3 +798,32 @@ exports.getRedisKeys = (matchBetType, matchId, redisKeys) => {
 exports.parseRedisData = (redisKey, userRedisData) => {
   return parseFloat((Number(userRedisData[redisKey]) || 0.0).toFixed(2));
 };
+exports.childIdquery = async (user, searchId) => {
+  let subquery;
+  if (user.roleName === userRoleConstant.user) {
+    subquery = `(user.id)`
+  }
+  else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
+    subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}')`;
+
+  } else {
+    let userId = searchId || user.id;
+
+    if (user.roleName === userRoleConstant.fairGameAdmin && !searchId) {
+      subquery = `(SELECT id FROM "users" WHERE "superParentId" = '${user.id}' AND "roleName" = '${userRoleConstant.user}')`;
+
+    } else {
+      const recursiveSubquery = `
+      WITH RECURSIVE p AS (
+        SELECT * FROM "users" WHERE "users"."id" = '${userId}'
+        UNION
+        SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+      )
+      SELECT "id" FROM p WHERE "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}'
+    `;
+      subquery = `(${recursiveSubquery})`;
+
+    }
+  }
+  return subquery;
+}

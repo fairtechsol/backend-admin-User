@@ -13,7 +13,7 @@ const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis, getUserRedisKeys } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
-const { childIdquery } = require('../controllers/fairgameWalletController')
+const { childIdquery } = require('../services/commonService')
 const { logger } = require('../config/logger');
 
 exports.getProfile = async (req, res) => {

@@ -281,7 +281,6 @@ exports.getBetsProfitLoss = async (where, totalLoss, subQuery) => {
       'placeBet.bettingName  as "bettingName"',
     ])
     .groupBy('placeBet.id, user.userName').orderBy('placeBet.createdAt', 'DESC');
-
   let result = await query.getRawMany();
 
   return result;
