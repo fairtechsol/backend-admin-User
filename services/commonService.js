@@ -7,6 +7,8 @@ const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets,
 const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
+const { insertTransactions } = require("./transactionService");
+const { insertCommissions } = require("./commissionService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -283,9 +285,9 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
     }
 
     let i = 0;
-    for (var j = first - 5 > 0 ? first - 5 : 0; j <= last + 5; j++) {
+    for (let j = first - 5 > 0 ? first - 5 : 0; j <= last + 5; j++) {
       let profitLoss = 0.0;
-      for (var key in betPlace) {
+      for (let key in betPlace) {
         let partnership = 100;
         if (userPartnerShip) {
           partnership = userPartnerShip;
@@ -997,4 +999,72 @@ exports.transactionPasswordAttempts=async (user)=>{
   else{
     await userPasswordAttempts(user.id);
   }
+}
+exports.insertBulkTransactions = async (bulkWalletRecord) => {
+  const chunkSize = 5000;
+  const totalRecords = bulkWalletRecord.length;
+  for (let i = 0; i < totalRecords; i += chunkSize) {
+    const chunk = bulkWalletRecord.slice(i, i + chunkSize);
+    await insertTransactions(chunk);
+  }
+}
+
+exports.insertBulkCommissions = async (bulkWalletRecord) => {
+  const chunkSize = 5000;
+  const totalRecords = bulkWalletRecord.length;
+  for (let i = 0; i < totalRecords; i += chunkSize) {
+    const chunk = bulkWalletRecord.slice(i, i + chunkSize);
+    await insertCommissions(chunk);
+  }
+}
+exports.getRedisKeys = (matchBetType, matchId, redisKeys) => {
+  let teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey;
+
+  if (matchBetType === matchBettingType.tiedMatch1 || matchBetType === matchBettingType.tiedMatch2) {
+    teamArateRedisKey = redisKeys.yesRateTie;
+    teamBrateRedisKey = redisKeys.noRateTie;
+    teamCrateRedisKey = null;
+  } else if (matchBetType === matchBettingType.completeMatch || matchBetType === matchBettingType.completeManual) {
+    teamArateRedisKey = redisKeys.yesRateComplete;
+    teamBrateRedisKey = redisKeys.noRateComplete;
+    teamCrateRedisKey = null;
+  } else {
+    teamArateRedisKey = redisKeys.userTeamARate;
+    teamBrateRedisKey = redisKeys.userTeamBRate;
+    teamCrateRedisKey = redisKeys.userTeamCRate + matchId;
+  }
+
+  return { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey };
+}
+exports.parseRedisData = (redisKey, userRedisData) => {
+  return parseFloat((Number(userRedisData[redisKey]) || 0.0).toFixed(2));
+};
+exports.childIdquery = async (user, searchId) => {
+  let subquery;
+  if (user.roleName === userRoleConstant.user) {
+    subquery = `'${user.id}'`
+  }
+  else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
+    subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}')`;
+
+  } else {
+    let userId = searchId || user.id;
+
+    if (user.roleName === userRoleConstant.fairGameAdmin && !searchId) {
+      subquery = `(SELECT id FROM "users" WHERE "superParentId" = '${user.id}' AND "roleName" = '${userRoleConstant.user}')`;
+
+    } else {
+      const recursiveSubquery = `
+      WITH RECURSIVE p AS (
+        SELECT * FROM "users" WHERE "users"."id" = '${userId}'
+        UNION
+        SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+      )
+      SELECT "id" FROM p WHERE "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}'
+    `;
+      subquery = `(${recursiveSubquery})`;
+
+    }
+  }
+  return subquery;
 }

@@ -23,7 +23,7 @@ router.post("/update/creditreferrence", isAuthenticate, checkTransactionPassword
 router.post("/generateTransactionPassword", isAuthenticate, validator(generateTransactionPass), generateTransactionPassword);
 
 router.get("/generalReport", isAuthenticate, generalReport);
-router.post("/totalProfitLoss", isAuthenticate, totalProfitLoss);
+router.post("/totalProfitLoss", isAuthenticate, totalProfitLossWallet);
 router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), userMatchLock);
 router.get("/getMatchLockAllChild", isAuthenticate, getMatchLockAllChild);
 router.get("/getUserDetailsForParent", isAuthenticate, getUserDetailsForParent);
