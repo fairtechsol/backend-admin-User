@@ -29,7 +29,7 @@
     "forceLogout":"Some other user login this account on other device."
   },
   "user" : {
-    "blocked": "There is something wrong with your account. Please contact your administrator.",
+    "blocked": "Please contact your admin for assistance.",
     "passwordMatch": "Password must contain at least four letters, including at least one uppercase letter, and four digits.",
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
     "partnershipNotValid" : "Given partnership not valid.",

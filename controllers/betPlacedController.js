@@ -126,7 +126,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       logger.info({
         info: `user is blocked for login id ${reqUser.id}`,
         data: req.body
-      })
+      });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.blocked" } }, req, res);
     }
     if (user?.betBlock) {
@@ -292,7 +292,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
         betId,
         matchId,
         userCurrentBalance,
-        maximumLoss
+        maximumLoss,
+        newUserExposure
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
     }
@@ -419,7 +420,10 @@ exports.sessionBetPlace = async (req, res, next) => {
     // Fetch user details by ID
     let user = await getUserById(id, ["userBlock", "betBlock", "userName", "exposureLimit"]);
     let userExposureLimit = parseFloat(user.exposureLimit);
-
+    logger.info({
+      info: `Bet placed for session matchId ${matchId}, betId ${betId}, userId ${id}`,
+      data: req.body
+    });
     // Check if the user is blocked
     if (user?.userBlock) {
       return ErrorResponse(
@@ -452,7 +456,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       logger.info({
         info: `user is blocked for the session ${id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
-      })
+      });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
     }
 
@@ -577,6 +581,13 @@ exports.sessionBetPlace = async (req, res, next) => {
     betPlaceObject.diffSessionExp = redisData.maxLoss - maxSessionLoss;
 
     if (newBalance < 0) {
+      logger.info({
+        info: `user exposure balance insufficient to place this bet user id is ${id}`,
+        betId,
+        matchId,
+        userCurrentBalance: userData?.currentBalance,
+        exposure: betPlaceObject.diffSessionExp
+      });
       return ErrorResponse(
         {
           statusCode: 400,
@@ -747,7 +758,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
           message: {
             msg: "bet.marketRateChanged",
             keys: {
-              marketType: "Session",
+              marketType: "Session rate or %",
             },
           },
         };
@@ -764,10 +775,8 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       };
     }
     if (
-      (betDetails.betType == betType.NO &&
-        betDetails.odds != apiBetData.noRate) ||
-      (betDetails.betType == betType.YES &&
-        betDetails.odds != apiBetData.yesRate) ||
+      (betDetails.betType == betType.NO && (betDetails.odds != apiBetData.noRate || betDetails.ratePercent != apiBetData.noPercent) ) ||
+      (betDetails.betType == betType.YES && (betDetails.odds != apiBetData.yesRate || betDetails.ratePercent != apiBetData.yesPercent) ) ||
       (apiBetData.status != null && apiBetData.status != teamStatus.active)
     ) {
       throw {
@@ -775,7 +784,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
         message: {
           msg: "bet.marketRateChanged",
           keys: {
-            marketType: "Session",
+            marketType: "Session rate or %",
           },
         },
       };
@@ -797,17 +806,17 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       });
       throw error
     });
+    
     let filterData = data?.find(
       (d) => d.SelectionId == apiBetData.selectionId
     );
+
     if (
-      betDetail.betType == betType.NO &&
-      betDetail.odds != filterData["LayPrice1"]
+      betDetail.betType == betType.NO && (betDetail.odds != filterData["LayPrice1"] || betDetail.ratePercent != filterData["LaySize1"])
     ) {
       return true;
     } else if (
-      betDetail.betType == betType.YES &&
-      betDetail.odds != filterData["BackPrice1"]
+      betDetail.betType == betType.YES && (betDetail.odds != filterData["BackPrice1"] || betDetail.ratePercent != filterData["BackSize1"])
     ) {
       return true;
     } else {
@@ -867,7 +876,16 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
 
 }
 
-const checkRate = async (matchBettingDetail, betObj, teams) => {
+const checkRate = async (bettingDetail, betObj, teams) => {
+  const matchBettingDetail = JSON.parse(JSON.stringify(bettingDetail));
+  if (teams.placeIndex != 0) {
+    matchBettingDetail.backTeamA = parseInt(matchBettingDetail.backTeamA);
+    matchBettingDetail.backTeamB = parseInt(matchBettingDetail.backTeamB);
+    matchBettingDetail.backTeamC = parseInt(matchBettingDetail.backTeamC);
+    matchBettingDetail.layTeamA = parseInt(matchBettingDetail.layTeamA);
+    matchBettingDetail.layTeamB = parseInt(matchBettingDetail.layTeamB);
+    matchBettingDetail.layTeamC = parseInt(matchBettingDetail.layTeamC);
+  }
   if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && !(matchBettingDetail.statusTeamA == teamStatus.active && matchBettingDetail.backTeamA - teams.placeIndex == betObj.odds)) {
     return true;
   }
@@ -974,7 +992,7 @@ exports.deleteMultipleBet = async (req, res) => {
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, id: In(placedBetIdArray) });
     let updateObj = {};
     let isAnyMatchBet = false;
-    placedBet.map(bet => {
+    placedBet.forEach(bet => {
       let isSessionBet = false;
       if (bet.betType == betType.YES || bet.betType == betType.NO) {
         isSessionBet = true;
@@ -1175,12 +1193,12 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   await updateUserExposure(userId, -exposureDiff);
 
   // blocking user if its exposure would increase by current balance
-  const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock"]);
+  const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock", "superParentId"]);
   if (userOldExposure - exposureDiff > currUserBalance && !userCreatedBy.userBlock) {
     await userService.updateUser(userId, {
       autoBlock: true,
       userBlock: true,
-      userBlockedBy: userCreatedBy?.createBy
+      userBlockedBy: userCreatedBy?.createBy == userId ? userCreatedBy?.superParentId : userCreatedBy?.createBy
     });
 
     if (userCreatedBy?.createBy == userId) {
@@ -1188,7 +1206,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
         apiMethod.post,
         walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
         {
-          userId: userId, userBlock: true, parentId: userCreatedBy.superParentId, autoBlock: true
+          userId: userId, userBlock: true, parentId:  userCreatedBy?.superParentId, autoBlock: true
         }
       ).catch(error => {
         logger.error({
@@ -1291,7 +1309,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
             await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
 
-            userDeleteProfitLoss.betData.map((ob, index) => {
+            userDeleteProfitLoss.betData.forEach((ob, index) => {
               let partnershipData = (ob.profitLoss * partnership) / 100;
               if (ob.odds == parentPLbetPlaced[index].odds) {
                 parentPLbetPlaced[index].profitLoss = parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData;
@@ -1359,7 +1377,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
 const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails) => {
   let userRedisData = await getUserRedisData(userId);
-  let isUserLogin = userRedisData ? true : false;
+  let isUserLogin = !!userRedisData;
   let userOldExposure = 0;
   let betPlacedId = bets.map(bet => bet.id);
   let partnershipObj = {};
@@ -1655,7 +1673,7 @@ exports.profitLoss = async (req, res) => {
     let where = {
       result: In([betResultStatus.LOSS, betResultStatus.WIN])
     }
-    let result, total, user
+    let result, total, user;
     let userId = req.body.userId;
 
     if (userId != "") {
@@ -1679,8 +1697,8 @@ exports.profitLoss = async (req, res) => {
       result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
     }
     total = {};
-    result.map((arr, index) => {
-      if (total[arr.marketType]) {
+    result.forEach((arr, index) => {
+      if(total[arr.marketType]){
         total[arr.marketType] += parseFloat(arr.aggregateAmount);
       } else {
         total[arr.marketType] = parseFloat(arr.aggregateAmount);
@@ -1728,7 +1746,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
     let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
-    if (!userBalanceData || !userBalanceData.user) {
+    if (!userBalanceData?.user) {
       logger.info({
         info: `user not found for login id ${reqUser.id}`,
         data: req.body
@@ -1752,7 +1770,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
     let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
-    if (getMatchLockData && getMatchLockData.matchLock) {
+    if (getMatchLockData?.matchLock) {
       logger.info({
         info: `user is blocked for the match ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
@@ -1893,7 +1911,8 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
         betId,
         matchId,
         userCurrentBalance,
-        maximumLoss
+        maximumLoss,
+        newUserExposure
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
     }
@@ -1904,7 +1923,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       userCurrentBalance,
       matchExposure, maximumLoss
     })
-    await updateMatchExposure(reqUser.id, matchId, matchExposure);
+    // await updateMatchExposure(reqUser.id, matchId, matchExposure);
     let newBet = await betPlacedService.addNewBet(betPlacedObj);
     let jobData = {
       userId: reqUser.id,
@@ -1914,6 +1933,21 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       userPreviousExposure,
       userCurrentBalance, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newTeamRateData,
       newBet,
+      userName: user.userName,
+      matchExposure: matchExposure
+    }
+
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
+
+    let walletJobData = {
+      domainUrl: domainUrl,
+      partnerships: userRedisData.partnerShips,
+      userId: reqUser.id,
+      stake: jobData.stake,
+      userUpdatedExposure: Math.abs(parseFloat(newUserExposure) - parseFloat(userPreviousExposure)),
+      newUserExposure, userPreviousExposure,
+      winAmount, lossAmount, teamRates,
+      bettingType, betOnTeam, teamA, teamB, teamC, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newBet,
       userName: user.userName
     }
 
@@ -1931,21 +1965,9 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
         message: error.message,
         errorFile: error
       });
-      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
       betPlacedService.deleteBetByEntityOnError(newBet);
       throw error;
     });
-
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
-
-    let walletJobData = {
-      ...jobData,
-      domainUrl: domainUrl,
-      partnerships: userRedisData.partnerShips,
-      userUpdatedExposure: Math.abs(parseFloat(newUserExposure) - parseFloat(userPreviousExposure)),
-      teamRates,
-    }
-
 
     const walletJob = WalletMatchBetQueue.createJob(walletJobData);
     await walletJob.save().then(data => {
@@ -1975,7 +1997,6 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
         message: error.message,
         errorFile: error
       });
-      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
       betPlacedService.deleteBetByEntityOnError(newBet);
       throw error;
     });

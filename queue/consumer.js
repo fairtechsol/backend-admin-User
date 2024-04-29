@@ -71,7 +71,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
 
   // Extract relevant data from jobData
   const placedBetObject = jobData.betPlaceObject;
-  let maxLossExposure = placedBetObject.maxLoss;
+  // let maxLossExposure = placedBetObject.maxLoss;
   let partnerSessionExposure = placedBetObject.diffSessionExp;
   let stake = placedBetObject?.betPlacedData?.stake;
   let redisObj = jobData?.redisObject;
@@ -80,10 +80,10 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
   if (userRedisData?.roleName == userRoleConstant.user) {
     sendMessageToUser(userId, socketData.SessionBetPlaced, {
       currentBalance: userRedisData?.currentBalance,
-      exposure: (parseFloat(userRedisData?.exposure)+parseFloat(maxLossExposure)).toFixed(2),
+      exposure: (parseFloat(userRedisData?.exposure) + parseFloat(partnerSessionExposure)).toFixed(2),
       myProfitLoss: userRedisData?.myProfitLoss,
       profitLoss: userRedisData?.profitLoss,
-      profitLossData: userRedisData?.[`${jobData?.placedBet?.betId}_profitLoss`],
+      profitLossData: redisObj?.[`${jobData?.placedBet?.betId}_profitLoss`],
       betPlaced: jobData
     });
 
@@ -243,11 +243,10 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
       [jobData.teamArateRedisKey]: teamData.teamA,
       [jobData.teamBrateRedisKey]: teamData.teamB,
       ...(jobData.teamCrateRedisKey ? { [jobData.teamCrateRedisKey]: teamData.teamC } : {}),
-      [redisKeys.userMatchExposure + jobData?.matchId]: jobData?.matchExposure
     }
 
     // updating redis
-    await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure }, userRedisObj);
+    await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure, [redisKeys.userMatchExposure + jobData?.matchId]: userCurrentExposure - userOldExposure }, userRedisObj);
 
     // updating db
     await updateUserExposure(userId, (userCurrentExposure - userOldExposure));
@@ -270,7 +269,7 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
       (item) =>
         item != userRoleConstant.fairGameAdmin &&
         item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
-    )
+  )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
       // Check if partnershipId exists in partnershipObj

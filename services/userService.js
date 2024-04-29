@@ -44,7 +44,7 @@ exports.getCreditRefrence = async (where, select) => {
 
 exports.getUserBalance = async (where, select) => {
   try {
-    let userData1 = await user.createQueryBuilder()
+    let userData1 = user.createQueryBuilder()
       .where(where)
       .leftJoinAndMapOne(
         'user.userBal',
@@ -54,7 +54,7 @@ exports.getUserBalance = async (where, select) => {
       )
       .select(select);
     //userData1.select(select)
-    let userData = userData1.getMany();
+    let userData = await userData1.getMany();
 
     if (!userData || userData.length === 0) {
       throw new Error('No data found for the given criteria.');
@@ -452,3 +452,8 @@ exports.deleteUserByDirectParent = async (id) => {
   `
   return user.query(query);
 };
+
+exports.userPasswordAttempts=async (id)=>{
+  await user.query(`update "users" set "transactionPasswordAttempts" = "transactionPasswordAttempts" + 1 where "id" = $1`, [id]);
+
+}
