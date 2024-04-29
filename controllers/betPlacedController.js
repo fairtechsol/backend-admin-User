@@ -1746,7 +1746,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
     let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
-    if (!userBalanceData || !userBalanceData.user) {
+    if (!userBalanceData?.user) {
       logger.info({
         info: `user not found for login id ${reqUser.id}`,
         data: req.body
@@ -1770,7 +1770,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
     let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
-    if (getMatchLockData && getMatchLockData.matchLock) {
+    if (getMatchLockData?.matchLock) {
       logger.info({
         info: `user is blocked for the match ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
@@ -1911,7 +1911,8 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
         betId,
         matchId,
         userCurrentBalance,
-        maximumLoss
+        maximumLoss,
+        newUserExposure
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
     }
@@ -1922,7 +1923,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       userCurrentBalance,
       matchExposure, maximumLoss
     })
-    await updateMatchExposure(reqUser.id, matchId, matchExposure);
+    // await updateMatchExposure(reqUser.id, matchId, matchExposure);
     let newBet = await betPlacedService.addNewBet(betPlacedObj);
     let jobData = {
       userId: reqUser.id,
@@ -1932,6 +1933,21 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       userPreviousExposure,
       userCurrentBalance, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newTeamRateData,
       newBet,
+      userName: user.userName,
+      matchExposure: matchExposure
+    }
+
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
+
+    let walletJobData = {
+      domainUrl: domainUrl,
+      partnerships: userRedisData.partnerShips,
+      userId: reqUser.id,
+      stake: jobData.stake,
+      userUpdatedExposure: Math.abs(parseFloat(newUserExposure) - parseFloat(userPreviousExposure)),
+      newUserExposure, userPreviousExposure,
+      winAmount, lossAmount, teamRates,
+      bettingType, betOnTeam, teamA, teamB, teamC, teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey, newBet,
       userName: user.userName
     }
 
@@ -1949,21 +1965,9 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
         message: error.message,
         errorFile: error
       });
-      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
       betPlacedService.deleteBetByEntityOnError(newBet);
       throw error;
     });
-
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
-
-    let walletJobData = {
-      ...jobData,
-      domainUrl: domainUrl,
-      partnerships: userRedisData.partnerShips,
-      userUpdatedExposure: Math.abs(parseFloat(newUserExposure) - parseFloat(userPreviousExposure)),
-      teamRates,
-    }
-
 
     const walletJob = WalletMatchBetQueue.createJob(walletJobData);
     await walletJob.save().then(data => {
@@ -1993,7 +1997,6 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
         message: error.message,
         errorFile: error
       });
-      updateMatchExposure(reqUser.id, matchId, oldMatchExposure);
       betPlacedService.deleteBetByEntityOnError(newBet);
       throw error;
     });
