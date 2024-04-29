@@ -452,3 +452,8 @@ exports.deleteUserByDirectParent = async (id) => {
   `
   return user.query(query);
 };
+
+exports.userPasswordAttempts=async (id)=>{
+  await user.query(`update "users" set "transactionPasswordAttempts" = "transactionPasswordAttempts" + 1 where "id" = $1`, [id]);
+
+}

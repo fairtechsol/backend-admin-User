@@ -4,7 +4,7 @@ const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole } = require("./betPlacedService");
-const { getUserById, getChildsWithOnlyUserRole, getAllUsers } = require("./userService");
+const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
 
@@ -968,4 +968,33 @@ exports.profitLossPercentCol = (body, queryColumns) => {
       break;
   }
   return queryColumns;
+}
+
+
+exports.transactionPasswordAttempts=async (user)=>{
+  if (user?.transactionPasswordAttempts + 1 >= 11) {
+    await userBlockUnblock(user.id, user.createBy == user.id ? user.superParentId : user.createBy, true);
+
+    if (user?.createBy == user.id) {
+      await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+        {
+          userId: user.id, userBlock: true, parentId: user?.superParentId, autoBlock: false
+        }
+      ).catch(error => {
+        logger.error({
+          error: `Error at block user in tp.`,
+          stack: error.stack,
+          message: error.message,
+        });
+        throw error
+      });
+    }
+    this.forceLogoutUser(user.id);
+    await updateUser(user.id, { transactionPasswordAttempts: 0 });
+  }
+  else{
+    await userPasswordAttempts(user.id);
+  }
 }

@@ -21,6 +21,7 @@ module.exports.ErrorResponse = (errorData, req, res) => {
       statusCode: errorData.statusCode,
       message: __mf(i18Code, keys || undefined), // Using i18n to get the translated message
       stack: errorData.stack,
+      data: errorData?.data
     };
 
     logger.error(errorObj);

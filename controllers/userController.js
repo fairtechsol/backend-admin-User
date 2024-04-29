@@ -6,7 +6,7 @@ const { insertButton } = require('../services/buttonService');
 const { getTotalProfitLoss, findAllPlacedBet, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
-const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin, forceLogoutIfLogin, getUserProfitLossForUpperLevel } = require("../services/commonService");
+const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
@@ -491,23 +491,33 @@ exports.changePassword = async (req, res, next) => {
     // if password is changed by parent of users
     const userId = req.body.userId;
 
+    const user = await getUserById(req.user.id, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
 
     const isPasswordMatch = await checkTransactionPassword(
       req.user.id,
       transactionPassword
     );
 
-
-
     if (!isPasswordMatch) {
+
+      const currDomain = `${req.protocol}://${req.get('host')}`;
+
+      if (currDomain != oldBetFairDomain) {
+        await transactionPasswordAttempts(user);
+      }
       return ErrorResponse(
         {
           statusCode: 403,
           message: { msg: "auth.invalidPass", keys: { type: "transaction" } },
+          data: { attemptsLeft: 11 - (user.transactionPasswordAttempts + 1) }
         },
         req,
         res
       );
+    }
+
+    if (user?.transactionPasswordAttempts > 0) {
+      await updateUser(user.id, { transactionPasswordAttempts: 0 });
     }
 
     if (!userId) {
