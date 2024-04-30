@@ -1572,14 +1572,10 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
           let masterRedisData = await getUserRedisData(partnershipId);
           await updateUserExposure(partnershipId, (-exposureDiff));
 
-          if (lodash.isEmpty(masterRedisData)) {
-            // If masterRedisData is empty, update partner exposure
-            await updateUserExposure(partnershipId, (-exposureDiff));
-          } else {
+          if (!lodash.isEmpty(masterRedisData)) {
             // If masterRedisData exists, update partner exposure and session data
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
             let partnerExposure = masterExposure - exposureDiff;
-            await updateUserExposure(partnershipId, (-exposureDiff));
 
             let masterTeamRates = {
               teamA: Number(masterRedisData[teamArateRedisKey]) || 0,
