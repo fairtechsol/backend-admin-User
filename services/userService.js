@@ -195,7 +195,7 @@ exports.getUsersWithUserBalance = async (where, offset, limit) => {
     Query = Query.limit(parseInt(limit));
   }
 
-  var result = await Query.getManyAndCount();
+  let result = await Query.getManyAndCount();
   return result;
 
 }
@@ -316,7 +316,6 @@ exports.getUsersWithUsersBalanceData = async (where, query) => {
     , query).search().filter().sort().paginate().getResult();
 
   return await transactionQuery;
-
 }
 
 exports.getUsersWithTotalUsersBalanceData = (where, query, select) => {

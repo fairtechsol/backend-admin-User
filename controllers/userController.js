@@ -13,6 +13,7 @@ const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis, getUserRedisKeys } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
+const { childIdquery } = require('../services/commonService')
 const { logger } = require('../config/logger');
 
 exports.getProfile = async (req, res) => {
@@ -756,7 +757,7 @@ exports.userList = async (req, res, next) => {
           ]
           : []),
       ];
- 
+
 
       const fileGenerate = new FileGenerate(type);
       const file = await fileGenerate.generateReport(data, header);
@@ -1235,22 +1236,11 @@ exports.totalProfitLoss = async (req, res) => {
     if (user && user.roleName == userRoleConstant.user) {
       where.createBy = In([userId])
       totalLoss = `(Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-
-    } else {
-      let childsId = await getChildsWithOnlyUserRole(req.user.id);
-      childsId = childsId.map(item => item.id)
-      if (!childsId.length) {
-        return SuccessResponse({
-          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: {
-            result: []
-          }
-        }, req, res)
-      }
-      where.createBy = In(childsId)
     }
 
     totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
-    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss)
+    let subQuery = await childIdquery(user)
+    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, subQuery)
     return SuccessResponse(
       {
         statusCode: 200, data: { result },

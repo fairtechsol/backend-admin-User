@@ -61,7 +61,7 @@ const getDataSource = () => {
 
   return new Promise((resolve, reject) => {
     if (AppDataSource.isInitialized) resolve(AppDataSource);
-    else reject("Failed to create connection with database");
+    else reject(new Error("Failed to create connection with database"));
   });
 };
 
