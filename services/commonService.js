@@ -780,16 +780,16 @@ exports.getRedisKeys = (matchBetType, matchId, redisKeys) => {
   let teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey;
 
   if (matchBetType === matchBettingType.tiedMatch1 || matchBetType === matchBettingType.tiedMatch2) {
-    teamArateRedisKey = redisKeys.yesRateTie;
-    teamBrateRedisKey = redisKeys.noRateTie;
+    teamArateRedisKey = redisKeys.yesRateTie + matchId;
+    teamBrateRedisKey = redisKeys.noRateTie + matchId;
     teamCrateRedisKey = null;
   } else if (matchBetType === matchBettingType.completeMatch || matchBetType === matchBettingType.completeManual) {
-    teamArateRedisKey = redisKeys.yesRateComplete;
-    teamBrateRedisKey = redisKeys.noRateComplete;
+    teamArateRedisKey = redisKeys.yesRateComplete + matchId;
+    teamBrateRedisKey = redisKeys.noRateComplete + matchId;
     teamCrateRedisKey = null;
   } else {
-    teamArateRedisKey = redisKeys.userTeamARate+matchId;
-    teamBrateRedisKey = redisKeys.userTeamBRate+matchId;
+    teamArateRedisKey = redisKeys.userTeamARate + matchId;
+    teamBrateRedisKey = redisKeys.userTeamBRate + matchId;
     teamCrateRedisKey = redisKeys.userTeamCRate + matchId;
   }
 
