@@ -788,8 +788,8 @@ exports.getRedisKeys = (matchBetType, matchId, redisKeys) => {
     teamBrateRedisKey = redisKeys.noRateComplete;
     teamCrateRedisKey = null;
   } else {
-    teamArateRedisKey = redisKeys.userTeamARate;
-    teamBrateRedisKey = redisKeys.userTeamBRate;
+    teamArateRedisKey = redisKeys.userTeamARate+matchId;
+    teamBrateRedisKey = redisKeys.userTeamBRate+matchId;
     teamCrateRedisKey = redisKeys.userTeamCRate + matchId;
   }
 
