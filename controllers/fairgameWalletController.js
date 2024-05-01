@@ -2973,11 +2973,12 @@ exports.declareOtherMatchResult = async (req, res) => {
       sendMessageToUser(key, socketData.matchResult, {
         ...parentUser,
         betId: betId,
-        matchId
+        matchId,
+        betType: betType
       });
     }
     // insertBulkCommissions(commissionReport);
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId });
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: betType });
 
     return SuccessResponse(
       {
@@ -3188,7 +3189,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
     //   }
     // }
 
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId: currBetId, matchId, userBalanceData });
+    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId: currBetId, matchId, userBalanceData, betType: currMatchBettingDetailsType });
 
     // deducting 1% from match odd win amount 
     if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
