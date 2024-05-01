@@ -3054,11 +3054,8 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
       data: user.user.userBalance.exposure
     });
 
-
- 
-      getWinAmount = getMultipleAmount.winAmount;
-      getLossAmount = getMultipleAmount.lossAmount;
-    
+    getWinAmount = getMultipleAmount.winAmount;
+    getLossAmount = getMultipleAmount.lossAmount;
 
     profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
 
@@ -3228,7 +3225,6 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
       });
     });
 
-
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, ...redisKeysMarketWise[currMatchBettingDetailsType]?.map((item) => item + matchId));
 
     if (user.user.createBy === user.user.id) {
@@ -3262,7 +3258,6 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
         (((profitLoss) * upLinePartnership) / 100).toString()
       );
       // let parentCommission = parseFloat((((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
-
 
       if (upperUserObj[patentUser.id]) {
         upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
@@ -3509,7 +3504,6 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
       req,
       res
     );
-
 
   } catch (error) {
     logger.error({
