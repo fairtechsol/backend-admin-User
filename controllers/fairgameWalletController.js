@@ -20,6 +20,7 @@ const {
   mainMatchMarketType,
   otherEventMatchBettingRedisKey,
   redisKeysMarketWise,
+  scoreBasedMarket,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss } = require("../services/betPlacedService");
@@ -35,7 +36,8 @@ const {
   insertBulkTransactions,
   insertBulkCommissions,
   childIdquery,
-  calculateProfitLossForOtherMatchToResult
+  calculateProfitLossForOtherMatchToResult,
+  extractNumbersFromString
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -3219,7 +3221,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
         amount: item.winAmount - item.lossAmount,
         transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
         closingBalance: currBal,
-        description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
+        description: `${user?.eventType}/${user?.eventName}/${item.type} - ${item.result} ${scoreBasedMarket.find((item) => currMatchBettingDetailsType?.startsWith(item)) ? `${extractNumbersFromString(currMatchBettingDetailsType)} Goals` : ""}`,
         createdAt: new Date(),
         uniqueId: uniqueId,
         betId: item?.betId
@@ -3522,7 +3524,7 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
 
 const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, matchData,
   //  commissionData, 
-  matchOddsWinBets, matchDetailsBetIds, betType, currBetId) => {
+  matchOddsWinBets, matchDetailsBetIds, merketBetType, currBetId) => {
 
   let faAdminCal = {
     admin: {},
@@ -3549,7 +3551,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
     let redisData = await calculateProfitLossForOtherMatchToResult(betId, user.user?.id, matchData);
 
-    const redisPLData = Object.values(redisData)?.find((item) => item?.type == betType);
+    const redisPLData = Object.values(redisData)?.find((item) => item?.type == merketBetType);
     let teamARate = redisPLData?.rates?.a ?? Number.MAX_VALUE;
     let teamBRate = redisPLData?.rates?.b ?? Number.MAX_VALUE;
     let teamCRate = redisPLData?.rates?.c ?? Number.MAX_VALUE;
@@ -3569,6 +3571,11 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
 
     let result = resultDeclare?.[0]?.result;
 
+    if(scoreBasedMarket.find((item)=>merketBetType?.startsWith(item))){
+      const currScore = extractNumbersFromString(merketBetType);
+      result = parseFloat(result) < parseFloat(currScore) ? "UNDER" : "OVER";
+    }
+
     getWinAmount = getMultipleAmount.winAmount;
     getLossAmount = getMultipleAmount.lossAmount;
 
@@ -3577,7 +3584,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
 
     let userCurrentBalance = parseFloat(user.user.userBalance.currentBalance);
 
-    if (betType == matchBettingType.quickbookmaker1) {
+    if (merketBetType == matchBettingType.quickbookmaker1) {
 
       matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData, uniqueId) => {
         userCurrentBalance += parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
@@ -3598,7 +3605,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
     }
 
     // deducting 1% from match odd win amount
-    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0 && betType == matchBettingType.quickbookmaker1) {
+    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0 && merketBetType == matchBettingType.quickbookmaker1) {
       profitLoss -= parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
     }
 
@@ -3667,7 +3674,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
     sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData });
 
     // deducting 1% from match odd win amount 
-    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0 && betType == matchBettingType.quickbookmaker1) {
+    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0 && merketBetType == matchBettingType.quickbookmaker1) {
       user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance + (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
     }
 
@@ -3677,7 +3684,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
       ...(result != resultType.noResult ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmount).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
-        type: betType == matchBettingType.quickbookmaker1 ? "MATCH ODDS" : matchDetailsBetIds?.find((item) => item?.id == currBetId)?.name,
+        type: merketBetType == matchBettingType.quickbookmaker1 ? "MATCH ODDS" : matchDetailsBetIds?.find((item) => item?.id == currBetId)?.name,
         result: result,
         betId: betId
       }] : [])
@@ -3694,7 +3701,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
         amount: -(item.winAmount - item.lossAmount),
         transType: -(item.winAmount - item.lossAmount) < 0 ? transType.loss : transType.win,
         closingBalance: currBal,
-        description: `Revert ${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
+        description: `Revert ${user?.eventType}/${user?.eventName}/${item.type} - ${item.result} ${scoreBasedMarket.find((item) => merketBetType?.startsWith(item)) ? `${extractNumbersFromString(merketBetType)} Goals` : ""}`,
         createdAt: new Date(),
         uniqueId: uniqueId,
         betId: item?.betId

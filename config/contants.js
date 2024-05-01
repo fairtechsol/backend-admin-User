@@ -501,3 +501,5 @@ module.exports.redisKeysMarketWise = {
     return prev;
   }, {}))
 }
+
+module.exports.scoreBasedMarket = ["firstHalfGoal", "overUnder"];
