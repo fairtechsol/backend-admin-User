@@ -79,6 +79,7 @@ const {
   softDeleteAllUsers,
   deleteUserByDirectParent,
   getUsersByWallet,
+  getUserDataWithUserBalanceDeclare,
 } = require("../services/userService");
 const { sendMessageToUser, broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -2837,7 +2838,7 @@ exports.declareOtherMatchResult = async (req, res) => {
     // let bulkCommission = {};
     // let commissions = {};
     let matchOddWinBets = [];
-
+    const userData = new Set();
     for (let item of betPlaced) {
     if (result === resultType.noResult) {
           item.result = betResultStatus.TIE;
@@ -2878,18 +2879,19 @@ exports.declareOtherMatchResult = async (req, res) => {
       }
 
       updateRecords.push(item);
+      userData.add(item?.user?.id);
     }
 
     await addNewBet(updateRecords);
 
 
-    let users = await getDistinctUserBetPlaced(In(betIds));
+    let users = await getUserDataWithUserBalanceDeclare({ id: In([...userData]) });
 
     let upperUserObj = {};
     let bulkWalletRecord = [];
     // let commissionReport = [];
     const profitLossData = await calculateProfitLossOtherMatchForUserDeclare(
-      users,
+     users,
       betIds,
       matchId,
       0,
@@ -3013,7 +3015,8 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
   };
   let superAdminData = {};
 
-  for (const user of users) {
+  for (let user of users) {
+    user = { user: user };
     let getWinAmount = 0;
     let getLossAmount = 0;
     let profitLoss = 0;

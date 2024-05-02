@@ -456,3 +456,16 @@ exports.userPasswordAttempts=async (id)=>{
   await user.query(`update "users" set "transactionPasswordAttempts" = "transactionPasswordAttempts" + 1 where "id" = $1`, [id]);
 
 }
+
+exports.getUserDataWithUserBalanceDeclare = async (where) => {
+  return await user
+  .createQueryBuilder()
+  .where(where)
+  .leftJoinAndMapOne(
+    "user.userBalance",
+    "userBalance",
+    "userBalance",
+    "user.id = userBalance.userId"
+  )
+  .getMany();
+}
