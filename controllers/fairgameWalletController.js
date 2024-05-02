@@ -21,6 +21,7 @@ const {
   otherEventMatchBettingRedisKey,
   redisKeysMarketWise,
   scoreBasedMarket,
+  profitLossKeys,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss } = require("../services/betPlacedService");
@@ -3544,8 +3545,13 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
 
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
     let redisData = await calculateProfitLossForOtherMatchToResult(betId, user.user?.id, matchData);
-
-    const redisPLData = Object.values(redisData)?.find((item) => item?.type == merketBetType);
+    let redisPLData;
+    if (merketBetType == matchBettingType.quickbookmaker1) {
+      redisPLData = redisData?.[profitLossKeys.matchOdd];
+    }
+    else {
+      redisPLData = Object.values(redisData)?.find((item) => item?.type == merketBetType);
+    }
     let teamARate = redisPLData?.rates?.a ?? Number.MAX_VALUE;
     let teamBRate = redisPLData?.rates?.b ?? Number.MAX_VALUE;
     let teamCRate = redisPLData?.rates?.c ?? Number.MAX_VALUE;
