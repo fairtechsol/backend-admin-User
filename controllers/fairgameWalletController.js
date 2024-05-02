@@ -3019,7 +3019,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
     let userRedisData = await getUserRedisData(user.user.id);
     let getMultipleAmount = await getMultipleAccountOtherMatchProfitLoss(betId, user.user.id);
 
-    Object.keys(getMultipleAmount)?.map((item) => {
+    Object.keys(getMultipleAmount)?.forEach((item) => {
       getMultipleAmount[item] = parseFloat(parseFloat(getMultipleAmount[item]).toFixed(2));
     });
 
@@ -3535,7 +3535,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
     let userRedisData = await getUserRedisData(user.user.id);
     let getMultipleAmount = await getMultipleAccountOtherMatchProfitLoss(betId, user.user.id);
 
-    Object.keys(getMultipleAmount)?.map((item) => {
+    Object.keys(getMultipleAmount)?.forEach((item) => {
       getMultipleAmount[item] = parseFloat(parseFloat(getMultipleAmount[item]).toFixed(2));
     });
     let maxLoss = 0;
