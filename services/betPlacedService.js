@@ -118,6 +118,25 @@ exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
   return betPlaced;
 };
 
+exports.getMultipleAccountOtherMatchProfitLoss = async (betId, userId) => {
+
+  const betPlaced = await BetPlaced.createQueryBuilder().select([
+    'SUM(CASE WHEN result = :winStatus THEN "winAmount" ELSE 0 END) AS "winAmount"',
+    'SUM(CASE WHEN result = :lossStatus THEN "lossAmount" ELSE 0 END) AS "lossAmount"',
+    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchOdd) THEN "winAmount" ELSE 0 END) AS "winAmountMatchOdd"',
+    'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchOdd) THEN "lossAmount" ELSE 0 END) AS "lossAmountMatchOdd"',
+  ])
+    .setParameter('winStatus', betResultStatus.WIN)
+    .setParameter('lossStatus', betResultStatus.LOSS)
+    .setParameter('matchOdd', [matchBettingType.matchOdd])
+    .andWhere('"betId" IN (:...betIds)', { betIds: betId })
+    .andWhere('"userId" = :userId', { userId: userId })
+    .andWhere('"deleteReason" IS NULL')
+    .getRawOne();
+
+  return betPlaced;
+};
+
 exports.findAllPlacedBet = async (whereObj) => {
   return await BetPlaced.find({
     where: whereObj
