@@ -21,6 +21,7 @@ const {
   otherEventMatchBettingRedisKey,
   redisKeysMarketWise,
   scoreBasedMarket,
+  profitLossKeys,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss } = require("../services/betPlacedService");
@@ -78,6 +79,7 @@ const {
   softDeleteAllUsers,
   deleteUserByDirectParent,
   getUsersByWallet,
+  getUserDataWithUserBalanceDeclare,
 } = require("../services/userService");
 const { sendMessageToUser, broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -2836,7 +2838,7 @@ exports.declareOtherMatchResult = async (req, res) => {
     // let bulkCommission = {};
     // let commissions = {};
     let matchOddWinBets = [];
-
+    const userData = new Set();
     for (let item of betPlaced) {
     if (result === resultType.noResult) {
           item.result = betResultStatus.TIE;
@@ -2877,18 +2879,19 @@ exports.declareOtherMatchResult = async (req, res) => {
       }
 
       updateRecords.push(item);
+      userData.add(item?.user?.id);
     }
 
     await addNewBet(updateRecords);
 
 
-    let users = await getDistinctUserBetPlaced(In(betIds));
+    let users = await getUserDataWithUserBalanceDeclare({ id: In([...userData]) });
 
     let upperUserObj = {};
     let bulkWalletRecord = [];
     // let commissionReport = [];
     const profitLossData = await calculateProfitLossOtherMatchForUserDeclare(
-      users,
+     users,
       betIds,
       matchId,
       0,
@@ -3012,7 +3015,8 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
   };
   let superAdminData = {};
 
-  for (const user of users) {
+  for (let user of users) {
+    user = { user: user };
     let getWinAmount = 0;
     let getLossAmount = 0;
     let profitLoss = 0;
@@ -3544,8 +3548,13 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
 
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
     let redisData = await calculateProfitLossForOtherMatchToResult(betId, user.user?.id, matchData);
-
-    const redisPLData = Object.values(redisData)?.find((item) => item?.type == merketBetType);
+    let redisPLData;
+    if (merketBetType == matchBettingType.quickbookmaker1) {
+      redisPLData = redisData?.[profitLossKeys.matchOdd];
+    }
+    else {
+      redisPLData = Object.values(redisData)?.find((item) => item?.type == merketBetType);
+    }
     let teamARate = redisPLData?.rates?.a ?? Number.MAX_VALUE;
     let teamBRate = redisPLData?.rates?.b ?? Number.MAX_VALUE;
     let teamCRate = redisPLData?.rates?.c ?? Number.MAX_VALUE;
