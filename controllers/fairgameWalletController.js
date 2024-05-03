@@ -3674,7 +3674,13 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
       data: user
     })
 
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData });
+    sendMessageToUser(user.user.id, redisEventName, {
+      ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData, profitLoss: {
+        teamA: teamARate,
+        teamB: teamBRate,
+        teamC: teamCRate
+      }
+    });
 
     // deducting 1% from match odd win amount 
     if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0 && merketBetType == matchBettingType.quickbookmaker1) {
