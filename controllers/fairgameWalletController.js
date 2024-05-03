@@ -2821,9 +2821,9 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
 
 exports.declareOtherMatchResult = async (req, res) => {
   try {
-    const { result, matchDetails, userId, matchId, match, betId, betType } = req.body;
+    const { result, matchDetails, userId, matchId, match, betId, betType:matchBetType } = req.body;
    
-    const betIds = betType == matchBettingType.quickbookmaker1 ? matchDetails?.filter((item) => mainMatchMarketType.includes(item?.type))?.map((item) => item?.id) : [betId];
+    const betIds = matchBetType == matchBettingType.quickbookmaker1 ? matchDetails?.filter((item) => mainMatchMarketType.includes(item?.type))?.map((item) => item?.id) : [betId];
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
     logger.info({
@@ -2972,18 +2972,18 @@ exports.declareOtherMatchResult = async (req, res) => {
           myProfitLoss: -value["myProfitLoss"],
           exposure: -value["exposure"],
         });
-        await deleteKeyFromUserRedis(key, ...redisKeysMarketWise[betType]?.map((item) => item + matchId));
+        await deleteKeyFromUserRedis(key, ...redisKeysMarketWise[matchBetType]?.map((item) => item + matchId));
       }
 
       sendMessageToUser(key, socketData.matchResult, {
         ...parentUser,
         betId: betId,
         matchId,
-        betType: betType
+        betType: matchBetType
       });
     }
     // insertBulkCommissions(commissionReport);
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: betType });
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
 
     return SuccessResponse(
       {
@@ -3222,7 +3222,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
         amount: item.winAmount - item.lossAmount,
         transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
         closingBalance: currBal,
-        description: `${user?.eventType}/${user?.eventName}/${item.type} - ${item.result} ${scoreBasedMarket.find((item) => currMatchBettingDetailsType?.startsWith(item)) ? `${extractNumbersFromString(currMatchBettingDetailsType)} Goals` : ""}`,
+        description: `${matchData?.matchType}/${matchData?.title}/${item.type} - ${item.result} ${scoreBasedMarket.find((item) => currMatchBettingDetailsType?.startsWith(item)) ? `${extractNumbersFromString(currMatchBettingDetailsType)} Goals` : ""}`,
         createdAt: new Date(),
         uniqueId: uniqueId,
         betId: item?.betId
@@ -3369,9 +3369,9 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
 exports.unDeclareOtherMatchResult = async (req, res) => {
   try {
 
-    const { matchId, match, matchBetting, userId, matchOddId, betType } = req.body;
+    const { matchId, match, matchBetting, userId, matchOddId, betType:matchBetType } = req.body;
 
-    const betIds = betType == matchBettingType.quickbookmaker1 ? matchBetting?.filter((item) => mainMatchMarketType.includes(item?.type))?.map((item) => item?.id) : [matchOddId];
+    const betIds = matchBetType == matchBettingType.quickbookmaker1 ? matchBetting?.filter((item) => mainMatchMarketType.includes(item?.type))?.map((item) => item?.id) : [matchOddId];
     let users = await getDistinctUserBetPlaced(In(betIds));
 
     logger.info({
@@ -3384,7 +3384,7 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
     let upperUserObj = {};
     let bulkWalletRecord = [];
     let matchOddsWinBets=[];
-    if (betType == matchBettingType.quickbookmaker1) {
+    if (matchBetType == matchBettingType.quickbookmaker1) {
       matchOddsWinBets = await findAllPlacedBet({
         marketType: matchBettingType.matchOdd,
         result: betResultStatus.WIN,
@@ -3406,7 +3406,7 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
       // commissionData, 
       matchOddsWinBets,
        matchBetting,
-       betType,
+       matchBetType,
        matchOddId
     );
     // deleteCommission(matchOddId);
