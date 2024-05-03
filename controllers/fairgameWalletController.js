@@ -3369,7 +3369,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
 exports.unDeclareOtherMatchResult = async (req, res) => {
   try {
 
-    const { matchId, match, matchBetting, userId, matchOddId, betType:matchBetType } = req.body;
+    const { matchId, match, matchBetting, userId, matchOddId, betType: matchBetType } = req.body;
 
     const betIds = matchBetType == matchBettingType.quickbookmaker1 ? matchBetting?.filter((item) => mainMatchMarketType.includes(item?.type))?.map((item) => item?.id) : [matchOddId];
     let users = await getDistinctUserBetPlaced(In(betIds));
@@ -3483,7 +3483,8 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
         ...parentUser,
         matchId,
         betId: betIds,
-        profitLossData: value
+        profitLossData: value,
+        betType: matchBetType
       });
     }
 
@@ -3679,7 +3680,8 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
         teamA: teamARate,
         teamB: teamBRate,
         teamC: teamCRate
-      }
+      },
+      betType: merketBetType
     });
 
     // deducting 1% from match odd win amount 
