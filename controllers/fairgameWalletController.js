@@ -3484,7 +3484,10 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
         matchId,
         betId: betIds,
         profitLossData: value,
-        betType: matchBetType
+        betType: matchBetType,
+        teamArateRedisKey: `${otherEventMatchBettingRedisKey[matchBetType]?.a}${matchId}`,
+        teamBrateRedisKey: `${otherEventMatchBettingRedisKey[matchBetType]?.b}${matchId}`,
+        teamCrateRedisKey: `${otherEventMatchBettingRedisKey[matchBetType]?.c}${matchId}`,
       });
     }
 
@@ -3673,7 +3676,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
     logger.info({
       message: "user save at un declare result",
       data: user
-    })
+    });
 
     sendMessageToUser(user.user.id, redisEventName, {
       ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData, profitLoss: {
@@ -3681,7 +3684,11 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
         teamB: teamBRate,
         teamC: teamCRate
       },
-      betType: merketBetType
+      teamArateRedisKey: `${otherEventMatchBettingRedisKey[merketBetType]?.a}${matchId}`,
+      teamBrateRedisKey: `${otherEventMatchBettingRedisKey[merketBetType]?.b}${matchId}`,
+      teamCrateRedisKey: `${otherEventMatchBettingRedisKey[merketBetType]?.c}${matchId}`,
+      betType: merketBetType,
+      
     });
 
     // deducting 1% from match odd win amount 
