@@ -3369,7 +3369,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
 exports.unDeclareOtherMatchResult = async (req, res) => {
   try {
 
-    const { matchId, match, matchBetting, userId, matchOddId, betType:matchBetType } = req.body;
+    const { matchId, match, matchBetting, userId, matchOddId, betType: matchBetType } = req.body;
 
     const betIds = matchBetType == matchBettingType.quickbookmaker1 ? matchBetting?.filter((item) => mainMatchMarketType.includes(item?.type))?.map((item) => item?.id) : [matchOddId];
     let users = await getDistinctUserBetPlaced(In(betIds));
@@ -3483,7 +3483,11 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
         ...parentUser,
         matchId,
         betId: betIds,
-        profitLossData: value
+        profitLossData: value,
+        betType: matchBetType,
+        teamArateRedisKey: `${otherEventMatchBettingRedisKey[matchBetType]?.a}${matchId}`,
+        teamBrateRedisKey: `${otherEventMatchBettingRedisKey[matchBetType]?.b}${matchId}`,
+        teamCrateRedisKey: `${otherEventMatchBettingRedisKey[matchBetType]?.c}${matchId}`,
       });
     }
 
@@ -3672,9 +3676,20 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
     logger.info({
       message: "user save at un declare result",
       data: user
-    })
+    });
 
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData });
+    sendMessageToUser(user.user.id, redisEventName, {
+      ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData, profitLoss: {
+        teamA: teamARate,
+        teamB: teamBRate,
+        teamC: teamCRate
+      },
+      teamArateRedisKey: `${otherEventMatchBettingRedisKey[merketBetType]?.a}${matchId}`,
+      teamBrateRedisKey: `${otherEventMatchBettingRedisKey[merketBetType]?.b}${matchId}`,
+      teamCrateRedisKey: `${otherEventMatchBettingRedisKey[merketBetType]?.c}${matchId}`,
+      betType: merketBetType,
+      
+    });
 
     // deducting 1% from match odd win amount 
     if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0 && merketBetType == matchBettingType.quickbookmaker1) {

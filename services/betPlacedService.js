@@ -344,12 +344,10 @@ exports.getPlacedBetsWithCategory = async (userId) => {
       'betPlaced.eventType AS "eventType"',
       'betPlaced.eventName AS "eventName"',
       'betPlaced.matchId AS "matchId"',
-      "CASE WHEN betPlaced.marketType IN ('tiedMatch1','tiedMatch2') THEN :tiedmatch ELSE :other END AS groupedMarketType",
+      "betPlaced.bettingName AS groupedMarketType",
     ])
-    .setParameter('tiedmatch', 'Match Odds')
-    .setParameter('other', 'Tied Match')
     .where({ createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull() })
-    .groupBy('groupedMarketType, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType');
+    .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType');
 
   const data = await query.getRawMany();
 
