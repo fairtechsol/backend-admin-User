@@ -3,14 +3,14 @@ const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getUserRedisData, updateMatchExposure, updateUserDataRedis, getUserRedisKey, incrementValuesRedis } = require("../services/redis/commonfunction");
+const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
-const { updateUserBalanceByUserId, getUserBalanceDataByUserId, updateUserExposure, updateUserBalanceData } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, updateUserExposure } = require('../services/userBalanceService');
 const { sendMessageToUser } = require('../sockets/socketManager');
 
 exports.getBet = async (req, res) => {
@@ -63,7 +63,7 @@ exports.getBet = async (req, res) => {
         count: 0,
         rows: []
       }
-    }, req, res)
+    }, req, res);
 
     return SuccessResponse({
       statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {

@@ -2,6 +2,7 @@ const {
   userRoleConstant,
   redisTimeOut,
   differLoginTypeByRoles,
+  jwtSecret,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -85,7 +86,7 @@ const setUserDetailsRedis = async (user) => {
 exports.login = async (req, res) => {
   try {
     const { password, loginType } = req.body;
-    const userName = req.body.userName.trim();
+    const userName = req.body.userName;
     const user = await validateUser(userName, password);
 
     if (user?.error) {
@@ -167,12 +168,12 @@ exports.login = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, roleName: user.roleName, userName: user.userName },
-      process.env.JWT_SECRET || "secret"
+      jwtSecret
     );
 
     // checking transition password
     const isTransPasswordCreated = Boolean(user.transPassword);
-    const forceChangePassword = !Boolean(user.loginAt);
+    const forceChangePassword = !user.loginAt;
 
     if (!forceChangePassword) {
       userLoginAtUpdate(user.id);
