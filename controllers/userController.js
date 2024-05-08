@@ -559,7 +559,7 @@ exports.changePassword = async (req, res, next) => {
 
 exports.setExposureLimit = async (req, res, next) => {
   try {
-    let { amount, userId, transPassword } = req.body
+    let { amount, userId } = req.body
 
     let reqUser = req.user || {}
     let loginUser = await getUserById(reqUser.id, ["id", "exposureLimit", "roleName"]);
