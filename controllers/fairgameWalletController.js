@@ -3222,7 +3222,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
         amount: item.winAmount - item.lossAmount,
         transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
         closingBalance: currBal,
-        description: `${matchData?.matchType}/${matchData?.title}/${item.type} - ${item.result} ${scoreBasedMarket.find((item) => currMatchBettingDetailsType?.startsWith(item)) ? `${extractNumbersFromString(currMatchBettingDetailsType)} Goals` : ""}`,
+        description: `${matchData?.matchType}/${matchData?.title}/${item.type} - ${item.result} ${scoreBasedMarket.find((item) => currMatchBettingDetailsType?.startsWith(item) && result != resultType.noResult) ? `${extractNumbersFromString(currMatchBettingDetailsType)} Goals` : ""}`,
         createdAt: new Date(),
         uniqueId: uniqueId,
         betId: item?.betId
@@ -3578,7 +3578,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
 
     let result = resultDeclare?.[0]?.result;
 
-    if(scoreBasedMarket.find((item)=>merketBetType?.startsWith(item))){
+    if (scoreBasedMarket.find((item) => merketBetType?.startsWith(item)) && result != resultType.noResult) {
       const currScore = extractNumbersFromString(merketBetType);
       result = parseFloat(result) < parseFloat(currScore) ? "UNDER" : "OVER";
     }
@@ -3719,7 +3719,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
         amount: -(item.winAmount - item.lossAmount),
         transType: -(item.winAmount - item.lossAmount) < 0 ? transType.loss : transType.win,
         closingBalance: currBal,
-        description: `Revert ${user?.eventType}/${user?.eventName}/${item.type} - ${item.result} ${scoreBasedMarket.find((item) => merketBetType?.startsWith(item)) ? `${extractNumbersFromString(merketBetType)} Goals` : ""}`,
+        description: `Revert ${user?.eventType}/${user?.eventName}/${item.type} - ${item.result} ${scoreBasedMarket.find((item) => merketBetType?.startsWith(item) && result != resultType.noResult) ? `${extractNumbersFromString(merketBetType)} Goals` : ""}`,
         createdAt: new Date(),
         uniqueId: uniqueId,
         betId: item?.betId
