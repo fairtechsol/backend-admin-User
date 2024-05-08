@@ -36,7 +36,7 @@ exports.deleteBetByEntityOnError = async (body) => {
 exports.getBet = async (where, query, roleName, select, superParentId) => {
   let pgQuery = BetPlaced.createQueryBuilder().where(where);
   if (roleName == userRoleConstant.fairGameAdmin) {
-    pgQuery.leftJoinAndMapOne(
+    pgQuery.innerJoinAndMapOne(
       "betPlaced.user",
       "user",
       "user",
