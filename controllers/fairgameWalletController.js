@@ -1580,10 +1580,6 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
         upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-        let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
-        if (userCommission) {
-          upperUserObj[patentUser.id].totalCommission += parseFloat((parseFloat(userCommission?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
-        }
 
         for (const placedBets of betPlace) {
           upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSession(upperUserObj[patentUser.id].profitLossObj, {
@@ -1908,7 +1904,7 @@ exports.declareMatchResult = async (req, res) => {
         profitLoss: value?.["profitLoss"],
         myProfitLoss: -value["myProfitLoss"],
         exposure: -value["exposure"],
-        totalCommission: value["totalCommission"]
+        totalCommission: parseFloat(parseFloat(value["totalCommission"]).toFixed(2))
       });
 
       logger.info({
@@ -2249,8 +2245,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       let myProfitLoss = parseFloat(
         (((profitLoss) * upLinePartnership) / 100).toString()
       );
-      let parentCommission = parseFloat((((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
-
+      let parentCommission = parseFloat((parseFloat(((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 100).toFixed(2)) * parseFloat(upLinePartnership) / 100).toFixed(2));
 
       if (upperUserObj[patentUser.id]) {
         upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
@@ -2438,7 +2433,7 @@ exports.unDeclareMatchResult = async (req, res) => {
         profitLoss: -value?.["profitLoss"],
         myProfitLoss: value["myProfitLoss"],
         exposure: value["exposure"],
-        totalCommission: -parseFloat(value["totalCommission"] || 0)
+        totalCommission: -parseFloat(parseFloat(value["totalCommission"] || 0).toFixed(2))
       });
 
       logger.info({
