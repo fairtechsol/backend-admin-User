@@ -1654,9 +1654,12 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
 
 exports.profitLoss = async (req, res) => {
   try {
-    const startDate = req.body.startDate
-    const endDate = req.body.endDate
-    const reqUser = req.user
+    const startDate = req.body.startDate;
+    const endDate = req.body.endDate;
+    const reqUser = req.user;
+
+    const { page, limit, keyword } = req.body;
+
     let where = {
       result: In([betResultStatus.LOSS, betResultStatus.WIN])
     }
@@ -1668,32 +1671,29 @@ exports.profitLoss = async (req, res) => {
     }
     if (user && user.roleName == userRoleConstant.user) {
       where.createBy = In([userId]);
-      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
+      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate, page, limit, keyword);
     } else {
       let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
       childsId = childsId.map(item => item.id)
       if (!childsId.length) {
         return SuccessResponse({
-          statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: {
-            result: [],
-            total: 0
-          }
-        }, req, res)
+          statusCode: 200, data: { result: [], total: 0 }
+        }, req, res);
       }
       where.createBy = In(childsId);
-      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate);
+      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate, page, limit, keyword);
     }
     total = {};
-    result.forEach((arr, index) => {
-      if (total[arr.marketType]) {
-        total[arr.marketType] += parseFloat(arr.aggregateAmount);
+    result?.profitLossData.forEach((arr, index) => {
+      if (total[arr.eventType]) {
+        total[arr.eventType] += parseFloat(arr.aggregateAmount);
       } else {
-        total[arr.marketType] = parseFloat(arr.aggregateAmount);
+        total[arr.eventType] = parseFloat(arr.aggregateAmount);
       }
     });
     return SuccessResponse(
       {
-        statusCode: 200, message: { msg: "fetched", keys: { type: "Profit loss" } }, data: { result, total },
+        statusCode: 200, data: { result: result.profitLossData, count: result?.count?.count, total },
       },
       req,
       res

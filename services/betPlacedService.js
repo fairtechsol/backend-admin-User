@@ -185,7 +185,7 @@ exports.getBetsWithUserRole = async (ids,where) => {
   return betPlaced;
 }
 
-exports.allChildsProfitLoss = async (where, startDate, endDate) => {
+exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, keyword) => {
   let profitLoss = await BetPlaced.createQueryBuilder()
     .where(where);
   if (startDate) {
@@ -194,6 +194,10 @@ exports.allChildsProfitLoss = async (where, startDate, endDate) => {
   if (endDate) {
     profitLoss.andWhere(`"createdAt" <= :endDate`, { endDate: endDate });
   }
+  if(keyword){
+    profitLoss.andWhere(`betPlaced.eventType ILIKE :search`, { search: `%${keyword}%` });
+  }
+  const count = await profitLoss.select("COUNT(DISTINCT(betPlaced.marketType, betPlaced.eventType))", "count").getRawOne();
   profitLoss = profitLoss.select([
     `"marketType"`,
     `"eventType"`,
@@ -202,9 +206,13 @@ exports.allChildsProfitLoss = async (where, startDate, endDate) => {
     .groupBy([
       `"marketType"`,
       `"eventType"`,
-    ])
+    ]);
+
+    if (page) {
+      profitLoss = profitLoss.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
+    }
   let profitLossData = await profitLoss.getRawMany();
-  return profitLossData
+  return { profitLossData, count }
 }
 
 exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss, subQuery) => {
