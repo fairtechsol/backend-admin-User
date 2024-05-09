@@ -185,7 +185,7 @@ exports.getBetsWithUserRole = async (ids,where) => {
   return betPlaced;
 }
 
-exports.allChildsProfitLoss = async (where, startDate, endDate) => {
+exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit) => {
   let profitLoss = await BetPlaced.createQueryBuilder()
     .where(where);
   if (startDate) {
@@ -203,6 +203,10 @@ exports.allChildsProfitLoss = async (where, startDate, endDate) => {
       `"marketType"`,
       `"eventType"`,
     ])
+
+    if (page) {
+      profitLoss = profitLoss.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
+    }
   let profitLossData = await profitLoss.getRawMany();
   return profitLossData
 }
