@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -966,7 +966,7 @@ exports.deleteMultipleBet = async (req, res) => {
       matchId, data, deleteReason
     } = req.body;
     // const { id } = req.user;
-    if (data.length == 0) {
+    if (data?.length == 0) {
       return ErrorResponse(
         {
           statusCode: 400,
@@ -979,7 +979,7 @@ exports.deleteMultipleBet = async (req, res) => {
       );
     }
     let placedBetIdArray = [];
-    data.map(obj => {
+    data.forEach(obj => {
       placedBetIdArray.push(obj.placeBetId);
     });
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, id: In(placedBetIdArray) });
@@ -1069,7 +1069,7 @@ exports.deleteMultipleBetForOther = async (req, res) => {
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, id: In(placedBetIdArray) });
 
     let updateObj = {};
-    placedBet.map(bet => {
+    placedBet.forEach(bet => {
       if (!updateObj[bet.createBy]) {
         updateObj[bet.createBy] = { [bet.betId]: { array: [bet] } };
       } else {
@@ -2020,7 +2020,7 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
     otherEventMatchBettingRedisKey[matchBetType]?.b + matchId;
   const teamCrateRedisKey = otherEventMatchBettingRedisKey[matchBetType]?.c + matchId;
 
-  let isOddOrBookMakerMatch = [matchBettingType.matchOdd || matchBettingType.bookmaker, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3].includes(matchBetType)
+  let isOddOrBookMakerMatch = matchWithTeamName.includes(matchBetType)
 
 
   let teamA = !isOddOrBookMakerMatch ? matchBettingsTeamName.under : matchDetails.teamA;
@@ -2064,13 +2064,13 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
     teamB: 0,
     teamC: 0
   };
-  for (let index = 0; index < bets.length; index++) {
+  for (const element of bets) {
     let data = {
       teamA, teamB, teamC,
-      winAmount: bets[index].winAmount,
-      lossAmount: bets[index].lossAmount,
-      bettingType: bets[index].betType,
-      betOnTeam: bets[index].teamName
+      winAmount: element.winAmount,
+      lossAmount: element.lossAmount,
+      bettingType: element.betType,
+      betOnTeam: element.teamName
     }
     newTeamRate = await calculateRate(newTeamRate, data, 100);
   }
