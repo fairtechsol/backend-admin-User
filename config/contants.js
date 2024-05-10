@@ -266,6 +266,8 @@ module.exports.profitLossKeys={
   }, {}))
 }
 
+module.exports.matchWithTeamName = [this.matchBettingType.matchOdd, this.matchBettingType.bookmaker, this.matchBettingType.quickbookmaker1, this.matchBettingType.quickbookmaker2, this.matchBettingType.quickbookmaker3, this.matchBettingType.halfTime, ...(Array.from({ length: 20 }, (_, index) => index).map((prev, curr) => { return `setWinner${curr}`; }))];
+
 module.exports.matchesTeamName={
   
   [this.matchBettingType.tiedMatch1]: {
