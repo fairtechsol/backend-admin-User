@@ -235,24 +235,28 @@ SELECT SUM("userBalances"."currentBalance") as balance FROM p JOIN "userBalances
 }
 
 exports.getChildsWithOnlyUserRole = async (userId) => {
-  let query = await user.query(`WITH RECURSIVE p AS (
-    SELECT * FROM "users" WHERE "users"."id" = '${userId}'
-    UNION
-    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
-  )
-  SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}';`);
-  return query;
+  const query = `WITH RECURSIVE p AS (
+      SELECT * FROM "users" WHERE "users"."id" = :userId
+      UNION
+      SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+    )
+    SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND "roleName" = :roleName;`;
+  const results = await user.query(query, {
+    userId, roleName: UserRoleConstant.user
+  });
+  return results;
 }
 
-exports.getParentsWithBalance = async (userId) => {
-  let query = await user.query(`WITH RECURSIVE p AS (
-    SELECT * FROM "users" WHERE "users"."id" = '${userId}'
-    UNION
-    SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
-  )
-  SELECT p."id", p."userName",p."roleName", p."matchCommission", p."sessionCommission", p."matchComissionType", p."createBy", p."userBlock", p."betBlock" FROM p where p."id" != '${userId}';`);
-  return query;
-}
+export const getParentsWithBalance = async (userId) => {
+  const query = `WITH RECURSIVE p AS (
+      SELECT * FROM "users" WHERE "users"."id" = :userId
+      UNION
+      SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
+    )
+    SELECT p."id", p."userName", p."roleName", p."matchCommission", p."sessionCommission", p."matchComissionType", p."createBy", p."userBlock", p."betBlock" FROM p WHERE p."id" != :userId;`;
+  const results = await user.query(query, { userId });
+  return results;
+};
 
 exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, userName: true, roleName: true } });
