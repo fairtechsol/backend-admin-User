@@ -265,59 +265,44 @@ exports.calculateProfitLossSession = async (redisProfitLoss, betData, partnershi
 };
 
 exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds, oldUpperLimitOdds) => {
-  let betData = [];
-  let line = 1;
-  let maxLoss = 0.0;
-  let first = 0;
-  let last = 0;
-  if (betPlace && betPlace.length) {
-    // let latest_bet = betPlace[betPlace.length - 1].odds;
-    let oddsValues = betPlace.map(({ odds }) => odds)
-    if (oldLowerLimitOdds) {
-      first = oldLowerLimitOdds + 5;
-    } else {
-      first = Math.min(...oddsValues);
-    }
-    if (oldUpperLimitOdds) {
-      last = oldUpperLimitOdds - 5;
-    } else {
-      last = Math.max(...oddsValues);
-    }
-
-    let i = 0;
-    for (let j = first - 5 > 0 ? first - 5 : 0; j <= last + 5; j++) {
-      let profitLoss = 0.0;
-      for (let key in betPlace) {
-        let partnership = 100;
-        if (userPartnerShip) {
-          partnership = userPartnerShip;
-        }
-        if (betPlace[key]['betType'] == betType.NO && j < betPlace[key]['odds']) {
-          profitLoss = profitLoss + (betPlace[key]['winAmount'] * partnership / 100);
-        } else if (betPlace[key]['betType'] == betType.NO && j >= betPlace[key]['odds']) {
-          profitLoss = profitLoss - (betPlace[key]['lossAmount'] * partnership / 100);
-        } else if (betPlace[key]['betType'] == betType.YES && j < betPlace[key]['odds']) {
-          profitLoss = profitLoss - (betPlace[key]['lossAmount'] * partnership / 100);
-        } else if (betPlace[key]['betType'] == betType.YES && j >= betPlace[key]['odds']) {
-          profitLoss = profitLoss + (betPlace[key]['winAmount'] * partnership / 100);
-        }
-      }
-      if (maxLoss < Math.abs(profitLoss) && profitLoss < 0) {
-        maxLoss = Math.abs(profitLoss);
-      }
-      if (j == last) {
-        line = i;
-      }
-      profitLoss = Number(profitLoss.toFixed(2));
-      betData.push({
-        'odds': j,
-        'profitLoss': profitLoss
-      });
-      i++;
-    }
+  if (!Array.isArray(betPlace) || betPlace.length === 0) {
+    return {
+      betData: [],
+      line: 1,
+      maxLoss: 0.0,
+      total_bet: 0,
+      lowerLimitOdds: oldLowerLimitOdds ? oldLowerLimitOdds + 5 : undefined,
+      upperLimitOdds: oldUpperLimitOdds ? oldUpperLimitOdds - 5 : undefined
+    };
   }
-  maxLoss = Number(maxLoss.toFixed(2));
-  return { betData: betData, line: line, maxLoss: maxLoss, total_bet: betPlace.length, lowerLimitOdds: betData[0]?.odds, upperLimitOdds: betData[betData.length - 1]?.odds }
+
+  let oddsValues = betPlace.map(({ odds }) => odds);
+  let first = oldLowerLimitOdds ? oldLowerLimitOdds + 5 : Math.min(...oddsValues);
+  let last = oldUpperLimitOdds ? oldUpperLimitOdds - 5 : Math.max(...oddsValues);
+
+  let betData = [];
+  let maxLoss = 0.0;
+
+  for (let j = Math.max(first - 5, 0); j <= last + 5; j++) {
+    let profitLoss = 0.0;
+    for (let key in betPlace) {
+      let partnership = userPartnerShip || 100;
+      let bet = betPlace[key];
+      let isWinningBet = (bet.betType === betType.NO && j < bet.odds) || (bet.betType === betType.YES && j >= bet.odds);
+      profitLoss += isWinningBet ? (bet.winAmount * partnership / 100) : (-bet.lossAmount * partnership / 100);
+    }
+    maxLoss = Math.min(maxLoss, profitLoss);
+    betData.push({ odds: j, profitLoss: Number(profitLoss.toFixed(2)) });
+  }
+
+  return {
+    betData,
+    line: betData.length - 1,
+    maxLoss: Number(Math.abs(maxLoss).toFixed(2)),
+    total_bet: betPlace.length,
+    lowerLimitOdds: betData[0].odds,
+    upperLimitOdds: betData[betData.length - 1].odds
+  };
 };
 
 
@@ -610,12 +595,8 @@ exports.settingBetsDataAtLogin = async (user) => {
     let sessionResult = {};
     let sessionExp = {};
     let betResult = {
-      session: {
-
-      },
-      match: {
-
-      }
+      session: { },
+      match: { }
     };
 
     let matchResult = {};
