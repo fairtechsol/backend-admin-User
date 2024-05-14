@@ -222,13 +222,13 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
   return await user.query(query)
 }
 
-exports.getChildUserBalanceSum = async (id,excludeSelfBalance=false) => {
+exports.getChildUserBalanceSum = async (id, excludeSelfBalance = false, where="") => {
   let query = `WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${id}'
     UNION
     SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
   )
-SELECT SUM("userBalances"."currentBalance") as balance FROM p JOIN "userBalances" ON "userBalances"."userId" = "p"."id" where "deletedAt" IS NULL ${excludeSelfBalance ? `AND "p"."id" <> '${id}'` : ""};
+SELECT SUM("userBalances"."currentBalance") as balance FROM p JOIN "userBalances" ON "userBalances"."userId" = "p"."id" where "deletedAt" IS NULL ${excludeSelfBalance ? `AND "p"."id" <> '${id}'` : ""}${where};
 ;`
 
   return await user.query(query)
