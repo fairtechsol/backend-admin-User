@@ -215,11 +215,6 @@ exports.logout = async (req, res) => {
     // Get the user from the request object
     const user = req.user;
 
-    // If the user is an expert, remove their ID from the "expertLoginIds" set in Redis
-    if (user.roleName === userRoleConstant.expert) {
-      await internalRedis.srem("expertLoginIds", user.id);
-    }
-
     // Remove the user's token from Redis using their ID as the key
     await internalRedis.del(user.id);
 

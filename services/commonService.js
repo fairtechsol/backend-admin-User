@@ -505,7 +505,7 @@ exports.findUserPartnerShipObj = async (user) => {
               response?.data
             );
           } catch (err) {
-            console.log(err);
+           
           }
         } else if (currentUser?.roleName == userRoleConstant.fairGameAdmin) {
           await traverseHierarchy(
