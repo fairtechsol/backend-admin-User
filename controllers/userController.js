@@ -840,10 +840,15 @@ exports.getTotalUserListBalance = async (req, res, next) => {
         break;
       }
     }
+    let childUserBalanceWhere="";
+
+    if(apiQuery.userBlock){
+      childUserBalanceWhere = `AND "p"."userBlock" = ${apiQuery?.userBlock?.slice(2)}`
+    }
 
     const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
 
-    let childUsersBalances = await getChildUserBalanceSum(userId || reqUser.id, true);
+    let childUsersBalances = await getChildUserBalanceSum(userId || reqUser.id, true, childUserBalanceWhere);
 
     totalBalance.currBalance = childUsersBalances?.[0]?.balance;
     totalBalance.availableBalance = parseFloat(totalBalance.availableBalance || 0) - parseFloat(totalBalance.totalExposure || 0);
