@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
-const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate } = require('../validators/userValidator');
-const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch, deleteUser } = require('../controllers/userController');
+const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate, CheckOldPassword } = require('../validators/userValidator');
+const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch, deleteUser, checkOldPasswordData } = require('../controllers/userController');
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 const { totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getUserWiseTotalProfitLoss } = require('../controllers/fairgameWalletController');
 
@@ -23,7 +23,7 @@ router.post("/update/creditreferrence", isAuthenticate, checkTransactionPassword
 router.post("/generateTransactionPassword", isAuthenticate, validator(generateTransactionPass), generateTransactionPassword);
 
 router.get("/generalReport", isAuthenticate, generalReport);
-router.post("/totalProfitLoss", isAuthenticate, totalProfitLoss);
+router.post("/totalProfitLoss", isAuthenticate, totalProfitLossWallet);
 router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), userMatchLock);
 router.get("/getMatchLockAllChild", isAuthenticate, getMatchLockAllChild);
 router.get("/getUserDetailsForParent", isAuthenticate, getUserDetailsForParent);
@@ -40,6 +40,8 @@ router.get("/commissionBetPlaced/:userId", isAuthenticate, getCommissionBetPlace
 router.get("/profitLossData/:matchId", isAuthenticate, getUserProfitLossForMatch);
 
 router.delete("/delete/:id", isAuthenticate, deleteUser);
+router.post("/check/oldPassword", isAuthenticate, validator(CheckOldPassword), checkOldPasswordData);
+
 
 module.exports = router;
 //https://3100dev.fairgame.club/fair-game-wallet/getUserBalanceDetails

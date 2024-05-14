@@ -12,15 +12,35 @@ const expertRoutes = require('./expertRoutes.js');
 const matchRoutes = require("./matchRoutes");
 const betRoutes = require("./betRoutes.js");
 
+
 // Define routes
-router.use('/auth', authRoutes);
-router.use('/user', userRoutes);
-router.use('/button', buttonRoutes);
-router.use('/transaction', transactionsRoutes);
-router.use('/balance', userBalanceRoutes);
-router.use('/fairgameWallet', fairgameWalletRoutes);
-router.use('/expert', expertRoutes);
-router.use("/match",matchRoutes);
-router.use("/bet",betRoutes);
+router.use('/auth', authRoutes
+// #swagger.tags = ['auth']
+);
+router.use('/user', userRoutes
+// #swagger.tags = ['user']
+);
+router.use('/button', buttonRoutes
+// #swagger.tags = ['button']
+);
+router.use('/transaction', transactionsRoutes
+// #swagger.tags = ['transaction']
+);
+router.use('/balance', userBalanceRoutes
+// #swagger.tags = ['balance']
+);
+router.use('/fairgameWallet', fairgameWalletRoutes 
+// #swagger.tags = ['fairgame wallet']
+);
+router.use('/expert', expertRoutes 
+// #swagger.tags = ['expert']
+);
+router.use("/match", matchRoutes
+// #swagger.tags = ['match']
+);
+router.use("/bet", betRoutes
+// #swagger.tags = ['bet']
+);
+
 
 module.exports = router;

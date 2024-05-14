@@ -44,7 +44,7 @@ exports.getCreditRefrence = async (where, select) => {
 
 exports.getUserBalance = async (where, select) => {
   try {
-    let userData1 = await user.createQueryBuilder()
+    let userData1 = user.createQueryBuilder()
       .where(where)
       .leftJoinAndMapOne(
         'user.userBal',
@@ -54,7 +54,7 @@ exports.getUserBalance = async (where, select) => {
       )
       .select(select);
     //userData1.select(select)
-    let userData = userData1.getMany();
+    let userData = await userData1.getMany();
 
     if (!userData || userData.length === 0) {
       throw new Error('No data found for the given criteria.');
@@ -195,10 +195,22 @@ exports.getUsersWithUserBalance = async (where, offset, limit) => {
     Query = Query.limit(parseInt(limit));
   }
 
-  var result = await Query.getManyAndCount();
+  let result = await Query.getManyAndCount();
   return result;
 
 }
+
+exports.getUsersByWallet = async (where, select) => {
+  let userData = user
+    .createQueryBuilder()
+    .where(where)
+    .andWhere("user.id = user.createBy")
+    .select(select)
+    .getMany();
+
+  return userData;
+}
+
 exports.getChildUser = async (id) => {
   let query = `WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${id}'
@@ -210,19 +222,17 @@ SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
   return await user.query(query)
 }
 
-exports.getChildUserBalanceSum = async (id,excludeSelfBalance=false) => {
+exports.getChildUserBalanceSum = async (id, excludeSelfBalance = false, where="") => {
   let query = `WITH RECURSIVE p AS (
     SELECT * FROM "users" WHERE "users"."id" = '${id}'
     UNION
     SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
   )
-SELECT SUM("userBalances"."currentBalance") as balance FROM p JOIN "userBalances" ON "userBalances"."userId" = "p"."id" where "deletedAt" IS NULL ${excludeSelfBalance ? `AND "p"."id" <> '${id}'` : ""};
+SELECT SUM("userBalances"."currentBalance") as balance FROM p JOIN "userBalances" ON "userBalances"."userId" = "p"."id" where "deletedAt" IS NULL ${excludeSelfBalance ? `AND "p"."id" <> '${id}'` : ""}${where};
 ;`
 
   return await user.query(query)
 }
-
-
 
 exports.getChildsWithOnlyUserRole = async (userId) => {
   let query = await user.query(`WITH RECURSIVE p AS (
@@ -306,7 +316,6 @@ exports.getUsersWithUsersBalanceData = async (where, query) => {
     , query).search().filter().sort().paginate().getResult();
 
   return await transactionQuery;
-
 }
 
 exports.getUsersWithTotalUsersBalanceData = (where, query, select) => {
@@ -442,3 +451,21 @@ exports.deleteUserByDirectParent = async (id) => {
   `
   return user.query(query);
 };
+
+exports.userPasswordAttempts=async (id)=>{
+  await user.query(`update "users" set "transactionPasswordAttempts" = "transactionPasswordAttempts" + 1 where "id" = $1`, [id]);
+
+}
+
+exports.getUserDataWithUserBalanceDeclare = async (where) => {
+  return await user
+  .createQueryBuilder()
+  .where(where)
+  .leftJoinAndMapOne(
+    "user.userBalance",
+    "userBalance",
+    "userBalance",
+    "user.id = userBalance.userId"
+  )
+  .getMany();
+}

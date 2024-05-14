@@ -1,7 +1,5 @@
 const socketIO = require("socket.io");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
-const { userRoleConstant } = require("../config/contants");
-const internalRedis = require("../config/internalRedisConnection");
 const redis = require("socket.io-redis");
 require("dotenv").config();
 
@@ -13,8 +11,7 @@ let io;
 const handleConnection = async (client) => {
   try {
     // Extract the token from the client's handshake headers or auth object
-    const token =
-      client.handshake.headers.authorization || client.handshake.auth.token;
+    const token = client.handshake.headers.authorization || client.handshake.auth.token;
 
     // If no token is provided, disconnect the client
     if (!token) {
@@ -32,7 +29,7 @@ const handleConnection = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId, roleName } = decodedUser;
+    const { id: userId } = decodedUser;
 
     // Retrieve the user's token from Redis
     const userTokenRedis = await getUserTokenFromRedis(userId);
@@ -59,8 +56,7 @@ const handleConnection = async (client) => {
 const handleDisconnect = async (client) => {
   try {
     // Extract the token from the client's handshake headers or auth object
-    const token =
-      client.handshake.headers.authorization || client.handshake.auth.token;
+    const token = client.handshake.headers.authorization || client.handshake.auth.token;
 
     // If no token is provided, disconnect the client
     if (!token) {
@@ -76,7 +72,7 @@ const handleDisconnect = async (client) => {
     }
 
     // Extract user ID and role from the decoded user object
-    const { id: userId, roleName } = decodedUser;
+    const { id: userId } = decodedUser;
 
     // Leave the room with the user's ID
     client.leave(userId);

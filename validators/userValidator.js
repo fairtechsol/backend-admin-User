@@ -117,4 +117,10 @@ module.exports.userMatchLockValidate = Joi.object({
   type: Joi.string().valid(...Object.values(matchWiseBlockType)).required(),
   block: Joi.boolean().required(),
   operationToAll: Joi.boolean(),
-})
+});
+
+module.exports.CheckOldPassword = Joi.object({
+  oldPassword: Joi.string().required().label('password').messages({
+    'any.required': 'Password is required',
+  })
+});

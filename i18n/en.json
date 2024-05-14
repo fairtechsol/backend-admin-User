@@ -29,7 +29,7 @@
     "forceLogout":"Some other user login this account on other device."
   },
   "user" : {
-    "blocked": "There is something wrong with your account. Please contact your administrator.",
+    "blocked": "Please contact your admin for assistance.",
     "passwordMatch": "Password must contain at least four letters, including at least one uppercase letter, and four digits.",
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
     "partnershipNotValid" : "Given partnership not valid.",
@@ -46,7 +46,7 @@
     "profile": "Profile get successfully.",
     "userList": "User List Get Success.",
     "ExposureLimitExceed" : "User exposure is greater than exposure limit.",
-    "credit/refrence" : "Credit refrence fetch successfully.",
+    "credit/refrence" : "Credit reference fetch successfully.",
     "balance":"User balance fetch successfully.",
     "matchLock": "You are block for this match action. Please contact your administrator."
   },
@@ -61,12 +61,13 @@
   },
   "bet":{
     "notLive": "Bet Is currently not live.",
-    "minAmountViolate": "Amount less then minimun amount.",
+    "minAmountViolate": "Amount less then minimum amount.",
     "maxAmountViolate": "Amount More then maximum amount.",
     "marketRateChanged": "{marketType} rate has been changed.",
     "resultDeclared": "Result declared successfully.",
     "resultUnDeclared": "Result un declared successfully.",
     "matchNotLive": "Match is currently not live.",
-    "oddNotAllow": "Bet not accpet rate over 5.01 on {gameType}"
+    "oddNotAllow": "Bet not accept rate over 5.01 on {gameType}",
+    "validGameType":"Provide a valid game type."
   }
 }

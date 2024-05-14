@@ -173,6 +173,11 @@ const userSchema = new EntitySchema({
       type: 'timestamp with time zone',
       nullable: true,
       default: null
+    },
+    transactionPasswordAttempts:{
+      type:"int",
+      nullable: false,
+      default:0,
     }
   },
   orderBy: {

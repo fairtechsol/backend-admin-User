@@ -30,6 +30,23 @@ exports.updateUserDataRedis = async (userId, value) => {
   await internalRedis.hmset(userId, value);
 };
 
+// Assuming internalRedis is the Redis client instance
+exports.incrementValuesRedis = async (userId, value, updateValues) => {
+  // Start pipelining
+  const pipeline = internalRedis.pipeline();
+  // Queue up HINCRBY commands for each field in 'value' object
+  Object.entries(value).forEach(([field, increment]) => {
+    pipeline.hincrbyfloat(userId, field, increment);
+  });
+  // If there are additional values to update, queue an HMSET command
+  if (updateValues) {
+    pipeline.hmset(userId, updateValues);
+  }
+  // Execute the pipeline
+  await pipeline.exec();
+};
+
+
 exports.hasUserInCache = async (userId) => {
   return await internalRedis.exists(userId);
 }
