@@ -6,15 +6,16 @@ const { insertButton } = require('../services/buttonService');
 const { getTotalProfitLoss, findAllPlacedBet, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
+
 const crypto = require('crypto');
-const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts } = require("../services/commonService");
+const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery } = require("../services/commonService");
+
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis, getUserRedisKeys } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
-const { childIdquery } = require('../services/commonService')
 const { logger } = require('../config/logger');
 
 exports.getProfile = async (req, res) => {
@@ -41,63 +42,63 @@ exports.isUserExist = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    let { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, remark, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission, delayTime } = req.body;
+    const { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, remark, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission, delayTime } = req.body;
     let reqUser = req.user || {};
-    let creator = await getUserById(reqUser.id || createdBy);
-    if (!creator) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
+    const creator = await getUserById(reqUser.id || createdBy);
+
+    if (!creator)
+      return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
 
     if (!checkUserCreationHierarchy(creator, roleName))
       return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidHierarchy" } }, req, res);
-    creator.myPartnership = parseInt(myPartnership)
-    userName = userName.toUpperCase();
-    let userExist = await getUserByUserName(userName);
-    if (userExist) return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
-    if (creator.roleName != userRoleConstant.fairGameWallet) {
-      if (exposureLimit && exposureLimit > creator.exposureLimit)
-        return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
-    }
-    password = await bcrypt.hash(
-      password,
-      process.env.BCRYPTSALT || 10
-    );
 
-    creditRefrence = creditRefrence ? parseFloat(creditRefrence) : 0;
-    exposureLimit = exposureLimit ? exposureLimit : creator.exposureLimit;
-    maxBetLimit = maxBetLimit ?? creator.maxBetLimit;
-    minBetLimit = minBetLimit ?? creator.minBetLimit;
-    let userData = {
-      userName,
+    creator.myPartnership = parseInt(myPartnership);
+
+    const upperCaseUserName = userName?.toUpperCase();
+    const userExist = await getUserByUserName(upperCaseUserName);
+    if (userExist)
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
+
+    if (creator.roleName !== userRoleConstant.fairGameWallet && exposureLimit > creator.exposureLimit)
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
+
+    const hashedPassword = await bcrypt.hash(password, process.env.BCRYPTSALT || 10);
+
+    const userData = {
+      userName: upperCaseUserName,
       fullName,
-      password,
+      password: hashedPassword,
       phoneNumber,
       city,
       roleName,
       userBlock: creator.userBlock,
       betBlock: creator.betBlock,
       createBy: creator.id,
-      creditRefrence: creditRefrence,
-      exposureLimit: exposureLimit,
-      maxBetLimit: maxBetLimit,
-      minBetLimit: minBetLimit,
+      creditRefrence: creditRefrence ? parseFloat(creditRefrence) : 0,
+      exposureLimit: exposureLimit || creator.exposureLimit,
+      maxBetLimit: maxBetLimit ?? creator.maxBetLimit,
+      minBetLimit: minBetLimit ?? creator.minBetLimit,
       sessionCommission,
       matchComissionType,
       matchCommission,
       superParentType: creator.superParentType,
       superParentId: creator.superParentId,
-      remark: remark,
+      remark,
       delayTime: delayTime || 2
-    }
-    let partnerships = await calculatePartnership(userData, creator)
-    userData = { ...userData, ...partnerships };
-    let insertUser = await addUser(userData);
-    let updateUser = {}
+    };
+
+    const partnerships = await calculatePartnership(userData, creator);
+    const userWithPartnership = { ...userData, ...partnerships };
+    const insertUser = await addUser(userWithPartnership);
+
     if (creditRefrence) {
-      updateUser = await addUser({
+      await addUser({
         id: creator.id,
-        downLevelCreditRefrence: creditRefrence + parseInt(creator.downLevelCreditRefrence)
-      })
+        downLevelCreditRefrence: parseInt(creator.downLevelCreditRefrence) + parseFloat(creditRefrence)
+      });
     }
-    let transactionArray = [{
+
+    const transactionArray = [{
       actionBy: insertUser.createBy,
       searchId: insertUser.createBy,
       userId: insertUser.id,
@@ -105,7 +106,7 @@ exports.createUser = async (req, res) => {
       transType: transType.add,
       closingBalance: insertUser.creditRefrence,
       description: walletDescription.userCreate
-    }]
+    }];
     if (insertUser.createdBy != insertUser.id) {
       transactionArray.push({
         actionBy: insertUser.createBy,
@@ -118,33 +119,35 @@ exports.createUser = async (req, res) => {
       });
     }
 
-    const transactioninserted = await insertTransactions(transactionArray);
-    let insertUserBalanceData = {
+    await insertTransactions(transactionArray);
+
+    const insertUserBalanceData = {
       currentBalance: 0,
       userId: insertUser.id,
-      profitLoss: -creditRefrence,
+      profitLoss: -(creditRefrence || 0),
       myProfitLoss: 0,
       downLevelBalance: 0,
       exposure: 0
-    }
-    insertUserBalanceData = await addInitialUserBalance(insertUserBalanceData)
+    };
+
+    await addInitialUserBalance(insertUserBalanceData);
+
     if (insertUser.roleName == userRoleConstant.user) {
-      let buttonValue = [
-        {
-          type: buttonType.MATCH,
-          value: defaultButtonValue.buttons,
-          createBy: insertUser.id
-        },
-        {
-          type: buttonType.SESSION,
-          value: sessiontButtonValue.buttons,
-          createBy: insertUser.id
-        }
-      ]
-      let insertedButton = await insertButton(buttonValue)
+      const buttonValue = [{
+        type: buttonType.MATCH,
+        value: defaultButtonValue.buttons,
+        createBy: insertUser.id
+      }, {
+        type: buttonType.SESSION,
+        value: sessiontButtonValue.buttons,
+        createBy: insertUser.id
+      }];
+      await insertButton(buttonValue);
     }
-    let response = lodash.omit(insertUser, ["password", "transPassword"])
-    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { type: "User" } }, data: response }, req, res)
+
+    const response = lodash.omit(insertUser, ["password", "transPassword"]);
+
+    return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { type: "User" } }, data: response }, req, res);
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -1256,7 +1259,7 @@ exports.totalProfitLoss = async (req, res) => {
         req,
         res
       );
-    queryColumns = await profitLossPercentCol(user, queryColumns);
+    queryColumns = profitLossPercentCol(user, queryColumns);
     totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
 
     if (user && user.roleName == userRoleConstant.user) {
@@ -1297,46 +1300,37 @@ exports.getMatchLockAllChild = async (req, res) => {
 
 exports.userMatchLock = async (req, res) => {
   try {
-    let { userId, matchId, type, block, operationToAll, isFromWallet = false } = req.body;
+    const { userId, matchId, type, block, operationToAll, isFromWallet = false } = req.body;
     let reqUser = req.user;
+
     if (isFromWallet) {
       reqUser.id = userId;
     }
-    if (operationToAll) {
-      userId = reqUser.id;
-    }
-    let childUsers = await getChildUser(userId);
-    let allChildUserIds = childUsers.map(obj => obj.id);
-    if (!operationToAll) {
+
+    const childUsers = await getChildUser(userId);
+    const allChildUserIds = [...childUsers.map(obj => obj.id), ...(operationToAll ? [] : [userId])];
+
+    if (isFromWallet && allChildUserIds.includes(userId)) {
       allChildUserIds.push(userId);
-    }
-    if (isFromWallet) {
-      if (allChildUserIds.includes(userId)) {
-        allChildUserIds.push(userId);
-      }
     }
 
     let returnData;
-    for (let i = 0; i < allChildUserIds.length; i++) {
-      let blockUserId = allChildUserIds[i];
+    for (const blockUserId of allChildUserIds) {
       returnData = await userBlockUnlockMatch(blockUserId, matchId, reqUser, block, type, isFromWallet);
     }
+
     let allChildMatchDeactive = true;
     let allChildSessionDeactive = true;
-    let allDeactive = await isAllChildDeactive({ createBy: reqUser.id, id: Not(reqUser.id) }, ['userMatchLock.id'], matchId);
-    allDeactive.map(ob => {
-      if (!ob.userMatchLock_id) {
+
+    const allDeactive = await isAllChildDeactive({ createBy: reqUser.id, id: Not(reqUser.id) }, ['userMatchLock.id'], matchId);
+    allDeactive.forEach(ob => {
+      if (!ob.userMatchLock_id || !ob.userMatchLock_matchLock) {
         allChildMatchDeactive = false;
-        allChildSessionDeactive = false;
-      } else {
-        if (!ob.userMatchLock_matchLock) {
-          allChildMatchDeactive = false;
-        }
-        if (!ob.userMatchLock_sessionLock) {
-          allChildSessionDeactive = false;
-        }
       }
-    })
+      if (!ob.userMatchLock_id || !ob.userMatchLock_sessionLock) {
+        allChildSessionDeactive = false;
+      }
+    });
 
     return SuccessResponse({
       statusCode: 200,
@@ -1346,24 +1340,23 @@ exports.userMatchLock = async (req, res) => {
   } catch (error) {
     return ErrorResponse(error, req, res);
   }
-
   async function userBlockUnlockMatch(userId, matchId, reqUser, block, type, isFromWallet) {
     let userAlreadyBlockExit = await getUserMatchLock({ userId, matchId, blockBy: reqUser.id, isWalletLock: isFromWallet });
-    if (!userAlreadyBlockExit && !block) {
-      throw { message: { msg: "notUnblockFirst" } };
-    }
 
-    if (!userAlreadyBlockExit && block) {
-      let object = {
-        userId, matchId,
-        blockBy: reqUser.id,
-        isWalletLock: isFromWallet
-      };
-      if (type == matchWiseBlockType.match) {
-        object.matchLock = true;
-      } else {
-        object.sessionLock = true;
+    if (!userAlreadyBlockExit) {
+      if (!block) {
+        throw { message: { msg: "notUnblockFirst" } };
       }
+
+      const object = {
+        userId,
+        matchId,
+        blockBy: reqUser.id,
+        isWalletLock: isFromWallet,
+        matchLock: type == matchWiseBlockType.match && block,
+        sessionLock: type != matchWiseBlockType.match && block
+      };
+
       addUserMatchLock(object);
       return object;
     }
@@ -1374,16 +1367,15 @@ exports.userMatchLock = async (req, res) => {
       userAlreadyBlockExit.sessionLock = block;
     }
 
-    if (!block) {
-      if (!(userAlreadyBlockExit.matchLock || userAlreadyBlockExit.sessionLock)) {
-        deleteUserMatchLock({ id: userAlreadyBlockExit.id });
-        return userAlreadyBlockExit;
-      }
+    if (!block && !(userAlreadyBlockExit.matchLock || userAlreadyBlockExit.sessionLock)) {
+      deleteUserMatchLock({ id: userAlreadyBlockExit.id });
+      return userAlreadyBlockExit;
     }
 
     addUserMatchLock(userAlreadyBlockExit);
     return userAlreadyBlockExit;
   }
+
 }
 
 exports.checkChildDeactivate = async (req, res) => {
@@ -1392,7 +1384,7 @@ exports.checkChildDeactivate = async (req, res) => {
   let allChildMatchDeactive = true;
   let allChildSessionDeactive = true;
   let allDeactive = await isAllChildDeactive({ createBy: reqUser.id, id: Not(reqUser.id) }, ['userMatchLock.id', 'userMatchLock.matchLock', 'userMatchLock.sessionLock'], matchId);
-  allDeactive.map(ob => {
+  allDeactive.forEach(ob => {
     if (!ob.userMatchLock_id) {
       allChildMatchDeactive = false;
       allChildSessionDeactive = false;
