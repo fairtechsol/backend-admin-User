@@ -103,15 +103,18 @@ exports.createUser = async (req, res) => {
       transType: transType.add,
       closingBalance: insertUser.creditRefrence,
       description: walletDescription.userCreate
-    }, {
-      actionBy: insertUser.createBy,
-      searchId: insertUser.id,
-      userId: insertUser.id,
-      amount: 0,
-      transType: transType.withDraw,
-      closingBalance: insertUser.creditRefrence,
-      description: walletDescription.userCreate
     }];
+    if (insertUser.createdBy != insertUser.id) {
+      transactionArray.push({
+        actionBy: insertUser.createBy,
+        searchId: insertUser.id,
+        userId: insertUser.id,
+        amount: 0,
+        transType: transType.withDraw,
+        closingBalance: insertUser.creditRefrence,
+        description: walletDescription.userCreate
+      });
+    }
 
     await insertTransactions(transactionArray);
 
@@ -126,7 +129,7 @@ exports.createUser = async (req, res) => {
 
     await addInitialUserBalance(insertUserBalanceData);
 
-    if (insertUser.roleName === userRoleConstant.user) {
+    if (insertUser.roleName == userRoleConstant.user) {
       const buttonValue = [{
         type: buttonType.MATCH,
         value: defaultButtonValue.buttons,
@@ -1346,8 +1349,8 @@ exports.userMatchLock = async (req, res) => {
         matchId,
         blockBy: reqUser.id,
         isWalletLock: isFromWallet,
-        matchLock: type === matchWiseBlockType.match && block,
-        sessionLock: type !== matchWiseBlockType.match && block
+        matchLock: type == matchWiseBlockType.match && block,
+        sessionLock: type != matchWiseBlockType.match && block
       };
 
       addUserMatchLock(object);
