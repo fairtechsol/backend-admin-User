@@ -384,7 +384,6 @@ const checkUserCreationHierarchy = (creator, createUserRoleName) => {
 
 function genrateTranactionPassword() {
   return crypto.randomInt(0, 999999).toString().padStart(6, '0');
-  // return `${number}`;
 }
 
 // Check old password against the stored password
@@ -460,7 +459,6 @@ exports.changePassword = async (req, res, next) => {
       // Update loginAt and generate new transaction password if conditions are met
       if (user.loginAt == null && user.roleName !== userRoleConstant.user) {
         const generatedTransPass = genrateTranactionPassword();
-        console.log('first', generatedTransPass)
         await updateUser(userId, {
           loginAt: new Date(),
           transPassword: bcrypt.hashSync(generatedTransPass, 10),
