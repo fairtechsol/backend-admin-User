@@ -197,13 +197,13 @@ exports.getUsersByWallet = async (where, select) => {
 
 exports.getChildUser = async (id) => {
   let query = `WITH RECURSIVE p AS (
-    SELECT * FROM "users" WHERE "users"."id" = '${id}'
+    SELECT * FROM "users" WHERE "users"."id" = $1
     UNION
     SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
   )
-SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != '${id}';`
+SELECT "id", "userName" FROM p where "deletedAt" IS NULL AND id != $1;`
 
-  return await user.query(query)
+  return await user.query(query, [id])
 }
 
 exports.getChildUserBalanceSum = async (id, excludeSelfBalance = false, where = "") => {
