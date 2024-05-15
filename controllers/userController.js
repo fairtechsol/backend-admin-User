@@ -51,7 +51,7 @@ exports.createUser = async (req, res) => {
 
     creator.myPartnership = parseInt(myPartnership);
 
-    const upperCaseUserName = userName ? userName.toUpperCase() : userName;
+    const upperCaseUserName = userName?.toUpperCase();
     const userExist = await getUserByUserName(upperCaseUserName);
     if (userExist)
       return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
