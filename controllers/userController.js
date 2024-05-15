@@ -757,10 +757,29 @@ exports.userList = async (req, res, next) => {
           ]
           : []),
       ];
+      const total = data?.reduce((prev, curr) => {
+        prev["creditRefrence"] = (prev["creditRefrence"] || 0) + (curr["creditRefrence"] || 0);
+        prev["balance"] = (prev["balance"] || 0) + (curr["balance"] || 0);
+        prev["availableBalance"] = (prev["availableBalance"] || 0) + (curr["availableBalance"] || 0);
 
+        if (prev["userBal"]) {
+          prev["userBal"] = {
+            profitLoss: (prev["userBal"]["profitLoss"] || 0) + (curr["userBal"]["profitLoss"] || 0),
+            exposure: (prev["userBal"]["exposure"] || 0) + (curr["userBal"]["exposure"] || 0)
+          }
+        }
+        else {
+          prev["userBal"] = {
+            profitLoss: (curr["userBal"]["profitLoss"] || 0),
+            exposure: (curr["userBal"]["exposure"] || 0),
+          }
+        }
+        return prev
+      }, {});
+      data?.unshift(total);
 
       const fileGenerate = new FileGenerate(type);
-      const file = await fileGenerate.generateReport(data, header);
+      const file = await fileGenerate.generateReport(data, header, "Client List Report");
       const fileName = `accountList_${new Date()}`
 
       return SuccessResponse(
