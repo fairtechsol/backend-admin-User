@@ -6,6 +6,7 @@ const { insertButton } = require('../services/buttonService');
 const { getTotalProfitLoss, findAllPlacedBet, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
+const crypto = require('crypto');
 const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
@@ -381,10 +382,10 @@ const checkUserCreationHierarchy = (creator, createUserRoleName) => {
 
 }
 
-const generateTransactionPass = () => {
-  const randomNumber = Math.floor(100000 + Math.random() * 900000);
-  return `${randomNumber}`;
-};
+function genrateTranactionPassword() {
+  const number = crypto.randomInt(0, 999999).toString().padStart(6, '0');
+  return `${number}`;
+}
 
 // Check old password against the stored password
 const checkOldPassword = async (userId, oldPassword) => {
@@ -458,7 +459,7 @@ exports.changePassword = async (req, res, next) => {
 
       // Update loginAt and generate new transaction password if conditions are met
       if (user.loginAt == null && user.roleName !== userRoleConstant.user) {
-        const generatedTransPass = generateTransactionPass();
+        const generatedTransPass = genrateTranactionPassword();
         await updateUser(userId, {
           loginAt: new Date(),
           transPassword: bcrypt.hashSync(generatedTransPass, 10),
