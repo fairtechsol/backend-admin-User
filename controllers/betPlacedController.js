@@ -1730,7 +1730,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       data: req.body
     });
     let reqUser = req.user;
-    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName } = req.body;
+    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, gameType } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     if (!userBalanceData?.user) {
@@ -1770,7 +1770,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
     if (Object.values(marketBettingTypeByBettingType)?.includes(matchBetType) && newCalculateOdd > 400) {
-      return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
+      return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: gameType } } }, req, res);
     }
 
     if (bettingType == betType.BACK) {
