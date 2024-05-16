@@ -1287,7 +1287,8 @@ exports.totalProfitLoss = async (req, res) => {
 
 exports.getMatchLockAllChild = async (req, res) => {
   let reqUser = req.user;
-  let childUsers = await getMatchLockAllChild(reqUser.id);
+  let matchId = req.query.matchId;
+  let childUsers = await getMatchLockAllChild(reqUser.id, matchId);
   return SuccessResponse({
     statusCode: 200,
     data: childUsers,

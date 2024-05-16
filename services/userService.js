@@ -357,15 +357,15 @@ exports.deleteUserMatchLock = async (where) => {
   return deleted;
 };
 
-exports.getMatchLockAllChild = (id) => {
+exports.getMatchLockAllChild = (id, matchId) => {
   const query = `
     SELECT p."id", p."userName", um."blockBy", um."matchId", um."matchLock", um."sessionLock"
     FROM "users" p
     LEFT JOIN "userMatchLocks" um ON p.id = um."userId"
-    WHERE p."deletedAt" IS NULL AND p.id != $1 AND p."createBy" = $1;
+    WHERE p."deletedAt" IS NULL AND p.id != $1 AND p."createBy" = $1 AND um."matchId" = $2;
   `;
   try {
-    return user.query(query, [id]);
+    return user.query(query, [id, matchId]);
   } catch (error) {
     throw error;
   }
