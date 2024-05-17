@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, redisKeys, partnershipPrefixByRole, uplinePartnerShipForAllUsers } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -1297,23 +1297,20 @@ exports.getMatchLockAllChild = async (req, res) => {
 
 exports.userMatchLock = async (req, res) => {
   try {
-    const { userId, matchId, type, block, operationToAll, isFromWallet = false } = req.body;
-    let reqUser = req.user;
+    const { userId, matchId, type, block,operationToAll, roleName } = req.body;
+    let reqUser = req.user || {};
 
-    if (isFromWallet) {
+    if (roleName == userRoleConstant.fairGameAdmin || roleName == userRoleConstant.fairGameWallet) {
       reqUser.id = userId;
+      reqUser.roleName = roleName;
     }
 
-    const childUsers = isFromWallet ? await getChildUser(userId) : await getUser({ superParentId: userId }, ["id", "userName"]);
+    const childUsers = roleName == userRoleConstant.fairGameWallet ? await getAllUsers({}, ["id", "userName"]) : roleName == userRoleConstant.fairGameAdmin ? await getAllUsers({ superParentId: userId }, ["id", "userName"]) : await getChildUser(userId);
     const allChildUserIds = [...childUsers.map(obj => obj.id), ...(operationToAll ? [] : [userId])];
-
-    if (isFromWallet && allChildUserIds.includes(userId)) {
-      allChildUserIds.push(userId);
-    }
 
     let returnData;
     for (const blockUserId of allChildUserIds) {
-      returnData = await userBlockUnlockMatch(blockUserId, matchId, reqUser, block, type, isFromWallet);
+      returnData = await userBlockUnlockMatch(blockUserId, matchId, reqUser, block, type);
     }
 
     let allChildMatchDeactive = true;
@@ -1337,8 +1334,8 @@ exports.userMatchLock = async (req, res) => {
   } catch (error) {
     return ErrorResponse(error, req, res);
   }
-  async function userBlockUnlockMatch(userId, matchId, reqUser, block, type, isFromWallet) {
-    let userAlreadyBlockExit = await getUserMatchLock({ userId, matchId, blockBy: reqUser.id, isWalletLock: isFromWallet });
+  async function userBlockUnlockMatch(userId, matchId, reqUser, block, type) {
+    let userAlreadyBlockExit = await getUserMatchLock({ userId, matchId, blockBy: reqUser.id });
 
     if (!userAlreadyBlockExit) {
       if (!block) {
@@ -1349,7 +1346,6 @@ exports.userMatchLock = async (req, res) => {
         userId,
         matchId,
         blockBy: reqUser.id,
-        isWalletLock: isFromWallet,
         matchLock: type == matchWiseBlockType.match && block,
         sessionLock: type != matchWiseBlockType.match && block
       };
