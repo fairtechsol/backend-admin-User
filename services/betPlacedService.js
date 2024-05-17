@@ -33,7 +33,7 @@ exports.deleteBetByEntityOnError = async (body) => {
   return userBet;
 }
 
-exports.getBet = async (where, query, roleName, select, superParentId) => {
+exports.getBet = async (where, query, roleName, select, superParentId, isTeamNameAllow=true) => {
   let pgQuery = BetPlaced.createQueryBuilder('betPlaced').where(where);
   if (roleName == userRoleConstant.fairGameAdmin) {
     pgQuery.innerJoinAndMapOne(
@@ -56,10 +56,16 @@ exports.getBet = async (where, query, roleName, select, superParentId) => {
     "match",
     "match",
     "betPlaced.matchId = match.id"
-  ).select(select).addSelect(`CASE
-  WHEN "betPlaced"."marketType" IN (:...bettingType) THEN "betPlaced"."teamName"  || ' ' || REGEXP_REPLACE("betPlaced"."marketType", '[^0-9.]+', '', 'g')
-  ELSE "betPlaced"."teamName"
-END`, `${pgQuery.alias}_teamName`).orderBy("betPlaced.createdAt", 'DESC').setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))]);
+  ).select(select).orderBy("betPlaced.createdAt", 'DESC')
+
+  if (isTeamNameAllow) {
+    pgQuery.addSelect(`CASE
+    WHEN "betPlaced"."marketType" IN (:...bettingType) THEN "betPlaced"."teamName"  || ' ' || REGEXP_REPLACE("betPlaced"."marketType", '[^0-9.]+', '', 'g')
+    ELSE "betPlaced"."teamName"
+  END`, `${pgQuery.alias}_teamName`)
+      .setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))]);
+  }
+
   return await new ApiFeature(
     pgQuery,
     query
