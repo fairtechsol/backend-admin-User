@@ -1304,7 +1304,7 @@ exports.userMatchLock = async (req, res) => {
       reqUser.id = userId;
     }
 
-    const childUsers = await getChildUser(userId);
+    const childUsers = isFromWallet ? await getChildUser(userId) : await getUser({ superParentId: userId }, ["id", "userName"]);
     const allChildUserIds = [...childUsers.map(obj => obj.id), ...(operationToAll ? [] : [userId])];
 
     if (isFromWallet && allChildUserIds.includes(userId)) {
