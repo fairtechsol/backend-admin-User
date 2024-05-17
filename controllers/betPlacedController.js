@@ -1678,7 +1678,7 @@ exports.profitLoss = async (req, res) => {
       childsId = childsId.map(item => item.id)
       if (!childsId.length) {
         return SuccessResponse({
-          statusCode: 200, data: { result: [], total: 0 }
+          statusCode: 200, data: { result: [], count: 0, total: {} }
         }, req, res);
       }
       where.createBy = In(childsId);
