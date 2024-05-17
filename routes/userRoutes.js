@@ -24,7 +24,7 @@ router.post("/generateTransactionPassword", isAuthenticate, validator(generateTr
 
 router.get("/generalReport", isAuthenticate, generalReport);
 router.post("/totalProfitLoss", isAuthenticate, totalProfitLossWallet);
-router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), userMatchLock);
+router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), checkTransactionPassword, userMatchLock);
 router.get("/getMatchLockAllChild", isAuthenticate, getMatchLockAllChild);
 router.get("/getUserDetailsForParent", isAuthenticate, getUserDetailsForParent);
 router.get("/checkChildDeactivate", isAuthenticate, checkChildDeactivate);
