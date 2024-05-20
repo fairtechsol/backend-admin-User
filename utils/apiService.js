@@ -38,6 +38,8 @@ exports.allApiRoutes = {
     matchDetails: "/superAdmin/match/",
     matchDetailsForFootball:"/superadmin/otherMatch/",
     matchList: "/superAdmin/match/list",
+    racingMatchList: "/superAdmin/match/racing/list",
+    racingMatchCountryCodeList: "/superAdmin/match/racing/countryCode",
     MatchBettingDetail : "/superAdmin/matchBetting/",
     sessionDetail: "/superAdmin/session/"
   },

@@ -74,6 +74,7 @@ exports.calculateRate = async (teamRates, data, partnership = 100) => {
   }
   return newTeamRates;
 }
+
 exports.calculateExpertRate = async (teamRates, data, partnership = 100) => {
   let { teamA, teamB, teamC, winAmount, lossAmount, bettingType, betOnTeam } = data;
   let newTeamRates = {
@@ -117,6 +118,68 @@ exports.calculateExpertRate = async (teamRates, data, partnership = 100) => {
     teamB: Number(newTeamRates.teamB.toFixed(2)),
     teamC: Number(newTeamRates.teamC.toFixed(2))
   }
+  return newTeamRates;
+}
+
+exports.calculateRacingRate = async (teamRates, data, partnership = 100) => {
+  let { runners, winAmount, lossAmount, bettingType, runnerId } = data;
+  let newTeamRates = { ...teamRates };
+  runners.forEach((item) => {
+    if (!newTeamRates[item?.id]) {
+      newTeamRates[item?.id] = 0;
+    }
+
+    if (item?.id == runnerId) {
+      if (bettingType == betType.BACK) {
+        newTeamRates[item?.id] += ((winAmount * partnership) / 100);
+      }
+      else if (bettingType == betType.LAY) {
+        newTeamRates[item?.id] -= ((lossAmount * partnership) / 100);
+      }
+    }
+    else {
+      if (bettingType == betType.BACK) {
+        newTeamRates[item?.id] -= ((lossAmount * partnership) / 100);
+      }
+      else if (bettingType == betType.LAY) {
+        newTeamRates[item?.id] += ((winAmount * partnership) / 100);
+      }
+    }
+
+    newTeamRates[item?.id] = this.parseRedisData(item?.id, newTeamRates);
+  });
+
+  return newTeamRates;
+}
+
+exports.calculateRacingExpertRate = async (teamRates, data, partnership = 100) => {
+  let { runners, winAmount, lossAmount, bettingType, runnerId } = data;
+  let newTeamRates = { ...teamRates };
+
+  runners.forEach((item) => {
+    if (!newTeamRates[item?.id]) {
+      newTeamRates[item?.id] = 0;
+    }
+
+    if (item?.id == runnerId) {
+      if (bettingType == betType.BACK) {
+        newTeamRates[item?.id] -= ((winAmount * partnership) / 100);
+      }
+      else if (bettingType == betType.LAY) {
+        newTeamRates[item?.id] += ((lossAmount * partnership) / 100);
+      }
+    }
+    else {
+      if (bettingType == betType.BACK) {
+        newTeamRates[item?.id] += ((lossAmount * partnership) / 100);
+      }
+      else if (bettingType == betType.LAY) {
+        newTeamRates[item?.id] -= ((winAmount * partnership) / 100);
+      }
+    }
+
+    newTeamRates[item?.id] = this.parseRedisData(item?.id, newTeamRates);
+  });
   return newTeamRates;
 }
 
