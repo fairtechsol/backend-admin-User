@@ -11,7 +11,8 @@ module.exports.resultType = {
 module.exports.gameType = {
   cricket: "cricket",
   football: "football",
-  tennis:"tennis"
+  tennis: "tennis",
+  horseRacing: "horseRacing"
 }
 module.exports.tiedManualTeamName = {
   yes: "YES",

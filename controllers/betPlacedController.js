@@ -2474,7 +2474,8 @@ exports.racingBettingBetPlaced = async (req, res) => {
       browserDetail: browserDetail || req.headers['user-agent'],
       eventName: match.title,
       eventType: match.matchType,
-      bettingName: bettingName
+      bettingName: bettingName,
+      runnerId: runnerId
     }
     await validateRacingBettingDetails(matchBetting, betPlacedObj, placeIndex, selectionId);
 
@@ -2491,7 +2492,7 @@ exports.racingBettingBetPlaced = async (req, res) => {
     }
 
     if(!teamRates){
-      teamRates=runners.reduce((acc, key) => {
+      teamRates = runners.reduce((acc, key) => {
         acc[key?.id] = 0;
         return acc;
       }, {});
