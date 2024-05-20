@@ -116,6 +116,14 @@ module.exports.userMatchLockValidate = Joi.object({
   matchId: Joi.string().guid({ version: 'uuidv4' }).required(),
   type: Joi.string().valid(...Object.values(matchWiseBlockType)).required(),
   block: Joi.boolean().required(),
+  operationToAll: Joi.boolean()
+});
+
+module.exports.oldUserMatchLockValidate = Joi.object({
+  userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  matchId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  type: Joi.string().valid(...Object.values(matchWiseBlockType)).required(),
+  block: Joi.boolean().required(),
   operationToAll: Joi.boolean(),
   transactionPassword: Joi.string().required().messages({
     'string.base': '"Transaction Password" must be a string',
