@@ -460,6 +460,7 @@ module.exports.socketData = {
 exports.marketBetType = {
   SESSION: "SESSION",
   MATCHBETTING: "MATCHBETTING",
+  RACING: "RACING"
 };
 
 module.exports.manualMatchBettingType = [
