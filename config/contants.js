@@ -196,6 +196,11 @@ module.exports.matchBettingType = {
     return prev;
   }, {}))
 };
+
+module.exports.racingBettingType = {
+  matchOdd: "matchOdd",
+};
+
 module.exports.mainMatchMarketType = [this.matchBettingType.matchOdd, this.matchBettingType.quickbookmaker1, this.matchBettingType.quickbookmaker2, this.matchBettingType.quickbookmaker3, this.matchBettingType.bookmaker];
 
 module.exports.tieCompleteBetType = {
