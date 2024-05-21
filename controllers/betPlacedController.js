@@ -2399,14 +2399,14 @@ exports.racingBettingBetPlaced = async (req, res) => {
       })
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
-    let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
-    if (getMatchLockData?.matchLock) {
-      logger.info({
-        info: `user is blocked for the match ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
-        data: req.body
-      })
-      return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
-    }
+    // let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
+    // if (getMatchLockData?.matchLock) {
+    //   logger.info({
+    //     info: `user is blocked for the match ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
+    //     data: req.body
+    //   })
+    //   return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
+    // }
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
     newCalculateOdd = (newCalculateOdd - 1) * 100;

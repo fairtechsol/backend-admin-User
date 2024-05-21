@@ -413,9 +413,9 @@ let calculateRacingRateAmount = async (userRedisData, jobData, userId) => {
         try {
           // Get user data from Redis or balance data by userId
           let masterRedisData = await getUserRedisData(partnershipId);
-          if (lodash.isEmpty(masterRedisData)) {
-            await updateUserExposure(partnershipId, (- userOldExposure + userCurrentExposure));
-          } else {
+          await updateUserExposure(partnershipId, (- userOldExposure + userCurrentExposure));
+
+          if (!lodash.isEmpty(masterRedisData)) {
             let masterExposure = masterRedisData?.exposure ? masterRedisData.exposure : 0;
             let partnerExposure = (parseFloat(masterExposure) || 0) - userOldExposure + userCurrentExposure;
 
@@ -444,8 +444,6 @@ let calculateRacingRateAmount = async (userRedisData, jobData, userId) => {
             
              // updating redis
             await incrementValuesRedis(partnershipId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure }, userRedisObj);
-             // updating db
-            await updateUserExposure(partnershipId, (- userOldExposure + userCurrentExposure));
 
             jobData.myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
             sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { userRedisData, jobData, userRedisObj })
