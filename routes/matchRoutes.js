@@ -2,9 +2,9 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
 const { isAuthenticate } = require('../middleware/auth');
-const { matchDetails, listMatch,matchDetailsForFootball, listRacingCountryCode, listRacingMatch } = require('../controllers/matchController');
-const { addMatch } = require('../controllers/expertController');
-const { addMatchValidate } = require('../validators/matchValidator');
+const { matchDetails, listMatch, matchDetailsForFootball, listRacingCountryCode, listRacingMatch } = require('../controllers/matchController');
+const { addMatch, raceAdd } = require('../controllers/expertController');
+const { addMatchValidate, addRaceValidate } = require('../validators/matchValidator');
 
 router.get('/list', isAuthenticate, listMatch);
 //racing list
@@ -14,5 +14,7 @@ router.get('/racing/list', isAuthenticate, listRacingMatch);
 router.get('/:id', isAuthenticate, matchDetails);
 router.get('/other/:id', isAuthenticate, matchDetailsForFootball);
 router.post('/add', validator(addMatchValidate), addMatch);
+router.post('/raceAdd', validator(addRaceValidate), raceAdd);
+
 
 module.exports = router;
