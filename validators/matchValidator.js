@@ -65,14 +65,6 @@ module.exports.addMatchValidate = Joi.object({
       "date.base": "Start date must be a valid date",
       "any.required": "Start date is required",
     }),
-    competitionId: Joi.string().required().messages({
-      "string.base": "Competition ID must be a string",
-      "any.required": "Competition ID is required",
-    }),
-    competitionName: Joi.string().required().messages({
-      "string.base": "Competition name must be a string",
-      "any.required": "Competition name is required",
-    }),
     title: Joi.string().required().messages({
       "string.base": "Title must be a string",
       "any.required": "Title is required",
@@ -90,16 +82,16 @@ module.exports.addMatchValidate = Joi.object({
       "any.required": "Start date is required",
     }),
     venue: Joi.string().required().messages({
-      "string.base": "venue must be a string",
-      "any.required": "venue is required",
+      "string.base": "Venue must be a string",
+      "any.required": "Venue is required",
     }),
     raceType: Joi.string().required().messages({
-      "string.base": "raceType must be a string",
-      "any.required": "raceType is required",
+      "string.base": "Race Type must be a string",
+      "any.required": "Race Type  is required",
     }),
     countryCode: Joi.string().required().messages({
-      "string.base": "countryCode must be a string",
-      "any.required": "countryCode is required",
+      "string.base": "Country Code must be a string",
+      "any.required": "Country Code is required",
     }),
     createdAt: Joi.date().required().messages({
         "date.base": "Created at date must be a valid date",
