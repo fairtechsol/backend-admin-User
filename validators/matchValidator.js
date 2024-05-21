@@ -62,8 +62,8 @@ module.exports.addMatchValidate = Joi.object({
       "any.required": "Match type is required",
     }),
     createBy: Joi.string().required().messages({
-      "date.base": "Start date must be a valid date",
-      "any.required": "Start date is required",
+      "string.base": "Create By must be a valid userId",
+      "any.required": "Create By is required",
     }),
     title: Joi.string().required().messages({
       "string.base": "Title must be a string",
