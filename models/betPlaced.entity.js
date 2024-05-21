@@ -97,10 +97,14 @@ const betPlacedSchema = new EntitySchema({
             type : 'varchar',
             nullable : true
         },
-        bettingName:{
-            type : 'varchar',
-            nullable : true
-        }
+        bettingName: {
+            type: 'varchar',
+            nullable: true
+        },
+        runnerId: {
+            type: 'varchar',
+            nullable: true
+        },
     },
     relations: {
         user: {

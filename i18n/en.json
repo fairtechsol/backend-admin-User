@@ -68,6 +68,7 @@
     "resultUnDeclared": "Result un declared successfully.",
     "matchNotLive": "Match is currently not live.",
     "oddNotAllow": "Bet not accept rate over 5.01 on {gameType}",
-    "validGameType":"Provide a valid game type."
+    "validGameType":"Provide a valid game type.",
+    "placingBetBeforeTime": "You can place bet before {min} minutes of match start time."
   }
 }

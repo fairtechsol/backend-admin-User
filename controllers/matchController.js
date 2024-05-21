@@ -221,3 +221,64 @@ exports.listMatch = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.listRacingMatch = async (req, res) => {
+  try {
+    // let user = req.user;
+    let domain = expertDomain;
+    let apiResponse = {};
+    try {
+      apiResponse = await apiCall(
+        apiMethod.get,
+        domain + allApiRoutes.MATCHES.racingMatchList,
+        null,
+        null,
+        req.query
+      );
+    } catch (error) {
+      throw error?.response?.data;
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "match details", keys: { name: "Match" } },
+        data: apiResponse.data,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.listRacingCountryCode = async (req, res) => {
+  try {
+    let domain = expertDomain;
+    let apiResponse = {};
+    try {
+      apiResponse = await apiCall(
+        apiMethod.get,
+        domain + allApiRoutes.MATCHES.racingMatchCountryCodeList,
+        null,
+        null,
+        req.query
+      );
+    } catch (error) {
+      throw error?.response?.data;
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "match details", keys: { name: "Match" } },
+        data: apiResponse.data,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
