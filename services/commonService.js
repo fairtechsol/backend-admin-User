@@ -129,21 +129,11 @@ exports.calculateRacingRate = async (teamRates, data, partnership = 100) => {
       newTeamRates[item?.id] = 0;
     }
 
-    if (item?.id == runnerId) {
-      if (bettingType == betType.BACK) {
-        newTeamRates[item?.id] += ((winAmount * partnership) / 100);
-      }
-      else if (bettingType == betType.LAY) {
-        newTeamRates[item?.id] -= ((lossAmount * partnership) / 100);
-      }
+    if ((item?.id == runnerId && bettingType == betType.BACK) || (item?.id != runnerId && bettingType == betType.LAY)) {
+      newTeamRates[item?.id] += ((winAmount * partnership) / 100);
     }
-    else {
-      if (bettingType == betType.BACK) {
-        newTeamRates[item?.id] -= ((lossAmount * partnership) / 100);
-      }
-      else if (bettingType == betType.LAY) {
-        newTeamRates[item?.id] += ((winAmount * partnership) / 100);
-      }
+    else if ((item?.id != runnerId && bettingType == betType.BACK) || (item?.id == runnerId && bettingType == betType.LAY)) {
+      newTeamRates[item?.id] -= ((lossAmount * partnership) / 100);
     }
 
     newTeamRates[item?.id] = this.parseRedisData(item?.id, newTeamRates);
@@ -161,22 +151,12 @@ exports.calculateRacingExpertRate = async (teamRates, data, partnership = 100) =
       newTeamRates[item?.id] = 0;
     }
 
-    if (item?.id == runnerId) {
-      if (bettingType == betType.BACK) {
+      if ((item?.id == runnerId && bettingType == betType.BACK) || (item?.id != runnerId && bettingType == betType.LAY)) {
         newTeamRates[item?.id] -= ((winAmount * partnership) / 100);
       }
-      else if (bettingType == betType.LAY) {
+      else if ((item?.id != runnerId && bettingType == betType.BACK) || (item?.id == runnerId && bettingType == betType.LAY)) {
         newTeamRates[item?.id] += ((lossAmount * partnership) / 100);
       }
-    }
-    else {
-      if (bettingType == betType.BACK) {
-        newTeamRates[item?.id] += ((lossAmount * partnership) / 100);
-      }
-      else if (bettingType == betType.LAY) {
-        newTeamRates[item?.id] -= ((winAmount * partnership) / 100);
-      }
-    }
 
     newTeamRates[item?.id] = this.parseRedisData(item?.id, newTeamRates);
   });
