@@ -4902,17 +4902,15 @@ exports.unDeclareRaceMatchResult = async (req, res) => {
       betIds,
       matchId,
       0,
-      matchBetting,
       socketData.matchResultUnDeclare,
       userId,
       bulkWalletRecord,
       upperUserObj,
-      match,
       // commissionData, 
       matchOddsWinBets,
-       matchBetting,
-       matchBetType,
-       matchOddId
+      matchBetting,
+      matchBetType,
+      matchOddId
     );
     // deleteCommission(matchOddId);
 
@@ -5029,9 +5027,9 @@ exports.unDeclareRaceMatchResult = async (req, res) => {
   }
 }
 
-const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, matchData,
+const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj,
   //  commissionData, 
-  matchOddsWinBets, matchDetailsBetIds, merketBetType, currBetId) => {
+  matchOddsWinBets, matchDetails, merketBetType, currBetId) => {
 
   let faAdminCal = {
     admin: {},
@@ -5056,7 +5054,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     logger.info({ message: "Updated users", data: user.user });
 
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
-    let redisData = await calculateProfitLossForRacingMatchToResult(betId, user.user?.id, matchData);
+    let redisData = await calculateProfitLossForRacingMatchToResult(betId, user.user?.id, matchDetails?.[0]);
     Object.keys(redisData)?.forEach((key) => {
       maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || 0), 0));
     });
@@ -5072,7 +5070,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
       data: user.user.exposure
     });
 
-    let result = resultDeclare?.[0]?.result;
+    let result = matchDetails?.[0]?.result;
 
     getWinAmount = getMultipleAmount.winAmount;
     getLossAmount = getMultipleAmount.lossAmount;
@@ -5095,12 +5093,12 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
         createdAt: new Date(),
         description: `Revert deducted 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
         uniqueId: uniqueId,
-        betId: [matchDetailsBetIds?.find((item) => item?.type == matchBettingType.matchOdd)?.id]
+        betId: [matchDetails?.find((item) => item?.type == racingBettingType.matchOdd)?.id]
       });
     });
 
     // deducting 1% from match odd win amount
-    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0 && merketBetType == matchBettingType.quickbookmaker1) {
+    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
       profitLoss -= parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
     }
 
@@ -5166,7 +5164,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     });
 
     // deducting 1% from match odd win amount 
-    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0 && merketBetType == matchBettingType.quickbookmaker1) {
+    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
       user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance + (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
     }
 
@@ -5228,7 +5226,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
 
         Object.keys(redisData)?.forEach((item) => {
           if (upperUserObj[patentUser.id][item]) {
-            redisData[item]?.forEach((plKeys) => {
+            Object.keys(redisData[item])?.forEach((plKeys) => {
               if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
                 upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
               }
@@ -5239,7 +5237,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
           }
           else {
             upperUserObj[patentUser.id][item] ={};
-            redisData[item]?.forEach((plKeys) => {
+            Object.keys(redisData[item])?.forEach((plKeys) => {
               if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
                 upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
               }
@@ -5264,7 +5262,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
 
         Object.keys(redisData)?.forEach((item) => {
           upperUserObj[patentUser.id][item] = {};
-          redisData[item]?.forEach((plKeys) => {
+          Object.keys(redisData[item])?.forEach((plKeys) => {
             if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
               upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
             }
@@ -5287,7 +5285,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     Object.keys(redisData)?.forEach((item) => {
       if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
         if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
-          redisData[item]?.forEach((plKeys) => {
+          Object.keys(redisData[item])?.forEach((plKeys) => {
             if (faAdminCal.admin[user.user.superParentId]?.[item]?.[plKeys]) {
               faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
             }
@@ -5301,7 +5299,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
             faAdminCal.admin[user.user.superParentId] = {};
           }
           faAdminCal.admin[user.user.superParentId][item] ={};
-          redisData[item]?.forEach((plKeys) => {
+          Object.keys(redisData[item])?.forEach((plKeys) => {
             if (faAdminCal.admin[user.user.superParentId][item]?.[plKeys]) {
               faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
             }
@@ -5312,23 +5310,23 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
         }
       }
       if (faAdminCal.wallet?.[item]) {
-        redisData[item]?.forEach((plKeys) => {
+        Object.keys(redisData[item])?.forEach((plKeys) => {
           if (faAdminCal.wallet?.[item]?.[plKeys]) {
-            faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+            faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
           }
           else {
-            faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+            faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
           }
         });
       }
       else {
         faAdminCal.wallet[item] ={};
-        redisData[item]?.forEach((plKeys) => {
+        Object.keys(redisData[item])?.forEach((plKeys) => {
           if (faAdminCal.wallet[item]?.[plKeys]) {
-            faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+            faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
           }
           else {
-            faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+            faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
           }
         });
       }
