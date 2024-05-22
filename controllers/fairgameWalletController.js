@@ -4343,7 +4343,7 @@ exports.declarRaceMatchResult = async (req, res) => {
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
     logger.info({
-      message: "Other match result declared.",
+      message: "Race match result declared.",
       data: {
         betIds,
         result,
