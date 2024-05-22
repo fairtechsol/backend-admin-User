@@ -12,7 +12,7 @@ const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildPro
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
-const { hasUserInCache, updateUserDataRedis, getUserRedisKeys } = require('../services/redis/commonfunction');
+const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 
@@ -1665,6 +1665,31 @@ exports.checkOldPasswordData = async (req, res) => {
 
   } catch (error) {
     logger.error({ message: "Error in checking old password.", stack: error?.stack, context: error?.message });
+    return ErrorResponse(error, req, res);
+  }
+}
+
+exports.checkMatchLock=async (req,res)=>{
+  try {
+    const { matchId } = req.query;
+    const { id } = req.user;
+
+    const userPartnershipData = await getUserRedisKey(id, "partnerShips");
+    const userPartnership = JSON.parse(userPartnershipData);
+    let parentKeys = [];
+    Object.values(partnershipPrefixByRole)?.forEach((item) => {
+      if (userPartnership[`${item}PartnershipId`] && userPartnership[`${item}PartnershipId`] != id) {
+        parentKeys.push(userPartnership[`${item}PartnershipId`]);
+      }
+    });
+
+    let parentBlock = await getUserMatchLock({ userId: id, matchId, blockBy: In(parentKeys) });
+    let selfBlock = await getUserMatchLock({ userId: id, matchId, blockBy: id });
+
+    return SuccessResponse({ statusCode: 200, data: { parentBlock: !!parentBlock, selfBlock: !!selfBlock } }, req, res);
+
+  } catch (error) {
+    logger.error({ message: "Error in check match lock.", stack: error?.stack, context: error?.message });
     return ErrorResponse(error, req, res);
   }
 }

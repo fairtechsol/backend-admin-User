@@ -63,14 +63,10 @@ const setUserDetailsRedis = async (user) => {
       currentBalance: user?.userBal?.currentBalance || 0,
       roleName: user.roleName,
       ...(betData || {}),
-      ...(otherMatchBetData||{}),
+      ...(otherMatchBetData || {}),
       ...(racingMatchData, {}),
-      ...(user.roleName === userRoleConstant.user
-        ? {
-          partnerShips: await findUserPartnerShipObj(user),
-          userRole: user.roleName,
-        }
-        : {}),
+      partnerShips: await findUserPartnerShipObj(user),
+      userRole: user.roleName,
     });
 
     // Expire user data in Redis
