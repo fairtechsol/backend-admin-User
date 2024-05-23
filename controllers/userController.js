@@ -1683,10 +1683,24 @@ exports.checkMatchLock=async (req,res)=>{
       }
     });
 
-    let parentBlock = await getUserMatchLock({ userId: id, matchId, blockBy: In(parentKeys) });
-    let selfBlock = await getUserMatchLock({ userId: id, matchId, blockBy: id });
+    let blockObj = {
+      match: {
+        parentBlock: false,
+        selfBlock: false
+      },
+      session: {
+        parentBlock: false,
+        selfBlock: false
+      }
+    };
 
-    return SuccessResponse({ statusCode: 200, data: { parentBlock: !!parentBlock, selfBlock: !!selfBlock } }, req, res);
+    blockObj.match.parentBlock = !!(await getUserMatchLock({ userId: id, matchId, blockBy: In(parentKeys), sessionLock: false }));
+    blockObj.match.selfBlock = !!(await getUserMatchLock({ userId: id, matchId, blockBy: id, sessionLock: false }));
+
+    blockObj.session.parentBlock = !!(await getUserMatchLock({ userId: id, matchId, blockBy: In(parentKeys), sessionLock: true }));
+    blockObj.session.selfBlock = !!(await getUserMatchLock({ userId: id, matchId, blockBy: id, sessionLock: true }));
+
+    return SuccessResponse({ statusCode: 200, data: blockObj }, req, res);
 
   } catch (error) {
     logger.error({ message: "Error in check match lock.", stack: error?.stack, context: error?.message });
