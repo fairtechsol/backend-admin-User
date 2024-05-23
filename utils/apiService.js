@@ -36,6 +36,7 @@ exports.allApiRoutes = {
   getMatchByCompetitionAndDate:"/match/competition/getMatch",
   MATCHES: {
     matchDetails: "/superAdmin/match/",
+    raceDetails: "/superAdmin/match/racing/",
     matchDetailsForFootball:"/superadmin/otherMatch/",
     matchList: "/superAdmin/match/list",
     racingMatchList: "/superAdmin/match/racing/list",
