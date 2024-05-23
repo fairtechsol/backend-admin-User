@@ -6,7 +6,7 @@ const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate } = require('../services/commonService');
+const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
@@ -1130,6 +1130,7 @@ exports.deleteMultipleBet = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 }
+
 exports.deleteMultipleBetForOther = async (req, res) => {
   try {
     const {
@@ -1204,6 +1205,7 @@ exports.deleteMultipleBetForOther = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 }
+
 const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, domainUrl) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = userRedisData ? true : false;
@@ -2645,4 +2647,298 @@ exports.racingBettingBetPlaced = async (req, res) => {
     });
     return ErrorResponse(error, req, res)
   }
+}
+
+exports.deleteRaceMultipleBet = async (req, res) => {
+  try {
+    const {
+      matchId, data, deleteReason
+    } = req.body;
+  
+    if (data?.length == 0) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "NoData",
+          },
+        },
+        req,
+        res
+      );
+    }
+    let placedBetIdArray = [];
+    data.forEach(obj => {
+      placedBetIdArray.push(obj.placeBetId);
+    });
+    let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, id: In(placedBetIdArray) });
+    let updateObj = {};
+    placedBet.forEach(bet => {
+     
+      if (!updateObj[bet.createBy]) {
+        updateObj[bet.createBy] = { [bet.betId]: { array: [bet] } };
+      } else {
+        if (!updateObj[bet.createBy][bet.betId]) {
+          updateObj[bet.createBy][bet.betId] = { array: [bet] };
+        } else {
+          updateObj[bet.createBy][bet.betId].array.push(bet);
+        }
+      }
+    });
+
+    let apiResponse = {};
+    try {
+      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + matchBettingType.quickbookmaker1;
+      apiResponse = await apiCall(apiMethod.get, url);
+    } catch (error) {
+      logger.info({
+        info: `Error at get match details for delete match bet.`,
+        data: req.body
+      });
+      throw error?.response?.data;
+    }
+    let { runners } = apiResponse.data;
+
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
+    if (Object.keys(updateObj).length > 0) {
+      for (let key in updateObj) {
+        let userId = key;
+        let userDataDelete = updateObj[key];
+        for (let value in userDataDelete) {
+          let betId = value;
+          let bet = userDataDelete[value];
+          await updateUserAtMatchOddsRacing(userId, betId, matchId, bet.array, deleteReason, domainUrl, runners);
+        };
+      }
+    }
+    return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
+  } catch (error) {
+    logger.error({
+      error: `Error at delete bet for the user.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res);
+  }
+}
+
+const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteReason, domainUrl, runners) => {
+  let userRedisData = await getUserRedisData(userId);
+  let isUserLogin = !!userRedisData;
+  let userOldExposure = 0;
+  let betPlacedId = bets.map(bet => bet.id);
+  let partnershipObj = {};
+  let socketSessionEvent = socketData.matchDeleteBet;
+  let teamRates = {};
+  let matchBetType = bets?.[0].marketType;
+  let currUserBalance;
+
+  if (isUserLogin) {
+    userOldExposure = parseFloat(userRedisData.exposure);
+    partnershipObj = JSON.parse(userRedisData.partnerShips);
+    teamRates = userRedisData[`${matchId}_${betId}`];
+    currUserBalance = parseFloat(userRedisData.currentBalance);
+  } else {
+    let user = await getUserById(userId);
+    let partnership = await findUserPartnerShipObj(user);
+    partnershipObj = JSON.parse(partnership);
+    let userBalance = await getUserBalanceDataByUserId(userId);
+    userOldExposure = userBalance.exposure;
+    currUserBalance = parseFloat(userBalance.currentBalance);
+    let redisData = await calculateProfitLossForRacingMatchToResult([betId], userId, {runners});
+    teamRates = redisData[`${matchId}_${betId}`];
+  }
+
+  let maximumLossOld = Math.min(...Object.values(teamRates), 0);
+
+  let newTeamRate = runners.reduce((acc, key) => {
+    acc[key?.id] = 0;
+    return acc;
+  }, {});
+
+  for (const element of bets) {
+    let data = {
+      runners:runners,
+      winAmount: element.winAmount,
+      lossAmount: element.lossAmount,
+      bettingType: element.betType,
+      runnerId: element.runnerId
+    };
+    newTeamRate = await calculateRacingRate(newTeamRate, data, 100);
+  }
+
+  // do not chagne any value in newTeamRate object this is using for parent calculation
+   Object.keys(teamRates)?.forEach((item)=>{
+     teamRates[item] -= newTeamRate[item];
+     teamRates[item] = parseRedisData(item, teamRates);
+   });
+
+  let maximumLoss = Math.min(...Object.values(teamRates), 0);
+  maximumLoss = Math.abs(maximumLoss);
+  maximumLossOld = Math.abs(maximumLossOld);
+
+  let exposureDiff = maximumLossOld - maximumLoss;
+
+  await updateUserExposure(userId, (-exposureDiff));
+
+  // blocking user if its exposure would increase by current balance
+  const userCreatedBy = await getUserById(userId, ["createBy", "userBlock", "autoBlock", "superParentId"]);
+
+  if (userOldExposure - exposureDiff > currUserBalance && !userCreatedBy.userBlock) {
+    await userService.updateUser(userId, {
+      autoBlock: true,
+      userBlock: true,
+      userBlockedBy: userCreatedBy?.createBy == userId ? userCreatedBy.superParentId : userCreatedBy.createBy
+    });
+
+    if (userCreatedBy?.createBy == userId) {
+      await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+        {
+          userId: userId, userBlock: true, parentId: userCreatedBy.superParentId, autoBlock: true
+        }
+      ).catch(error => {
+        logger.error({
+          error: `Error at auto block user.`,
+          stack: error.stack,
+          message: error.message,
+        });
+        throw error
+      });
+    }
+
+    if (isUserLogin) {
+      forceLogoutUser(userId);
+    }
+  }
+  else if (userCreatedBy.autoBlock && userCreatedBy.userBlock && userOldExposure - exposureDiff <= currUserBalance) {
+    await userService.updateUser(userId, {
+      autoBlock: false,
+      userBlock: false,
+      userBlockedBy: null
+    });
+
+    if (userCreatedBy?.createBy == userId) {
+      await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+        {
+          userId: userId, userBlock: false, parentId: null, autoBlock: false
+        }
+      ).catch(error => {
+        logger.error({
+          error: `Error at auto block user.`,
+          stack: error.stack,
+          message: error.message,
+        });
+        throw error
+      });
+    }
+  }
+
+  if (isUserLogin) {
+    let redisObject = {
+      [`${matchId}_${betId}`]: teamRates
+    }
+    await incrementValuesRedis(userId, {
+      [redisKeys.userMatchExposure + matchId]: -exposureDiff,
+      [redisKeys.userAllExposure]: -exposureDiff
+    }, redisObject);
+
+    sendMessageToUser(userId, socketSessionEvent, {
+      currentBalance: userRedisData?.currentBalance,
+      exposure: userOldExposure - exposureDiff,
+      bets: bets,
+      betId: betId,
+      deleteReason: deleteReason,
+      matchId: matchId,
+      betPlacedId: betPlacedId,
+      matchBetType,
+      teamRate: teamRates
+    });
+  }
+  await betPlacedService.updatePlaceBet({ matchId: matchId, id: In(betPlacedId) }, { deleteReason: deleteReason, result: betResultStatus.UNDECLARE });
+
+  Object.keys(partnershipPrefixByRole)
+    ?.filter(
+      (item) =>
+        item != userRoleConstant.fairGameAdmin &&
+        item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
+    )
+    ?.map(async (item) => {
+      let partnerShipKey = `${partnershipPrefixByRole[item]}`;
+
+      // Check if partnershipId exists in partnershipObj
+      if (partnershipObj[`${partnerShipKey}PartnershipId`]) {
+        let partnershipId = partnershipObj[`${partnerShipKey}PartnershipId`];
+        let partnership = partnershipObj[`${partnerShipKey}Partnership`];
+
+        try {
+          // Get user data from Redis or balance data by userId
+          let masterRedisData = await getUserRedisData(partnershipId);
+          await updateUserExposure(partnershipId, (-exposureDiff));
+
+          if (!lodash.isEmpty(masterRedisData)) {
+            // If masterRedisData exists, update partner exposure and session data
+            let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
+            let partnerExposure = masterExposure - exposureDiff;
+
+            let masterTeamRates = masterRedisData[`${matchId}_${betId}`];
+
+            masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
+              acc[key] = parseFloat((parseRedisData(key, masterTeamRates) + ((newTeamRate[key] * partnership) / 100)).toFixed(2));
+              return acc;
+            }, {});
+
+            let redisObj = {
+              [`${matchId}_${betId}`]: masterTeamRates
+            }
+            await incrementValuesRedis(partnershipId, {
+              exposure: -exposureDiff,
+              [redisKeys.userMatchExposure + matchId]: -exposureDiff,
+            }, redisObj);
+            // Send data to socket for session bet placement
+            sendMessageToUser(partnershipId, socketSessionEvent, {
+              currentBalance: userRedisData?.currentBalance,
+              exposure: partnerExposure,
+              bets: bets,
+              betId: betId,
+              deleteReason: deleteReason,
+              matchId: matchId,
+              betPlacedId: betPlacedId,
+              matchBetType,
+              teamRate: masterTeamRates
+            });
+
+          }
+        } catch (error) {
+          // Log error if any during exposure update
+          logger.error({
+            context: `error in ${item} exposure update for delete match bet`,
+            process: `User ID : ${userId} and ${item} id ${partnershipId}`,
+            error: error.message,
+            stake: error.stack,
+          });
+        }
+      }
+    });
+
+  let queueObject = {
+    userId: userId,
+    partnership: partnershipObj,
+    exposureDiff: exposureDiff,
+    betId: betId,
+    matchId: matchId,
+    deleteReason: deleteReason,
+    domainUrl: domainUrl,
+    betPlacedId: betPlacedId,
+    matchBetType, newTeamRate
+  }
+
+  const walletJob = walletMatchBetDeleteQueue.createJob(queueObject);
+  await walletJob.save();
+
+  const expertJob = expertMatchBetDeleteQueue.createJob(queueObject);
+  await expertJob.save();
 }

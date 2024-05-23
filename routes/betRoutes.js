@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getBet, matchBettingBetPlaced, sessionBetPlace, deleteMultipleBet, getSessionProfitLoss, profitLoss, getMyMarket, otherMatchBettingBetPlaced,deleteMultipleBetForOther, racingBettingBetPlaced } = require('../controllers/betPlacedController');
+const { getBet, matchBettingBetPlaced, sessionBetPlace, deleteMultipleBet, getSessionProfitLoss, profitLoss, getMyMarket, otherMatchBettingBetPlaced,deleteMultipleBetForOther, racingBettingBetPlaced, deleteRaceMultipleBet } = require('../controllers/betPlacedController');
 
 const validator = require('../middleware/joi.validator');
 const { isAuthenticate } = require('../middleware/auth');
@@ -16,6 +16,7 @@ router.post('/raceBetting', isAuthenticate, validator(RaceBetPlacedValidator), r
 
 router.post('/deleteMultipleBet', deleteMultipleBet);
 router.post('/deleteMultipleBetForOther', deleteMultipleBetForOther);
+router.post('/deleteMultipleBetForRace', deleteRaceMultipleBet);
 
 router.post('/profitLoss',isAuthenticate, profitLoss);
 router.get('/myMarket',isAuthenticate, getMyMarket);
