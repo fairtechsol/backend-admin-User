@@ -142,7 +142,7 @@ exports.matchDetailsForFootball = async (req, res) => {
     if (apiResponse?.data) {
       if (Array.isArray(apiResponse?.data)) {
         for (let i = 0; i < apiResponse?.data?.length; i++) {
-          const raceId = apiResponse?.data?.[i]?.id;
+          const matchId = apiResponse?.data?.[i]?.id;
           const redisIds = [];
           redisIds.push(
             ...redisKeysMatchWise[matchType].map(
