@@ -4359,8 +4359,7 @@ exports.declarRaceMatchResult = async (req, res) => {
     if (result === resultType.noResult) {
           item.result = betResultStatus.TIE;
       } else {
-        const isWinCondition = ((item.betType === betType.BACK && item.runnerId == result) || (item.betType === betType.LAY && item.runnerId != result));
-        item.result = isWinCondition ? betResultStatus.WIN : betResultStatus.LOSS;
+        item.result = ((item.betType === betType.BACK && item.runnerId == result) || (item.betType === betType.LAY && item.runnerId != result)) ? betResultStatus.WIN : betResultStatus.LOSS;
       }
       // if (item.user.matchCommission && item.result == betResultStatus.LOSS && item.user.matchComissionType == matchComissionTypeConstant.entryWise) {
       //   let commissionAmount = Number((parseFloat(item.lossAmount) * (parseFloat(item.user['matchCommission']) / 100)).toFixed(2));
@@ -4547,8 +4546,8 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
     logger.info({ message: "Updated users", data: user.user });
    
     // check if data is already present in the redis or not
-    if (userRedisData?.[`${matchId}_${betId}`]) {
-      maxLoss = (Math.abs(Math.min(...Object.values(userRedisData?.[`${matchId}_${betId}`] || []), 0))) || 0;
+    if (userRedisData?.[`${matchId}_${currBetId}`]) {
+      maxLoss = (Math.abs(Math.min(...Object.values(userRedisData?.[`${matchId}_${currBetId}`] || []), 0))) || 0;
     }
     else {
       // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
@@ -4586,7 +4585,7 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
         description: `Deduct 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
         createdAt: new Date(),
         uniqueId: uniqueId,
-        betId: [currBetId]
+        betId: betId
       });
     });
 
