@@ -2412,9 +2412,9 @@ exports.racingBettingBetPlaced = async (req, res) => {
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
     newCalculateOdd = (newCalculateOdd - 1) * 100;
-    if (newCalculateOdd > 400) {
-      return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
-    }
+    // if (newCalculateOdd > 400) {
+    //   return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
+    // }
 
     if (bettingType == betType.BACK) {
       winAmount = (stake * newCalculateOdd) / 100;
