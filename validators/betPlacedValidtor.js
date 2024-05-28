@@ -1,5 +1,5 @@
 const Joi = require('joi')
-const { betType, matchBettingType } = require('../config/contants')
+const { betType, matchBettingType, racingBettingType } = require('../config/contants')
 
 //{ teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail,placeIndex }
 
@@ -39,21 +39,21 @@ module.exports.MatchBetPlacedValidator = Joi.object({
 
   module.exports.RaceBetPlacedValidator = Joi.object({
     matchId: Joi.string().required(),
-    stake : Joi.number().required().positive().greater(0),
-    odd : Joi.number().required(),
-    betId : Joi.string().required(),
-    bettingType : Joi.string().valid(...Object.values(betType)).required(),
-    matchBetType: Joi.string().valid(...Object.values(matchBettingType)).required(),
-    betOnTeam : Joi.string().required(),
-    placeIndex : Joi.number().required(),
-    ipAddress : Joi.string().allow(""),
-    browserDetail :  Joi.string().allow(""),
+    stake: Joi.number().required().positive().greater(0),
+    odd: Joi.number().required(),
+    betId: Joi.string().required(),
+    bettingType: Joi.string().valid(...Object.values(betType)).required(),
+    matchBetType: Joi.string().valid(...Object.values(racingBettingType)).required(),
+    betOnTeam: Joi.string().required(),
+    placeIndex: Joi.number().required(),
+    ipAddress: Joi.string().allow(""),
+    browserDetail: Joi.string().allow(""),
     bettingName: Joi.string().allow(""),
     userId: Joi.string().allow(""),
-    selectionId:Joi.string().required().messages({
+    selectionId: Joi.string().required().messages({
       "any.required":"Selection id is required"
     }),
-    runnerId:Joi.string().required().messages({
+    runnerId: Joi.string().required().messages({
       "any.required": "Runner id is required"
     })
   });
