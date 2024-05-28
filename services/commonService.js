@@ -1,5 +1,5 @@
 const { In, Not } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchBettingTeamRatesKey, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchBettingTeamRatesKey, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -488,7 +488,7 @@ exports.calculateProfitLossForOtherMatchToResult = async (betId, userId, matchDa
 }
 
 exports.calculateProfitLossForRacingMatchToResult = async (betId, userId, matchData) => {
-  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId), { eventType: In([gameType.horseRacing]) });
+  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId), { eventType: In([gameType.horseRacing, gameType.greyHound]) });
   let redisData = await this.calculateRatesRacingMatch(betPlace, 100, matchData);
   return redisData;
 }
@@ -922,7 +922,7 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
 
 exports.settingRacingMatchBetsDataAtLogin = async (user) => {
   if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id, { eventType: In([gameType.horseRacing]) });
+    const bets = await getUserDistinctBets(user.id, { eventType: In([gameType.horseRacing, gameType.greyHound]) });
 
     let matchResult = {};
     let matchExposure = {};
@@ -966,7 +966,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
     let matchResult = {};
     let matchExposure = {};
 
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: In([gameType.horseRacing]) });
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: In([gameType.horseRacing, gameType.greyHound]) });
     bets?.forEach((item) => {
       let itemData = {
         ...item,
@@ -986,7 +986,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "?type=" + matchBettingType.quickbookmaker1;
+        let url = expertDomain + allApiRoutes.MATCHES.raceBettingDetail + matchId + "?type=" + racingBettingType.matchOdd;
         apiResponse = await apiCall(apiMethod.get, url);
       } catch (error) {
         logger.info({

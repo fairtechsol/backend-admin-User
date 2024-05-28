@@ -139,7 +139,6 @@ exports.getUser = async (where = {}, select) => {
     where: where,
     select: select
   });
-
 };
 
 exports.getUsers = async (where, select, offset, limit, relations) => {
