@@ -2841,7 +2841,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
 
   if (isUserLogin) {
     let redisObject = {
-      [`${matchId}_${betId}`]: teamRates
+      [`${matchId}_${betId}`]: JSON.stringify(teamRates)
     }
     await incrementValuesRedis(userId, {
       [redisKeys.userMatchExposure + matchId]: -exposureDiff,
@@ -2894,7 +2894,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
             }, {});
 
             let redisObj = {
-              [`${matchId}_${betId}`]: masterTeamRates
+              [`${matchId}_${betId}`]: JSON.stringify(masterTeamRates)
             }
             await incrementValuesRedis(partnershipId, {
               exposure: -exposureDiff,
