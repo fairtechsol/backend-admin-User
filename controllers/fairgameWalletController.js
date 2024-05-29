@@ -4559,13 +4559,13 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
    
     // check if data is already present in the redis or not
     if (userRedisData?.[`${matchId}_${currBetId}`]) {
-      maxLoss = (Math.abs(Math.min(...Object.values(userRedisData?.[`${matchId}_${currBetId}`] || []), 0))) || 0;
+      maxLoss = (Math.abs(Math.min(...Object.values(JSON.parse(userRedisData?.[`${matchId}_${currBetId}`]) || {}), 0))) || 0;
     }
     else {
       // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
       let redisData = await calculateProfitLossForRacingMatchToResult(betId, user.user?.id, matchDetails?.[0]);
       Object.keys(redisData)?.forEach((key) => {
-        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || 0), 0));
+        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
       });
     }
 
@@ -5067,7 +5067,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
     let redisData = await calculateProfitLossForRacingMatchToResult(betId, user.user?.id, matchDetails?.[0]);
     Object.keys(redisData)?.forEach((key) => {
-      maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || 0), 0));
+      maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
     });
 
     logger.info({
