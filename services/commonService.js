@@ -444,9 +444,8 @@ exports.calculateRatesRacingMatch = async (betPlace, partnerShip = 100, matchDat
   const { runners } = matchData;
 
   for (let placedBets of betPlace) {
-    const betId=placedBets?.betId;
     const matchId=placedBets?.matchId;
-    const teamRate = teamRates[`${matchId}_${betId}`] || runners.reduce((acc, key) => {
+    const teamRate = teamRates[`${matchId}${redisKeys.profitLoss}`] || runners.reduce((acc, key) => {
       acc[key?.id] = 0;
       return acc;
     }, {});
@@ -463,7 +462,7 @@ exports.calculateRatesRacingMatch = async (betPlace, partnerShip = 100, matchDat
       partnerShip
     );
 
-    teamRates[`${matchId}_${betId}`] = calculatedRates;
+    teamRates[`${matchId}${redisKeys.profitLoss}`] = calculatedRates;
   }
 
   return teamRates;

@@ -4499,7 +4499,7 @@ exports.declarRaceMatchResult = async (req, res) => {
           myProfitLoss: -value["myProfitLoss"],
           exposure: -value["exposure"],
         });
-        await deleteKeyFromUserRedis(key, `${matchId}_${betId}`);
+        await deleteKeyFromUserRedis(key, `${matchId}${redisKeys.profitLoss}`);
       }
 
       sendMessageToUser(key, socketData.matchResult, {
@@ -4558,8 +4558,8 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
     logger.info({ message: "Updated users", data: user.user });
    
     // check if data is already present in the redis or not
-    if (userRedisData?.[`${matchId}_${currBetId}`]) {
-      maxLoss = (Math.abs(Math.min(...Object.values(JSON.parse(userRedisData?.[`${matchId}_${currBetId}`]) || {}), 0))) || 0;
+    if (userRedisData?.[`${matchId}${redisKeys.profitLoss}`]) {
+      maxLoss = (Math.abs(Math.min(...Object.values(JSON.parse(userRedisData?.[`${matchId}${redisKeys.profitLoss}`]) || {}), 0))) || 0;
     }
     else {
       // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
@@ -4747,7 +4747,7 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
       });
     });
 
-    await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, `${matchId}_${currBetId}`);
+    await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, `${matchId}${redisKeys.profitLoss}`);
 
     if (user.user.createBy === user.user.id) {
       superAdminData[user.user.id] = {
@@ -5170,7 +5170,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     });
 
     sendMessageToUser(user.user.id, redisEventName, {
-      ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData, profitLoss: redisData[`${matchId}_${currBetId}`],
+      ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData, profitLoss: redisData[`${matchId}${redisKeys.profitLoss}`],
       betType: merketBetType,
     });
 

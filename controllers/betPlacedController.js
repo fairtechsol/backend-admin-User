@@ -2487,7 +2487,7 @@ exports.racingBettingBetPlaced = async (req, res) => {
    
     let userTotalExposure = matchExposure;
 
-    let teamRates = userRedisData?.[`${matchId}_${betId}`];
+    let teamRates = userRedisData?.[`${matchId}${redisKeys.profitLoss}`];
 
     if (teamRates) {
       teamRates = JSON.parse(teamRates);
@@ -2738,7 +2738,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
     partnershipObj = JSON.parse(userRedisData.partnerShips);
-    teamRates = JSON.parse(userRedisData[`${matchId}_${betId}`]);
+    teamRates = JSON.parse(userRedisData[`${matchId}${redisKeys.profitLoss}`]);
     currUserBalance = parseFloat(userRedisData.currentBalance);
   } else {
     let user = await getUserById(userId);
@@ -2748,7 +2748,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
     userOldExposure = userBalance.exposure;
     currUserBalance = parseFloat(userBalance.currentBalance);
     let redisData = await calculateProfitLossForRacingMatchToResult([betId], userId, {runners});
-    teamRates = redisData[`${matchId}_${betId}`];
+    teamRates = redisData[`${matchId}${redisKeys.profitLoss}`];
   }
 
   let maximumLossOld = Math.min(...Object.values(teamRates), 0);
@@ -2841,7 +2841,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
 
   if (isUserLogin) {
     let redisObject = {
-      [`${matchId}_${betId}`]: JSON.stringify(teamRates)
+      [`${matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamRates)
     }
     await incrementValuesRedis(userId, {
       [redisKeys.userMatchExposure + matchId]: -exposureDiff,
@@ -2886,7 +2886,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
             let partnerExposure = masterExposure - exposureDiff;
 
-            let masterTeamRates = JSON.parse(masterRedisData[`${matchId}_${betId}`]);
+            let masterTeamRates = JSON.parse(masterRedisData[`${matchId}${redisKeys.profitLoss}`]);
 
             masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
               acc[key] = parseFloat((parseRedisData(key, masterTeamRates) + ((newTeamRate[key] * partnership) / 100)).toFixed(2));
@@ -2894,7 +2894,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
             }, {});
 
             let redisObj = {
-              [`${matchId}_${betId}`]: JSON.stringify(masterTeamRates)
+              [`${matchId}${redisKeys.profitLoss}`]: JSON.stringify(masterTeamRates)
             }
             await incrementValuesRedis(partnershipId, {
               exposure: -exposureDiff,

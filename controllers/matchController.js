@@ -110,9 +110,8 @@ exports.raceDetails = async (req, res) => {
       if (Array.isArray(apiResponse?.data)) {
         for (let [index, matchData] of apiResponse?.data?.entries() || []) {
           const matchId = matchData?.id;
-          const betId = matchData?.matchOdd?.id;
-
-          let redisData = await getUserRedisSingleKey(userId, `${matchId}_${betId}`);
+        
+          let redisData = await getUserRedisSingleKey(userId, `${matchId}${redisKeys.profitLoss}`);
           if (redisData) {
             redisData = JSON.parse(redisData);
           }
@@ -121,8 +120,7 @@ exports.raceDetails = async (req, res) => {
       }
       else {
         const matchId = apiResponse?.data?.id;
-        const betId = apiResponse?.data?.matchOdd?.id;
-        let redisData = await getUserRedisSingleKey(userId, `${matchId}_${betId}`);
+        let redisData = await getUserRedisSingleKey(userId, `${matchId}${redisKeys.profitLoss}`);
         
         if (redisData) {
           redisData = JSON.parse(redisData);
