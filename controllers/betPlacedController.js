@@ -2738,7 +2738,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
     partnershipObj = JSON.parse(userRedisData.partnerShips);
-    teamRates = userRedisData[`${matchId}_${betId}`];
+    teamRates = JSON.parse(userRedisData[`${matchId}_${betId}`]);
     currUserBalance = parseFloat(userRedisData.currentBalance);
   } else {
     let user = await getUserById(userId);
@@ -2886,7 +2886,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
             let partnerExposure = masterExposure - exposureDiff;
 
-            let masterTeamRates = masterRedisData[`${matchId}_${betId}`];
+            let masterTeamRates = JSON.parse(masterRedisData[`${matchId}_${betId}`]);
 
             masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
               acc[key] = parseFloat((parseRedisData(key, masterTeamRates) + ((newTeamRate[key] * partnership) / 100)).toFixed(2));
