@@ -930,7 +930,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + currBets.matchId + "?type=" + matchBettingType.quickbookmaker1;
+        let url = expertDomain + allApiRoutes.MATCHES.raceBettingDetail + currBets.matchId + "?type=" + racingBettingType.matchOdd;
         apiResponse = await apiCall(apiMethod.get, url);
       } catch (error) {
         logger.info({

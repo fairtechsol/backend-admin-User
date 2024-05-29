@@ -2585,7 +2585,9 @@ exports.racingBettingBetPlaced = async (req, res) => {
       newUserExposure, userPreviousExposure,
       winAmount, lossAmount, teamRates,
       bettingType, betOnTeam, newBet, runnerId, runners, selectionId,
-      userName: user.userName
+      userName: user.userName,
+      matchId: matchId,
+      betId: betId
     }
     //add redis queue function
     const job = MatchRacingBetQueue.createJob(jobData);
