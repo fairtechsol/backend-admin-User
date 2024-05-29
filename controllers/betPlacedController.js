@@ -7,7 +7,7 @@ const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesR
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult } = require('../services/commonService');
-const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue } = require('../queue/consumer');
+const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
 const { getUserBalanceDataByUserId, updateUserExposure } = require('../services/userBalanceService');
@@ -2938,9 +2938,9 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
     matchBetType, newTeamRate
   }
 
-  const walletJob = walletMatchBetDeleteQueue.createJob(queueObject);
+  const walletJob = walletRaceMatchBetDeleteQueue.createJob(queueObject);
   await walletJob.save();
 
-  const expertJob = expertMatchBetDeleteQueue.createJob(queueObject);
+  const expertJob = expertRaceMatchBetDeleteQueue.createJob(queueObject);
   await expertJob.save();
 }
