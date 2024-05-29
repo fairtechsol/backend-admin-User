@@ -2454,7 +2454,7 @@ exports.racingBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
     }
 
-    if (new Date().getTime() < new Date(new Date(match?.startAt).setMinutes(new Date(match?.startAt) - parseInt(match?.betPlaceStartBefore))).getTime() && match?.betPlaceStartBefore) {
+    if (new Date().getTime() < new Date(new Date(match?.startAt).setMinutes(new Date(match?.startAt).getMinutes() - parseInt(match?.betPlaceStartBefore))).getTime() && match?.betPlaceStartBefore) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.placingBetBeforeTime", keys: { "min": match?.betPlaceStartBefore } } }, req, res);
     }
 
