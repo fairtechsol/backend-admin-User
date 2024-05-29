@@ -64,7 +64,7 @@ const setUserDetailsRedis = async (user) => {
       roleName: user.roleName,
       ...(betData || {}),
       ...(otherMatchBetData || {}),
-      ...(racingMatchData, {}),
+      ...(racingMatchData|| {}),
       partnerShips: await findUserPartnerShipObj(user),
       userRole: user.roleName,
     });
