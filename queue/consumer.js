@@ -378,7 +378,7 @@ let calculateRacingRateAmount = async (userRedisData, jobData, userId) => {
   }
   if (roleName == userRoleConstant.user) {
     let userRedisObj = {
-      [`${jobData?.matchId}_${jobData?.betId}`]: JSON.stringify(teamData)
+      [`${jobData?.matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamData)
     }
 
     // updating redis
@@ -421,7 +421,7 @@ let calculateRacingRateAmount = async (userRedisData, jobData, userId) => {
             let masterExposure = masterRedisData?.exposure ? masterRedisData.exposure : 0;
             let partnerExposure = (parseFloat(masterExposure) || 0) - userOldExposure + userCurrentExposure;
 
-            let teamRates = masterRedisData?.[`${jobData?.matchId}_${jobData?.betId}`];
+            let teamRates = masterRedisData?.[`${jobData?.matchId}${redisKeys.profitLoss}`];
 
             if (teamRates) {
               teamRates = JSON.parse(teamRates);
@@ -441,14 +441,14 @@ let calculateRacingRateAmount = async (userRedisData, jobData, userId) => {
 
             let teamData = await calculateRacingExpertRate(teamRates, obj, partnership);
             let userRedisObj = {
-              [`${jobData?.matchId}_${jobData?.betId}`]: JSON.stringify(teamData)
+              [`${jobData?.matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamData)
             }
             
              // updating redis
             await incrementValuesRedis(partnershipId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure }, userRedisObj);
 
             jobData.myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
-            sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { userRedisData, jobData, userRedisObj })
+            sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { jobData, userRedisObj })
             // Log information about exposure and stake update
             logger.info({
               context: "Update User Exposure and Stake at the match bet",

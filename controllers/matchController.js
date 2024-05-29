@@ -1,7 +1,7 @@
 const { In } = require("typeorm");
 const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise } = require("../config/contants");
 const { findAllPlacedBet } = require("../services/betPlacedService");
-const { getUserRedisKeys } = require("../services/redis/commonfunction");
+const { getUserRedisKeys, getUserRedisSingleKey } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
@@ -93,6 +93,7 @@ exports.matchDetails = async (req, res) => {
 
 exports.raceDetails = async (req, res) => {
   try {
+    let userId = req.user.id;
     const raceId = req.params.id;
     let domain = expertDomain;
     let apiResponse = {};
@@ -104,6 +105,30 @@ exports.raceDetails = async (req, res) => {
     } catch (error) {
       throw error?.response?.data;
     }
+
+    if (apiResponse?.data) {
+      if (Array.isArray(apiResponse?.data)) {
+        for (let [index, matchData] of apiResponse?.data?.entries() || []) {
+          const matchId = matchData?.id;
+        
+          let redisData = await getUserRedisSingleKey(userId, `${matchId}${redisKeys.profitLoss}`);
+          if (redisData) {
+            redisData = JSON.parse(redisData);
+          }
+          apiResponse.data[index].profitLossDataMatch = redisData;
+        }
+      }
+      else {
+        const matchId = apiResponse?.data?.id;
+        let redisData = await getUserRedisSingleKey(userId, `${matchId}${redisKeys.profitLoss}`);
+        
+        if (redisData) {
+          redisData = JSON.parse(redisData);
+        }
+        apiResponse.data.profitLossDataMatch = redisData;
+      }
+    }
+
     return SuccessResponse(
       {
         statusCode: 200,

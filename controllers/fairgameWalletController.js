@@ -25,7 +25,7 @@ const {
   racingBettingType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -1713,7 +1713,7 @@ exports.getBetWallet = async (req, res) => {
     let { roleName, userId, isTeamNameAllow, ...queryData } = req.query;
     let result;
     let select = [
-      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt"
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt", "betPlaced.runnerId"
     ];
 
     select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
@@ -3849,9 +3849,10 @@ exports.totalProfitLossWallet = async (req, res) => {
     totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
     let subQuery = await childIdquery(user, searchId)
     const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, subQuery);
+    const racingReport = await getTotalProfitLossRacing(where, startDate, endDate, totalLoss, subQuery);
     return SuccessResponse(
       {
-        statusCode: 200, data: result
+        statusCode: 200, data: [...result, ...racingReport]
       },
       req,
       res
@@ -3875,7 +3876,7 @@ exports.totalProfitLossWallet = async (req, res) => {
 
 exports.totalProfitLossByMatch = async (req, res) => {
   try {
-    let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit } = req.body;
+    let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit, isRacing } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
@@ -3900,8 +3901,19 @@ exports.totalProfitLossByMatch = async (req, res) => {
       sessionProfitLoss = '-' + sessionProfitLoss;
     }
     let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
-    let subQuery = await childIdquery(user, searchId)
-    const { result, count } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, subQuery);
+    let subQuery = await childIdquery(user, searchId);
+    let result, count;
+    if (isRacing) {
+      const data = await getAllRacinMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, subQuery);
+      result = data.result;
+      count = data.count;
+    }
+    else {
+      const data = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, subQuery);
+      result = data.result;
+      count = data.count;
+    }
+
     return SuccessResponse(
       {
         statusCode: 200, data: { result, count }
@@ -3933,7 +3945,7 @@ exports.getResultBetProfitLoss = async (req, res) => {
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
     let queryColumns = ``;
-    let where = { marketBetType: isSession ? marketBetType.SESSION : marketBetType.MATCHBETTING };
+    let where = { marketBetType: isSession ? marketBetType.SESSION : In([marketBetType.MATCHBETTING, marketBetType.RACING]) };
 
     if (matchId) {
       where.matchId = matchId;
@@ -4487,7 +4499,7 @@ exports.declarRaceMatchResult = async (req, res) => {
           myProfitLoss: -value["myProfitLoss"],
           exposure: -value["exposure"],
         });
-        await deleteKeyFromUserRedis(key, `${matchId}_${betId}`);
+        await deleteKeyFromUserRedis(key, `${matchId}${redisKeys.profitLoss}`);
       }
 
       sendMessageToUser(key, socketData.matchResult, {
@@ -4546,14 +4558,14 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
     logger.info({ message: "Updated users", data: user.user });
    
     // check if data is already present in the redis or not
-    if (userRedisData?.[`${matchId}_${currBetId}`]) {
-      maxLoss = (Math.abs(Math.min(...Object.values(userRedisData?.[`${matchId}_${currBetId}`] || []), 0))) || 0;
+    if (userRedisData?.[`${matchId}${redisKeys.profitLoss}`]) {
+      maxLoss = (Math.abs(Math.min(...Object.values(JSON.parse(userRedisData?.[`${matchId}${redisKeys.profitLoss}`]) || {}), 0))) || 0;
     }
     else {
       // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
       let redisData = await calculateProfitLossForRacingMatchToResult(betId, user.user?.id, matchDetails?.[0]);
       Object.keys(redisData)?.forEach((key) => {
-        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || 0), 0));
+        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
       });
     }
 
@@ -4735,7 +4747,7 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
       });
     });
 
-    await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, `${matchId}_${currBetId}`);
+    await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, `${matchId}${redisKeys.profitLoss}`);
 
     if (user.user.createBy === user.user.id) {
       superAdminData[user.user.id] = {
@@ -5055,7 +5067,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
     let redisData = await calculateProfitLossForRacingMatchToResult(betId, user.user?.id, matchDetails?.[0]);
     Object.keys(redisData)?.forEach((key) => {
-      maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || 0), 0));
+      maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
     });
 
     logger.info({
@@ -5158,7 +5170,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     });
 
     sendMessageToUser(user.user.id, redisEventName, {
-      ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData, profitLoss: redisData[`${matchId}_${currBetId}`],
+      ...user.user, betId, matchId, matchExposure: maxLoss, userBalanceData, profitLoss: redisData[`${matchId}${redisKeys.profitLoss}`],
       betType: merketBetType,
     });
 

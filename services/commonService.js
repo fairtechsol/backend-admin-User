@@ -444,9 +444,8 @@ exports.calculateRatesRacingMatch = async (betPlace, partnerShip = 100, matchDat
   const { runners } = matchData;
 
   for (let placedBets of betPlace) {
-    const betId=placedBets?.betId;
     const matchId=placedBets?.matchId;
-    const teamRate = teamRates[`${matchId}_${betId}`] || runners.reduce((acc, key) => {
+    const teamRate = teamRates[`${matchId}${redisKeys.profitLoss}`] || runners.reduce((acc, key) => {
       acc[key?.id] = 0;
       return acc;
     }, {});
@@ -463,7 +462,7 @@ exports.calculateRatesRacingMatch = async (betPlace, partnerShip = 100, matchDat
       partnerShip
     );
 
-    teamRates[`${matchId}_${betId}`] = calculatedRates;
+    teamRates[`${matchId}${redisKeys.profitLoss}`] = calculatedRates;
   }
 
   return teamRates;
@@ -930,7 +929,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + currBets.matchId + "?type=" + matchBettingType.quickbookmaker1;
+        let url = expertDomain + allApiRoutes.MATCHES.raceBettingDetail + currBets.matchId + "?type=" + racingBettingType.matchOdd;
         apiResponse = await apiCall(apiMethod.get, url);
       } catch (error) {
         logger.info({
@@ -942,7 +941,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
       let redisData = await this.calculateProfitLossForRacingMatchToResult([currBets.betId], user.id, apiResponse?.data);
       let maxLoss=0;
       Object.keys(redisData)?.forEach((key) => {
-        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || 0), 0));
+        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
         redisData[key]=JSON.stringify(redisData[key]);
       });
 
@@ -997,7 +996,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
       let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
       let maxLoss = 0;
       Object.keys(redisData)?.forEach((key) => {
-        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || 0), 0));
+        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
         redisData[key]=JSON.stringify(redisData[key]);
       });
 

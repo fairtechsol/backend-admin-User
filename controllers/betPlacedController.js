@@ -7,7 +7,7 @@ const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesR
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult } = require('../services/commonService');
-const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue } = require('../queue/consumer');
+const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
 const { getUserBalanceDataByUserId, updateUserExposure } = require('../services/userBalanceService');
@@ -2454,7 +2454,7 @@ exports.racingBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
     }
 
-    if (new Date().getTime() < new Date(new Date(match?.startAt).setMinutes(new Date(match?.startAt) - parseInt(match?.betPlaceStartBefore))).getTime() && match?.betPlaceStartBefore) {
+    if (new Date().getTime() < new Date(new Date(match?.startAt).setMinutes(new Date(match?.startAt).getMinutes() - parseInt(match?.betPlaceStartBefore))).getTime() && match?.betPlaceStartBefore) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.placingBetBeforeTime", keys: { "min": match?.betPlaceStartBefore } } }, req, res);
     }
 
@@ -2487,7 +2487,7 @@ exports.racingBettingBetPlaced = async (req, res) => {
    
     let userTotalExposure = matchExposure;
 
-    let teamRates = userRedisData?.[`${matchId}_${betId}`];
+    let teamRates = userRedisData?.[`${matchId}${redisKeys.profitLoss}`];
 
     if (teamRates) {
       teamRates = JSON.parse(teamRates);
@@ -2585,7 +2585,9 @@ exports.racingBettingBetPlaced = async (req, res) => {
       newUserExposure, userPreviousExposure,
       winAmount, lossAmount, teamRates,
       bettingType, betOnTeam, newBet, runnerId, runners, selectionId,
-      userName: user.userName
+      userName: user.userName,
+      matchId: matchId,
+      betId: betId
     }
     //add redis queue function
     const job = MatchRacingBetQueue.createJob(jobData);
@@ -2736,7 +2738,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
     partnershipObj = JSON.parse(userRedisData.partnerShips);
-    teamRates = userRedisData[`${matchId}_${betId}`];
+    teamRates = JSON.parse(userRedisData[`${matchId}${redisKeys.profitLoss}`]);
     currUserBalance = parseFloat(userRedisData.currentBalance);
   } else {
     let user = await getUserById(userId);
@@ -2746,7 +2748,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
     userOldExposure = userBalance.exposure;
     currUserBalance = parseFloat(userBalance.currentBalance);
     let redisData = await calculateProfitLossForRacingMatchToResult([betId], userId, {runners});
-    teamRates = redisData[`${matchId}_${betId}`];
+    teamRates = redisData[`${matchId}${redisKeys.profitLoss}`];
   }
 
   let maximumLossOld = Math.min(...Object.values(teamRates), 0);
@@ -2839,7 +2841,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
 
   if (isUserLogin) {
     let redisObject = {
-      [`${matchId}_${betId}`]: teamRates
+      [`${matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamRates)
     }
     await incrementValuesRedis(userId, {
       [redisKeys.userMatchExposure + matchId]: -exposureDiff,
@@ -2884,7 +2886,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
             let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
             let partnerExposure = masterExposure - exposureDiff;
 
-            let masterTeamRates = masterRedisData[`${matchId}_${betId}`];
+            let masterTeamRates = JSON.parse(masterRedisData[`${matchId}${redisKeys.profitLoss}`]);
 
             masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
               acc[key] = parseFloat((parseRedisData(key, masterTeamRates) + ((newTeamRate[key] * partnership) / 100)).toFixed(2));
@@ -2892,7 +2894,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
             }, {});
 
             let redisObj = {
-              [`${matchId}_${betId}`]: masterTeamRates
+              [`${matchId}${redisKeys.profitLoss}`]: JSON.stringify(masterTeamRates)
             }
             await incrementValuesRedis(partnershipId, {
               exposure: -exposureDiff,
@@ -2936,9 +2938,9 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
     matchBetType, newTeamRate
   }
 
-  const walletJob = walletMatchBetDeleteQueue.createJob(queueObject);
+  const walletJob = walletRaceMatchBetDeleteQueue.createJob(queueObject);
   await walletJob.save();
 
-  const expertJob = expertMatchBetDeleteQueue.createJob(queueObject);
+  const expertJob = expertRaceMatchBetDeleteQueue.createJob(queueObject);
   await expertJob.save();
 }
