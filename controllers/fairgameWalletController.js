@@ -3945,7 +3945,7 @@ exports.getResultBetProfitLoss = async (req, res) => {
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
     let queryColumns = ``;
-    let where = { marketBetType: isSession ? marketBetType.SESSION : marketBetType.MATCHBETTING };
+    let where = { marketBetType: isSession ? marketBetType.SESSION : In([marketBetType.MATCHBETTING, marketBetType.RACING]) };
 
     if (matchId) {
       where.matchId = matchId;
