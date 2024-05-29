@@ -25,7 +25,7 @@ const {
   racingBettingType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -3849,9 +3849,10 @@ exports.totalProfitLossWallet = async (req, res) => {
     totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
     let subQuery = await childIdquery(user, searchId)
     const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, subQuery);
+    const racingReport = await getTotalProfitLossRacing(where, startDate, endDate, totalLoss, subQuery);
     return SuccessResponse(
       {
-        statusCode: 200, data: result
+        statusCode: 200, data: [...result, ...racingReport]
       },
       req,
       res
@@ -3875,7 +3876,7 @@ exports.totalProfitLossWallet = async (req, res) => {
 
 exports.totalProfitLossByMatch = async (req, res) => {
   try {
-    let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit } = req.body;
+    let { user, type, startDate, endDate, searchId, partnerShipRoleName, page, limit, isRacing } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
@@ -3900,8 +3901,19 @@ exports.totalProfitLossByMatch = async (req, res) => {
       sessionProfitLoss = '-' + sessionProfitLoss;
     }
     let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
-    let subQuery = await childIdquery(user, searchId)
-    const { result, count } = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, subQuery);
+    let subQuery = await childIdquery(user, searchId);
+    let result, count;
+    if (isRacing) {
+      const data = await getAllRacinMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, subQuery);
+      result = data.result;
+      count = data.count;
+    }
+    else {
+      const data = await getAllMatchTotalProfitLoss(where, startDate, endDate, [sessionProfitLoss, rateProfitLoss, totalDeduction], page, limit, subQuery);
+      result = data.result;
+      count = data.count;
+    }
+
     return SuccessResponse(
       {
         statusCode: 200, data: { result, count }

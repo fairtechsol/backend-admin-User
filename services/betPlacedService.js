@@ -252,6 +252,34 @@ exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss, subQue
   return result
 }
 
+exports.getTotalProfitLossRacing = async (where, startDate, endDate, totalLoss, subQuery) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
+    .leftJoinAndMapOne("placeBet.match", "racingMatch", 'match', 'placeBet.matchId = match.id')
+    .where(where)
+    .andWhere({
+      result: In([betResultStatus.WIN, betResultStatus.LOSS]),
+      deleteReason: IsNull(),
+    });
+  if (startDate) {
+    query = query.andWhere('match.startAt >= :from', { from: new Date(startDate) })
+  }
+  if (endDate) {
+    let newDate = new Date(endDate);
+    newDate.setHours(23, 59, 59, 999);
+    query = query.andWhere('match.startAt <= :to', { to: newDate })
+  }
+  query = query
+    .select([
+      totalLoss,
+      'placeBet.eventType as "eventType"',
+      'COUNT(placeBet.id) as "totalBet"'
+    ])
+    .groupBy('placeBet.eventType')
+  let result = await query.getRawMany();
+  return result
+}
+
 exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, page, limit, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
@@ -290,10 +318,48 @@ exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArr
   return { result, count };
 }
 
+exports.getAllRacinMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, page, limit, subQuery) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .leftJoinAndMapOne("placeBet.match", "racingMatch", 'match', 'placeBet.matchId = match.id')
+    .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
+    .where(where)
+    .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
+
+  if (startDate) {
+    query = query.andWhere('match.startAt >= :from', { from: new Date(startDate) })
+  }
+  if (endDate) {
+    let newDate = new Date(endDate);
+    newDate.setHours(23, 59, 59, 999);
+    query = query.andWhere('match.startAt <= :to', { to: newDate })
+  }
+
+  const count = (await query.select(["match.id"]).groupBy("match.id").getRawMany())?.length;
+
+  query = query
+    .select([
+      ...selectArray,
+      'placeBet.eventType as "eventType"',
+      'COUNT(placeBet.id) as "totalBet"',
+      'match.startAt as "startAt"',
+      'match.title as title',
+      'match.id as "matchId"'
+    ])
+    .groupBy('placeBet.matchId, match.id, placeBet.eventType').orderBy('match.startAt', 'DESC');
+
+  if (page) {
+    query.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
+  }
+
+  let result = await query.getRawMany();
+
+  return { result, count };
+}
+
 exports.getBetsProfitLoss = async (where, totalLoss, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
-    .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
+    // .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
     .where(where)
     .andWhere({ result: Not(betResultStatus.PENDING) })
 
