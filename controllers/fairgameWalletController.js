@@ -4046,8 +4046,6 @@ const getQueryColumns = async (user, partnerShipRoleName) => {
   return partnerShipRoleName ? await profitLossPercentCol({ roleName: partnerShipRoleName }) : await profitLossPercentCol(user);
 }
 
-
-
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {
     let { user, matchId, searchId, userIds, partnerShipRoleName } = req.body;
@@ -4137,7 +4135,8 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
 exports.getBetCount = async (req, res) => {
   try {
     const parentId = req.query.parentId;
-    const result = await getBetsWithMatchId(parentId ? ` AND user.superParentId = '${parentId}'` : "");
+    const matchId = req.query.matchId;
+    const result = await getBetsWithMatchId((parentId ? ` AND user.superParentId = '${parentId}'` : ""), (matchId ? { matchId: matchId } : {}));
     return SuccessResponse(
       {
         statusCode: 200, data: result
