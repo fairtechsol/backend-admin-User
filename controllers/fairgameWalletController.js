@@ -41,7 +41,8 @@ const {
   calculateProfitLossForOtherMatchToResult,
   extractNumbersFromString,
   parseRedisData,
-  calculateProfitLossForRacingMatchToResult
+  calculateProfitLossForRacingMatchToResult,
+  getUserProfitLossRacingForUpperLevel
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -4045,8 +4046,6 @@ const getQueryColumns = async (user, partnerShipRoleName) => {
   return partnerShipRoleName ? await profitLossPercentCol({ roleName: partnerShipRoleName }) : await profitLossPercentCol(user);
 }
 
-
-
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {
     let { user, matchId, searchId, userIds, partnerShipRoleName } = req.body;
@@ -4136,7 +4135,8 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
 exports.getBetCount = async (req, res) => {
   try {
     const parentId = req.query.parentId;
-    const result = await getBetsWithMatchId(parentId ? ` AND user.superParentId = '${parentId}'` : "");
+    const matchId = req.query.matchId;
+    const result = await getBetsWithMatchId((parentId ? ` AND user.superParentId = '${parentId}'` : ""), (matchId ? { matchId: matchId } : {}));
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -4240,6 +4240,57 @@ exports.getUsersProfitLoss = async (req, res) => {
   } catch (error) {
     logger.error({
       context: `Error in get profit loss user data.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getUsersRacingProfitLoss = async (req, res) => {
+  try {
+    const { userIds } = req.query;
+    const { matchId } = req.params;
+
+    const resUserData = [];
+
+    for (let userData of userIds?.split("|")) {
+      userData = JSON.parse(userData);
+      let userProfitLossData = {};
+
+      let totalPLVal=0;
+
+      let betsData = await getUserProfitLossRacingForUpperLevel(userData, matchId);
+      Object.keys(betsData)?.forEach((item)=>{
+        Object.keys(betsData[item])?.forEach((items)=>{
+          userProfitLossData[items] = -parseFloat(parseFloat(betsData[item][items]).toFixed(2)) || 0;
+          userProfitLossData[items + "_percent"] = -parseFloat(parseFloat(betsData[item][items] * parseFloat(userData.partnerShip) / 100).toFixed(2)) || 0;
+          totalPLVal += (betsData[item][items] || 0);
+        });
+      })
+      userProfitLossData.userName = userData?.userName;
+
+      if (totalPLVal !=0 ) {
+        resUserData.push(userProfitLossData);
+      }
+    }
+    return SuccessResponse(
+      {
+        statusCode: 200, data: resUserData
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get profit loss user data race.`,
       error: error.message,
       stake: error.stack,
     });

@@ -449,11 +449,11 @@ exports.getPlacedBetTotalLossAmount = (where) => {
     .getRawMany();
 }
 
-exports.getBetsWithMatchId = (where) => {
+exports.getBetsWithMatchId = (where, betCondition = {}) => {
 
   return BetPlaced.createQueryBuilder()
     .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id' + (where ?? ""))
-    .where({ deleteReason: IsNull(), result: In([betResultStatus.PENDING]) })
+    .where({ deleteReason: IsNull(), result: In([betResultStatus.PENDING]), ...betCondition })
     .andWhere("user.id IS NOT NULL")
     .groupBy("betPlaced.matchId")
     .select(['betPlaced.matchId as "matchId"', "COUNT(betPlaced.matchId) as count"])
