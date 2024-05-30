@@ -448,7 +448,7 @@ let calculateRacingRateAmount = async (userRedisData, jobData, userId) => {
             await incrementValuesRedis(partnershipId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure }, userRedisObj);
 
             jobData.myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
-            sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { jobData, userRedisObj })
+            sendMessageToUser(partnershipId, socketData.MatchBetPlaced, { jobData, userRedisObj: teamData })
             // Log information about exposure and stake update
             logger.info({
               context: "Update User Exposure and Stake at the match bet",
