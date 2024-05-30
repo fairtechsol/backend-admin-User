@@ -995,18 +995,24 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
       }
       let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
       let maxLoss = 0;
-      Object.keys(redisData)?.forEach((key) => {
-        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
-        redisData[key]=JSON.stringify(redisData[key]);
-      });
 
-      matchResult = {
-        ...matchResult,
-        ...redisData
-      }
+      Object.keys(redisData)?.forEach((items)=>{
+        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
+        if(matchResult[items]){
+          Object.keys(redisData[items])?.forEach((matchResultData)=>{
+            matchResult[items][matchResultData] += parseFloat(parseFloat(redisData[items]?.[matchResultData]).toFixed(2));
+          });
+        }
+        else{
+          matchResult[items]=redisData[items];
+        }
+       });
+
       matchExposure[`${redisKeys.userMatchExposure}${matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${matchId}`] || 0) + maxLoss).toFixed(2));
     }
-
+    Object.keys(matchResult)?.forEach((key) => {
+      matchResult[key] = JSON.stringify(matchResult[key]);
+    });
     return {
       ...matchExposure, ...matchResult
     }
@@ -1136,7 +1142,7 @@ exports.getUserProfitLossRacingForUpperLevel = async (user,matchId) => {
       else{
         matchResult[items]=redisData[items];
       }
-     })
+     });
   }
   return {
     ...matchResult
