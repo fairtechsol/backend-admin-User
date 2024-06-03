@@ -2412,9 +2412,6 @@ exports.racingBettingBetPlaced = async (req, res) => {
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
     newCalculateOdd = (newCalculateOdd - 1) * 100;
-    // if (newCalculateOdd > 400) {
-    //   return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
-    // }
 
     if (bettingType == betType.BACK) {
       winAmount = (stake * newCalculateOdd) / 100;
@@ -2449,6 +2446,10 @@ exports.racingBettingBetPlaced = async (req, res) => {
       throw error?.response?.data;
     }
     let { match, matchBetting, runners } = apiResponse.data;
+
+    if (newCalculateOdd >= 20000) {
+      return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllowRacing", keys: { gameType: match?.matchType == gameType.horseRacing ? "Horse" : "Grey hound" } } }, req, res);
+    }
 
     if (match?.stopAt) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
