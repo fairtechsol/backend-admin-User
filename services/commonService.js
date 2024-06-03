@@ -997,7 +997,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
       let maxLoss = 0;
 
       Object.keys(redisData)?.forEach((items)=>{
-        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
+        maxLoss += Math.abs(Math.min(...Object.values(redisData[items] || {}), 0));
         if(matchResult[items]){
           Object.keys(redisData[items])?.forEach((matchResultData)=>{
             matchResult[items][matchResultData] += parseFloat(parseFloat(redisData[items]?.[matchResultData]).toFixed(2));
