@@ -12,8 +12,8 @@ exports.updateMatchData = async (where, body) => {
 };
 
 exports.listMatch = async (keyword) => {
-  let matchList = await match.query(`SELECT title, "matchType", "startAt" FROM matchs where "stopAt" is NULL AND title ILIKE $1
+  let matchList = await match.query(`SELECT title, "matchType", "startAt", "id" FROM matchs where "stopAt" is NULL AND title ILIKE $1
   UNION
-  SELECT title, "matchType", "startAt" FROM "racingMatchs"  where "stopAt" is NULL AND title ILIKE $1 ORDER BY "startAt";`,[`%${keyword}%`]);
+  SELECT CONCAT(venue, ' | ', title) as title, "matchType", "startAt", "id" FROM "racingMatchs"  where "stopAt" is NULL AND ( title ILIKE $1 OR venue ILIKE $1) ORDER BY "startAt";`, [`%${keyword}%`]);
   return matchList;
 };
