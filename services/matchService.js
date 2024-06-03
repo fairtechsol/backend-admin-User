@@ -6,3 +6,14 @@ exports.addMatchData = async (body) => {
   let insertMatchData = await match.save(body);
   return insertMatchData;
 };
+
+exports.updateMatchData = async (where, body) => {
+  await match.update(where, body);
+};
+
+exports.listMatch = async (keyword) => {
+  let matchList = await match.query(`SELECT title, "matchType", "startAt" FROM matchs where "stopAt" is NULL AND title ILIKE $1
+  UNION
+  SELECT title, "matchType", "startAt" FROM "racingMatchs"  where "stopAt" is NULL AND title ILIKE $1 ORDER BY "startAt";`,[`%${keyword}%`]);
+  return matchList;
+};

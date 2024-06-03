@@ -89,6 +89,8 @@ const { sendMessageToUser, broadcastEvent } = require("../sockets/socketManager"
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertCommissions, getCombinedCommission, deleteCommission} = require("../services/commissionService");
 const { insertButton } = require("../services/buttonService");
+const { updateMatchData } = require("../services/matchService");
+const { updateRaceMatchData } = require("../services/racingServices");
 
 
 
@@ -1947,7 +1949,7 @@ exports.declareMatchResult = async (req, res) => {
     }
     insertBulkCommissions(commissionReport);
     broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType });
-
+    await updateMatchData({ id: matchId }, { stopAt: new Date() });
     return SuccessResponse(
       {
         statusCode: 200,
@@ -2487,6 +2489,7 @@ exports.unDeclareMatchResult = async (req, res) => {
     );
 
     broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType });
+    await updateMatchData({ id: matchId }, { stopAt: null });
 
     return SuccessResponse(
       {
@@ -2983,7 +2986,9 @@ exports.declareOtherMatchResult = async (req, res) => {
     }
     // insertBulkCommissions(commissionReport);
     broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
-
+    if (matchBetType == matchBettingType.quickbookmaker1) {
+      await updateMatchData({ id: matchId }, { stopAt: new Date() });
+    }
     return SuccessResponse(
       {
         statusCode: 200,
@@ -3501,6 +3506,9 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
     );
 
     broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betIds });
+    if (matchBetType == matchBettingType.quickbookmaker1) {
+      await updateMatchData({ id: matchId }, { stopAt: null });
+    }
 
     return SuccessResponse(
       {
@@ -3511,7 +3519,6 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
       req,
       res
     );
-
   } catch (error) {
     logger.error({
       error: `Error at un declare match result for the user.`,
@@ -4562,7 +4569,7 @@ exports.declarRaceMatchResult = async (req, res) => {
     }
     // insertBulkCommissions(commissionReport);
     broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
-
+    await updateRaceMatchData({ id: matchId }, { stopAt: new Date() });
     return SuccessResponse(
       {
         statusCode: 200,
@@ -5067,6 +5074,7 @@ exports.unDeclareRaceMatchResult = async (req, res) => {
     );
 
     broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betIds });
+    await updateRaceMatchData({ id: matchId }, { stopAt: null });
 
     return SuccessResponse(
       {

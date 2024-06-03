@@ -16,13 +16,17 @@ const { sendMessageToUser } = require('../sockets/socketManager');
 exports.getBet = async (req, res) => {
   try {
     const reqUser = req.user;
-    let query = req.query;
+    let { isCurrentBets, ...query } = req.query;
     let where = {};
     let result;
     
     let select = [
       "betPlaced.id","betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.bettingName", "match.id"
     ];
+
+    if (isCurrentBets) {
+      select.push("racingMatch.title", "racingMatch.startAt", "racingMatch.id")
+    }
 
     if (query.status && query.status == "MATCHED") {
       where.result = In([betResultStatus.LOSS, betResultStatus.TIE, betResultStatus.WIN]);
@@ -42,7 +46,7 @@ exports.getBet = async (req, res) => {
 
     if (reqUser.roleName == userRoleConstant.user) {
       where.createBy = reqUser.id;
-      result = await betPlacedService.getBet(where, query, reqUser.roleName, select);
+      result = await betPlacedService.getBet(where, query, reqUser.roleName, select, null, true, isCurrentBets);
     } else {
       let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
       childsId = childsId.map(item => item.id);
@@ -57,7 +61,7 @@ exports.getBet = async (req, res) => {
       let partnershitColumn = partnershipPrefixByRole[reqUser.roleName] + 'Partnership';
       select.push("user.id", "user.userName", `user.${partnershitColumn}`);
       where.createBy = In(childsId);
-      result = await betPlacedService.getBet(where, query, reqUser.roleName, select);
+      result = await betPlacedService.getBet(where, query, reqUser.roleName, select, null, true, isCurrentBets);
     }
     if (!result[1]) return SuccessResponse({
       statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {

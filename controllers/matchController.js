@@ -6,6 +6,7 @@ const { getChildsWithOnlyUserRole } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
+const { listMatch } = require("../services/matchService");
 
 exports.matchDetails = async (req, res) => {
   try {
@@ -327,6 +328,23 @@ exports.listRacingCountryCode = async (req, res) => {
         statusCode: 200,
         message: { msg: "match details", keys: { name: "Match" } },
         data: apiResponse.data,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.listSearchMatch = async (req, res) => {
+  try {
+    const { keyword } = req.params;
+    const matchList=await listMatch(keyword);
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: matchList,
       },
       req,
       res

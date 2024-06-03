@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
 const { isAuthenticate } = require('../middleware/auth');
-const { matchDetails, listMatch, matchDetailsForFootball, listRacingCountryCode, listRacingMatch, raceDetails } = require('../controllers/matchController');
+const { matchDetails, listMatch, matchDetailsForFootball, listRacingCountryCode, listRacingMatch, raceDetails, listSearchMatch } = require('../controllers/matchController');
 const { addMatch, raceAdd } = require('../controllers/expertController');
 const { addMatchValidate, addRaceValidate } = require('../validators/matchValidator');
 
 router.get('/list', isAuthenticate, listMatch);
+router.get('/search/:keyword', isAuthenticate, listSearchMatch);
 //racing list
 router.get('/countryWiseList', isAuthenticate, listRacingCountryCode);
 router.get('/racing/list', isAuthenticate, listRacingMatch);

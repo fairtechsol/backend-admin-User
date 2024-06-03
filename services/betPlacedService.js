@@ -33,7 +33,7 @@ exports.deleteBetByEntityOnError = async (body) => {
   return userBet;
 }
 
-exports.getBet = async (where, query, roleName, select, superParentId, isTeamNameAllow=true) => {
+exports.getBet = async (where, query, roleName, select, superParentId, isTeamNameAllow = true, isCurrentBets) => {
   let pgQuery = BetPlaced.createQueryBuilder('betPlaced').where(where);
   if (roleName == userRoleConstant.fairGameAdmin) {
     pgQuery.innerJoinAndMapOne(
@@ -51,6 +51,16 @@ exports.getBet = async (where, query, roleName, select, superParentId, isTeamNam
       "betPlaced.createBy = user.id"
     )
   }
+
+  if(isCurrentBets){
+    pgQuery.leftJoinAndMapOne(
+      "betPlaced.racingMatch",
+      "racingMatch",
+      "racingMatch",
+      "betPlaced.matchId = racingMatch.id"
+    )
+  }
+
   pgQuery.leftJoinAndMapOne(
     "betPlaced.match",
     "match",
