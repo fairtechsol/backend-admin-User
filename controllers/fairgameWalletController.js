@@ -3505,7 +3505,7 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
       }
     );
 
-    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betIds });
+    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betIds, betType: matchBetType });
     if (matchBetType == matchBettingType.quickbookmaker1) {
       await updateMatchData({ id: matchId }, { stopAt: null });
     }
