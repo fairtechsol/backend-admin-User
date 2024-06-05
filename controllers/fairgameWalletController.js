@@ -4798,7 +4798,7 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
         amount: item.winAmount - item.lossAmount,
         transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
         closingBalance: currBal,
-        description: `${matchData?.matchType}/${matchData?.title}/${item.type} - ${item.result} `,
+        description: `${matchData?.matchType}/${matchData?.title}/${item.type} - ${matchDetails?.[0]?.runners?.find((runnerData) => runnerData?.id == item.result)?.runnerName} `,
         createdAt: new Date(),
         uniqueId: uniqueId,
         betId: item?.betId
@@ -5261,7 +5261,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
         amount: -(item.winAmount - item.lossAmount),
         transType: -(item.winAmount - item.lossAmount) < 0 ? transType.loss : transType.win,
         closingBalance: currBal,
-        description: `Revert ${user?.eventType}/${user?.eventName}/${item.type} - ${item.result}`,
+        description: `Revert ${user?.eventType}/${user?.eventName}/${item.type} - ${matchDetails?.[0]?.runners?.find((runnerData) => runnerData?.id == item.result)?.runnerName}`,
         createdAt: new Date(),
         uniqueId: uniqueId,
         betId: item?.betId
