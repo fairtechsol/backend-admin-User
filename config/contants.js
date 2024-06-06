@@ -513,3 +513,29 @@ module.exports.redisKeysMarketWise = {
 }
 
 module.exports.scoreBasedMarket = ["firstHalfGoal", "overUnder"];
+
+exports.cardGames = [{
+  type: "teen20",
+  name: "20-20 TEENPATTI",
+  id: "27948657-084b-469e-887a-4e3dbd8532f6"
+},
+{
+  type: "card32",
+  name: "32 CARDS - A",
+  id: "2aa3973a-91ef-4159-ad6d-b1cd99eea9a7"
+},
+{
+  type: "lucky7",
+  name: "LUCKY 7 - A",
+  "id": "541da7e4-2c6b-429f-9c01-0952882b4cb3"
+},
+{
+  type: "abj",
+  name: "ANDAR BAHAR 2",
+  id: "ab24f5bd-4b29-41c2-8a79-017dfaa89684"
+},
+{
+  type: "dt20",
+  name: "20-20 DRAGON TIGER",
+  id: "d67dcc3f-dfa8-48c9-85cb-c258b0d7084a"
+}];
