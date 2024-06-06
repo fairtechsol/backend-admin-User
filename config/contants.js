@@ -513,3 +513,24 @@ module.exports.redisKeysMarketWise = {
 }
 
 module.exports.scoreBasedMarket = ["firstHalfGoal", "overUnder"];
+
+exports.cardGames = [{
+  type: "teen20",
+  name: "20-20 TEENPATTI"
+},
+{
+  type: "card32",
+  name: "32 CARDS - A"
+},
+{
+  type: "lucky7",
+  name: "LUCKY 7 - A"
+},
+{
+  type: "abj",
+  name: "ANDAR BAHAR 2"
+},
+{
+  type: "dt20",
+  name: "20-20 DRAGON TIGER"
+}];
