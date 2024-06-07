@@ -1,5 +1,6 @@
 const { redisKeys } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
+const externalRedis = require("../../config/externalRedisConnection");
 
 exports.updateSessionExposure = async (userId, matchId, value) => {
   await internalRedis.hset(userId, `${matchId}_sessionExposure`, value);
@@ -69,4 +70,8 @@ exports.getUserRedisSingleKey = async (userId,key)=>{
 
   // Return the user data as an object or null if no data is found
   return  userData;
+}
+
+exports.setCardBetPlaceRedis = async (mid,key,value)=>{
+  await externalRedis.hincrbyfloat(`${mid}${redisKeys.card}`, key, value);
 }
