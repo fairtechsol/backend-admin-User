@@ -151,7 +151,7 @@ exports.cardMatchDetails = async (req, res) => {
 
     let casinoDetails = await getCardMatch({ type: type });
 
-    const roundData = null;
+    let roundData = null;
     try {
       const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.casinoData + type
 

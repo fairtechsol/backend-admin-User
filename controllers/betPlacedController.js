@@ -84,6 +84,47 @@ exports.getBet = async (req, res) => {
 
 };
 
+exports.getAccountStatementBet = async (req, res) => {
+  try {
+    let { query, user: reqUser } = req;
+    let where = {};
+    let result;
+    
+    let select = [
+      "betPlaced.id","betPlaced.ipAddress","betPlaced.browserDetail", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.bettingName", "match.id", "racingMatch.title", "racingMatch.startAt", "racingMatch.id", "user.userName", "createBy.userName","user.id"
+    ];
+
+    if (query.status && query.status == "MATCHED") {
+      where.result = In([betResultStatus.LOSS, betResultStatus.TIE, betResultStatus.WIN]);
+      query = lodash.omit(query, ['status']);
+    }
+    else if (query.status && query.status == betResultStatus.PENDING) {
+      where.result = betResultStatus.PENDING;
+      query = lodash.omit(query, ['status']);
+    }
+    else if (query.status && query.status == "DELETED") {
+      where.deleteReason = Not(IsNull());
+      where.result = betResultStatus.UNDECLARE;
+      query = lodash.omit(query, ['status']);
+    } else {
+      query = lodash.omit(query, ['status']);
+    }
+
+    result = await betPlacedService.getAccountStatBet(where, query, select);
+
+    return SuccessResponse({
+      statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
+        count: result?.count,
+        rows: result?.data,
+        totalCount: result?.totalAmountData
+      }
+    }, req, res)
+  } catch (err) {
+    return ErrorResponse(err, req, res)
+  }
+
+};
+
 exports.getSessionProfitLoss = async (req, res) => {
   try {
     const { id: userId } = req.user;
@@ -2960,7 +3001,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       data: req.body
     });
     let reqUser = req.user;
-    let { stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, bettingName, selectionId } = req.body;
+    let { stake, odd, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, bettingName, selectionId } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     let user = userBalanceData?.user;
@@ -3079,7 +3120,6 @@ exports.cardBettingBetPlaced = async (req, res) => {
     if (userCurrentBalance < 0) {
       logger.info({
         info: `user exposure balance insufficient to place this bet user id is ${reqUser.id}`,
-        betId,
         matchId,
         userCurrentBalance,
         maximumLoss,
@@ -3090,7 +3130,6 @@ exports.cardBettingBetPlaced = async (req, res) => {
     }
     logger.info({
       info: `updating user exposure balance in redis for user id is ${reqUser.id}`,
-      betId,
       matchId,
       userCurrentBalance,
       matchExposure: newUserExposure, maximumLoss

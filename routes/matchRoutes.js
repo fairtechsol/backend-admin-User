@@ -13,6 +13,7 @@ router.get('/countryWiseList', isAuthenticate, listRacingCountryCode);
 router.get('/racing/list', isAuthenticate, listRacingMatch);
 router.get('/racing/:id', isAuthenticate, raceDetails);
 
+//card details
 router.get('/card/:type', isAuthenticate, cardMatchDetails);
 
 router.get('/:id', isAuthenticate, matchDetails);
