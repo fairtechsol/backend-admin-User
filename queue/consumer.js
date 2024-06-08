@@ -512,7 +512,7 @@ let calculateCardMatchRateAmount = async (userRedisData, jobData, userId) => {
 
   if (roleName == userRoleConstant.user) {
     let userRedisObj = {
-      [`${jobData?.mid}_${jobData?.selectionId}_${redisKeys.card}`]: teamData
+      [`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`]: teamData
     }
 
     // updating redis
@@ -555,13 +555,13 @@ let calculateCardMatchRateAmount = async (userRedisData, jobData, userId) => {
             let masterExposure = masterRedisData?.exposure ? masterRedisData.exposure : 0;
             let partnerExposure = (parseFloat(masterExposure) || 0) - userOldExposure + userCurrentExposure;
 
-            let teamRates = masterRedisData?.[`${jobData?.mid}_${jobData?.selectionId}_${redisKeys.card}`];
+            let teamRates = masterRedisData?.[`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`];
 
             let cardProfitLossAndExposure = new CardProfitLoss(jobData?.matchType, teamRates, { bettingType: jobData?.bettingType, winAmount: jobData?.winAmount, lossAmount: jobData?.lossAmount, playerName: jobData?.betOnTeam, partnership: partnership }, userOldExposure).getCardGameProfitLoss()
           
             let teamData = cardProfitLossAndExposure.profitLoss;
             let userRedisObj = {
-              [`${jobData?.mid}_${jobData?.selectionId}_${redisKeys.card}`]: teamData
+              [`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`]: teamData
             }
             
              // updating redis

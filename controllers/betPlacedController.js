@@ -3087,7 +3087,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
    
     let userTotalExposure = matchExposure;
 
-    let teamRates = userRedisData?.[`${betPlacedObj.runnerId}_${selectionId}_${redisKeys.card}`];
+    let teamRates = userRedisData?.[`${betPlacedObj.runnerId}_${selectionId}${redisKeys.card}`];
 
     let userPreviousExposure = parseFloat(userRedisData[redisKeys.userAllExposure]) || 0.0;
     let userOtherMatchExposure = userPreviousExposure - userTotalExposure;
@@ -3122,7 +3122,6 @@ exports.cardBettingBetPlaced = async (req, res) => {
         info: `user exposure balance insufficient to place this bet user id is ${reqUser.id}`,
         matchId,
         userCurrentBalance,
-        maximumLoss,
         newUserExposure,
         runnerId
       })
@@ -3132,7 +3131,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       info: `updating user exposure balance in redis for user id is ${reqUser.id}`,
       matchId,
       userCurrentBalance,
-      matchExposure: newUserExposure, maximumLoss
+      matchExposure: newUserExposure
     });
 
     // await updateMatchExposure(reqUser.id, matchId, matchExposure);
@@ -3234,7 +3233,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
 }
 
 const validateCardBettingDetails = async (match, betObj, selectionId) => {
-  const roundData = null;
+  let roundData = null;
   try {
     const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.casinoData + match?.type
 
@@ -3286,5 +3285,5 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     };
   }
 
-  betObj.runnerId = currData?.t1?.mid;
+  betObj.runnerId = roundData?.t1?.[0]?.mid;
 }
