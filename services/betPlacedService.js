@@ -150,6 +150,16 @@ exports.getMatchBetPlaceWithUser = async (betId, select) => {
   return betPlaced;
 };
 
+exports.getMatchBetPlaceWithUserCard = async (where, select) => {
+  let betPlaced = await BetPlaced.createQueryBuilder()
+    .where({ ...where, result: betResultStatus.PENDING, deleteReason: IsNull() })
+    .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
+    .leftJoinAndMapOne("betPlaced.userBalance", "userBalance", 'balance', 'betPlaced.createBy = balance.userId')
+    .select(select)
+    .getMany()
+  return betPlaced;
+};
+
 exports.getMultipleAccountProfitLoss = async (betId, userId) => {
   let betPlaced = await BetPlaced.query(`SELECT Sum(CASE result WHEN '${betResultStatus.WIN}' then "winAmount" ELSE 0 END) AS winAmount, Sum(CASE result WHEN '${betResultStatus.LOSS}' then "lossAmount" ELSE 0 END) AS lossAmount, Sum(amount) AS "totalStack" from "betPlaceds" where "betId" ='${betId}' AND "userId"='${userId}' AND "deleteReason" IS NULL`)
   return betPlaced;
@@ -201,6 +211,22 @@ exports.getMultipleAccountOtherMatchProfitLoss = async (betId, userId) => {
     .setParameter('lossStatus', betResultStatus.LOSS)
     .setParameter('matchOdd', [matchBettingType.matchOdd])
     .andWhere('"betId" IN (:...betIds)', { betIds: betId })
+    .andWhere('"userId" = :userId', { userId: userId })
+    .andWhere('"deleteReason" IS NULL')
+    .getRawOne();
+
+  return betPlaced;
+};
+
+exports.getMultipleAccountCardMatchProfitLoss = async (runnerId, userId) => {
+
+  const betPlaced = await BetPlaced.createQueryBuilder().select([
+    'SUM(CASE WHEN result = :winStatus THEN "winAmount" ELSE 0 END) AS "winAmount"',
+    'SUM(CASE WHEN result = :lossStatus THEN "lossAmount" ELSE 0 END) AS "lossAmount"',
+  ])
+    .setParameter('winStatus', betResultStatus.WIN)
+    .setParameter('lossStatus', betResultStatus.LOSS)
+    .andWhere('"runnerId" = :runnerId', { runnerId: runnerId })
     .andWhere('"userId" = :userId', { userId: userId })
     .andWhere('"deleteReason" IS NULL')
     .getRawOne();

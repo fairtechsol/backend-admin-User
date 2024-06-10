@@ -59,10 +59,10 @@ class CardProfitLoss {
 
         Object.keys(newProfitLoss)?.forEach((item) => {
 
-            if ((item == playerName && bettingType == betType.BACK) || (item != playerName && bettingType == betType.LAY)) {
+            if ((item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
                 newProfitLoss[item] += ((winAmount * partnership) / 100);
             }
-            else if ((item != playerName && bettingType == betType.BACK) || (item == playerName && bettingType == betType.LAY)) {
+            else if ((item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
                 newProfitLoss[item] -= ((lossAmount * partnership) / 100);
             }
 
@@ -80,6 +80,10 @@ class CardProfitLoss {
     teen20() {
         const { winAmount, lossAmount } = this.data;
         return { profitLoss: parseFloat((parseFloat(winAmount || 0) + parseFloat(this.oldProfitLoss || 0)).toFixed(2)), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+    }
+
+    removeSpacesAndToLowerCase(str) {
+        return str.replace(/\s+/g, '');
     }
 
 }
