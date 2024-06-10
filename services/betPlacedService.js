@@ -52,7 +52,7 @@ exports.getBet = async (where, query, roleName, select, superParentId, isTeamNam
     )
   }
 
-  if(isCurrentBets){
+  if (isCurrentBets) {
     pgQuery.leftJoinAndMapOne(
       "betPlaced.racingMatch",
       "racingMatch",
@@ -87,6 +87,58 @@ exports.getBet = async (where, query, roleName, select, superParentId, isTeamNam
     .getResult();
 }
 
+
+exports.getAccountStatBet = async (where, query, select) => {
+  let pgQuery = BetPlaced.createQueryBuilder('betPlaced').where(where).leftJoinAndMapOne(
+    "betPlaced.user",
+    "user",
+    "user",
+    "betPlaced.createBy = user.id"
+  )
+    .leftJoinAndMapOne(
+      "user.createBy",
+      "user",
+      "createBy",
+      "user.createBy = createBy.id"
+    )
+    .leftJoinAndMapOne(
+      "betPlaced.racingMatch",
+      "racingMatch",
+      "racingMatch",
+      "betPlaced.matchId = racingMatch.id"
+    ).leftJoinAndMapOne(
+      "betPlaced.match",
+      "match",
+      "match",
+      "betPlaced.matchId = match.id"
+    ).addSelect(`CASE
+              WHEN "betPlaced"."marketType" IN (:...bettingType) THEN "betPlaced"."teamName"  || ' ' || REGEXP_REPLACE("betPlaced"."marketType", '[^0-9.]+', '', 'g')
+              ELSE "betPlaced"."teamName"
+              END`, `betPlaced_teamName`)
+    .setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))])
+    .select(select).orderBy("betPlaced.createdAt", 'DESC');
+  const [ data, count ] = await new ApiFeature(
+    pgQuery,
+    query
+  )
+    .search()
+    .filter()
+    .sort()
+    .paginate()
+    .getResult();
+
+  const totalAmountData = await new ApiFeature(
+    BetPlaced.createQueryBuilder('betPlaced').where(where).select([`SUM(CASE WHEN result = :winStatus THEN "winAmount" ELSE 0 END) - SUM(CASE WHEN result = :lossStatus THEN "lossAmount" ELSE 0 END) AS "amount"`, "COUNT(*) as soda", 'COUNT(DISTINCT "userId") as "totalCount"'])
+      .setParameter('winStatus', betResultStatus.WIN)
+      .setParameter('lossStatus', betResultStatus.LOSS)
+    ,
+    query
+  )
+    .filter().query.getRawOne();
+
+
+  return { count, data, totalAmountData };
+}
 
 exports.getMatchBetPlaceWithUser = async (betId, select) => {
   let betPlaced = await BetPlaced.createQueryBuilder()

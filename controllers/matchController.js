@@ -1,5 +1,5 @@
 const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise } = require("../config/contants");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain } = require("../config/contants");
 const { findAllPlacedBet } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole } = require("../services/userService");
@@ -7,6 +7,7 @@ const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const { listMatch } = require("../services/matchService");
+const { getCardMatch } = require("../services/cardMatchService");
 
 exports.matchDetails = async (req, res) => {
   try {
@@ -134,6 +135,52 @@ exports.raceDetails = async (req, res) => {
       {
         statusCode: 200,
         data: apiResponse.data,
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.cardMatchDetails = async (req, res) => {
+  try {
+    const { type } = req.params;
+
+    let casinoDetails = await getCardMatch({ type: type });
+
+    let roundData = null;
+    try {
+      const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.casinoData + type
+
+      let data = await apiCall(apiMethod.get, url);
+      roundData = data?.data?.data?.data;
+    }
+    catch (error) {
+      throw {
+        message: {
+          msg: "bet.notLive"
+        }
+      };
+    }
+
+    if (casinoDetails) {
+      let cardRedisKeys = Object.keys(roundData?.t2)?.map((item) => `${roundData?.t1?.mid}_${item?.sid}${redisKeys.card}`);
+
+      let redisData = await getUserRedisKeys(req?.user?.id, cardRedisKeys);
+      casinoDetails.profitLoss = {};
+      redisData?.forEach((item, index) => {
+        if (item) {
+          casinoDetails.profitLoss[cardRedisKeys[index]] = item;
+        }
+      });
+    }
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: casinoDetails,
       },
       req,
       res
