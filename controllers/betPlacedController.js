@@ -3256,7 +3256,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
       }
     };
   }
-  else if (betObj.amount < currData?.min) {
+  else if (betObj.amount < (currData?.min ?? roundData?.t1?.[0]?.min)) {
     throw {
       statusCode: 400,
       message: {
@@ -3264,7 +3264,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
       }
     };
   }
-  else if (betObj.amount > currData?.max) {
+  else if (betObj.amount > (currData?.max ?? roundData?.t1?.[0]?.max)) {
     throw {
       statusCode: 400,
       message: {
