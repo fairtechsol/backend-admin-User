@@ -10,7 +10,7 @@ class CardWinOrLose {
     }
 
     removeSpacesAndToLowerCase(str) {
-        return str.replace(/\s+/g, '');
+        return str.replace(/\s+/g, '')?.toLowerCase();
     }
 
     getCardGameProfitLoss() {
