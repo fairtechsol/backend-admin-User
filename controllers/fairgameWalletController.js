@@ -95,8 +95,6 @@ const { updateMatchData } = require("../services/matchService");
 const { updateRaceMatchData } = require("../services/racingServices");
 const { CardWinOrLose } = require("../services/cardService/cardWinAccordingToBet");
 
-
-
 exports.createSuperAdmin = async (req, res) => {
   try {
     const {
@@ -455,7 +453,6 @@ exports.setExposureLimitSuperAdmin = async (req, res, next) => {
     return ErrorResponse(error, req, res);
   }
 };
-
 
 exports.setExposureLimitByFGAdmin = async (req, res, next) => {
   try {
@@ -1771,6 +1768,16 @@ exports.declareMatchResult = async (req, res) => {
     const betIds = matchDetails?.map((item) => item?.id);
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
+    if (betPlaced?.length <= 0) {
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "bet.resultDeclared" },
+          data: { fwProfitLoss: 0, faAdminCal: { commission: [], userData: {} }, superAdminData: {}, bulkCommission: {} },
+        }, req, res
+      );
+    }
+
     logger.info({
       message: "Match result declared.",
       data: {
@@ -2830,6 +2837,16 @@ exports.declareOtherMatchResult = async (req, res) => {
    
     const betIds = matchBetType == matchBettingType.quickbookmaker1 ? matchDetails?.filter((item) => mainMatchMarketType.includes(item?.type))?.map((item) => item?.id) : [betId];
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
+
+    if (betPlaced?.length <= 0) {
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "bet.resultDeclared" },
+          data: { fwProfitLoss: 0, faAdminCal: { commission: [], userData: {} }, superAdminData: {} },
+        }, req, res
+      );
+    }
 
     logger.info({
       message: "Other match result declared.",
@@ -4415,6 +4432,16 @@ exports.declarRaceMatchResult = async (req, res) => {
     const betIds = [betId];
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
+    if (betPlaced?.length <= 0) {
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "bet.resultDeclared" },
+          data: { fwProfitLoss: 0, faAdminCal: { commission: [], userData: {} }, superAdminData: {} },
+        }, req, res
+      );
+    }
+
     logger.info({
       message: "Race match result declared.",
       data: {
@@ -5423,6 +5450,16 @@ exports.declarCardMatchResult = async (req, res) => {
     const { result, matchDetails, type } = req.body;
    
     const betPlaced = await getMatchBetPlaceWithUserCard({ runnerId: result?.mid });
+
+    if (betPlaced?.length <= 0) {
+      return SuccessResponse(
+        {
+          statusCode: 200,
+          message: { msg: "bet.resultDeclared" },
+          data: { fwProfitLoss: 0, faAdminCal: { commission: [], userData: {} }, superAdminData: {} },
+        }, req, res
+      );
+    }
 
     logger.info({
       message: "Card match result declared.",

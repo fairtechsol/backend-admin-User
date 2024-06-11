@@ -2997,7 +2997,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
 exports.cardBettingBetPlaced = async (req, res) => {
   try {
     logger.info({
-      info: `racing match betting bet placed`,
+      info: `card match betting bet placed`,
       data: req.body
     });
     let reqUser = req.user;

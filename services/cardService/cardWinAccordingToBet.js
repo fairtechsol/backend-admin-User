@@ -48,14 +48,14 @@ class CardWinOrLose {
         }
         else {
             if (currBetTeam?.toLowerCase() == "dragon") {
-                const cardBetType = (arr.shift(), arr.join(''));
+                const cardBetType = (betOnTeamData.shift(), betOnTeamData.join(''));
                 const currTeamResult = resultData?.[1]?.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
                 if (currTeamResult?.includes(this.removeSpacesAndToLowerCase(cardBetType))) {
                     return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
                 }
             }
             else if (currBetTeam?.toLowerCase() == "tiger") {
-                const cardBetType = (arr.shift(), arr.join(''));
+                const cardBetType = (betOnTeamData.shift(), betOnTeamData.join(''));
                 const currTeamResult = resultData?.[2]?.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
                 if (currTeamResult?.includes(this.removeSpacesAndToLowerCase(cardBetType))) {
                     return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
