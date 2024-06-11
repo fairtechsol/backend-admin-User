@@ -1,14 +1,15 @@
-const { In, Not } = require("typeorm");
+const { In, Not, IsNull } = require("typeorm");
 const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchBettingTeamRatesKey, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole } = require("./betPlacedService");
+const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet } = require("./betPlacedService");
 const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
 const { insertTransactions } = require("./transactionService");
 const { insertCommissions } = require("./commissionService");
+const { CardProfitLoss } = require("./cardService/cardProfitLossCalc");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -490,6 +491,19 @@ exports.calculateProfitLossForRacingMatchToResult = async (betId, userId, matchD
   let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId), { eventType: In([gameType.horseRacing, gameType.greyHound]) });
   let redisData = await this.calculateRatesRacingMatch(betPlace, 100, matchData);
   return redisData;
+}
+
+exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type) => {
+  let betPlace = await findAllPlacedBet({
+    createBy: userId,
+    deleteReason: IsNull(),
+    runnerId: runnerId
+  });
+  let oldPl = null;
+  for (let bets of betPlace) {
+    oldPl = new CardProfitLoss(type, oldPl, { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: 100 }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
+  }
+  return oldPl;
 }
 
 exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {

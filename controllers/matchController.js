@@ -167,7 +167,7 @@ exports.cardMatchDetails = async (req, res) => {
     }
 
     if (casinoDetails) {
-      let cardRedisKeys = Object.keys(roundData?.t2)?.map((item) => `${roundData?.t1?.mid}_${item?.sid}${redisKeys.card}`);
+      let cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
 
       let redisData = await getUserRedisKeys(req?.user?.id, cardRedisKeys);
       casinoDetails.profitLoss = {};

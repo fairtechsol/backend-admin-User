@@ -462,6 +462,7 @@ module.exports.socketData = {
   sessionNoResult: "sessionNoResult",
   sessionResultUnDeclare: "sessionResultUnDeclare",
   matchResult: "matchResult",
+  cardResult: "cardResult",
   matchResultUnDeclare: "matchResultUnDeclare",
   sessionDeleteBet: "sessionDeleteBet",
   matchDeleteBet: "matchDeleteBet",
@@ -554,4 +555,11 @@ exports.cardGameType = {
   lucky7: "lucky7",
   abj: "abj",
   dt20: "dt20",
+}
+
+exports.cardGameShapeCode = {
+  "CC": "club",
+  "DD": "heart",
+  "SS": "diamond",
+  "HH": "spade"
 }

@@ -75,3 +75,15 @@ exports.getUserRedisSingleKey = async (userId,key)=>{
 exports.setCardBetPlaceRedis = async (mid,key,value)=>{
   await externalRedis.hincrbyfloat(`${mid}${redisKeys.card}`, key, value);
 }
+
+exports.deleteHashKeysByPattern = async (key,pattern) => {
+  let cursor = '0';
+  do {
+    const result = await internalRedis.hscan(key, cursor, 'MATCH', pattern);
+    cursor = result[0];
+    const keys = result[1];
+    for (const key of keys) {
+      await internalRedis.del(key);
+    }
+  } while (cursor !== '0');
+}
