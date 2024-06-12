@@ -3273,7 +3273,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     };
   }
 
-  if ((betObj?.odds != currData?.rate && match?.type != cardGameType.abj) || (match?.type == cardGameType.abj && parseFloat(betObj?.odds) != parseFloat(currData?.b1))) {
+  if ((betObj?.odds != currData?.rate && match?.type != cardGameType.abj && match?.type != cardGameType.card32) || (match?.type == cardGameType.abj && parseFloat(betObj?.odds) != parseFloat(currData?.b1)) || (match?.type == cardGameType.card32 && ((betObj?.betType == betType.BACK && parseFloat(currData?.b1) != parseFloat(betObj?.odds)) || (betObj?.betType == betType.LAY && parseFloat(currData?.l1) != parseFloat(betObj?.odds))))) {
     throw {
       statusCode: 400,
       message: {
