@@ -5754,27 +5754,3 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
 
-exports.getCardResultByFGWallet = async ( req, res) => {
-  try {
-    const query = req.query;
-    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultList, null, null, query)
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        data: result?.data,
-      },
-      req,
-      res
-    );
-  } 
-  catch (error) {
-    return ErrorResponse(
-      {
-        statusCode: 500,
-        message: error.message,
-      },
-      req,
-      res
-    );
-  }
-}

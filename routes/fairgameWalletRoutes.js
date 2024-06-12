@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, declareMatchResult, unDeclareMatchResult, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss, declareOtherMatchResult, unDeclareOtherMatchResult, declarRaceMatchResult, unDeclareRaceMatchResult, getUsersRacingProfitLoss, declarCardMatchResult, getCardResultByFGWallet } = require("../controllers/fairgameWalletController");
+const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, declareMatchResult, unDeclareMatchResult, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss, declareOtherMatchResult, unDeclareOtherMatchResult, declarRaceMatchResult, unDeclareRaceMatchResult, getUsersRacingProfitLoss, declarCardMatchResult } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword } = require("../validators/fairgameWalletValidator");
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
@@ -54,7 +54,5 @@ router.post("/user/exposureLimitCheck", setExposureLimitByFGAdmin);
 router.post("/check/userBalance", checkUserBalance);
 router.delete("/user/delete/:id", deleteWalletUsers);
 router.get("/user/searchList", getAllChildSearchList);
-
-router.get("/cards/result", getCardResultByFGWallet);
 
 module.exports = router;
