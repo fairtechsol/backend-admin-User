@@ -43,7 +43,7 @@ class CardProfitLoss {
 
     card32() {
         const { bettingType, winAmount, lossAmount, playerName, partnership } = this.data;
-        let newProfitLoss = { ...(JSON.parse(this.oldProfitLoss || "{}")) };
+        let newProfitLoss = this.oldProfitLoss;
         if (!newProfitLoss) {
             newProfitLoss = {
                 player8: 0,
@@ -52,7 +52,6 @@ class CardProfitLoss {
                 player11: 0
             }
         }
-
         else {
             newProfitLoss = JSON.parse(newProfitLoss);
         }
