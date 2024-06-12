@@ -5456,7 +5456,7 @@ exports.declarCardMatchResult = async (req, res) => {
         {
           statusCode: 200,
           message: { msg: "bet.resultDeclared" },
-          data: { fwProfitLoss: 0, faAdminCal: { commission: [], userData: {} }, superAdminData: {} },
+          data: { fwProfitLoss: 0, faAdminCal: { userData: {} }, superAdminData: {} },
         }, req, res
       );
     }

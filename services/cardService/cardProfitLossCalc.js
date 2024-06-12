@@ -1,5 +1,4 @@
-const { cardGameType } = require("../../config/contants");
-const { parseRedisData } = require("../commonService");
+const { cardGameType, betType } = require("../../config/contants");
 
 class CardProfitLoss {
     constructor(type, oldProfitLoss, data, oldExposure) {
@@ -65,10 +64,10 @@ class CardProfitLoss {
                 newProfitLoss[item] -= ((lossAmount * partnership) / 100);
             }
 
-            newProfitLoss[item] = parseRedisData(item, newProfitLoss);
+            newProfitLoss[item] = parseFloat((Number(newProfitLoss[item]) || 0.0).toFixed(2));
         });
 
-        return { profitLoss: JSON.stringify(newProfitLoss), exposure: parseFloat(this.oldExposure || 0) - Math.min(...Object.values(this.oldProfitLoss), 0) + Math.min(...Object.values(newProfitLoss), 0) };
+        return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(this.oldProfitLoss || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
     }
 
     andarBahar() {
