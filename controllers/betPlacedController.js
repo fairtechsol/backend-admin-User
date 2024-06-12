@@ -3273,7 +3273,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     };
   }
 
-  if ((betObj?.odds != currData?.rate && match?.type != cardGameType.abj && match?.type != cardGameType.card32) || (match?.type == cardGameType.abj && parseFloat(betObj?.odds) != parseFloat(currData?.b1)) || (match?.type == cardGameType.card32 && ((betObj?.betType == betType.BACK && parseFloat(currData?.b1) != parseFloat(betObj?.odds)) || (betObj?.betType == betType.LAY && parseFloat(currData?.l1) != parseFloat(betObj?.odds))))) {
+  if (processBetPlaceCondition(betObj, currData, match)) {
     throw {
       statusCode: 400,
       message: {
@@ -3286,4 +3286,15 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   }
 
   betObj.runnerId = roundData?.t1?.[0]?.mid;
+}
+
+const processBetPlaceCondition = (betObj, currData, match) => {
+  switch (match.type) {
+    case cardGameType.abj:
+      return parseFloat(betObj.odds) != parseFloat(currData.b1);
+    case cardGameType.card32:
+      return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) !== parseFloat(betObj.odds)))
+    default:
+      return betObj?.odds != currData?.rate
+  }
 }
