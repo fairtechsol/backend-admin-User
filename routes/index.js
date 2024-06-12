@@ -11,6 +11,7 @@ const fairgameWalletRoutes = require('./fairgameWalletRoutes');
 const expertRoutes = require('./expertRoutes.js');
 const matchRoutes = require("./matchRoutes");
 const betRoutes = require("./betRoutes.js");
+const cardRoutes = require("./cardRoutes.js");
 
 
 // Define routes
@@ -41,6 +42,8 @@ router.use("/match", matchRoutes
 router.use("/bet", betRoutes
 // #swagger.tags = ['bet']
 );
-
+router.use("/card", cardRoutes
+// #swagger.tags = ['card']
+);
 
 module.exports = router;

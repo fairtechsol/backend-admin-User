@@ -23,7 +23,7 @@ const {
   scoreBasedMarket,
   profitLossKeys,
   racingBettingType,
-  cardGameType,
+  walletDomain,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard } = require("../services/betPlacedService");
@@ -94,6 +94,7 @@ const { insertButton } = require("../services/buttonService");
 const { updateMatchData } = require("../services/matchService");
 const { updateRaceMatchData } = require("../services/racingServices");
 const { CardWinOrLose } = require("../services/cardService/cardWinAccordingToBet");
+const { apiMethod, allApiRoutes, apiCall } = require("../utils/apiService");
 
 exports.createSuperAdmin = async (req, res) => {
   try {
@@ -5752,3 +5753,4 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
+
