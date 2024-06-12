@@ -1,4 +1,4 @@
-const { cardGameType, betResultStatus, cardGameShapeCode } = require("../../config/contants");
+const { cardGameType, betResultStatus, cardGameShapeCode, betType } = require("../../config/contants");
 
 class CardWinOrLose {
     constructor(type, betOnTeam, result, betType, betPlaceData) {
@@ -48,14 +48,14 @@ class CardWinOrLose {
         }
         else {
             if (currBetTeam?.toLowerCase() == "dragon") {
-                const cardBetType = (arr.shift(), arr.join(''));
+                const cardBetType = (betOnTeamData.shift(), betOnTeamData.join(''));
                 const currTeamResult = resultData?.[1]?.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
                 if (currTeamResult?.includes(this.removeSpacesAndToLowerCase(cardBetType))) {
                     return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
                 }
             }
             else if (currBetTeam?.toLowerCase() == "tiger") {
-                const cardBetType = (arr.shift(), arr.join(''));
+                const cardBetType = (betOnTeamData.shift(), betOnTeamData.join(''));
                 const currTeamResult = resultData?.[2]?.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
                 if (currTeamResult?.includes(this.removeSpacesAndToLowerCase(cardBetType))) {
                     return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
@@ -86,7 +86,7 @@ class CardWinOrLose {
             player10: "3",
             player11: "4",
         }
-        return ((this.betType === betType.BACK && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] == win) || (item.betType === betType.LAY && item.runnerId != playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] == win)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        return ((this.betType === betType.BACK && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] == win) || (this.betType === betType.LAY && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] != win)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 
     andarBahar() {

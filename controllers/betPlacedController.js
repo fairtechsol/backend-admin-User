@@ -2997,7 +2997,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
 exports.cardBettingBetPlaced = async (req, res) => {
   try {
     logger.info({
-      info: `racing match betting bet placed`,
+      info: `card match betting bet placed`,
       data: req.body
     });
     let reqUser = req.user;
@@ -3248,7 +3248,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     };
   }
   const currData = roundData?.t2?.find((item) => item?.sid == selectionId);
-  if (currData?.gstatus != "1") {
+  if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "active") {
     throw {
       statusCode: 400,
       message: {
@@ -3273,7 +3273,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     };
   }
 
-  if ((betObj?.odds != currData?.rate && match?.type != cardGameType.abj) || (match?.type == cardGameType.abj && parseFloat(betObj?.odds) != parseFloat(currData?.b1))) {
+  if (processBetPlaceCondition(betObj, currData, match)) {
     throw {
       statusCode: 400,
       message: {
@@ -3286,4 +3286,15 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   }
 
   betObj.runnerId = roundData?.t1?.[0]?.mid;
+}
+
+const processBetPlaceCondition = (betObj, currData, match) => {
+  switch (match.type) {
+    case cardGameType.abj:
+      return parseFloat(betObj.odds) != parseFloat(currData.b1);
+    case cardGameType.card32:
+      return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) !== parseFloat(betObj.odds)))
+    default:
+      return betObj?.odds != currData?.rate
+  }
 }
