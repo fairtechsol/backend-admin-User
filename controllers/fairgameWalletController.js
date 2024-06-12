@@ -23,7 +23,7 @@ const {
   scoreBasedMarket,
   profitLossKeys,
   racingBettingType,
-  cardGameType,
+  walletDomain,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard } = require("../services/betPlacedService");
@@ -94,6 +94,7 @@ const { insertButton } = require("../services/buttonService");
 const { updateMatchData } = require("../services/matchService");
 const { updateRaceMatchData } = require("../services/racingServices");
 const { CardWinOrLose } = require("../services/cardService/cardWinAccordingToBet");
+const { apiMethod, allApiRoutes, apiCall } = require("../utils/apiService");
 
 exports.createSuperAdmin = async (req, res) => {
   try {
@@ -5751,4 +5752,29 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
 
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
+}
+
+exports.getCardResultByFGWallet = async ( req, res) => {
+  try {
+    const query = req.query;
+    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultList, null, null, query)
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: result?.data,
+      },
+      req,
+      res
+    );
+  } 
+  catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
 }
