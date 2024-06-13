@@ -1,5 +1,5 @@
 const { In, Not, IsNull } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchBettingTeamRatesKey, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchBettingTeamRatesKey, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -1030,6 +1030,39 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
     return {
       ...matchExposure, ...matchResult
     }
+  }
+}
+
+exports.settingCasinoMatchBetsDataAtLogin = async (user) => {
+  let bets = [];
+
+  if (user.roleName == userRoleConstant.user) {
+     bets = await findAllPlacedBet({ marketBetType: marketBetType.CARD, result: In([betResultStatus.PENDING]), deleteReason: IsNull(), createBy: user.id });   
+  }
+  else {
+    const users = await getChildsWithOnlyUserRole(user.id);
+    bets = await getBetsWithUserRole(users?.map((item) => item.id), { marketBetType: marketBetType.CARD });
+    bets = bets?.map((item) => {
+      return {
+        ...item,
+        winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
+        lossAmount: -parseFloat((parseFloat(item.lossAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2))
+      }
+    });
+  }
+
+  let matchResult = {};
+  let matchExposure= {};
+  
+  for (let currBets of bets) {
+    
+    const newProfitLossAndExp = new CardProfitLoss(currBets.eventType, matchResult[`${currBets.runnerId}_${currBets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`], { bettingType: currBets?.betType, winAmount: currBets?.winAmount, lossAmount: currBets?.lossAmount, playerName: currBets?.teamName, partnership: 100 }, matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`]).getCardGameProfitLoss()
+    matchResult[`${currBets.runnerId}_${currBets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`] = newProfitLossAndExp.profitLoss;
+    matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((newProfitLossAndExp.exposure).toFixed(2));
+
+  }
+  return {
+    ...matchExposure, ...matchResult
   }
 }
 
