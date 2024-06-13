@@ -42,6 +42,7 @@ class CardProfitLoss {
 
     card32() {
         const { bettingType, winAmount, lossAmount, playerName, partnership } = this.data;
+        let oldProfitLossData = JSON.parse(this.oldProfitLoss || "{}");
         let newProfitLoss = this.oldProfitLoss;
         if (!newProfitLoss) {
             newProfitLoss = {
@@ -52,7 +53,7 @@ class CardProfitLoss {
             }
         }
         else {
-            newProfitLoss = JSON.parse(newProfitLoss);
+            newProfitLoss = {...JSON.parse(newProfitLoss)};
         }
 
         Object.keys(newProfitLoss)?.forEach((item) => {
@@ -67,7 +68,7 @@ class CardProfitLoss {
             newProfitLoss[item] = parseFloat((Number(newProfitLoss[item]) || 0.0).toFixed(2));
         });
 
-        return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(this.oldProfitLoss || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
+        return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
     }
 
     andarBahar() {

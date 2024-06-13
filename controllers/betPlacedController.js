@@ -3081,6 +3081,10 @@ exports.cardBettingBetPlaced = async (req, res) => {
     }
     await validateCardBettingDetails(match, betPlacedObj, selectionId);
 
+    if (match.type == cardGameType.card32) {
+      selectionId = 1;
+    }
+
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
     let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]) : 0.0;
