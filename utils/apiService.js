@@ -48,7 +48,8 @@ exports.allApiRoutes = {
   WALLET:{
     updateBalance:"/superAdmin/update/balance/SA",
     autoLockUnlockUser:"/superAdmin/auto/lockUnlockUser",
-    cardResultList:"/superadmin/cards/result/"
+    cardResultList:"/superadmin/cards/result/",
+    cardResultDetail:"/superadmin/cards/result/detail/"
   },
   EXPERT:{
     partnershipId:"/superAdmin/partnershipId/"
