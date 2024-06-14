@@ -315,7 +315,7 @@ exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, key
 exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
-    .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
+    .innerJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
     .where(where)
     .andWhere({
       result: In([betResultStatus.WIN, betResultStatus.LOSS]),
@@ -343,7 +343,7 @@ exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss, subQue
 exports.getTotalProfitLossRacing = async (where, startDate, endDate, totalLoss, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
-    .leftJoinAndMapOne("placeBet.match", "racingMatch", 'match', 'placeBet.matchId = match.id')
+    .innerJoinAndMapOne("placeBet.match", "racingMatch", 'match', 'placeBet.matchId = match.id')
     .where(where)
     .andWhere({
       result: In([betResultStatus.WIN, betResultStatus.LOSS]),
@@ -371,11 +371,12 @@ exports.getTotalProfitLossRacing = async (where, startDate, endDate, totalLoss, 
 exports.getTotalProfitLossCard = async (where, startDate, endDate, totalLoss, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
-    .leftJoinAndMapOne("placeBet.match", "cardMatch", 'match', 'placeBet.matchId = match.id')
+    .innerJoinAndMapOne("placeBet.match", "cardMatch", 'match', 'placeBet.matchId = match.id')
     .where(where)
     .andWhere({
       result: In([betResultStatus.WIN, betResultStatus.LOSS]),
       deleteReason: IsNull(),
+      marketBetType: marketBetType.CARD
     });
   if (startDate) {
     query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
@@ -388,12 +389,12 @@ exports.getTotalProfitLossCard = async (where, startDate, endDate, totalLoss, su
   query = query
     .select([
       totalLoss,
-      'placeBet.matchId as "matchId"',
+      'match.id as "matchId"',
       'match.name as "name"',
       'match.type as "type"',
       'COUNT(placeBet.id) as "totalBet"'
     ])
-    .groupBy('placeBet.matchId,match.name,match.type')
+    .groupBy('match.id').addGroupBy("match.name").addGroupBy("match.type")
   let result = await query.getRawMany();
   return result;
 }

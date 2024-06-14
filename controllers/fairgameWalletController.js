@@ -3994,7 +3994,6 @@ exports.totalProfitLossCardsWallet = async (req, res) => {
     if (user.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
     let subQuery = await childIdquery(user, searchId)
     const result = await getTotalProfitLossCard(where, startDate, endDate, totalLoss, subQuery);
     return SuccessResponse(
