@@ -23,10 +23,10 @@ const {
   scoreBasedMarket,
   profitLossKeys,
   racingBettingType,
-  cardGameType,
+  walletDomain,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -94,6 +94,7 @@ const { insertButton } = require("../services/buttonService");
 const { updateMatchData } = require("../services/matchService");
 const { updateRaceMatchData } = require("../services/racingServices");
 const { CardWinOrLose } = require("../services/cardService/cardWinAccordingToBet");
+const { apiMethod, allApiRoutes, apiCall } = require("../utils/apiService");
 
 exports.createSuperAdmin = async (req, res) => {
   try {
@@ -3966,6 +3967,166 @@ exports.totalProfitLossByMatch = async (req, res) => {
   }
 }
 
+exports.totalProfitLossCardsWallet = async (req, res) => {
+  try {
+    let { user, startDate, endDate, runnerId, searchId, partnerShipRoleName } = req.body;
+    user = user || req.user;
+    partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
+    let totalLoss;
+    let queryColumns = ``;
+    let where = {}
+
+
+    if (runnerId) {
+      where.runnerId = runnerId
+    }
+
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await getQueryColumns(user, partnerShipRoleName);
+    totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+
+    if (user.roleName == userRoleConstant.user) {
+      totalLoss = '-' + totalLoss;
+    }
+    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
+    let subQuery = await childIdquery(user, searchId)
+    const result = await getTotalProfitLossCard(where, startDate, endDate, totalLoss, subQuery);
+    return SuccessResponse(
+      {
+        statusCode: 200, data: result
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `error in get total profit loss cards.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.totalProfitLossByRoundCards = async (req, res) => {
+  try {
+    let { user, matchId, startDate, endDate, searchId, partnerShipRoleName, page, limit } = req.body;
+    user = user || req.user;
+    partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
+
+    let queryColumns = ``;
+    let where = {
+      matchId: matchId
+    }
+
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await getQueryColumns(user, partnerShipRoleName);
+    let rateProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.betType = '${betType.BACK}' or placeBet.betType = '${betType.LAY}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "rateProfitLoss"`;
+
+    if (req?.user?.roleName == userRoleConstant.user) {
+      rateProfitLoss = '-' + rateProfitLoss;
+    }
+    let subQuery = await childIdquery(user, searchId);
+
+    const data = await getAllCardMatchTotalProfitLoss(where, startDate, endDate, [rateProfitLoss], page, limit, subQuery);
+    const result = data.result;
+    const count = data.count;
+
+
+    return SuccessResponse(
+      {
+        statusCode: 200, data: { result, count }
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `error in get total domain wise profit loss`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getCardResultBetProfitLoss = async (req, res) => {
+  try {
+    let { user, runnerId, searchId, partnerShipRoleName } = req.body;
+    user = user || req.user;
+    partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
+
+    let queryColumns = ``;
+
+    if (runnerId) {
+      where.runnerId = runnerId;
+    }
+
+    if (!user) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "invalidData" } },
+        req,
+        res
+      );
+    }
+    queryColumns = await getQueryColumns(user, partnerShipRoleName);
+    let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+
+    if (req?.user?.roleName == userRoleConstant.user) {
+      totalLoss = '-' + totalLoss;
+    }
+    let subQuery = await childIdquery(user, searchId)
+    const result = await getBetsProfitLoss(where, totalLoss, subQuery);
+    return SuccessResponse(
+      {
+        statusCode: 200, data: result
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get card bet profit loss.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
 exports.getResultBetProfitLoss = async (req, res) => {
   try {
     let { user, matchId, betId, isSession, searchId, partnerShipRoleName } = req.body;
@@ -4075,7 +4236,7 @@ const getQueryColumns = async (user, partnerShipRoleName) => {
 
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {
-    let { user, matchId, searchId, userIds, partnerShipRoleName } = req.body;
+    let { user, matchId, searchId, userIds, partnerShipRoleName, runnerId } = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
@@ -4083,6 +4244,9 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
 
     if (matchId) {
       where.matchId = matchId;
+    }
+    if(runnerId){
+      where.runnerId = runnerId;
     }
 
     if (!user) {
@@ -5752,3 +5916,4 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
+

@@ -3074,12 +3074,17 @@ exports.cardBettingBetPlaced = async (req, res) => {
       marketType: matchBetType,
       marketBetType: marketBetType.CARD,
       ipAddress: ipAddress || req.ip || req.connection.remoteAddress,
-      browserDetail: browserDetail || req.headers['user-agent'],
+      browserDetail: `${browserDetail || req.headers['user-agent']}|${selectionId}`,
       eventName: match.name,
       eventType: match.type,
       bettingName: bettingName
     }
     await validateCardBettingDetails(match, betPlacedObj, selectionId);
+
+    if (match.type == cardGameType.card32) {
+      selectionId = 1;
+      betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+    }
 
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
