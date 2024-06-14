@@ -121,7 +121,7 @@ class CardWinOrLose {
     
         // Return result
         if (isWin) {
-            return { result: betResultStatus.WIN, winAmount: betPlaceData.winAmount, lossAmount: betPlaceData.lossAmount };
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
 
        
