@@ -389,11 +389,11 @@ exports.getTotalProfitLossCard = async (where, startDate, endDate, totalLoss, su
     .select([
       totalLoss,
       'placeBet.matchId as "matchId"',
-      'placeBet.name as "name"',
-      'placeBet.type as "type"',
+      'match.name as "name"',
+      'match.type as "type"',
       'COUNT(placeBet.id) as "totalBet"'
     ])
-    .groupBy('placeBet.matchId,placeBet.name,placeBet.type')
+    .groupBy('placeBet.matchId,match.name,match.type')
   let result = await query.getRawMany();
   return result;
 }
