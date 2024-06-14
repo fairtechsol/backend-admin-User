@@ -5829,11 +5829,11 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
     let currBal = user.user.userBalance.currentBalance;
 
     const transactions = [
-      [{
+      {
         winAmount: parseFloat(getMultipleAmount.winAmount),
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
         type: "MATCH ODDS"
-      }]
+      }
     ];
 
     transactions.forEach((item, uniqueId) => {
