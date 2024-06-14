@@ -98,9 +98,33 @@ class CardWinOrLose {
         }
         const { win, cards } = this.result;
         const currentCards = cards?.split(",")?.filter((item) => item != "1");
-        if ((currentCards?.length <= 3 && ((this.removeSpacesAndToLowerCase(this.betOnTeam) == "sb" && win == "2") || (this.removeSpacesAndToLowerCase(this.betOnTeam) == "sa" && win == "1"))) || ((this.removeSpacesAndToLowerCase(this.betOnTeam) == "2ndbeta" || this.removeSpacesAndToLowerCase(this.betOnTeam) == "1stbeta") && win == "1") || ((this.removeSpacesAndToLowerCase(this.betOnTeam) == "2ndbetb" || this.removeSpacesAndToLowerCase(this.betOnTeam) == "1stbetb") && win == "2") || (this.removeSpacesAndToLowerCase(this.betOnTeam)?.slice(5) == cardGameShapeCode[currentCards[0]?.slice(-2)]) || (this.removeSpacesAndToLowerCase(this.betOnTeam)?.slice(5) == (this.removeSpacesAndToLowerCase(currentCards[0])?.slice(0, -2))) || (this.removeSpacesAndToLowerCase(this.betOnTeam)?.slice(5) == "odd" && parseInt(cardsNo[(this.removeSpacesAndToLowerCase(currentCards[0])?.slice(0, -2))] || this.removeSpacesAndToLowerCase(currentCards[0])?.slice(0, -2)) % 2 == 1)||(this.removeSpacesAndToLowerCase(this.betOnTeam)?.slice(5) == "even" && parseInt(cardsNo[(this.removeSpacesAndToLowerCase(currentCards[0])?.slice(0, -2))] || this.removeSpacesAndToLowerCase(currentCards[0])?.slice(0, -2)) % 2 == 0)) {
-            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+
+        const betOnTeamNormalized = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        const firstCard = this.removeSpacesAndToLowerCase(currentCards[0]);
+    
+        // Conditions for winning
+        const conditions = [
+            currentCards?.length <= 3 && (
+                (betOnTeamNormalized == "sb" && win == "2") ||
+                (betOnTeamNormalized == "sa" && win == "1")
+            ),
+            (betOnTeamNormalized == "2ndbeta" || betOnTeamNormalized == "1stbeta") && win == "1",
+            (betOnTeamNormalized == "2ndbetb" || betOnTeamNormalized == "1stbetb") && win == "2",
+            betOnTeamNormalized.slice(5) == cardGameShapeCode[firstCard?.slice(-2)],
+            betOnTeamNormalized.slice(5) == firstCard?.slice(0, -2),
+            betOnTeamNormalized.slice(5) == "odd" && parseInt(cardsNo[firstCard?.slice(0, -2)] || firstCard?.slice(0, -2)) % 2 == 1,
+            betOnTeamNormalized.slice(5) == "even" && parseInt(cardsNo[firstCard?.slice(0, -2)] || firstCard?.slice(0, -2)) % 2 == 0
+        ];
+    
+        // Check if any condition is met
+        const isWin = conditions.some(condition => condition);
+    
+        // Return result
+        if (isWin) {
+            return { result: betResultStatus.WIN, winAmount: betPlaceData.winAmount, lossAmount: betPlaceData.lossAmount };
         }
+
+       
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 
