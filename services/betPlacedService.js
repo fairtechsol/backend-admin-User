@@ -378,20 +378,22 @@ exports.getTotalProfitLossCard = async (where, startDate, endDate, totalLoss, su
       deleteReason: IsNull(),
     });
   if (startDate) {
-    query = query.andWhere('match.startAt >= :from', { from: new Date(startDate) })
+    query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
   }
   if (endDate) {
     let newDate = new Date(endDate);
     newDate.setHours(23, 59, 59, 999);
-    query = query.andWhere('match.startAt <= :to', { to: newDate })
+    query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
   }
   query = query
     .select([
       totalLoss,
-      'placeBet.eventType as "eventType"',
+      'placeBet.matchId as "matchId"',
+      'placeBet.name as "name"',
+      'placeBet.type as "type"',
       'COUNT(placeBet.id) as "totalBet"'
     ])
-    .groupBy('placeBet.eventType')
+    .groupBy('placeBet.matchId,placeBet.name,placeBet.type')
   let result = await query.getRawMany();
   return result;
 }
@@ -480,12 +482,12 @@ exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selec
     .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
 
   if (startDate) {
-    query = query.andWhere('match.startAt >= :from', { from: new Date(startDate) })
+    query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
   }
   if (endDate) {
     let newDate = new Date(endDate);
     newDate.setHours(23, 59, 59, 999);
-    query = query.andWhere('match.startAt <= :to', { to: newDate })
+    query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
   }
 
   const count = (await query.select(["match.runnerId"]).groupBy("match.runnerId").getRawMany())?.length;
@@ -495,8 +497,8 @@ exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selec
       ...selectArray,
       'placeBet.eventType as "eventType"',
       'COUNT(placeBet.id) as "totalBet"',
-      'match.startAt as "startAt"',
-      'match.title as title',
+      'match.name as "name"',
+      'match.type as type',
       'match.id as "matchId"',
       'match.runnerId as "runnerId"'
     ])

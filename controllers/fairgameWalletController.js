@@ -5847,7 +5847,7 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
         amount: item.winAmount - item.lossAmount,
         transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
         closingBalance: currBal,
-        description: `${matchData?.type}/${matchData?.name} Rno. ${result?.mid}/${matchData?.type} - ${result?.desc} `,
+        description: `${matchData?.type}/${matchData?.name} Rno. ${result?.mid}/${matchData?.type} - ${result?.win}||${result?.desc} `,
         createdAt: new Date(),
         uniqueId: uniqueId,
       });
