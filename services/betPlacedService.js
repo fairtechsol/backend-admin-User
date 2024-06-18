@@ -141,7 +141,7 @@ exports.updatePlaceBet = async (conditionObj, updateColumsObj) => {
 exports.getDistinctUserBetPlaced= async (betId)=>{
   let betPlaced = await BetPlaced.createQueryBuilder()
   .where({ betId: betId, deleteReason: IsNull() })
-  .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
+  .innerJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
   .leftJoinAndMapOne("user.userBalance", "userBalance", 'userBalance', 'user.id = userBalance.userId')
   .distinctOn(['user.id'])
   .getMany()
