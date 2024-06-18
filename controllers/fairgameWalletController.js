@@ -3994,7 +3994,6 @@ exports.totalProfitLossCardsWallet = async (req, res) => {
     if (user.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
     let subQuery = await childIdquery(user, searchId)
     const result = await getTotalProfitLossCard(where, startDate, endDate, totalLoss, subQuery);
     return SuccessResponse(
@@ -4023,7 +4022,7 @@ exports.totalProfitLossCardsWallet = async (req, res) => {
 
 exports.totalProfitLossByRoundCards = async (req, res) => {
   try {
-    let { user, matchId, startDate, endDate, searchId, partnerShipRoleName, page, limit } = req.body;
+    let { user, matchId, startDate, endDate, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
@@ -4047,14 +4046,12 @@ exports.totalProfitLossByRoundCards = async (req, res) => {
     }
     let subQuery = await childIdquery(user, searchId);
 
-    const data = await getAllCardMatchTotalProfitLoss(where, startDate, endDate, [rateProfitLoss], page, limit, subQuery);
+    const data = await getAllCardMatchTotalProfitLoss(where, startDate, endDate, [rateProfitLoss],subQuery);
     const result = data.result;
-    const count = data.count;
-
 
     return SuccessResponse(
       {
-        statusCode: 200, data: { result, count }
+        statusCode: 200, data: { result }
       },
       req,
       res
@@ -4081,7 +4078,7 @@ exports.getCardResultBetProfitLoss = async (req, res) => {
     let { user, runnerId, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
-
+    let where = {};
     let queryColumns = ``;
 
     if (runnerId) {
@@ -5847,7 +5844,7 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
         amount: item.winAmount - item.lossAmount,
         transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
         closingBalance: currBal,
-        description: `${matchData?.type}/${matchData?.name} Rno. ${result?.mid}/${matchData?.type} - ${result?.desc} `,
+        description: `${matchData?.type}/${matchData?.name} Rno. ${result?.mid}/${matchData?.type} - ${result?.win}||${result?.desc} `,
         createdAt: new Date(),
         uniqueId: uniqueId,
       });
