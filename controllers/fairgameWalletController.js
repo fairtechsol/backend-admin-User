@@ -4046,14 +4046,12 @@ exports.totalProfitLossByRoundCards = async (req, res) => {
     }
     let subQuery = await childIdquery(user, searchId);
 
-    const data = await getAllCardMatchTotalProfitLoss(where, startDate, endDate, [rateProfitLoss], page, limit, subQuery);
+    const data = await getAllCardMatchTotalProfitLoss(where, startDate, endDate, [rateProfitLoss],subQuery);
     const result = data.result;
-    const count = data.count;
-
 
     return SuccessResponse(
       {
-        statusCode: 200, data: { result, count }
+        statusCode: 200, data: { result }
       },
       req,
       res

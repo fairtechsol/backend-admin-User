@@ -475,12 +475,15 @@ exports.getAllRacinMatchTotalProfitLoss = async (where, startDate, endDate, sele
   return { result, count };
 }
 
-exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, page, limit, subQuery) => {
+exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selectArray,subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
-    .leftJoinAndMapOne("placeBet.match", "cardMatch", 'match', 'placeBet.matchId = match.id')
+    .innerJoinAndMapOne("placeBet.match", "cardMatch", 'match', 'placeBet.matchId = match.id')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
     .where(where)
-    .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
+    .andWhere({
+      result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull(),
+      marketBetType: marketBetType.CARD
+    });
 
   if (startDate) {
     query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
@@ -491,27 +494,17 @@ exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selec
     query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
   }
 
-  const count = (await query.select(["match.runnerId"]).groupBy("match.runnerId").getRawMany())?.length;
-
   query = query
     .select([
       ...selectArray,
-      'placeBet.eventType as "eventType"',
       'COUNT(placeBet.id) as "totalBet"',
-      'match.name as "name"',
-      'match.type as type',
-      'match.id as "matchId"',
-      'match.runnerId as "runnerId"'
+      'placeBet.runnerId as "runnerId"'
     ])
-    .groupBy('placeBet.runnerId, match.id, placeBet.eventType').orderBy('match.startAt', 'DESC');
-
-  if (page) {
-    query.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
-  }
+    .groupBy('placeBet.runnerId').orderBy('placeBet.runnerId', 'DESC');
 
   let result = await query.getRawMany();
 
-  return { result, count };
+  return { result };
 }
 
 exports.getBetsProfitLoss = async (where, totalLoss, subQuery) => {
