@@ -4022,7 +4022,7 @@ exports.totalProfitLossCardsWallet = async (req, res) => {
 
 exports.totalProfitLossByRoundCards = async (req, res) => {
   try {
-    let { user, matchId, startDate, endDate, searchId, partnerShipRoleName, page, limit } = req.body;
+    let { user, matchId, startDate, endDate, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
@@ -4078,7 +4078,7 @@ exports.getCardResultBetProfitLoss = async (req, res) => {
     let { user, runnerId, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
-
+    let where = {};
     let queryColumns = ``;
 
     if (runnerId) {
