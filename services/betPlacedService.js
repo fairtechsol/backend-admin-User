@@ -501,7 +501,7 @@ exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selec
       'placeBet.runnerId as "runnerId"',
       "match.type as type"
     ])
-    .groupBy('placeBet.runnerId', 'type').orderBy('placeBet.runnerId', 'DESC');
+    .groupBy('placeBet.runnerId', 'match.type').orderBy('placeBet.runnerId', 'DESC');
 
   let result = await query.getRawMany();
 
