@@ -95,6 +95,7 @@ const { updateMatchData } = require("../services/matchService");
 const { updateRaceMatchData } = require("../services/racingServices");
 const { CardWinOrLose } = require("../services/cardService/cardWinAccordingToBet");
 const { apiMethod, allApiRoutes, apiCall } = require("../utils/apiService");
+const { CardResultTypeWin } = require("../services/cardService/winCardAccordingToTransaction");
 
 exports.createSuperAdmin = async (req, res) => {
   try {
@@ -5844,7 +5845,7 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
         amount: item.winAmount - item.lossAmount,
         transType: item.winAmount - item.lossAmount > 0 ? transType.win : transType.loss,
         closingBalance: currBal,
-        description: `${matchData?.type}/${matchData?.name} Rno. ${result?.mid}/${matchData?.type} - ${result?.win}||${result?.desc} `,
+        description: `${matchData?.type}/${matchData?.name} Rno. ${result?.mid}/${matchData?.type} - ${new CardResultTypeWin(matchData?.type, result).getCardGameProfitLoss()} `,
         createdAt: new Date(),
         uniqueId: uniqueId,
       });
