@@ -3135,7 +3135,8 @@ exports.cardBettingBetPlaced = async (req, res) => {
       info: `updating user exposure balance in redis for user id is ${reqUser.id}`,
       matchId,
       userCurrentBalance,
-      matchExposure: newUserExposure
+      matchExposure: newUserExposure,
+      runnerId: betPlacedObj.runnerId
     });
 
     // await updateMatchExposure(reqUser.id, matchId, matchExposure);
