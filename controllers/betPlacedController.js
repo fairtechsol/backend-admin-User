@@ -3260,8 +3260,9 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   if (match?.type == cardGameType.teen) {
     currData = roundData?.t1?.find((item) => item?.sid == selectionId);
   }
-  currData = roundData?.t2?.find((item) => item?.sid == selectionId);
-
+  else {
+    currData = roundData?.t2?.find((item) => item?.sid == selectionId);
+  }
   if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "active") {
     throw {
       statusCode: 400,
