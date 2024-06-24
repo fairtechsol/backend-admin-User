@@ -3105,7 +3105,8 @@ exports.cardBettingBetPlaced = async (req, res) => {
       userTotalExposure,
       teamRates,
       userPreviousExposure,
-      userOtherMatchExposure
+      userOtherMatchExposure,
+      runnerId: betPlacedObj.runnerId
     });
 
     let cardProfitLossAndExposure = new CardProfitLoss(match.type, teamRates, { bettingType: bettingType, winAmount: winAmount, lossAmount: lossAmount, playerName: betOnTeam, partnership: 100 }, userPreviousExposure).getCardGameProfitLoss()
@@ -3117,7 +3118,8 @@ exports.cardBettingBetPlaced = async (req, res) => {
         info: `User exceeded the limit of total exposure for a day`,
         userId: reqUser.id,
         newUserExposure,
-        userExposureLimit
+        userExposureLimit,
+        runnerId: betPlacedObj.runnerId
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
     }
@@ -3128,7 +3130,8 @@ exports.cardBettingBetPlaced = async (req, res) => {
         matchId,
         userCurrentBalance,
         newUserExposure,
-        runnerId
+        runnerId: betPlacedObj.runnerId
+
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
     }
@@ -3136,7 +3139,8 @@ exports.cardBettingBetPlaced = async (req, res) => {
       info: `updating user exposure balance in redis for user id is ${reqUser.id}`,
       matchId,
       userCurrentBalance,
-      matchExposure: newUserExposure
+      matchExposure: newUserExposure,
+      runnerId: betPlacedObj.runnerId
     });
 
     // await updateMatchExposure(reqUser.id, matchId, matchExposure);

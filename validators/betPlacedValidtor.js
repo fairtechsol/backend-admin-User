@@ -61,7 +61,7 @@ module.exports.MatchBetPlacedValidator = Joi.object({
   module.exports.CardBetPlacedValidator = Joi.object({
     matchId: Joi.string().required(),
     stake: Joi.number().required().positive().greater(0),
-    odd: Joi.number().required(),
+    odd: Joi.number().greater(0).required(),
     bettingType: Joi.string().valid(...Object.values(betType)).required(),
     matchBetType: Joi.string().valid(...Object.values(cardBettingType)).required(),
     betOnTeam: Joi.string().required(),
