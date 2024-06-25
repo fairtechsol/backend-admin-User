@@ -11,13 +11,19 @@ class CardResultTypeWin {
             case cardGameType.abj:
                 return this.andarBahar();
             case cardGameType.dt20:
+            case cardGameType.dt202:
+            case cardGameType.dt6:
                 return this.dragonTiger();
             case cardGameType.teen20:
+            case cardGameType.teen:
                 return this.teen20();
             case cardGameType.lucky7:
+            case cardGameType.lucky7eu:
                 return this.lucky7();
             case cardGameType.card32:
                 return this.card32();
+            case cardGameType.dtl20:
+                return this.dragonTigerLion();
             default:
                 throw {
                     statusCode: 400,
@@ -36,6 +42,19 @@ class CardResultTypeWin {
                 return 'Tiger';
             case '3':
                 return 'Tie';
+            default:
+                return null;
+        }
+    }
+
+    dragonTigerLion() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'Dragon';
+            case '21':
+                return 'Tiger';
+            case '41':
+                return 'Lion';
             default:
                 return null;
         }

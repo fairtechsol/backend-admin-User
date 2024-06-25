@@ -701,3 +701,17 @@ exports.cardGameShapeCode = {
   "SS": "diamond",
   "HH": "spade"
 }
+
+exports.cardGameShapeColor = {
+  "CC": "black",
+  "DD": "red",
+  "SS": "red",
+  "HH": "black"
+}
+
+exports.cardsNo = {
+  K: 13,
+  Q: 12,
+  J: 11,
+  A: 1,
+}

@@ -3109,7 +3109,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       runnerId: betPlacedObj.runnerId
     });
 
-    let cardProfitLossAndExposure = new CardProfitLoss(match.type, teamRates, { bettingType: bettingType, winAmount: winAmount, lossAmount: lossAmount, playerName: betOnTeam, partnership: 100 }, userPreviousExposure).getCardGameProfitLoss()
+    let cardProfitLossAndExposure = new CardProfitLoss(match.type, teamRates, { bettingType: bettingType, winAmount: winAmount, lossAmount: lossAmount, playerName: betOnTeam, partnership: 100, sid: selectionId }, userPreviousExposure).getCardGameProfitLoss()
     let newTeamRateData = cardProfitLossAndExposure.profitLoss;
 
     let newUserExposure = cardProfitLossAndExposure.exposure;
@@ -3256,7 +3256,13 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
       }
     };
   }
-  const currData = roundData?.t2?.find((item) => item?.sid == selectionId);
+  let currData;
+  if (match?.type == cardGameType.teen) {
+    currData = roundData?.t1?.find((item) => item?.sid == selectionId);
+  }
+  else {
+    currData = roundData?.t2?.find((item) => item?.sid == selectionId);
+  }
   if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "active") {
     throw {
       statusCode: 400,
@@ -3300,9 +3306,11 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
 const processBetPlaceCondition = (betObj, currData, match) => {
   switch (match.type) {
     case cardGameType.abj:
+    case cardGameType.dtl20:
       return parseFloat(betObj.odds) != parseFloat(currData.b1);
     case cardGameType.card32:
-      return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) !== parseFloat(betObj.odds)))
+    case cardGameType.dt6:
+      return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     default:
       return betObj?.odds != currData?.rate
   }
