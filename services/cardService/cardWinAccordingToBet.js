@@ -77,25 +77,23 @@ class CardWinOrLose {
         const resultData = desc?.split("*");
         const currBetTeam = betOnTeamData?.[0];
 
+        const gameResult = resultData?.[0]?.split("|")?.[0]?.toLowerCase();
+        const isPairResult = resultData?.[0]?.split("|")?.[1] == "Is Pair";
+        const betTypeIsBack = this.betType == betType.BACK;
+        const betTypeIsLay = this.betType == betType.LAY;
+
         if (betOnTeamData?.length == 1) {
-            if ((currBetTeam?.toLowerCase() == resultData?.[0]?.split("|")?.[0]?.toLowerCase() && this.betType == betType.BACK) || (currBetTeam?.toLowerCase() != resultData?.[0]?.split("|")?.[0]?.toLowerCase() && this.betType == betType.LAY) || (currBetTeam?.toLowerCase() == "pair" && resultData?.[0]?.split("|")?.[1] == "Is Pair")) {
+            if ((currBetTeam === gameResult && betTypeIsBack) || (currBetTeam !== gameResult && betTypeIsLay) || (currBetTeam === "pair" && isPairResult)) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
         }
         else {
-            if (currBetTeam?.toLowerCase() == "dragon") {
-                const cardBetType = (betOnTeamData.shift(), betOnTeamData.join(''));
-                const currTeamResult = resultData?.[1]?.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
-                if (currTeamResult?.includes(this.removeSpacesAndToLowerCase(cardBetType))) {
-                    return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
-                }
-            }
-            else if (currBetTeam?.toLowerCase() == "tiger") {
-                const cardBetType = (betOnTeamData.shift(), betOnTeamData.join(''));
-                const currTeamResult = resultData?.[2]?.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
-                if (currTeamResult?.includes(this.removeSpacesAndToLowerCase(cardBetType))) {
-                    return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
-                }
+            const cardBetType = (this.removeSpacesAndToLowerCase(betOnTeamData.slice(1).join('')));
+            const teamResultData = currBetTeam == "dragon" ? resultData?.[1] : resultData?.[2];
+            const teamResult = teamResultData?.split("|")?.map(item => this.removeSpacesAndToLowerCase(item));
+
+            if (teamResult?.includes(cardBetType)) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
@@ -112,27 +110,31 @@ class CardWinOrLose {
             L: 2
         }
 
+        const lastChar = betOnTeamData?.[betOnTeamData?.length - 1];
+        const cardIndex = dragonTigerLionIndexes[lastChar];
+        const card = resultData[cardIndex];
+        const cardValue = card?.slice(0, -2);
+        const cardColor = cardGameShapeColor[card?.slice(-2)];
+
         if (this.removeSpacesAndToLowerCase(betOnTeamData)?.includes("winner")) {
-            if (betOnTeamData[betOnTeamData?.length - 1]?.toLowerCase() == desc[0]?.toLowerCase()) {
+            if (lastChar?.toLowerCase() == desc[0]?.toLowerCase()) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
         }
         else if (this.removeSpacesAndToLowerCase(betOnTeamData)?.includes("red") || this.removeSpacesAndToLowerCase(betOnTeamData)?.includes("black")) {
-            if (cardGameShapeColor[(resultData[dragonTigerLionIndexes[betOnTeamData?.[betOnTeamData?.length - 1]]]?.slice(-2))] == this.removeSpacesAndToLowerCase(betOnTeamData)?.slice(0, -1)) {
+            if (cardColor == this.removeSpacesAndToLowerCase(betOnTeamData)?.slice(0, -1)) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
         }
         else if (this.removeSpacesAndToLowerCase(betOnTeamData)?.includes("odd") || this.removeSpacesAndToLowerCase(betOnTeamData)?.includes("even")) {
-            if (parseInt(cardsNo[resultData[dragonTigerLionIndexes[betOnTeamData?.[betOnTeamData?.length - 1]]]?.slice(0, -2)] || resultData[dragonTigerLionIndexes[betOnTeamData?.[betOnTeamData?.length - 1]]]?.slice(0, -2)) % 2 == 0 && this.removeSpacesAndToLowerCase(betOnTeamData)?.includes("even")) {
+            const cardNumber = parseInt(cardsNo[cardValue] || cardValue);
+            const isEven = cardNumber % 2 == 0;
+            if ((isEven && betOnTeamData?.includes("even")) || (!isEven && betOnTeamData?.includes("odd"))) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
-            }
-            else if (parseInt(cardsNo[resultData[dragonTigerLionIndexes[betOnTeamData?.[betOnTeamData?.length - 1]]]?.slice(0, -2)] || resultData[dragonTigerLionIndexes[betOnTeamData?.[betOnTeamData?.length - 1]]]?.slice(0, -2)) % 2 != 0 && this.removeSpacesAndToLowerCase(betOnTeamData)?.includes("odd")) {
-                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
-
             }
         }
         else {
-            if (resultData[dragonTigerLionIndexes[betOnTeamData?.[0]]]?.slice(0, -2) == betOnTeamData?.split(" ")[1]) {
+            if (cardValue == betOnTeamData?.split(" ")[1]) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
         }
@@ -239,7 +241,14 @@ class CardWinOrLose {
             playera: "1",
             playerb: "2"
         }
-        return ((this.betType === betType.BACK && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] == win) || (this.betType === betType.LAY && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] != win)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        const betOnTeamWinCondition = playerWinCond[betOnTeamKey];
+        const isBackBet = this.betType == betType.BACK;
+        const isLayBet = this.betType == betType.LAY;
+        const isWinningCondition = betOnTeamWinCondition == win;
+
+        return ((isBackBet && isWinningCondition) || (isLayBet && !isWinningCondition)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 
 }
