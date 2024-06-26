@@ -58,7 +58,7 @@ exports.allApiRoutes = {
     matchOdd : "/matchOdds/",
     bookmaker : "/bookmaker/",
     session : "/session/",
-    casinoData: "/api/tunnel/casino/odds",
+    casinoData: "/api/tunnel/casino/odds/",
     cardResultDetail: "/api/tunnel/casino/individual-result/"
   }
 }
