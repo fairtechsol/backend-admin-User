@@ -81,9 +81,9 @@ class CardResultTypeWin {
 
     andarBahar() {
         switch (this.cardResult.win) {
-            case '2':
-                return 'Andar';
             case '1':
+                return 'Andar';
+            case '2':
                 return 'Bahar';
             default:
                 return null;

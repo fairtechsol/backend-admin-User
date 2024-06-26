@@ -20,6 +20,8 @@ class CardWinOrLose {
             case cardGameType.dt20:
             case cardGameType.dt202:
                 return this.dragonTiger();
+            case cardGameType.dt6:
+                return this.dragonTiger1Day();
             case cardGameType.teen20:
                 return this.teen20();
             case cardGameType.lucky7:
@@ -83,7 +85,7 @@ class CardWinOrLose {
         const betTypeIsLay = this.betType == betType.LAY;
 
         if (betOnTeamData?.length == 1) {
-            if ((currBetTeam === gameResult && betTypeIsBack) || (currBetTeam !== gameResult && betTypeIsLay) || (currBetTeam === "pair" && isPairResult)) {
+            if ((currBetTeam == gameResult && betTypeIsBack) || (currBetTeam != gameResult && betTypeIsLay) || (currBetTeam == "pair" && isPairResult)) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
         }
@@ -163,7 +165,7 @@ class CardWinOrLose {
             player10: "3",
             player11: "4",
         }
-        return ((this.betType === betType.BACK && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] == win) || (this.betType === betType.LAY && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] != win)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        return ((this.betType == betType.BACK && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] == win) || (this.betType == betType.LAY && playerWinCond[this.removeSpacesAndToLowerCase(this.betOnTeam)] != win)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 
     andarBahar() {
