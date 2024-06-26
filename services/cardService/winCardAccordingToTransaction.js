@@ -94,9 +94,9 @@ class CardResultTypeWin {
         switch (this.cardResult.win) {
             case '1':
                 return 'Player A';
-            case '2':
-                return 'Player B';
             case '3':
+                return 'Player B';
+            case '0':
                 return 'Tie';
             default:
                 return null;
