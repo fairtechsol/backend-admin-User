@@ -516,7 +516,7 @@ let calculateCardMatchRateAmount = async (userRedisData, jobData, userId) => {
     }
 
     // updating redis
-    await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure, [redisKeys.userMatchExposure + jobData?.matchId]: userCurrentExposure - userOldExposure }, userRedisObj);
+    await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure, [redisKeys.userMatchExposure + jobData?.mid]: userCurrentExposure - userOldExposure }, userRedisObj);
 
     // updating db
     await updateUserExposure(userId, (userCurrentExposure - userOldExposure));
