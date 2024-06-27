@@ -5773,8 +5773,8 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
     logger.info({ message: "Updated users", data: user.user });
    
     // check if data is already present in the redis or not
-    if (userRedisData?.[`${redisKeys.userMatchExposure}${matchId}`]) {
-      maxLoss = (Math.abs(parseFloat(userRedisData?.[`${redisKeys.userMatchExposure}${matchId}`]))) || 0;
+    if (userRedisData?.[`${redisKeys.userMatchExposure}${result?.mid}`]) {
+      maxLoss = (Math.abs(parseFloat(userRedisData?.[`${redisKeys.userMatchExposure}${result?.mid}`]))) || 0;
     }
     else {
       // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
@@ -5852,7 +5852,7 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
     });
 
     await deleteHashKeysByPattern(user.user.id, result?.mid + "*");
-    await deleteKeyFromUserRedis(user.user.id, `${redisKeys.userMatchExposure}${matchId}`);
+    await deleteKeyFromUserRedis(user.user.id, `${redisKeys.userMatchExposure}${result?.mid}`);
 
     if (user.user.createBy === user.user.id) {
       superAdminData[user.user.id] = {

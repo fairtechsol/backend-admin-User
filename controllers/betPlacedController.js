@@ -3088,7 +3088,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
 
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
-    let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]) : 0.0;
+    let matchExposure = userRedisData[redisKeys.userMatchExposure + betPlacedObj?.runnerId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + betPlacedObj?.runnerId]) : 0.0;
    
     let userTotalExposure = matchExposure;
 
