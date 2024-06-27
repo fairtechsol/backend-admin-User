@@ -5610,7 +5610,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
 exports.declarCardMatchResult = async (req, res) => {
   try {
     const { result, matchDetails, type } = req.body;
-    await updatePlaceBet({ result: betResultStatus.PENDING, runnerId: Not(result?.mid), eventType: matchDetails?.type }, { result: betResultStatus.TIE });
+    // await updatePlaceBet({ result: betResultStatus.PENDING, runnerId: Not(result?.mid), eventType: matchDetails?.type }, { result: betResultStatus.TIE });
     const betPlaced = await getMatchBetPlaceWithUserCard({ runnerId: result?.mid });
 
     if (betPlaced?.length <= 0) {
