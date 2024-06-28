@@ -3261,7 +3261,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     currData = roundData?.t1?.find((item) => item?.sid == selectionId);
   }
   else if (match?.type == cardGameType.dt6 && betObj?.teamName == "Tiger") {
-    currData = roundData?.t1?.find((item) => item?.sid == 2);
+    currData = roundData?.t2?.find((item) => item?.sid == 2);
   }
   else {
     currData = roundData?.t2?.find((item) => item?.sid == selectionId);
