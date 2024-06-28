@@ -59,6 +59,7 @@ exports.allApiRoutes = {
     bookmaker : "/bookmaker/",
     session : "/session/",
     casinoData: "/api/tunnel/casino/odds/",
-    cardResultDetail: "/api/tunnel/casino/individual-result/"
+    cardResultDetail: "/api/tunnel/casino/individual-result/",
+    cardTopTenResultDetail: "/api/tunnel/casino/result/",
   }
 }

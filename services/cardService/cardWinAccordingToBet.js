@@ -77,9 +77,9 @@ class CardWinOrLose {
         const { desc } = this.result;
         const betOnTeamData = this.betOnTeam.split(" ");
         const resultData = desc?.split("*");
-        const currBetTeam = betOnTeamData?.[0];
+        const currBetTeam = this.removeSpacesAndToLowerCase(betOnTeamData?.[0]);
 
-        const gameResult = resultData?.[0]?.split("|")?.[0]?.toLowerCase();
+        const gameResult = this.removeSpacesAndToLowerCase(resultData?.[0]?.split("|")?.[0]);
         const isPairResult = resultData?.[0]?.split("|")?.[1] == "Is Pair";
         const betTypeIsBack = this.betType == betType.BACK;
         const betTypeIsLay = this.betType == betType.LAY;
