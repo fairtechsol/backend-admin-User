@@ -165,6 +165,19 @@ exports.cardMatchDetails = async (req, res) => {
         }
       };
     }
+    try {
+      const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.cardTopTenResultDetail + type
+
+      let data = await apiCall(apiMethod.get, url);
+      casinoDetails.topTenResult = data?.data?.data?.data;
+    }
+    catch (error) {
+      throw {
+        message: {
+          msg: "bet.notLive"
+        }
+      };
+    }
 
     if (casinoDetails) {
       let cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
