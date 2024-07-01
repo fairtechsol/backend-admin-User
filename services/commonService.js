@@ -1056,9 +1056,9 @@ exports.settingCasinoMatchBetsDataAtLogin = async (user) => {
   
   for (let currBets of bets) {
     
-    const newProfitLossAndExp = new CardProfitLoss(currBets.eventType, matchResult[`${currBets.runnerId}_${currBets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`], { bettingType: currBets?.betType, winAmount: currBets?.winAmount, lossAmount: currBets?.lossAmount, playerName: currBets?.teamName, partnership: 100 }, matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`]).getCardGameProfitLoss()
+    const newProfitLossAndExp = new CardProfitLoss(currBets.eventType, matchResult[`${currBets.runnerId}_${currBets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`], { bettingType: currBets?.betType, winAmount: currBets?.winAmount, lossAmount: currBets?.lossAmount, playerName: currBets?.teamName, partnership: 100 }, matchExposure[`${redisKeys.userMatchExposure}${currBets.runnerId}`]).getCardGameProfitLoss()
     matchResult[`${currBets.runnerId}_${currBets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`] = newProfitLossAndExp.profitLoss;
-    matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((newProfitLossAndExp.exposure).toFixed(2));
+    matchExposure[`${redisKeys.userMatchExposure}${currBets.runnerId}`] = parseFloat((newProfitLossAndExp.exposure).toFixed(2));
 
   }
   return {
