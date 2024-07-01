@@ -3081,7 +3081,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
     }
     await validateCardBettingDetails(match, betPlacedObj, selectionId);
 
-    if (match.type == cardGameType.card32 || match.type == cardGameType.teen || (match.type == cardGameType.poker && parseInt(selectionId) <= 2) || (match.type == cardGameType.poker && parseInt(selectionId) <= 4)) {
+    if (match.type == cardGameType.card32 || match.type == cardGameType.teen || (match.type == cardGameType.poker && parseInt(selectionId) <= 2) || (match.type == cardGameType.poker && parseInt(selectionId) <= 4) || (match.type == cardGameType.card32eu && parseInt(selectionId) <= 4)) {
       selectionId = 1;
       betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
     }
@@ -3318,6 +3318,7 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.dt6:
     case cardGameType.poker:
     case cardGameType.race20:
+    case cardGameType.card32eu:
       return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
       return ((betObj.betType === betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))

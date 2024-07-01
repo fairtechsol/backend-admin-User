@@ -41,6 +41,8 @@ class CardProfitLoss {
                 return this.war();
             case cardGameType["3cardj"]:
                 return this.threeCardJ();
+            case cardGameType.card32eu:
+                return this.card32B();
             default:
                 throw {
                     statusCode: 400,
@@ -52,13 +54,13 @@ class CardProfitLoss {
     }
 
     dragonTiger() {
-        const { lossAmount } = this.data;
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        const { lossAmount, partnership } = this.data;
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount * partnership) / 100) || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     lucky7() {
-        const { lossAmount } = this.data;
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        const { lossAmount, partnership } = this.data;
+        return { profitLoss: -Math.abs(parseFloat((parseFloat((lossAmount * partnership) / 100 || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     card32() {
@@ -74,7 +76,7 @@ class CardProfitLoss {
             }
         }
         else {
-            newProfitLoss = {...JSON.parse(newProfitLoss)};
+            newProfitLoss = { ...JSON.parse(newProfitLoss) };
         }
 
         Object.keys(newProfitLoss)?.forEach((item) => {
@@ -93,13 +95,13 @@ class CardProfitLoss {
     }
 
     andarBahar() {
-        const { lossAmount } = this.data;
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        const { lossAmount, partnership } = this.data;
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount * partnership) / 100) || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     teen20() {
-        const { winAmount, lossAmount } = this.data;
-        return { profitLoss: parseFloat((parseFloat(winAmount || 0) + parseFloat(this.oldProfitLoss || 0)).toFixed(2)), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        const { winAmount, lossAmount, partnership } = this.data;
+        return { profitLoss: parseFloat((parseFloat(((winAmount * partnership) / 100) || 0) + parseFloat(this.oldProfitLoss || 0)).toFixed(2)), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     dragonTiger1Day() {
@@ -132,7 +134,7 @@ class CardProfitLoss {
 
             return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
         }
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount * partnership) / 100) || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
 
     }
 
@@ -166,12 +168,12 @@ class CardProfitLoss {
 
             return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
         }
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount * partnership) / 100) || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     dragonTigerLion() {
-        const { lossAmount } = this.data;
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        const { lossAmount, partnership } = this.data;
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership) / 100) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     teenOneDay() {
@@ -185,7 +187,7 @@ class CardProfitLoss {
             }
         }
         else {
-            newProfitLoss = {...JSON.parse(newProfitLoss)};
+            newProfitLoss = { ...JSON.parse(newProfitLoss) };
         }
 
         Object.keys(newProfitLoss)?.forEach((item) => {
@@ -205,7 +207,7 @@ class CardProfitLoss {
 
     poker6Player() {
         const { lossAmount } = this.data;
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership) / 100) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     race20() {
@@ -240,17 +242,56 @@ class CardProfitLoss {
 
             return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
         }
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership) / 100) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     war() {
-        const { lossAmount } = this.data;
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        const { lossAmount, partnership } = this.data;
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership) / 100) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
     threeCardJ() {
-        const { lossAmount } = this.data;
+        const { lossAmount, partnership } = this.data;
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership) / 100) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+    }
+
+    card32B() {
+        const { bettingType, winAmount, lossAmount, playerName, partnership, sid } = this.data;
+
+        if (sid == 1) {
+            let oldProfitLossData = JSON.parse(this.oldProfitLoss || "{}");
+            let newProfitLoss = this.oldProfitLoss;
+            if (!newProfitLoss) {
+                newProfitLoss = {
+                    player8: 0,
+                    player9: 0,
+                    player10: 0,
+                    player11: 0
+                }
+            }
+            else {
+                newProfitLoss = { ...JSON.parse(newProfitLoss) };
+            }
+
+            Object.keys(newProfitLoss)?.forEach((item) => {
+
+                if ((item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
+                    newProfitLoss[item] += ((winAmount * partnership) / 100);
+                }
+                else if ((item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
+                    newProfitLoss[item] -= ((lossAmount * partnership) / 100);
+                }
+
+                newProfitLoss[item] = parseFloat((Number(newProfitLoss[item]) || 0.0).toFixed(2));
+            });
+
+            return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
+        }
+        else if (parseInt(sid) == 13 || parseInt(sid) == 14 || parseInt(sid) == 27) {
+            return { profitLoss: -Math.abs(parseFloat((parseFloat(bettingType == betType.BACK ? (((winAmount || 0) * partnership) / 100) : -(((lossAmount || 0) * partnership) / 100)) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: Math.abs(parseFloat(this.oldExposure || 0) + parseFloat(bettingType == betType.BACK ? -(winAmount || 0) : (lossAmount || 0))) };
+        }
         return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
+
     removeSpacesAndToLowerCase(str) {
         return str.replace(/\s+/g, '')?.toLowerCase();
     }
