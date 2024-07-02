@@ -1,4 +1,4 @@
-const { cardGameType, betResultStatus, cardGameShapeCode, betType, cardGameShapeColor, cardsNo } = require("../../config/contants");
+const { cardGameType, betResultStatus, cardGameShapeCode, betType, cardGameShapeColor, cardsNo, teenPattiWinRatio } = require("../../config/contants");
 
 class CardWinOrLose {
     constructor(type, betOnTeam, result, betType, betPlaceData) {
@@ -33,6 +33,8 @@ class CardWinOrLose {
                 return this.dragonTigerLion();
             case cardGameType.teen:
                 return this.teenOneDay();
+            case cardGameType.teen8:
+                return this.teenOpen();
             default:
                 throw {
                     statusCode: 400,
@@ -207,13 +209,6 @@ class CardWinOrLose {
 
     teen20() {
         const { win, sid } = this.result;
-        const teenPattiWinRatio = {
-            "2": 1,
-            "3": 4,
-            "4": 6,
-            "5": 35,
-            "6": 45
-        }
 
         if ((this.removeSpacesAndToLowerCase(this.betOnTeam) == "playera" && win == "1") || (this.removeSpacesAndToLowerCase(this.betOnTeam) == "playerb" && win == "2")) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
@@ -254,6 +249,40 @@ class CardWinOrLose {
         const isWinningCondition = betOnTeamWinCondition == win;
 
         return ((isBackBet && isWinningCondition) || (isLayBet && !isWinningCondition)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+
+    teenOpen() {
+        const { sid, cards } = this.result;
+        const winningTeams = sid?.split("|")?.[0]?.split(",");
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        if (betOnTeamKey?.includes("player") && winningTeams?.includes(betOnTeamKey?.[betOnTeamKey?.length - 1])) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey?.includes("pairplus")) {
+            const currCards = cards?.split(",")?.filter((_, index) => index % 9 == parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1);
+            const currCardData = currCards?.map((item) => ({
+                numb: item?.slice(0, -2) == "A" ? 14 : cardsNo[item?.slice(0, -2)] || item?.slice(0, -2),
+                shape: item?.slice(-2)
+            }));
+
+            if (currCardData?.sort((a, b) => b.numb - a.numb)?.every((item, index, arr) => item?.shape == currCardData?.[0]?.shape && parseInt(item?.numb) == parseInt(arr[index - 1]?.numb) + 1)) {
+                return { result: betResultStatus.WIN, winAmount: parseFloat((parseFloat(this.betPlaceData.winAmount) * 40).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
+            }
+            else if (currCardData?.every((item, index, arr) => parseInt(item?.numb) == parseInt(arr[index - 1]))) {
+                return { result: betResultStatus.WIN, winAmount: parseFloat((parseFloat(this.betPlaceData.winAmount) * 30).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
+            }
+            else if (currCardData?.sort((a, b) => b.numb - a.numb)?.every((item, index, arr) => parseInt(item?.numb) == parseInt(arr[index - 1]?.numb) + 1)) {
+                return { result: betResultStatus.WIN, winAmount: parseFloat((parseFloat(this.betPlaceData.winAmount) * 6).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
+            }
+            else if (currCardData?.every((item) => item?.shape == currCardData?.[0]?.shape)) {
+                return { result: betResultStatus.WIN, winAmount: parseFloat((parseFloat(this.betPlaceData.winAmount) * 4).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
+            }
+            else if (new Set(currCardData?.map((item) => item?.numb)).size() != 3) {
+                return { result: betResultStatus.WIN, winAmount: parseFloat((parseFloat(this.betPlaceData.winAmount) * 1).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+
     }
 
 }
