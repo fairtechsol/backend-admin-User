@@ -3039,12 +3039,12 @@ exports.cardBettingBetPlaced = async (req, res) => {
     newCalculateOdd = (newCalculateOdd - 1) * 100;
 
     if (bettingType == betType.BACK) {
-      winAmount = (stake * newCalculateOdd) / 100;
+      winAmount = (stake * (match?.type == cardGameType.race20 && selectionId == 6 ? 90 : newCalculateOdd)) / 100;
       lossAmount = stake;
     }
     else if (bettingType == betType.LAY) {
       winAmount = stake;
-      lossAmount = (stake * newCalculateOdd) / 100;
+      lossAmount = (stake * (match?.type == cardGameType.race20 && selectionId == 6 ? 105 : newCalculateOdd)) / 100;
     }
     else {
       logger.info({
@@ -3069,7 +3069,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       amount: stake,
       odds: odd,
       betType: bettingType,
-      rate: 0,
+      rate: match?.type == cardGameType.race20 && selectionId == 5 ? 100 : match?.type == cardGameType.race20 && selectionId == 6 && bettingType == betType.BACK ? 105 : match?.type == cardGameType.race20 && selectionId == 6 && bettingType == betType.LAY ? 90 : 0,
       createBy: reqUser.id,
       marketType: matchBetType,
       marketBetType: marketBetType.CARD,

@@ -44,6 +44,8 @@ class CardWinOrLose {
                 return this.andarBahar();
             case cardGameType.war:
                 return this.casinoWar();
+            case cardGameType.race20:
+                return this.race20();
             default:
                 throw {
                     statusCode: 400,
@@ -421,6 +423,35 @@ class CardWinOrLose {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if ((cardGameShapeCode[cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(-2)] == betOnTeamKey?.slice(0, -1))) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    race20() {
+        const { win, desc } = this.result;
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        const seperatedCardsData = desc.split("|");
+        const point = parseInt((seperatedCardsData?.[1]?.match(/\d+/g) || []).map(Number));
+        const cardsNo = parseInt((seperatedCardsData?.[2]?.match(/\d+/g) || []).map(Number));
+
+        const winningData = {
+            1: "spade",
+            2: "heart",
+            3: "club",
+            4: "diamond"
+        }
+        const betOnTeamShape = this.betOnTeam?.split(" ");
+
+        if (betOnTeamKey?.includes("kof") && ((winningData[win] == betOnTeamShape?.[betOnTeamShape?.length - 1] && this.betType == betType.BACK) || (winningData[win] != betOnTeamShape?.[betOnTeamShape?.length - 1] && this.betType == betType.LAY))) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey == "totalpoint" && (this.betType == betType.BACK && point >= this.betPlaceData?.rate) || (this.betType == betType.LAY && point <= this.betPlaceData?.rate)) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey == "totalcard" && (this.betType == betType.BACK && cardsNo >= this.betPlaceData?.rate) || (this.betType == betType.LAY && cardsNo <= this.betPlaceData?.rate)) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        if (betOnTeamKey?.includes("winwith") && parseInt((this.betOnTeam?.match(/\d+/g) || []).map(Number)) == parseInt(cardsNo)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
