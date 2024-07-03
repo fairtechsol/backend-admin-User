@@ -5,16 +5,16 @@ const { getBet, matchBettingBetPlaced, sessionBetPlace, deleteMultipleBet, getSe
 const validator = require('../middleware/joi.validator');
 const { isAuthenticate } = require('../middleware/auth');
 const { MatchBetPlacedValidator, SessionBetPlacedValidator, RaceBetPlacedValidator, CardBetPlacedValidator } = require('../validators/betPlacedValidtor');
-
+const { apiLimiter } = require('../middleware/apiHitLimiter');
 
 router.get('/', isAuthenticate, getBet);
 router.get('/accountStatement', isAuthenticate, getAccountStatementBet);
 router.get('/session/profitLoss/:betId', isAuthenticate, getSessionProfitLoss);
-router.post('/matchBetting', isAuthenticate, validator(MatchBetPlacedValidator), matchBettingBetPlaced);
-router.post('/session', isAuthenticate, validator(SessionBetPlacedValidator), sessionBetPlace);
+router.post('/matchBetting', apiLimiter, isAuthenticate, apiLimiter, validator(MatchBetPlacedValidator), matchBettingBetPlaced);
+router.post('/session', apiLimiter, isAuthenticate, validator(SessionBetPlacedValidator), sessionBetPlace);
 
-router.post('/raceBetting', isAuthenticate, validator(RaceBetPlacedValidator), racingBettingBetPlaced);
-router.post('/cardBetting', isAuthenticate, validator(CardBetPlacedValidator), cardBettingBetPlaced);
+router.post('/raceBetting', apiLimiter, isAuthenticate, validator(RaceBetPlacedValidator), racingBettingBetPlaced);
+router.post('/cardBetting', apiLimiter, isAuthenticate, validator(CardBetPlacedValidator), cardBettingBetPlaced);
 
 router.post('/deleteMultipleBet', deleteMultipleBet);
 router.post('/deleteMultipleBetForOther', deleteMultipleBetForOther);
@@ -22,6 +22,6 @@ router.post('/deleteMultipleBetForRace', deleteRaceMultipleBet);
 
 router.post('/profitLoss',isAuthenticate, profitLoss);
 router.get('/myMarket',isAuthenticate, getMyMarket);
-router.post('/other/matchBetting', isAuthenticate, validator(MatchBetPlacedValidator), otherMatchBettingBetPlaced);
+router.post('/other/matchBetting', apiLimiter, isAuthenticate, validator(MatchBetPlacedValidator), otherMatchBettingBetPlaced);
 
 module.exports = router;
