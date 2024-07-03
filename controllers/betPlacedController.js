@@ -3081,9 +3081,26 @@ exports.cardBettingBetPlaced = async (req, res) => {
     }
     await validateCardBettingDetails(match, betPlacedObj, selectionId);
 
-    if (match.type == cardGameType.card32 || match.type == cardGameType.teen || (match.type == cardGameType.poker && parseInt(selectionId) <= 2) || (match.type == cardGameType.poker && parseInt(selectionId) <= 4) || (match.type == cardGameType.card32eu && parseInt(selectionId) <= 4)) {
-      selectionId = 1;
-      betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+    switch (match.type) {
+      case cardGameType.card32:
+      case cardGameType.teen:
+        selectionId = 1;
+        betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+        break;
+      case cardGameType.poker:
+        if (parseInt(selectionId) <= 2) {
+          selectionId = 1;
+          betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+        }
+        break;
+      case cardGameType.card32eu:
+        if (parseInt(selectionId) <= 4) {
+          selectionId = 1;
+          betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+        }
+        break;
+      default:
+        break;
     }
 
     let userCurrentBalance = userBalanceData.currentBalance;

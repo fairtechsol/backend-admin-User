@@ -371,7 +371,7 @@ class CardWinOrLose {
     }
     andarBahar() {
         const { cards } = this.result;
-        const [andar, bahar] = cards?.split("*").map((card) => card.split(","));
+        const [andar, bahar] = cards?.split("*")?.map((card) => card.split(","));
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
 
         const andarSet = new Set();

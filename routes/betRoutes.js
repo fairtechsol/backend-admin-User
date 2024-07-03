@@ -10,7 +10,7 @@ const { apiLimiter } = require('../middleware/apiHitLimiter');
 router.get('/', isAuthenticate, getBet);
 router.get('/accountStatement', isAuthenticate, getAccountStatementBet);
 router.get('/session/profitLoss/:betId', isAuthenticate, getSessionProfitLoss);
-router.post('/matchBetting', apiLimiter, isAuthenticate, apiLimiter, validator(MatchBetPlacedValidator), matchBettingBetPlaced);
+router.post('/matchBetting', apiLimiter, isAuthenticate, validator(MatchBetPlacedValidator), matchBettingBetPlaced);
 router.post('/session', apiLimiter, isAuthenticate, validator(SessionBetPlacedValidator), sessionBetPlace);
 
 router.post('/raceBetting', apiLimiter, isAuthenticate, validator(RaceBetPlacedValidator), racingBettingBetPlaced);
