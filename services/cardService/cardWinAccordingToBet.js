@@ -16,7 +16,7 @@ class CardWinOrLose {
     getCardGameProfitLoss() {
         switch (this.type) {
             case cardGameType.abj:
-                return this.andarBahar();
+                return this.andarBahar2();
             case cardGameType.dt20:
             case cardGameType.dt202:
                 return this.dragonTiger();
@@ -35,6 +35,15 @@ class CardWinOrLose {
                 return this.teenOneDay();
             case cardGameType.teen8:
                 return this.teenOpen();
+            case cardGameType.poker20:
+            case cardGameType.poker6:
+                return this.poker2020();
+            case cardGameType.poker:
+                return this.poker();
+            case cardGameType.ab20:
+                return this.andarBahar();
+            case cardGameType.war:
+                return this.casinoWar();
             default:
                 throw {
                     statusCode: 400,
@@ -173,7 +182,7 @@ class CardWinOrLose {
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 
-    andarBahar() {
+    andarBahar2() {
 
         const { win, cards } = this.result;
         const currentCards = cards?.split(",")?.filter((item) => item != "1");
@@ -284,7 +293,138 @@ class CardWinOrLose {
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
 
     }
+    poker2020() {
+        const { sid } = this.result;
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[betPlaceData?.browserDetail?.split("|")?.length - 1];
 
+        if (sid?.split(",")?.includes(selectionId)) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+
+    poker() {
+        const { sid, cards, win } = this.result;
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        const cardsArray = cards?.split(",");
+        const winSid = sid?.split(",");
+
+        const currCardData = cardsArray?.filter((_, index) => index < 2)?.map((item) => ({
+            numb: item?.slice(0, -2) == "A" ? 14 : parseInt(cardsNo[item?.slice(0, -2)] || item?.slice(0, -2)),
+            shape: item?.slice(-2)
+        }));
+        const calculateWinAmount = (multiplier) => ({
+            result: betResultStatus.WIN,
+            winAmount: parseFloat((parseFloat(this.betPlaceData.winAmount) * multiplier).toFixed(2)),
+            lossAmount: this.betPlaceData.lossAmount
+        });
+        const bonus2CardCondition = (initialIndex) => {
+            return [
+                { check: currCardData?.[initialIndex]?.numb == 14 && currCardData?.[initialIndex + 1]?.numb == 14, multiplier: 30 },
+                { check: currCardData?.[initialIndex]?.numb == 14 && currCardData?.[initialIndex + 1]?.numb == 13 && currCardData?.[initialIndex]?.shape == currCardData?.[initialIndex + 1]?.shape, multiplier: 25 },
+                { check: ((currCardData?.[initialIndex]?.numb == 14 && currCardData?.[initialIndex + 1]?.numb == 12) || (currCardData?.[initialIndex]?.numb == 14 && currCardData?.[initialIndex + 1]?.numb == 11)) && currCardData?.[initialIndex]?.shape == currCardData?.[initialIndex + 1]?.shape, multiplier: 20 },
+                { check: currCardData?.[initialIndex]?.numb == 14 && currCardData?.[initialIndex + 1]?.numb == 13, multiplier: 15 },
+                { check: currCardData?.[initialIndex]?.numb == currCardData?.[initialIndex + 1]?.numb && [11, 12, 13].includes(currCardData?.[initialIndex + 1]?.numb), multiplier: 10 },
+                { check: currCardData?.[initialIndex]?.numb == 14 && [11, 12].includes(currCardData?.[initialIndex + 1]?.numb), multiplier: 5 },
+                { check: currCardData?.[initialIndex]?.numb == currCardData?.[initialIndex + 1]?.numb && currCardData?.[initialIndex + 1]?.numb <= 10, multiplier: 3 }
+            ]
+        }
+        const bonus7CardCondition = (playerType) => {
+            return [
+                { check: winSid?.includes(`${playerType}4`), multiplier: 3 },
+                { check: winSid?.includes(`${playerType}5`), multiplier: 4 },
+                { check: winSid?.includes(`${playerType}6`), multiplier: 6 },
+                { check: winSid?.includes(`${playerType}7`), multiplier: 8 },
+                { check: winSid?.includes(`${playerType}8`), multiplier: 30 },
+                { check: winSid?.includes(`${playerType}9`), multiplier: 50 },
+                { check: winSid?.includes(`${playerType + 1}0`), multiplier: 100 },
+            ]
+        }
+
+        if (((betOnTeamKey == "playera" && this.betType == betType.BACK) || (betOnTeamKey == "playerb" && this.betType == betType.LAY)) && win == "11") {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (((betOnTeamKey == "playerb" && this.betType == betType.BACK) || (betOnTeamKey == "playera" && this.betType == betType.LAY)) && win == "21") {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey == "playera2cardbonus") {
+            const conditions = bonus2CardCondition(0);
+            const result = conditions.find(({ check }) => check);
+            return result ? calculateWinAmount(result.multiplier) : null;
+        }
+        else if (betOnTeamKey == "playerb2cardbonus") {
+            const conditions = bonus2CardCondition(2);
+            const result = conditions.find(({ check }) => check);
+            return result ? calculateWinAmount(result.multiplier) : null;
+        }
+        else if (betOnTeamKey == "playera7cardbonus") {
+            const conditions = bonus7CardCondition(1);
+            const result = conditions.find(({ check }) => check);
+            return result ? calculateWinAmount(result.multiplier) : null;
+        }
+        else if (betOnTeamKey == "playerb7cardbonus") {
+            const conditions = bonus2CardCondition(2);
+            const result = conditions.find(({ check }) => check);
+            return result ? calculateWinAmount(result.multiplier) : null;
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    andarBahar() {
+        const { cards } = this.result;
+        const [andar, bahar] = cards?.split("*").map((card) => card.split(","));
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+
+        const andarSet = new Set();
+        const baharSet = new Set();
+        let i, j;
+        while (i < andar?.length || j < bahar?.length) {
+            if (j < bahar?.length) {
+                const baharCurrNumber = bahar[j]?.slice(0, -2);
+                if (!andarSet.has(baharCurrNumber)) {
+                    baharSet.add(baharCurrNumber);
+                }
+                j++;
+            }
+            if (i < andar?.length) {
+                const andarCurrNumber = andar[i]?.slice(0, -2);
+                if (!baharSet.has(andarCurrNumber)) {
+                    andarSet.add(andarCurrNumber);
+                }
+                i++;
+            }
+        }
+
+        if (betOnTeamKey?.contains("andar") && andarSet.has(this.betOnTeam?.split(` `)?.[1])) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey?.contains("bahar") && andarSet.has(this.betOnTeam?.split(` `)?.[1])) {
+            if (j == 1) {
+                return { result: betResultStatus.WIN, winAmount: parseFloat(((parseFloat(this.betPlaceData.winAmount) * 25) / 100).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
+            }
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    casinoWar() {
+        const { sid, cards } = this.result;
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        const cardsData = cards?.split(",");
+
+        if (betOnTeamKey?.includes("winner") && sid?.includes(betOnTeamKey?.[betOnTeamKey?.length - 1])) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if ((betOnTeamKey?.includes("black") && cardGameShapeColor[cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(-2)] == "black") || (betOnTeamKey?.includes("red") && cardGameShapeColor[cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(-2)] == "red")) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if ((betOnTeamKey?.includes("odd") && parseInt(cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(0, -2)) % 2 == 1) || (betOnTeamKey?.includes("even") && parseInt(cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(0, -2)) % 2 == 0)) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if ((cardGameShapeCode[cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(-2)] == betOnTeamKey?.slice(0, -1))) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
 }
 
 exports.CardWinOrLose = CardWinOrLose;
