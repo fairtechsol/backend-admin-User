@@ -615,7 +615,7 @@ exports.cardGames = [
   },
   {
     type: "ab20",
-    name: "ANDAR BAHAR 2",
+    name: "ANDAR BAHAR 1",
     id: "d1a4d7b8-8a7b-4a3b-8a7d-7d5e7a1d8e5d"
   },
   {
@@ -714,4 +714,12 @@ exports.cardsNo = {
   Q: 12,
   J: 11,
   A: 1,
+}
+
+exports.teenPattiWinRatio = {
+  "2": 1,
+  "3": 4,
+  "4": 6,
+  "5": 35,
+  "6": 45
 }

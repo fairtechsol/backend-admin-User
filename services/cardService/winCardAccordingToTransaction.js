@@ -9,7 +9,7 @@ class CardResultTypeWin {
     getCardGameProfitLoss() {
         switch (this.type) {
             case cardGameType.abj:
-                return this.andarBahar();
+                return this.andarBahar2();
             case cardGameType.dt20:
             case cardGameType.dt202:
             case cardGameType.dt6:
@@ -24,6 +24,17 @@ class CardResultTypeWin {
                 return this.card32();
             case cardGameType.dtl20:
                 return this.dragonTigerLion();
+            case cardGameType.teen8:
+                return this.teenOpen();
+            case cardGameType.poker20:
+            case cardGameType.poker:
+                return this.poker2020();
+            case cardGameType.poker6:
+                return this.poker6Player();
+            case cardGameType.ab20:
+                return this.andarBahar();
+            case cardGameType.war:
+                return this.casinoWar();
             default:
                 throw {
                     statusCode: 400,
@@ -79,7 +90,7 @@ class CardResultTypeWin {
         }
     }
 
-    andarBahar() {
+    andarBahar2() {
         switch (this.cardResult.win) {
             case '1':
                 return 'Andar';
@@ -101,6 +112,56 @@ class CardResultTypeWin {
             default:
                 return null;
         }
+    }
+
+    teenOpen() {
+        const sid = this.cardResult.result.sid;
+        const firstElement = sid.split('|')[0];
+        return `Player ${firstElement}`;
+    }
+
+    poker2020() {
+        switch (this.cardResult.result.win) {
+            case '11':
+                return 'Player A';
+            case '21':
+                return 'Player B';
+            case '0':
+                return 'Player Abandoned';
+            default:
+                return 'Unknown';
+        }
+    }
+
+    poker6Player() {
+        switch (this.cardResult.result.win) {
+            case '11':
+                return 'Player 1';
+            case '12':
+                return 'Player 2';
+            case '13':
+                return 'Player 3';
+            case '14':
+                return 'Player 4';
+            case '15':
+                return 'Player 5';
+            case '16':
+                return 'Player 6';
+            case '17':
+                return 'Player 7';
+            case '0':
+                return 'Player Abandoned';
+            default:
+                return 'Unknown';
+        }
+    }
+
+    andarBahar() {
+        return 'Player ab20';
+    }
+
+    casinoWar() {
+        return 'Player abandoned';
     }
 }
 

@@ -3081,9 +3081,26 @@ exports.cardBettingBetPlaced = async (req, res) => {
     }
     await validateCardBettingDetails(match, betPlacedObj, selectionId);
 
-    if (match.type == cardGameType.card32 || match.type == cardGameType.teen) {
-      selectionId = 1;
-      betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+    switch (match.type) {
+      case cardGameType.card32:
+      case cardGameType.teen:
+        selectionId = 1;
+        betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+        break;
+      case cardGameType.poker:
+        if (parseInt(selectionId) <= 2) {
+          selectionId = 1;
+          betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+        }
+        break;
+      case cardGameType.card32eu:
+        if (parseInt(selectionId) <= 4) {
+          selectionId = 1;
+          betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
+        }
+        break;
+      default:
+        break;
     }
 
     let userCurrentBalance = userBalanceData.currentBalance;
@@ -3263,6 +3280,9 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   else if (match?.type == cardGameType.dt6 && betObj?.teamName == "Tiger") {
     currData = roundData?.t2?.find((item) => item?.sid == 2);
   }
+  else if (match?.type == cardGameType.poker&&parseInt(selectionId) > 2) {
+      currData = roundData?.t3?.find((item) => item?.sid == selectionId);
+  }
   else {
     currData = roundData?.t2?.find((item) => item?.sid == selectionId);
   }
@@ -3313,6 +3333,9 @@ const processBetPlaceCondition = (betObj, currData, match) => {
       return parseFloat(betObj.odds) != parseFloat(currData.b1);
     case cardGameType.card32:
     case cardGameType.dt6:
+    case cardGameType.poker:
+    case cardGameType.race20:
+    case cardGameType.card32eu:
       return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
       return ((betObj.betType === betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
