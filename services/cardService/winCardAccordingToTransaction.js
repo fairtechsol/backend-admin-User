@@ -9,7 +9,7 @@ class CardResultTypeWin {
     getCardGameProfitLoss() {
         switch (this.type) {
             case cardGameType.abj:
-                return this.andarBahar();
+                return this.andarBahar2();
             case cardGameType.dt20:
             case cardGameType.dt202:
             case cardGameType.dt6:
@@ -90,7 +90,7 @@ class CardResultTypeWin {
         }
     }
 
-    andarBahar() {
+    andarBahar2() {
         switch (this.cardResult.win) {
             case '1':
                 return 'Andar';
