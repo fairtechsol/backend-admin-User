@@ -291,7 +291,7 @@ class CardWinOrLose {
             else if (currCardData?.every((item) => item?.shape == currCardData?.[0]?.shape)) {
                 return { result: betResultStatus.WIN, winAmount: parseFloat((parseFloat(this.betPlaceData.winAmount) * 4).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
             }
-            else if (new Set(currCardData?.map((item) => item?.numb)).size() != 3) {
+            else if (new Set(currCardData?.map((item) => item?.numb)).size != 3) {
                 return { result: betResultStatus.WIN, winAmount: parseFloat((parseFloat(this.betPlaceData.winAmount) * 1).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
             }
         }
@@ -432,6 +432,7 @@ class CardWinOrLose {
     }
     race20() {
         const { win, desc } = this.result;
+        
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
         const seperatedCardsData = desc.split("|");
         const point = parseInt((seperatedCardsData?.[1]?.match(/\d+/g) || []).map(Number));
