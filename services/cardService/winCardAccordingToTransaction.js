@@ -35,6 +35,12 @@ class CardResultTypeWin {
                 return this.andarBahar();
             case cardGameType.war:
                 return this.casinoWar();
+            case cardGameType.race20:
+                return this.race20();
+            case cardGameType.superover:
+                return this.superOver();
+            case cardGameType.cricketv3:
+                return this.cricket55();
             default:
                 throw {
                     statusCode: 400,
@@ -115,13 +121,13 @@ class CardResultTypeWin {
     }
 
     teenOpen() {
-        const sid = this.cardResult.result.sid;
+        const sid = this?.cardResult?.sid;
         const firstElement = sid.split('|')[0];
-        return `Player ${firstElement}`;
+        return firstElement == "0" ? "No Win" : `Player ${firstElement}`;
     }
 
     poker2020() {
-        switch (this.cardResult.result.win) {
+        switch (this.cardResult.win) {
             case '11':
                 return 'Player A';
             case '21':
@@ -134,7 +140,7 @@ class CardResultTypeWin {
     }
 
     poker6Player() {
-        switch (this.cardResult.result.win) {
+        switch (this.cardResult.win) {
             case '11':
                 return 'Player 1';
             case '12':
@@ -162,6 +168,44 @@ class CardResultTypeWin {
 
     casinoWar() {
         return 'Player abandoned';
+    }
+    race20() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'K Spade';
+            case '2':
+                return 'K Heart';
+            case '3':
+                return 'K Club';
+            case '4':
+                return 'K Diamond';
+            default:
+                return 'Unknown';
+        }
+    }
+    superOver() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'Player E';
+            case '2':
+                return 'Player R';
+            case '0':
+                return 'Player Abandoned';
+            default:
+                return 'Unknown';
+        }
+    }
+    cricket55() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'Player A';
+            case '2':
+                return 'Player I';
+            case '0':
+                return 'Player Abandoned';
+            default:
+                return 'Unknown';
+        }
     }
 }
 

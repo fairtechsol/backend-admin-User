@@ -3026,6 +3026,9 @@ exports.cardBettingBetPlaced = async (req, res) => {
       })
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
+    
+    // getting match
+    const match = await getCardMatch({ id: matchId });
     // let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
     // if (getMatchLockData?.matchLock) {
     //   logger.info({
@@ -3036,15 +3039,21 @@ exports.cardBettingBetPlaced = async (req, res) => {
     // }
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
-    newCalculateOdd = (newCalculateOdd - 1) * 100;
 
+    if (match?.type == cardGameType.race20 && selectionId == 6) {
+      newCalculateOdd = bettingType == betType.BACK ? 90 : 105;
+    }
+    else {
+      newCalculateOdd = (newCalculateOdd - 1) * 100;
+    }
+    
     if (bettingType == betType.BACK) {
-      winAmount = (stake * newCalculateOdd) / 100;
+      winAmount = (stake * (newCalculateOdd)) / 100;
       lossAmount = stake;
     }
     else if (bettingType == betType.LAY) {
       winAmount = stake;
-      lossAmount = (stake * newCalculateOdd) / 100;
+      lossAmount = (stake * (newCalculateOdd)) / 100;
     }
     else {
       logger.info({
@@ -3057,8 +3066,6 @@ exports.cardBettingBetPlaced = async (req, res) => {
     winAmount = Number(winAmount.toFixed(2));
     lossAmount = Number(lossAmount.toFixed(2));
 
-    // getting match
-    const match = await getCardMatch({ id: matchId });
 
     let betPlacedObj = {
       matchId: matchId,
@@ -3069,7 +3076,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       amount: stake,
       odds: odd,
       betType: bettingType,
-      rate: 0,
+      rate: calculateBetRate(match, selectionId, bettingType),
       createBy: reqUser.id,
       marketType: matchBetType,
       marketBetType: marketBetType.CARD,
@@ -3084,6 +3091,8 @@ exports.cardBettingBetPlaced = async (req, res) => {
     switch (match.type) {
       case cardGameType.card32:
       case cardGameType.teen:
+      case cardGameType.cricketv3:
+      case cardGameType.superover:
         selectionId = 1;
         betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
         break;
@@ -3336,10 +3345,32 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.poker:
     case cardGameType.race20:
     case cardGameType.card32eu:
+    case cardGameType.superover:
+    case cardGameType.cricketv3:
       return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
       return ((betObj.betType === betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
     default:
       return betObj?.odds != currData?.rate
   }
+}
+
+function calculateBetRate(match, selectionId, bettingType) {
+  if (!match) {
+    return 0;
+  }
+
+  if (match.type == cardGameType.race20) {
+    if (selectionId == 5) {
+      return 100;
+    } else if (selectionId == 6) {
+      if (bettingType == betType.BACK) {
+        return 105;
+      } else if (bettingType == betType.LAY) {
+        return 90;
+      }
+    }
+  }
+
+  return 0;
 }
