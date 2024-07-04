@@ -3039,9 +3039,14 @@ exports.cardBettingBetPlaced = async (req, res) => {
     // }
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
-    newCalculateOdd = (newCalculateOdd - 1) * 100;
-    newCalculateOdd = (match?.type == cardGameType.race20 && selectionId == 6) ? (bettingType == betType.BACK ? 90 : 105) : newCalculateOdd;
 
+    if (match?.type == cardGameType.race20 && selectionId == 6) {
+      newCalculateOdd = bettingType == betType.BACK ? 90 : 105;
+    }
+    else {
+      newCalculateOdd = (newCalculateOdd - 1) * 100;
+    }
+    
     if (bettingType == betType.BACK) {
       winAmount = (stake * (newCalculateOdd)) / 100;
       lossAmount = stake;
