@@ -3026,6 +3026,9 @@ exports.cardBettingBetPlaced = async (req, res) => {
       })
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
+    
+    // getting match
+    const match = await getCardMatch({ id: matchId });
     // let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
     // if (getMatchLockData?.matchLock) {
     //   logger.info({
@@ -3057,8 +3060,6 @@ exports.cardBettingBetPlaced = async (req, res) => {
     winAmount = Number(winAmount.toFixed(2));
     lossAmount = Number(lossAmount.toFixed(2));
 
-    // getting match
-    const match = await getCardMatch({ id: matchId });
 
     let betPlacedObj = {
       matchId: matchId,
@@ -3084,6 +3085,8 @@ exports.cardBettingBetPlaced = async (req, res) => {
     switch (match.type) {
       case cardGameType.card32:
       case cardGameType.teen:
+      case cardGameType.cricketv3:
+      case cardGameType.superover:
         selectionId = 1;
         betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
         break;
@@ -3336,6 +3339,8 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.poker:
     case cardGameType.race20:
     case cardGameType.card32eu:
+    case cardGameType.superover:
+    case cardGameType.cricketv3:
       return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
       return ((betObj.betType === betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))

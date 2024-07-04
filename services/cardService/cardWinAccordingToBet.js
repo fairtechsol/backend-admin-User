@@ -46,6 +46,9 @@ class CardWinOrLose {
                 return this.casinoWar();
             case cardGameType.race20:
                 return this.race20();
+            case cardGameType.superover:
+            case cardGameType.cricketv3:
+                return this.superOver();
             default:
                 throw {
                     statusCode: 400,
@@ -455,6 +458,22 @@ class CardWinOrLose {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+
+    superOver() {
+        const { win } = this.result;
+
+        if (parseInt(win) == 0) {
+            return { result: betResultStatus.TIE, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+
+        const sid = this.betPlaceData?.browserDetail?.split("|")?.[1];
+
+        const isBackBet = this.betType == betType.BACK;
+        const isLayBet = this.betType == betType.LAY;
+        const isWinningCondition = parseInt(sid) == parseInt(win);
+
+        return ((isBackBet && isWinningCondition) || (isLayBet && !isWinningCondition)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 }
 

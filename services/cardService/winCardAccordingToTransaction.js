@@ -37,6 +37,10 @@ class CardResultTypeWin {
                 return this.casinoWar();
             case cardGameType.race20:
                 return this.race20();
+            case cardGameType.superover:
+                return this.superOver();
+            case cardGameType.cricketv3:
+                return this.cricket55();
             default:
                 throw {
                     statusCode: 400,
@@ -175,6 +179,30 @@ class CardResultTypeWin {
                 return 'K Club';
             case '4':
                 return 'K Diamond';
+            default:
+                return 'Unknown';
+        }
+    }
+    superOver() {
+        switch (this.cardResult.result.win) {
+            case '1':
+                return 'Player E';
+            case '2':
+                return 'Player R';
+            case '0':
+                return 'Player Abandoned';
+            default:
+                return 'Unknown';
+        }
+    }
+    cricket55() {
+        switch (this.cardResult.result.win) {
+            case '1':
+                return 'Player A';
+            case '2':
+                return 'Player I';
+            case '0':
+                return 'Player Abandoned';
             default:
                 return 'Unknown';
         }
