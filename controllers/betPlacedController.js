@@ -3040,14 +3040,15 @@ exports.cardBettingBetPlaced = async (req, res) => {
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
     newCalculateOdd = (newCalculateOdd - 1) * 100;
+    newCalculateOdd = (match?.type == cardGameType.race20 && selectionId == 6) ? (bettingType == betType.BACK ? 90 : 105) : newCalculateOdd;
 
     if (bettingType == betType.BACK) {
-      winAmount = (stake * (match?.type == cardGameType.race20 && selectionId == 6 ? 90 : newCalculateOdd)) / 100;
+      winAmount = (stake * (newCalculateOdd)) / 100;
       lossAmount = stake;
     }
     else if (bettingType == betType.LAY) {
       winAmount = stake;
-      lossAmount = (stake * (match?.type == cardGameType.race20 && selectionId == 6 ? 105 : newCalculateOdd)) / 100;
+      lossAmount = (stake * (newCalculateOdd)) / 100;
     }
     else {
       logger.info({
@@ -3070,7 +3071,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       amount: stake,
       odds: odd,
       betType: bettingType,
-      rate: match?.type == cardGameType.race20 && selectionId == 5 ? 100 : match?.type == cardGameType.race20 && selectionId == 6 && bettingType == betType.BACK ? 105 : match?.type == cardGameType.race20 && selectionId == 6 && bettingType == betType.LAY ? 90 : 0,
+      rate: calculateBetRate(match, selectionId, bettingType),
       createBy: reqUser.id,
       marketType: matchBetType,
       marketBetType: marketBetType.CARD,
@@ -3347,4 +3348,24 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     default:
       return betObj?.odds != currData?.rate
   }
+}
+
+function calculateBetRate(match, selectionId, bettingType) {
+  if (!match) {
+    return 0;
+  }
+
+  if (match.type == cardGameType.race20) {
+    if (selectionId == 5) {
+      return 100;
+    } else if (selectionId == 6) {
+      if (bettingType == betType.BACK) {
+        return 105;
+      } else if (bettingType == betType.LAY) {
+        return 90;
+      }
+    }
+  }
+
+  return 0;
 }
