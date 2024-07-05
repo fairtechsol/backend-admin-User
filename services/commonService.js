@@ -499,9 +499,14 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type)
     deleteReason: IsNull(),
     runnerId: runnerId
   });
-  let oldPl = null;
+  let oldPl = {
+    profitLoss:{},
+    exposure:0
+  };
   for (let bets of betPlace) {
-    oldPl = new CardProfitLoss(type, oldPl, { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: 100 }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
+    const data = new CardProfitLoss(type, oldPl.profitLoss[`${runnerId}_${bets?.browserDetail?.split("|")?.[0]}${redisKeys.card}`], { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: 100 }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
+    oldPl.profitLoss[`${runnerId}_${bets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`] = data.profitLoss;
+    oldPl.exposure = data.exposure;
   }
   return oldPl;
 }

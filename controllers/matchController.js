@@ -1,13 +1,14 @@
 const { In } = require("typeorm");
 const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain } = require("../config/contants");
 const { findAllPlacedBet } = require("../services/betPlacedService");
-const { getUserRedisKeys, getUserRedisSingleKey } = require("../services/redis/commonfunction");
+const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const { listMatch } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
+const { calculateProfitLossForCardMatchToResult } = require("../services/commonService");
 
 exports.matchDetails = async (req, res) => {
   try {
@@ -189,6 +190,16 @@ exports.cardMatchDetails = async (req, res) => {
           casinoDetails.profitLoss[cardRedisKeys[index]] = item;
         }
       });
+      if (redisData?.filter((item)=>!!item)?.length<=0) {
+        // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
+        redisData = await calculateProfitLossForCardMatchToResult(req.user?.id, roundData?.t1?.[0]?.mid, type);
+        let maxLoss = redisData?.exposure;
+        redisData = redisData?.profitLoss;
+        casinoDetails.profitLoss = redisData?.profitLoss;
+        await updateUserDataRedis(req.user.id, {
+          ...redisData, [`${redisKeys.userMatchExposure}${roundData?.t1?.[0]?.mid}`]: maxLoss
+        });
+      }
     }
     return SuccessResponse(
       {
