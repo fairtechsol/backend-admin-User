@@ -381,7 +381,7 @@ class CardWinOrLose {
 
         const andarSet = new Set();
         const baharSet = new Set();
-        let i, j;
+        let i=0, j=0;
         while (i < andar?.length || j < bahar?.length) {
             if (j < bahar?.length) {
                 const baharCurrNumber = bahar[j]?.slice(0, -2);
@@ -399,10 +399,10 @@ class CardWinOrLose {
             }
         }
 
-        if (betOnTeamKey?.contains("andar") && andarSet.has(this.betOnTeam?.split(` `)?.[1])) {
+        if (betOnTeamKey?.includes("andar") && andarSet.has(this.betOnTeam?.split(` `)?.[1])) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if (betOnTeamKey?.contains("bahar") && andarSet.has(this.betOnTeam?.split(` `)?.[1])) {
+        else if (betOnTeamKey?.includes("bahar") && andarSet.has(this.betOnTeam?.split(` `)?.[1])) {
             if (j == 1) {
                 return { result: betResultStatus.WIN, winAmount: parseFloat(((parseFloat(this.betPlaceData.winAmount) * 25) / 100).toFixed(2)), lossAmount: this.betPlaceData.lossAmount };
             }
