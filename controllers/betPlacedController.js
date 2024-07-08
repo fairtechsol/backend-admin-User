@@ -6,7 +6,7 @@ const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult } = require('../services/commonService');
+const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue, CardMatchBetQueue, WalletCardMatchBetQueue, ExpertCardMatchBetQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
@@ -1801,14 +1801,21 @@ exports.profitLoss = async (req, res) => {
     let result, total, user;
     let userId = req.body.userId;
 
-    if (userId != "") {
+    if (userId) {
       user = await getUserById(userId, ["roleName"]);
     }
+
+    const queryColumns = profitLossPercentCol({ roleName: req.user.roleName });
+    let rateProfitLoss = `(Sum(CASE WHEN betPlaced.result = '${betResultStatus.LOSS}' and (betPlaced.betType = '${betType.BACK}' or betPlaced.betType = '${betType.LAY}') then ROUND(betPlaced.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN betPlaced.result = '${betResultStatus.WIN}' and (betPlaced.betType = '${betType.BACK}' or betPlaced.betType = '${betType.LAY}') then ROUND(betPlaced.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "aggregateAmount"`;
+    if (user?.roleName == userRoleConstant.user || reqUser?.roleName == userRoleConstant.user) {
+      rateProfitLoss = '-' + rateProfitLoss;
+    }
+
     if (user && user.roleName == userRoleConstant.user) {
       where.createBy = In([userId]);
-      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate, page, limit, keyword);
+      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate, page, limit, keyword, [rateProfitLoss]);
     } else {
-      let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
+      let childsId = await userService.getChildUser(reqUser.id);
       childsId = childsId.map(item => item.id)
       if (!childsId.length) {
         return SuccessResponse({
@@ -1816,7 +1823,8 @@ exports.profitLoss = async (req, res) => {
         }, req, res);
       }
       where.createBy = In(childsId);
-      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate, page, limit, keyword);
+     
+      result = await betPlacedService.allChildsProfitLoss(where, startDate, endDate, page, limit, keyword, [rateProfitLoss], true);
     }
     total = {};
     result?.profitLossData.forEach((arr, index) => {
