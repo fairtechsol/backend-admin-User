@@ -15,8 +15,9 @@ class CardResultTypeWin {
             case cardGameType.dt6:
                 return this.dragonTiger();
             case cardGameType.teen20:
-            case cardGameType.teen:
                 return this.teen20();
+            case cardGameType.teen:
+                return this.teenOneDay();
             case cardGameType.teen9:
                 return this.teenTest();
             case cardGameType.lucky7:
@@ -122,6 +123,18 @@ class CardResultTypeWin {
         }
     }
 
+    teenOneDay() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'Player A';
+            case '2':
+                return 'Player B';
+            case '0':
+                return 'Tie';
+            default:
+                return null;
+        }
+    }
     teenOpen() {
         const sid = this?.cardResult?.sid;
         const firstElement = sid.split('|')[0];
