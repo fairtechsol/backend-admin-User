@@ -17,6 +17,8 @@ class CardResultTypeWin {
             case cardGameType.teen20:
             case cardGameType.teen:
                 return this.teen20();
+            case cardGameType.teen9:
+                return this.teenTest();
             case cardGameType.lucky7:
             case cardGameType.lucky7eu:
                 return this.lucky7();
@@ -203,6 +205,19 @@ class CardResultTypeWin {
                 return 'Player I';
             case '0':
                 return 'Player Abandoned';
+            default:
+                return 'Unknown';
+        }
+    }
+
+    teenTest() {
+        switch (this.cardResult.win) {
+            case '11':
+                return 'Dragon';
+            case '21':
+                return 'Tiger';
+            case '31':
+                return 'Lion';
             default:
                 return 'Unknown';
         }
