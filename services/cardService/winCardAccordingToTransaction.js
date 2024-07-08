@@ -212,11 +212,11 @@ class CardResultTypeWin {
 
     teenTest() {
         switch (this.cardResult.win) {
-            case '1':
+            case '11':
                 return 'Dragon';
-            case '2':
+            case '21':
                 return 'Tiger';
-            case '3':
+            case '31':
                 return 'Lion';
             default:
                 return 'Unknown';
