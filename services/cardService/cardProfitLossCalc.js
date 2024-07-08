@@ -292,7 +292,7 @@ class CardProfitLoss {
         else if (parseInt(sid) == 13 || parseInt(sid) == 14 || parseInt(sid) == 27) {
             return { profitLoss: -Math.abs(parseFloat((parseFloat(bettingType == betType.BACK ? (((winAmount || 0) * partnership) / 100) : -(((lossAmount || 0) * partnership) / 100)) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: Math.abs(parseFloat(this.oldExposure || 0) + parseFloat(bettingType == betType.BACK ? -(winAmount || 0) : (lossAmount || 0))) };
         }
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(lossAmount || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0)*partnership/100).toFixed(2)) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     superOver() {

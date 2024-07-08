@@ -3,7 +3,7 @@ const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDo
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet } = require("./betPlacedService");
+const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard } = require("./betPlacedService");
 const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
@@ -493,18 +493,17 @@ exports.calculateProfitLossForRacingMatchToResult = async (betId, userId, matchD
   return redisData;
 }
 
-exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type) => {
-  let betPlace = await findAllPlacedBet({
+exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,partnership) => {
+  let betPlace = await getMatchBetPlaceWithUserCard({
     createBy: userId,
-    deleteReason: IsNull(),
     runnerId: runnerId
-  });
+  }, ["betPlaced", ...(partnership ? [`user.${partnership}`] : [])]);
   let oldPl = {
     profitLoss:{},
     exposure:0
   };
   for (let bets of betPlace) {
-    const data = new CardProfitLoss(type, oldPl.profitLoss[`${runnerId}_${bets?.browserDetail?.split("|")?.[0]}${redisKeys.card}`], { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: 100 }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
+    const data = new CardProfitLoss(type, oldPl.profitLoss[`${runnerId}_${bets?.browserDetail?.split("|")?.[0]}${redisKeys.card}`], { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: bets?.user?.[partnership] || 100 }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
     oldPl.profitLoss[`${runnerId}_${bets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`] = data.profitLoss;
     oldPl.exposure = data.exposure;
   }

@@ -3046,7 +3046,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
     else {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
-    
+
     if (bettingType == betType.BACK) {
       winAmount = (stake * (newCalculateOdd)) / 100;
       lossAmount = stake;
@@ -3347,6 +3347,7 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.card32eu:
     case cardGameType.superover:
     case cardGameType.cricketv3:
+    case cardGameType.war:
       return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
       return ((betObj.betType === betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
