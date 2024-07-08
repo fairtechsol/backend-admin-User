@@ -1,8 +1,8 @@
 const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain } = require("../config/contants");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole } = require("../config/contants");
 const { findAllPlacedBet } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis } = require("../services/redis/commonfunction");
-const { getChildsWithOnlyUserRole, getUsers } = require("../services/userService");
+const { getChildsWithOnlyUserRole, getUsers, getChildUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
@@ -192,9 +192,9 @@ exports.cardMatchDetails = async (req, res) => {
       });
       if (redisData?.filter((item) => !!item)?.length <= 0) {
         if (req.user.roleName != userRoleConstant.user) {
-          const adminUsers = await getUsers({ createBy: req.user.id }, ["id"]);
+          const adminUsers = await getChildUser(req.user.id);
           // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
-          redisData = await calculateProfitLossForCardMatchToResult(In(adminUsers?.map((item) => item?.id)), roundData?.t1?.[0]?.mid, type);
+          redisData = await calculateProfitLossForCardMatchToResult(In(adminUsers?.map((item) => item?.id)), roundData?.t1?.[0]?.mid, type,`${partnershipPrefixByRole[req.user.roleName]}Partnership`);
           let maxLoss = redisData?.exposure;
           redisData = redisData?.profitLoss;
           casinoDetails.profitLoss = redisData?.profitLoss;
