@@ -282,14 +282,15 @@ exports.getBetsWithUserRole = async (ids,where) => {
   return betPlaced;
 }
 
-exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, keyword) => {
-  let profitLoss = await BetPlaced.createQueryBuilder()
+exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, keyword, select) => {
+  let profitLoss = BetPlaced.createQueryBuilder()
+    .innerJoinAndMapOne("betPlaced.user", 'user', 'user', `betPlaced.createBy = user.id`)
     .where(where);
   if (startDate) {
-    profitLoss.andWhere(`"createdAt" >= :startDate`, { startDate: startDate });
+    profitLoss.andWhere(`"betPlaced"."createdAt" >= :startDate`, { startDate: startDate });
   }
   if (endDate) {
-    profitLoss.andWhere(`"createdAt" <= :endDate`, { endDate: endDate });
+    profitLoss.andWhere(`"betPlaced"."createdAt" <= :endDate`, { endDate: endDate });
   }
   if(keyword){
     profitLoss.andWhere(`betPlaced.eventType ILIKE :search`, { search: `%${keyword}%` });
@@ -298,7 +299,7 @@ exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, key
   profitLoss = profitLoss.select([
     `"marketType"`,
     `"eventType"`,
-    `(SUM(case when result = 'WIN' then "winAmount" else 0 end) - SUM(case when result = 'LOSS' then "lossAmount" else 0 end) ) as "aggregateAmount"`
+    ...select
   ])
     .groupBy([
       `"marketType"`,
