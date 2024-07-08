@@ -304,7 +304,7 @@ exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, key
     .groupBy([
       `"marketType"`,
       `"eventType"`,
-    ]);
+    ]).orderBy('betPlaced.eventType', 'ASC');
 
     if (page) {
       profitLoss = profitLoss.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
