@@ -3111,6 +3111,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
         }
         break;
       case cardGameType.card32eu:
+      case cardGameType.race20:
         if (parseInt(selectionId) <= 4) {
           selectionId = 1;
           betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;

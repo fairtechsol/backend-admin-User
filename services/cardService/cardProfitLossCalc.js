@@ -209,7 +209,7 @@ class CardProfitLoss {
     }
 
     poker6Player() {
-        const { lossAmount } = this.data;
+        const { lossAmount, partnership } = this.data;
         return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership) / 100) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
