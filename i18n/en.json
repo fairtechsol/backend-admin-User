@@ -71,6 +71,7 @@
     "oddNotAllowRacing": "Bet not accept rate over 200 on {gameType}",
     "validGameType":"Provide a valid game type.",
     "placingBetBeforeTime": "You can place bet before {min} minutes of match start time.",
-    "wrongCardBetType": "Wrong card bet type."
+    "wrongCardBetType": "Wrong card bet type.",
+    "placeBetAfter5":"Place bet after {time} seconds"
   }
 }
