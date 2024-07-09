@@ -20,7 +20,7 @@ const delayMatchOddBet = async (req, res, next) => {
             const userId = req.user.id; // Assuming user ID is available in req.user.id
             const { delayTime } = await getUser({ id: userId }, ["id", "delayTime"]); // Function to fetch user delay time from a service
 
-            const windowMs = parseFloat(delayTime) * 10000 || 5000;
+            const windowMs = parseFloat(delayTime) * 1000 ?? 5000;
 
             const currentTime = Date.now();
             const key = `rateLimit:${userId}`;
