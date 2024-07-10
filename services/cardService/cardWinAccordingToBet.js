@@ -224,7 +224,7 @@ class CardWinOrLose {
     teen20() {
         const { win, sid } = this.result;
 
-        if ((this.removeSpacesAndToLowerCase(this.betOnTeam) == "playera" && win == "1") || (this.removeSpacesAndToLowerCase(this.betOnTeam) == "playerb" && win == "2")) {
+        if ((this.removeSpacesAndToLowerCase(this.betOnTeam) == "playera" && win == "1") || (this.removeSpacesAndToLowerCase(this.betOnTeam) == "playerb" && win == "3")) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if ((this.removeSpacesAndToLowerCase(this.betOnTeam) == "pairplusa" && sid?.split(",")?.some(item => ["12", "13", "14", "15", "16"].includes(item))) || (this.removeSpacesAndToLowerCase(this.betOnTeam) == "pairplusb" && sid?.split(",")?.some(item => ["22", "23", "24", "25", "26"].includes(item)))) {
