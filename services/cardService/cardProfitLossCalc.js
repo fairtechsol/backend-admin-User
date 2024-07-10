@@ -44,8 +44,9 @@ class CardProfitLoss {
             case cardGameType.card32eu:
                 return this.card32B();
             case cardGameType.superover:
-            case cardGameType.cricketv3:
                 return this.superOver();
+            case cardGameType.cricketv3:
+                return this.fivefivecricket();
             default:
                 throw {
                     statusCode: 400,
@@ -292,7 +293,7 @@ class CardProfitLoss {
         else if (parseInt(sid) == 13 || parseInt(sid) == 14 || parseInt(sid) == 27) {
             return { profitLoss: -Math.abs(parseFloat((parseFloat(bettingType == betType.BACK ? (((winAmount || 0) * partnership) / 100) : -(((lossAmount || 0) * partnership) / 100)) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: Math.abs(parseFloat(this.oldExposure || 0) + parseFloat(bettingType == betType.BACK ? -(winAmount || 0) : (lossAmount || 0))) };
         }
-        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0)*partnership/100).toFixed(2)) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership / 100).toFixed(2)) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     superOver() {
@@ -301,8 +302,8 @@ class CardProfitLoss {
         let newProfitLoss = this.oldProfitLoss;
         if (!newProfitLoss) {
             newProfitLoss = {
-                1: 0,
-                2: 0
+                "eng": 0,
+                "rsa": 0
             }
         }
         else {
@@ -311,10 +312,10 @@ class CardProfitLoss {
 
         Object.keys(newProfitLoss)?.forEach((item) => {
 
-            if ((item == parseInt(sid) && bettingType == betType.BACK) || (item != parseInt(sid) && bettingType == betType.LAY)) {
+            if ((item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
                 newProfitLoss[item] += ((winAmount * partnership) / 100);
             }
-            else if ((item != parseInt(sid) && bettingType == betType.BACK) || (item == parseInt(sid) && bettingType == betType.LAY)) {
+            else if ((item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
                 newProfitLoss[item] -= ((lossAmount * partnership) / 100);
             }
 
@@ -324,6 +325,34 @@ class CardProfitLoss {
         return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
     }
 
+    fivefivecricket() {
+        const { bettingType, winAmount, lossAmount, playerName, partnership, sid } = this.data;
+        let oldProfitLossData = JSON.parse(this.oldProfitLoss || "{}");
+        let newProfitLoss = this.oldProfitLoss;
+        if (!newProfitLoss) {
+            newProfitLoss = {
+                "aus": 0,
+                "ind": 0
+            }
+        }
+        else {
+            newProfitLoss = { ...JSON.parse(newProfitLoss) };
+        }
+
+        Object.keys(newProfitLoss)?.forEach((item) => {
+
+            if ((item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
+                newProfitLoss[item] += ((winAmount * partnership) / 100);
+            }
+            else if ((item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
+                newProfitLoss[item] -= ((lossAmount * partnership) / 100);
+            }
+
+            newProfitLoss[item] = parseFloat((Number(newProfitLoss[item]) || 0.0).toFixed(2));
+        });
+
+        return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
+    }
     removeSpacesAndToLowerCase(str) {
         return str.replace(/\s+/g, '')?.toLowerCase();
     }

@@ -1,5 +1,5 @@
 const { In, Not, IsNull } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchBettingTeamRatesKey, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchBettingTeamRatesKey, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -493,18 +493,41 @@ exports.calculateProfitLossForRacingMatchToResult = async (betId, userId, matchD
   return redisData;
 }
 
-exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,partnership) => {
+exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type, partnership) => {
   let betPlace = await getMatchBetPlaceWithUserCard({
     createBy: userId,
     runnerId: runnerId
   }, ["betPlaced", ...(partnership ? [`user.${partnership}`] : [])]);
   let oldPl = {
-    profitLoss:{},
-    exposure:0
+    profitLoss: {},
+    exposure: 0
   };
   for (let bets of betPlace) {
-    const data = new CardProfitLoss(type, oldPl.profitLoss[`${runnerId}_${bets?.browserDetail?.split("|")?.[0]}${redisKeys.card}`], { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: bets?.user?.[partnership] || 100 }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
-    oldPl.profitLoss[`${runnerId}_${bets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`] = data.profitLoss;
+    const sid = bets?.browserDetail?.split("|")?.[1];
+    switch (type) {
+      case cardGameType.card32:
+      case cardGameType.teen:
+      case cardGameType.cricketv3:
+      case cardGameType.superover:
+        sid = 1;
+        break;
+      case cardGameType.poker:
+        if (parseInt(sid) <= 2) {
+          sid = 1;
+        }
+        break;
+      case cardGameType.card32eu:
+      case cardGameType.race20:
+        if (parseInt(sid) <= 4) {
+          sid = 1;
+        }
+        break;
+      default:
+        break;
+    }
+
+    const data = new CardProfitLoss(type, oldPl.profitLoss[`${runnerId}_${sid}${redisKeys.card}`], { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: bets?.user?.[partnership] || 100 }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
+    oldPl.profitLoss[`${runnerId}_${sid}${redisKeys.card}`] = data.profitLoss;
     oldPl.exposure = data.exposure;
   }
   return oldPl;
