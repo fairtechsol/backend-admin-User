@@ -3102,19 +3102,16 @@ exports.cardBettingBetPlaced = async (req, res) => {
       case cardGameType.cricketv3:
       case cardGameType.superover:
         selectionId = 1;
-        betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
         break;
       case cardGameType.poker:
         if (parseInt(selectionId) <= 2) {
           selectionId = 1;
-          betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
         }
         break;
       case cardGameType.card32eu:
       case cardGameType.race20:
         if (parseInt(selectionId) <= 4) {
           selectionId = 1;
-          betPlacedObj.browserDetail = `${browserDetail || req.headers['user-agent']}|${1}`;
         }
         break;
       default:
@@ -3298,12 +3295,13 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   else if (match?.type == cardGameType.dt6 && betObj?.teamName == "Tiger") {
     currData = roundData?.t2?.find((item) => item?.sid == 2);
   }
-  else if (match?.type == cardGameType.poker&&parseInt(selectionId) > 2) {
+  else if (match?.type == cardGameType.poker && parseInt(selectionId) > 2) {
       currData = roundData?.t3?.find((item) => item?.sid == selectionId);
   }
   else {
     currData = roundData?.t2?.find((item) => item?.sid == selectionId);
   }
+  
   if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "active" && currData?.status?.toLowerCase() != "active") {
     throw {
       statusCode: 400,

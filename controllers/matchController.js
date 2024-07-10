@@ -1,5 +1,5 @@
 const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole } = require("../config/contants");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType } = require("../config/contants");
 const { findAllPlacedBet } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getUsers, getChildUser } = require("../services/userService");
@@ -181,7 +181,18 @@ exports.cardMatchDetails = async (req, res) => {
     }
 
     if (casinoDetails) {
-      let cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
+      let cardRedisKeys ;
+      if (type == cardGameType.teen) {
+        cardRedisKeys = roundData?.t1?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
+      }
+      else if (type == cardGameType.poker) {
+        cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
+        cardRedisKeys = [...cardRedisKeys,...roundData?.t3?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`)];
+      }
+      else {
+        cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
+      }
+      
 
       let redisData = await getUserRedisKeys(req?.user?.id, cardRedisKeys);
       casinoDetails.profitLoss = {};
