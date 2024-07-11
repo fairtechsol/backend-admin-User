@@ -15,7 +15,7 @@ router.post('/matchBetting',apiLimiter,  isAuthenticate, delayMatchOddBet, valid
 router.post('/session', apiLimiter, isAuthenticate, validator(SessionBetPlacedValidator), sessionBetPlace);
 
 router.post('/raceBetting', apiLimiter, isAuthenticate,delayMatchOddBet, validator(RaceBetPlacedValidator), racingBettingBetPlaced);
-router.post('/cardBetting', apiLimiter, isAuthenticate, delayMatchOddBet, validator(CardBetPlacedValidator), cardBettingBetPlaced);
+router.post('/cardBetting', apiLimiter, isAuthenticate, validator(CardBetPlacedValidator), cardBettingBetPlaced);
 
 router.post('/deleteMultipleBet', deleteMultipleBet);
 router.post('/deleteMultipleBetForOther', deleteMultipleBetForOther);
