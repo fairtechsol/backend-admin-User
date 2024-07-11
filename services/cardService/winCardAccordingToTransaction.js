@@ -24,6 +24,7 @@ class CardResultTypeWin {
             case cardGameType.lucky7eu:
                 return this.lucky7();
             case cardGameType.card32:
+            case cardGameType.card32eu:
                 return this.card32();
             case cardGameType.dtl20:
                 return this.dragonTigerLion();

@@ -29,6 +29,8 @@ class CardWinOrLose {
                 return this.lucky7();
             case cardGameType.card32:
                 return this.card32();
+            case cardGameType.card32eu:
+                return this.card32B();
             case cardGameType.dtl20:
                 return this.dragonTigerLion();
             case cardGameType.teen:
@@ -381,7 +383,7 @@ class CardWinOrLose {
 
         const andarSet = new Set();
         const baharSet = new Set();
-        let i=0, j=0;
+        let i = 0, j = 0;
         while (i < andar?.length || j < bahar?.length) {
             if (j < bahar?.length) {
                 const baharCurrNumber = bahar[j]?.slice(0, -2);
@@ -432,7 +434,7 @@ class CardWinOrLose {
     }
     race20() {
         const { win, desc } = this.result;
-        
+
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
         const seperatedCardsData = desc.split("|");
         const point = parseInt((seperatedCardsData?.[1]?.match(/\d+/g) || []).map(Number));
@@ -475,6 +477,45 @@ class CardWinOrLose {
         const isWinningCondition = parseInt(sid) == parseInt(win);
 
         return ((isBackBet && isWinningCondition) || (isLayBet && !isWinningCondition)) ? { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount } : { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+
+    card32B() {
+        const { win, desc } = this.result;
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        const players = ["player8", "player9", "player10", "player11"];
+        const sid = this.betPlaceData?.browserDetail?.split("|")?.[1];
+        const allMarketRate = desc?.split("|");
+
+        if (players?.includes(betOnTeamKey) && parseInt(sid) == parseInt(win)) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey?.includes("odd") || betOnTeamKey?.includes("even")) {
+            const playerCardTypeObj = allMarketRate?.[1]?.split(",")?.reduce((prev, curr) => {
+                prev = { ...prev, [curr?.split(":")[0]]: this.removeSpacesAndToLowerCase(curr?.split(":")[1]) }
+                return prev;
+            }, {});
+
+            if (playerCardTypeObj[this.betOnTeam?.split(" ")?.[1]] == this.removeSpacesAndToLowerCase(this.betOnTeam?.split(" ")?.[2])) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        else if (["anythreecardblack", "anythreecardred", "twoblacktwored"]?.includes(betOnTeamKey)) {
+            const playerCardTypeObj = allMarketRate?.[2]?.split(",")?.reduce((prev, curr) => {
+                prev = { ...prev, [this.removeSpacesAndToLowerCase(curr?.split(":")[0])]: this.removeSpacesAndToLowerCase(curr?.split(":")[1]) }
+                return prev;
+            }, {});
+
+            if (betOnTeamKey == "anythreecardblack" && playerCardTypeObj["black"] == "yes" || betOnTeamKey == "anythreecardred" && playerCardTypeObj["red"] == "yes" || betOnTeamKey == "twoblacktwored" && playerCardTypeObj["2-2"] == "yes") {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        else if ((betOnTeamKey == "8&9total" && allMarketRate?.[4] == "8-9") || (betOnTeamKey == "10&11total" && allMarketRate?.[4] == "10-11")) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey?.includes("single") && allMarketRate[3] == betOnTeamKey[betOnTeamKey?.length - 1]) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 }
 
