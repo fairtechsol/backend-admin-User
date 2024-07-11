@@ -14,8 +14,8 @@ router.get('/session/profitLoss/:betId', isAuthenticate, getSessionProfitLoss);
 router.post('/matchBetting',apiLimiter,  isAuthenticate, delayMatchOddBet, validator(MatchBetPlacedValidator), matchBettingBetPlaced);
 router.post('/session', apiLimiter, isAuthenticate, validator(SessionBetPlacedValidator), sessionBetPlace);
 
-router.post('/raceBetting', apiLimiter, isAuthenticate, validator(RaceBetPlacedValidator), racingBettingBetPlaced);
-router.post('/cardBetting', apiLimiter, isAuthenticate, validator(CardBetPlacedValidator), cardBettingBetPlaced);
+router.post('/raceBetting', apiLimiter, isAuthenticate,delayMatchOddBet, validator(RaceBetPlacedValidator), racingBettingBetPlaced);
+router.post('/cardBetting', apiLimiter, isAuthenticate, delayMatchOddBet, validator(CardBetPlacedValidator), cardBettingBetPlaced);
 
 router.post('/deleteMultipleBet', deleteMultipleBet);
 router.post('/deleteMultipleBetForOther', deleteMultipleBetForOther);
@@ -23,6 +23,6 @@ router.post('/deleteMultipleBetForRace', deleteRaceMultipleBet);
 
 router.post('/profitLoss',isAuthenticate, profitLoss);
 router.get('/myMarket',isAuthenticate, getMyMarket);
-router.post('/other/matchBetting', apiLimiter, isAuthenticate, validator(MatchBetPlacedValidator), otherMatchBettingBetPlaced);
+router.post('/other/matchBetting', apiLimiter, isAuthenticate, delayMatchOddBet, validator(MatchBetPlacedValidator), otherMatchBettingBetPlaced);
 
 module.exports = router;

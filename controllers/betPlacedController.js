@@ -3301,7 +3301,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   else {
     currData = roundData?.t2?.find((item) => item?.sid == selectionId);
   }
-  
+
   if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "active" && currData?.status?.toLowerCase() != "active") {
     throw {
       statusCode: 400,
@@ -3355,9 +3355,9 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.superover:
     case cardGameType.cricketv3:
     case cardGameType.war:
-      return ((betObj.betType === betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
+      return ((betObj.betType == betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
-      return ((betObj.betType === betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
+      return ((betObj.betType == betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
     default:
       return betObj?.odds != currData?.rate
   }
