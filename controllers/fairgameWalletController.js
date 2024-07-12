@@ -210,7 +210,7 @@ exports.createSuperAdmin = async (req, res) => {
       superParentType,
       superParentId,
       remark,
-      delayTime: delayTime || 2,
+      delayTime: delayTime || 5,
       ...(isOldFairGame ? {
         sessionCommission,
         matchComissionType,

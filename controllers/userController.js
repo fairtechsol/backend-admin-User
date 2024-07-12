@@ -82,7 +82,7 @@ exports.createUser = async (req, res) => {
       superParentType: creator.superParentType,
       superParentId: creator.superParentId,
       remark,
-      delayTime: delayTime || 2
+      delayTime: delayTime || 5
     };
 
     const partnerships = await calculatePartnership(userData, creator);
