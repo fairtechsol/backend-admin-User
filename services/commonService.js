@@ -1,14 +1,15 @@
-const { In } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain } = require("../config/contants");
+const { In, Not, IsNull } = require("typeorm");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchBettingTeamRatesKey, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole } = require("./betPlacedService");
-const { getUserById, getChildsWithOnlyUserRole, getAllUsers } = require("./userService");
+const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard } = require("./betPlacedService");
+const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
 const { insertTransactions } = require("./transactionService");
 const { insertCommissions } = require("./commissionService");
+const { CardProfitLoss } = require("./cardService/cardProfitLossCalc");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -74,6 +75,7 @@ exports.calculateRate = async (teamRates, data, partnership = 100) => {
   }
   return newTeamRates;
 }
+
 exports.calculateExpertRate = async (teamRates, data, partnership = 100) => {
   let { teamA, teamB, teamC, winAmount, lossAmount, bettingType, betOnTeam } = data;
   let newTeamRates = {
@@ -117,6 +119,48 @@ exports.calculateExpertRate = async (teamRates, data, partnership = 100) => {
     teamB: Number(newTeamRates.teamB.toFixed(2)),
     teamC: Number(newTeamRates.teamC.toFixed(2))
   }
+  return newTeamRates;
+}
+
+exports.calculateRacingRate = async (teamRates, data, partnership = 100) => {
+  let { runners, winAmount, lossAmount, bettingType, runnerId } = data;
+  let newTeamRates = { ...teamRates };
+  runners.forEach((item) => {
+    if (!newTeamRates[item?.id]) {
+      newTeamRates[item?.id] = 0;
+    }
+
+    if ((item?.id == runnerId && bettingType == betType.BACK) || (item?.id != runnerId && bettingType == betType.LAY)) {
+      newTeamRates[item?.id] += ((winAmount * partnership) / 100);
+    }
+    else if ((item?.id != runnerId && bettingType == betType.BACK) || (item?.id == runnerId && bettingType == betType.LAY)) {
+      newTeamRates[item?.id] -= ((lossAmount * partnership) / 100);
+    }
+
+    newTeamRates[item?.id] = this.parseRedisData(item?.id, newTeamRates);
+  });
+
+  return newTeamRates;
+}
+
+exports.calculateRacingExpertRate = async (teamRates, data, partnership = 100) => {
+  let { runners, winAmount, lossAmount, bettingType, runnerId } = data;
+  let newTeamRates = { ...teamRates };
+
+  runners.forEach((item) => {
+    if (!newTeamRates[item?.id]) {
+      newTeamRates[item?.id] = 0;
+    }
+
+      if ((item?.id == runnerId && bettingType == betType.BACK) || (item?.id != runnerId && bettingType == betType.LAY)) {
+        newTeamRates[item?.id] -= ((winAmount * partnership) / 100);
+      }
+      else if ((item?.id != runnerId && bettingType == betType.BACK) || (item?.id == runnerId && bettingType == betType.LAY)) {
+        newTeamRates[item?.id] += ((lossAmount * partnership) / 100);
+      }
+
+    newTeamRates[item?.id] = this.parseRedisData(item?.id, newTeamRates);
+  });
   return newTeamRates;
 }
 
@@ -265,59 +309,44 @@ exports.calculateProfitLossSession = async (redisProfitLoss, betData, partnershi
 };
 
 exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds, oldUpperLimitOdds) => {
-  let betData = [];
-  let line = 1;
-  let maxLoss = 0.0;
-  let first = 0;
-  let last = 0;
-  if (betPlace && betPlace.length) {
-    // let latest_bet = betPlace[betPlace.length - 1].odds;
-    let oddsValues = betPlace.map(({ odds }) => odds)
-    if (oldLowerLimitOdds) {
-      first = oldLowerLimitOdds + 5;
-    } else {
-      first = Math.min(...oddsValues);
-    }
-    if (oldUpperLimitOdds) {
-      last = oldUpperLimitOdds - 5;
-    } else {
-      last = Math.max(...oddsValues);
-    }
-
-    let i = 0;
-    for (let j = first - 5 > 0 ? first - 5 : 0; j <= last + 5; j++) {
-      let profitLoss = 0.0;
-      for (let key in betPlace) {
-        let partnership = 100;
-        if (userPartnerShip) {
-          partnership = userPartnerShip;
-        }
-        if (betPlace[key]['betType'] == betType.NO && j < betPlace[key]['odds']) {
-          profitLoss = profitLoss + (betPlace[key]['winAmount'] * partnership / 100);
-        } else if (betPlace[key]['betType'] == betType.NO && j >= betPlace[key]['odds']) {
-          profitLoss = profitLoss - (betPlace[key]['lossAmount'] * partnership / 100);
-        } else if (betPlace[key]['betType'] == betType.YES && j < betPlace[key]['odds']) {
-          profitLoss = profitLoss - (betPlace[key]['lossAmount'] * partnership / 100);
-        } else if (betPlace[key]['betType'] == betType.YES && j >= betPlace[key]['odds']) {
-          profitLoss = profitLoss + (betPlace[key]['winAmount'] * partnership / 100);
-        }
-      }
-      if (maxLoss < Math.abs(profitLoss) && profitLoss < 0) {
-        maxLoss = Math.abs(profitLoss);
-      }
-      if (j == last) {
-        line = i;
-      }
-      profitLoss = Number(profitLoss.toFixed(2));
-      betData.push({
-        'odds': j,
-        'profitLoss': profitLoss
-      });
-      i++;
-    }
+  if (!Array.isArray(betPlace) || betPlace.length === 0) {
+    return {
+      betData: [],
+      line: 1,
+      maxLoss: 0.0,
+      total_bet: 0,
+      lowerLimitOdds: oldLowerLimitOdds ? oldLowerLimitOdds + 5 : undefined,
+      upperLimitOdds: oldUpperLimitOdds ? oldUpperLimitOdds - 5 : undefined
+    };
   }
-  maxLoss = Number(maxLoss.toFixed(2));
-  return { betData: betData, line: line, maxLoss: maxLoss, total_bet: betPlace.length, lowerLimitOdds: betData[0]?.odds, upperLimitOdds: betData[betData.length - 1]?.odds }
+
+  let oddsValues = betPlace.map(({ odds }) => odds);
+  let first = oldLowerLimitOdds ? oldLowerLimitOdds + 5 : Math.min(...oddsValues);
+  let last = oldUpperLimitOdds ? oldUpperLimitOdds - 5 : Math.max(...oddsValues);
+
+  let betData = [];
+  let maxLoss = 0.0;
+
+  for (let j = Math.max(first - 5, 0); j <= last + 5; j++) {
+    let profitLoss = 0.0;
+    for (let key in betPlace) {
+      let partnership = userPartnerShip || 100;
+      let bet = betPlace[key];
+      let isWinningBet = (bet.betType === betType.NO && j < bet.odds) || (bet.betType === betType.YES && j >= bet.odds);
+      profitLoss += isWinningBet ? (bet.winAmount * partnership / 100) : (-bet.lossAmount * partnership / 100);
+    }
+    maxLoss = Math.min(maxLoss, profitLoss);
+    betData.push({ odds: j, profitLoss: Number(profitLoss.toFixed(2)) });
+  }
+
+  return {
+    betData,
+    line: betData.length - 1,
+    maxLoss: Number(Math.abs(maxLoss).toFixed(2)),
+    total_bet: betPlace.length,
+    lowerLimitOdds: betData[0].odds,
+    upperLimitOdds: betData[betData.length - 1].odds
+  };
 };
 
 
@@ -371,6 +400,75 @@ exports.calculateRatesMatch = async (betPlace, partnerShip = 100, matchData) => 
   return { teamARate, teamBRate, teamCRate, teamNoRateTie, teamYesRateTie, teamNoRateComplete, teamYesRateComplete };
 }
 
+exports.calculateRatesOtherMatch = async (betPlace, partnerShip = 100, matchData) => {
+  let teamRates = {};
+
+  for (let placedBets of betPlace) {
+    const betType = placedBets?.marketType;
+    const profitLossKey = profitLossKeys[betType];
+    const teamRate = teamRates[profitLossKey] || { rates: {} };
+
+    let calculatedRates = await this.calculateRate(
+      {
+        teamA: teamRate?.rates?.a || 0,
+        teamB: teamRate?.rates?.b || 0,
+        teamC: matchData?.teamC && !matchesTeamName[betType] ? (teamRate?.rates?.c || 0) : 0,
+      },
+      {
+        teamA: matchesTeamName[betType]?.a ?? matchData?.teamA,
+        teamB: matchesTeamName[betType]?.b ?? matchData?.teamB,
+        teamC: !matchesTeamName[betType] ? matchData?.teamC : matchesTeamName[betType]?.c,
+        winAmount: placedBets?.winAmount,
+        lossAmount: placedBets?.lossAmount,
+        bettingType: placedBets?.betType,
+        betOnTeam: placedBets?.teamName
+      },
+      partnerShip
+    );
+
+    teamRates[profitLossKey] = {
+      rates: {
+        ...teamRate.rates,
+        a: calculatedRates.teamA,
+        b: calculatedRates.teamB,
+        ...(matchData?.teamC && !matchesTeamName[betType] ? { c: calculatedRates.teamC } : {}),
+      },
+      type: betType
+    };
+  }
+
+  return teamRates;
+}
+
+exports.calculateRatesRacingMatch = async (betPlace, partnerShip = 100, matchData) => {
+  let teamRates = {};
+  const { runners } = matchData;
+
+  for (let placedBets of betPlace) {
+    const matchId=placedBets?.matchId;
+    const teamRate = teamRates[`${matchId}${redisKeys.profitLoss}`] || runners.reduce((acc, key) => {
+      acc[key?.id] = 0;
+      return acc;
+    }, {});
+
+    let calculatedRates = await this.calculateRacingRate(
+      teamRate,
+      {
+        runners: runners,
+        winAmount: placedBets?.winAmount,
+        lossAmount: placedBets?.lossAmount,
+        bettingType: placedBets?.betType,
+        runnerId: placedBets?.runnerId
+      },
+      partnerShip
+    );
+
+    teamRates[`${matchId}${redisKeys.profitLoss}`] = calculatedRates;
+  }
+
+  return teamRates;
+}
+
 exports.calculateProfitLossForSessionToResult = async (betId, userId) => {
   let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, betId);
   let redisData = await this.calculatePLAllBet(betPlace, 100);
@@ -381,6 +479,58 @@ exports.calculateProfitLossForMatchToResult = async (betId, userId, matchData) =
   let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId));
   let redisData = await this.calculateRatesMatch(betPlace, 100, matchData);
   return redisData;
+}
+
+exports.calculateProfitLossForOtherMatchToResult = async (betId, userId, matchData) => {
+  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId), { eventType: In([gameType.football, gameType.tennis]) });
+  let redisData = await this.calculateRatesOtherMatch(betPlace, 100, matchData);
+  return redisData;
+}
+
+exports.calculateProfitLossForRacingMatchToResult = async (betId, userId, matchData) => {
+  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId), { eventType: In([gameType.horseRacing, gameType.greyHound]) });
+  let redisData = await this.calculateRatesRacingMatch(betPlace, 100, matchData);
+  return redisData;
+}
+
+exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type, partnership) => {
+  let betPlace = await getMatchBetPlaceWithUserCard({
+    createBy: userId,
+    runnerId: runnerId
+  }, ["betPlaced", ...(partnership ? [`user.${partnership}`] : [])]);
+  let oldPl = {
+    profitLoss: {},
+    exposure: 0
+  };
+  for (let bets of betPlace) {
+    const sid = bets?.browserDetail?.split("|")?.[1];
+    switch (type) {
+      case cardGameType.card32:
+      case cardGameType.teen:
+      case cardGameType.cricketv3:
+      case cardGameType.superover:
+        sid = 1;
+        break;
+      case cardGameType.poker:
+        if (parseInt(sid) <= 2) {
+          sid = 1;
+        }
+        break;
+      case cardGameType.card32eu:
+      case cardGameType.race20:
+        if (parseInt(sid) <= 4) {
+          sid = 1;
+        }
+        break;
+      default:
+        break;
+    }
+
+    const data = new CardProfitLoss(type, oldPl.profitLoss[`${runnerId}_${sid}${redisKeys.card}`], { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: bets?.user?.[partnership] || 100 }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
+    oldPl.profitLoss[`${runnerId}_${sid}${redisKeys.card}`] = data.profitLoss;
+    oldPl.exposure = data.exposure;
+  }
+  return oldPl;
 }
 
 exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
@@ -458,7 +608,7 @@ exports.findUserPartnerShipObj = async (user) => {
               response?.data
             );
           } catch (err) {
-            console.log(err);
+           
           }
         } else if (currentUser?.roleName == userRoleConstant.fairGameAdmin) {
           await traverseHierarchy(
@@ -496,7 +646,7 @@ exports.findUserPartnerShipObj = async (user) => {
  */
 exports.settingBetsDataAtLogin = async (user) => {
   if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id);
+    const bets = await getUserDistinctBets(user.id, { eventType: "cricket" });
     let sessionResult = {};
     let sessionExp = {};
     let matchResult = {};
@@ -563,18 +713,14 @@ exports.settingBetsDataAtLogin = async (user) => {
     let sessionResult = {};
     let sessionExp = {};
     let betResult = {
-      session: {
-
-      },
-      match: {
-
-      }
+      session: { },
+      match: { }
     };
 
     let matchResult = {};
     let matchExposure = {};
 
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id));
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: "cricket" });
     bets?.forEach((item) => {
       let itemData = {
         ...item,
@@ -663,7 +809,291 @@ exports.settingBetsDataAtLogin = async (user) => {
   }
 }
 
-exports.getUserProfitLossForUpperLevel = async (user) => {
+exports.settingOtherMatchBetsDataAtLogin = async (user) => {
+  if (user.roleName == userRoleConstant.user) {
+    const bets = await getUserDistinctBets(user.id, { eventType: In([gameType.tennis, gameType.football]) });
+    let sessionResult = {};
+    let sessionExp = {};
+    let matchResult = {};
+    let matchExposure = {};
+    for (let currBets of bets) {
+      if (currBets.marketBetType == marketBetType.SESSION) {
+        let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id);
+        sessionResult[`${currBets.betId}${redisKeys.profitLoss}`] = {
+          maxLoss: result.maxLoss,
+          upperLimitOdds: result.upperLimitOdds,
+          lowerLimitOdds: result.lowerLimitOdds,
+          betPlaced: result.betData,
+          totalBet: result.total_bet
+        };
+        sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] = parseFloat((parseFloat(sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] || 0) + result.maxLoss).toFixed(2));
+      }
+      else {
+        let apiResponse;
+        try {
+          let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + currBets.matchId + "?type=" + matchBettingType.quickbookmaker1;
+          apiResponse = await apiCall(apiMethod.get, url);
+        } catch (error) {
+          logger.info({
+            info: `Error at get match details in login.`
+          });
+          return;
+        }
+
+        let redisData = await this.calculateProfitLossForOtherMatchToResult([currBets.betId], user.id, apiResponse?.data?.match);
+        let maxLoss;
+        Object.values(redisData)?.forEach((plData) => {
+          maxLoss += Math.abs(Math.min(...Object.values(plData?.rates), 0));
+
+          matchResult = {
+            ...matchResult,
+            [otherEventMatchBettingRedisKey[plData?.type].a + currBets.matchId]: plData?.rates?.a,
+            [otherEventMatchBettingRedisKey[plData?.type].b + currBets.matchId]: plData?.rates?.b,
+            ...(plData?.rates?.c ? { [otherEventMatchBettingRedisKey[plData?.type].c + currBets.matchId]: plData?.rates?.c } : {}),
+          }
+        });
+
+
+        matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] || 0) + maxLoss).toFixed(2));
+      }
+
+    }
+    Object.keys(sessionResult)?.forEach((item) => {
+      sessionResult[item] = JSON.stringify(sessionResult[item]);
+    });
+    return {
+      ...matchExposure, ...matchResult, ...sessionExp, ...sessionResult
+    }
+  }
+  else {
+    const users = await getChildsWithOnlyUserRole(user.id);
+    let sessionResult = {};
+    let sessionExp = {};
+    let betResult = {
+      session: {
+
+      },
+      match: {
+
+      }
+    };
+
+    let matchResult = {};
+    let matchExposure = {};
+
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: In([gameType.tennis, gameType.football]) });
+    bets?.forEach((item) => {
+      let itemData = {
+        ...item,
+        winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
+        lossAmount: -parseFloat((parseFloat(item.lossAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2))
+      };
+      if (betResult.session[item.betId] || betResult.match[item.betId]) {
+        if (item.marketBetType == marketBetType.SESSION) {
+          betResult.session[item.betId].push(itemData);
+        }
+        else {
+          betResult.match[item.betId].push(itemData);
+
+        }
+      }
+      else {
+
+        if (item.marketBetType == marketBetType.SESSION) {
+          betResult.session[item.betId] = [itemData];
+        }
+        else {
+          betResult.match[item.betId] = [itemData];
+
+        }
+      }
+    });
+
+    for (const placedBet of Object.keys(betResult.session)) {
+
+      const betPlaceProfitLoss = await this.calculatePLAllBet(betResult.session[placedBet], 100);
+      sessionResult[`${placedBet}${redisKeys.profitLoss}`] = {
+        upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
+        lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
+        betPlaced: betPlaceProfitLoss?.betData,
+        maxLoss: betPlaceProfitLoss?.maxLoss,
+        totalBet: betPlaceProfitLoss?.total_bet
+      };
+      sessionExp[`${redisKeys.userSessionExposure}${betResult.session[placedBet]?.[0]?.matchId}`] = parseFloat((parseFloat(sessionExp[`${redisKeys.userSessionExposure}${betResult.session[placedBet]?.[0]?.matchId}`] || 0) + sessionResult?.[`${placedBet}${redisKeys.profitLoss}`].maxLoss).toFixed(2));
+
+    }
+
+    for (const placedBet of Object.keys(betResult.match)) {
+      const matchId = betResult.match[placedBet]?.[0]?.matchId;
+
+      let apiResponse;
+      try {
+        let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "?type=" + matchBettingType.quickbookmaker1;
+        apiResponse = await apiCall(apiMethod.get, url);
+      } catch (error) {
+        logger.info({
+          info: `Error at get match details in login.`
+        });
+        return;
+      }
+      let redisData = await this.calculateRatesOtherMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
+     let maxLoss;
+      Object.values(redisData)?.forEach((plData) => {
+        maxLoss += Math.abs(Math.min(...Object.values(plData?.rates), 0));
+
+        matchResult = {
+          ...matchResult,
+          [otherEventMatchBettingRedisKey[plData?.type].a + matchId]: plData?.rates?.a,
+          [otherEventMatchBettingRedisKey[plData?.type].b + matchId]: plData?.rates?.b,
+          ...(plData?.rates?.c ? { [otherEventMatchBettingRedisKey[plData?.type].c + matchId]: plData?.rates?.c } : {}),
+        }
+      });
+      matchExposure[`${redisKeys.userMatchExposure}${matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${matchId}`] || 0) + maxLoss).toFixed(2));
+
+    }
+    Object.keys(sessionResult)?.forEach((item) => {
+      sessionResult[item] = JSON.stringify(sessionResult[item]);
+    });
+    return {
+      ...matchExposure, ...matchResult, ...sessionExp, ...sessionResult
+    }
+  }
+}
+
+exports.settingRacingMatchBetsDataAtLogin = async (user) => {
+  if (user.roleName == userRoleConstant.user) {
+    const bets = await getUserDistinctBets(user.id, { eventType: In([gameType.horseRacing, gameType.greyHound]) });
+
+    let matchResult = {};
+    let matchExposure = {};
+    for (let currBets of bets) {
+
+      let apiResponse;
+      try {
+        let url = expertDomain + allApiRoutes.MATCHES.raceBettingDetail + currBets.matchId + "?type=" + racingBettingType.matchOdd;
+        apiResponse = await apiCall(apiMethod.get, url);
+      } catch (error) {
+        logger.info({
+          info: `Error at get match details in login.`
+        });
+        return;
+      }
+
+      let redisData = await this.calculateProfitLossForRacingMatchToResult([currBets.betId], user.id, apiResponse?.data);
+      let maxLoss=0;
+      Object.keys(redisData)?.forEach((key) => {
+        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
+        redisData[key]=JSON.stringify(redisData[key]);
+      });
+
+      matchResult = {
+        ...matchResult,
+        ...redisData
+      }
+
+      matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] || 0) + maxLoss).toFixed(2));
+
+    }
+    return {
+      ...matchExposure, ...matchResult
+    }
+  }
+  else {
+    const users = await getChildsWithOnlyUserRole(user.id);
+
+    let betResult = { match: {} };
+
+    let matchResult = {};
+    let matchExposure = {};
+
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: In([gameType.horseRacing, gameType.greyHound]) });
+    bets?.forEach((item) => {
+      let itemData = {
+        ...item,
+        winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
+        lossAmount: -parseFloat((parseFloat(item.lossAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2))
+      };
+      if (betResult.match[item.betId]) {
+        betResult.match[item.betId].push(itemData);
+      }
+      else {
+        betResult.match[item.betId] = [itemData];
+      }
+    });
+
+    for (const placedBet of Object.keys(betResult.match)) {
+      const matchId = betResult.match[placedBet]?.[0]?.matchId;
+
+      let apiResponse;
+      try {
+        let url = expertDomain + allApiRoutes.MATCHES.raceBettingDetail + matchId + "?type=" + racingBettingType.matchOdd;
+        apiResponse = await apiCall(apiMethod.get, url);
+      } catch (error) {
+        logger.info({
+          info: `Error at get match details in login.`
+        });
+        return;
+      }
+      let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
+      let maxLoss = 0;
+
+      Object.keys(redisData)?.forEach((items)=>{
+        maxLoss += Math.abs(Math.min(...Object.values(redisData[items] || {}), 0));
+        if(matchResult[items]){
+          Object.keys(redisData[items])?.forEach((matchResultData)=>{
+            matchResult[items][matchResultData] += parseFloat(parseFloat(redisData[items]?.[matchResultData]).toFixed(2));
+          });
+        }
+        else{
+          matchResult[items]=redisData[items];
+        }
+       });
+
+      matchExposure[`${redisKeys.userMatchExposure}${matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${matchId}`] || 0) + maxLoss).toFixed(2));
+    }
+    Object.keys(matchResult)?.forEach((key) => {
+      matchResult[key] = JSON.stringify(matchResult[key]);
+    });
+    return {
+      ...matchExposure, ...matchResult
+    }
+  }
+}
+
+exports.settingCasinoMatchBetsDataAtLogin = async (user) => {
+  let bets = [];
+
+  if (user.roleName == userRoleConstant.user) {
+     bets = await findAllPlacedBet({ marketBetType: marketBetType.CARD, result: In([betResultStatus.PENDING]), deleteReason: IsNull(), createBy: user.id });   
+  }
+  else {
+    const users = await getChildsWithOnlyUserRole(user.id);
+    bets = await getBetsWithUserRole(users?.map((item) => item.id), { marketBetType: marketBetType.CARD });
+    bets = bets?.map((item) => {
+      return {
+        ...item,
+        winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
+        lossAmount: -parseFloat((parseFloat(item.lossAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2))
+      }
+    });
+  }
+
+  let matchResult = {};
+  let matchExposure= {};
+  
+  for (let currBets of bets) {
+    
+    const newProfitLossAndExp = new CardProfitLoss(currBets.eventType, matchResult[`${currBets.runnerId}_${currBets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`], { bettingType: currBets?.betType, winAmount: currBets?.winAmount, lossAmount: currBets?.lossAmount, playerName: currBets?.teamName, partnership: 100 }, matchExposure[`${redisKeys.userMatchExposure}${currBets.runnerId}`]).getCardGameProfitLoss()
+    matchResult[`${currBets.runnerId}_${currBets?.browserDetail?.split("|")?.[1]}${redisKeys.card}`] = newProfitLossAndExp.profitLoss;
+    matchExposure[`${redisKeys.userMatchExposure}${currBets.runnerId}`] = parseFloat((newProfitLossAndExp.exposure).toFixed(2));
+
+  }
+  return {
+    ...matchExposure, ...matchResult
+  }
+}
+
+exports.getUserProfitLossForUpperLevel = async (user,matchId) => {
   let users = [];
   if (user.roleName == userRoleConstant.fairGameAdmin) {
     users = await getAllUsers({ superParentId: user.id });
@@ -675,7 +1105,7 @@ exports.getUserProfitLossForUpperLevel = async (user) => {
 
   let matchResult = {};
 
-  const bets = await getBetsWithUserRole(users?.map((item) => item.id));
+  const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, marketType: In([matchBettingType.bookmaker, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3, matchBettingType.matchOdd]) });
   bets?.forEach((item) => {
     let itemData = {
       ...item,
@@ -703,17 +1133,90 @@ exports.getUserProfitLossForUpperLevel = async (user) => {
       });
       return;
     }
-    let redisData = await this.calculateRatesMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
+    if (apiResponse?.data?.match?.matchType == gameType.cricket) {
+      let redisData = await this.calculateRatesMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
 
-    let teamARate = redisData?.teamARate ?? Number.MAX_VALUE;
-    let teamBRate = redisData?.teamBRate ?? Number.MAX_VALUE;
-    let teamCRate = redisData?.teamCRate ?? Number.MAX_VALUE;
-    matchResult = {
-      ...matchResult,
-      ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]: teamARate + (matchResult[redisKeys.userTeamARate + matchId] || 0) } : {}),
-      ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]: teamBRate + (matchResult[redisKeys.userTeamBRate + matchId] || 0) } : {}),
-      ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]: teamCRate + (matchResult[redisKeys.userTeamCRate + matchId] || 0) } : {}),
+      let teamARate = redisData?.teamARate ?? Number.MAX_VALUE;
+      let teamBRate = redisData?.teamBRate ?? Number.MAX_VALUE;
+      let teamCRate = redisData?.teamCRate ?? Number.MAX_VALUE;
+      matchResult = {
+        ...matchResult,
+        ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]: teamARate + (matchResult[redisKeys.userTeamARate + matchId] || 0) } : {}),
+        ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]: teamBRate + (matchResult[redisKeys.userTeamBRate + matchId] || 0) } : {}),
+        ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]: teamCRate + (matchResult[redisKeys.userTeamCRate + matchId] || 0) } : {}),
+      }
     }
+    else{
+      let redisData = await this.calculateRatesOtherMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
+     
+      Object.values(redisData)?.forEach((plData) => {
+
+        matchResult = {
+          ...matchResult,
+          [otherEventMatchBettingRedisKey[plData?.type].a + matchId]: plData?.rates?.a,
+          [otherEventMatchBettingRedisKey[plData?.type].b + matchId]: plData?.rates?.b,
+          ...(plData?.rates?.c ? { [otherEventMatchBettingRedisKey[plData?.type].c + matchId]: plData?.rates?.c } : {}),
+        }
+      });
+    }
+  }
+  return {
+    ...matchResult
+  }
+}
+
+exports.getUserProfitLossRacingForUpperLevel = async (user,matchId) => {
+  let users = [];
+  if (user.roleName == userRoleConstant.fairGameAdmin) {
+    users = await getAllUsers({ superParentId: user.id });
+  }
+  else {
+    users = await getChildsWithOnlyUserRole(user.id);
+  }
+  let betResult = { match: {} };
+
+  let matchResult = {};
+
+  const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, marketType: In([ racingBettingType.matchOdd]) });
+  bets?.forEach((item) => {
+    let itemData = {
+      ...item,
+      winAmount: -parseFloat((parseFloat(item.winAmount)).toFixed(2)),
+      lossAmount: -parseFloat((parseFloat(item.lossAmount)).toFixed(2))
+    };
+    if (betResult.match[item.betId]) {
+      betResult.match[item.betId].push(itemData);
+    }
+    else {
+      betResult.match[item.betId] = [itemData];
+    }
+  });
+
+  for (const placedBet of Object.keys(betResult.match)) {
+    const matchId = betResult.match[placedBet]?.[0]?.matchId;
+
+    let apiResponse;
+    try {
+      let url = expertDomain + allApiRoutes.MATCHES.raceBettingDetail + matchId + "?type=" +  racingBettingType.matchOdd;
+      apiResponse = await apiCall(apiMethod.get, url);
+    } catch (error) {
+      logger.info({
+        info: `Error at get match details in login.`
+      });
+      return;
+    }
+    let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
+
+     Object.keys(redisData)?.forEach((items)=>{
+      if(matchResult[items]){
+        Object.keys(redisData[items])?.forEach((matchResultData)=>{
+          matchResult[items][matchResultData] += parseFloat(parseFloat(redisData[items]?.[matchResultData]).toFixed(2));
+        });
+      }
+      else{
+        matchResult[items]=redisData[items];
+      }
+     });
   }
   return {
     ...matchResult
@@ -759,6 +1262,34 @@ exports.profitLossPercentCol = (body, queryColumns) => {
   return queryColumns;
 }
 
+
+exports.transactionPasswordAttempts=async (user)=>{
+  if (user?.transactionPasswordAttempts + 1 >= 11) {
+    await userBlockUnblock(user.id, user.createBy == user.id ? user.superParentId : user.createBy, true);
+
+    if (user?.createBy == user.id) {
+      await apiCall(
+        apiMethod.post,
+        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+        {
+          userId: user.id, userBlock: true, parentId: user?.superParentId, autoBlock: false
+        }
+      ).catch(error => {
+        logger.error({
+          error: `Error at block user in tp.`,
+          stack: error.stack,
+          message: error.message,
+        });
+        throw error
+      });
+    }
+    this.forceLogoutUser(user.id);
+    await updateUser(user.id, { transactionPasswordAttempts: 0 });
+  }
+  else{
+    await userPasswordAttempts(user.id);
+  }
+}
 exports.insertBulkTransactions = async (bulkWalletRecord) => {
   const chunkSize = 5000;
   const totalRecords = bulkWalletRecord.length;
@@ -826,4 +1357,9 @@ exports.childIdquery = async (user, searchId) => {
     }
   }
   return subquery;
+}
+
+exports.extractNumbersFromString = (str) => {
+  const matches = str.match(/\d+(\.\d+)?/);
+  return matches ? parseFloat(matches[0]) : null;
 }

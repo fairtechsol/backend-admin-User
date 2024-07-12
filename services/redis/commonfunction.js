@@ -1,11 +1,12 @@
 const { redisKeys } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
+const externalRedis = require("../../config/externalRedisConnection");
 
 exports.updateSessionExposure = async (userId, matchId, value) => {
   await internalRedis.hset(userId, `${matchId}_sessionExposure`, value);
 };
 exports.updateMatchExposure = async (userId, matchId, value) => {
-  await internalRedis.hset(userId, redisKeys.userMatchExposure+matchId, value);
+  await internalRedis.hset(userId, redisKeys.userMatchExposure + matchId, value);
 };
 
 exports.getUserRedisData = async (userId)=>{
@@ -61,4 +62,28 @@ exports.getUserRedisKeys = async (userId,keys)=>{
 
   // Return the user data as an object or null if no data is found
   return  userData;
+}
+
+exports.getUserRedisSingleKey = async (userId,key)=>{
+  // Retrieve all user data for the match from Redis
+  const userData = await internalRedis.hget(userId,key);
+
+  // Return the user data as an object or null if no data is found
+  return  userData;
+}
+
+exports.setCardBetPlaceRedis = async (mid,key,value)=>{
+  await externalRedis.hincrbyfloat(`${mid}${redisKeys.card}`, key, value);
+}
+
+exports.deleteHashKeysByPattern = async (key,pattern) => {
+  let cursor = '0';
+  do {
+    const result = await internalRedis.hscan(key, cursor, 'MATCH', pattern);
+    cursor = result[0];
+    const keys = result[1];
+    for (const keyData of keys) {
+      await internalRedis.hdel(key, keyData);
+    }
+  } while (cursor !== '0');
 }

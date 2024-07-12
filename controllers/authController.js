@@ -2,6 +2,7 @@ const {
   userRoleConstant,
   redisTimeOut,
   differLoginTypeByRoles,
+  jwtSecret,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -11,7 +12,7 @@ const {
   getUserWithUserBalance,
 } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin } = require("../services/commonService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
 
@@ -51,7 +52,8 @@ const setUserDetailsRedis = async (user) => {
   if (!redisUserData) {
     // Fetch and set betting data at login
     let betData = await settingBetsDataAtLogin(user);
-
+    let otherMatchBetData = await settingOtherMatchBetsDataAtLogin(user);
+    let racingMatchData = await settingRacingMatchBetsDataAtLogin(user);
     // Set user details and partnerships in Redis
     await updateUserDataRedis(user.id, {
       exposure: user?.userBal?.exposure || 0,
@@ -61,12 +63,10 @@ const setUserDetailsRedis = async (user) => {
       currentBalance: user?.userBal?.currentBalance || 0,
       roleName: user.roleName,
       ...(betData || {}),
-      ...(user.roleName === userRoleConstant.user
-        ? {
-          partnerShips: await findUserPartnerShipObj(user),
-          userRole: user.roleName,
-        }
-        : {}),
+      ...(otherMatchBetData || {}),
+      ...(racingMatchData|| {}),
+      partnerShips: await findUserPartnerShipObj(user),
+      userRole: user.roleName,
     });
 
     // Expire user data in Redis
@@ -84,7 +84,7 @@ const setUserDetailsRedis = async (user) => {
 exports.login = async (req, res) => {
   try {
     const { password, loginType } = req.body;
-    const userName = req.body.userName.trim();
+    const userName = req.body.userName;
     const user = await validateUser(userName, password);
 
     if (user?.error) {
@@ -166,12 +166,12 @@ exports.login = async (req, res) => {
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, roleName: user.roleName, userName: user.userName },
-      process.env.JWT_SECRET || "secret"
+      jwtSecret
     );
 
     // checking transition password
     const isTransPasswordCreated = Boolean(user.transPassword);
-    const forceChangePassword = !Boolean(user.loginAt);
+    const forceChangePassword = !user.loginAt;
 
     if (!forceChangePassword) {
       userLoginAtUpdate(user.id);
@@ -212,11 +212,6 @@ exports.logout = async (req, res) => {
   try {
     // Get the user from the request object
     const user = req.user;
-
-    // If the user is an expert, remove their ID from the "expertLoginIds" set in Redis
-    if (user.roleName === userRoleConstant.expert) {
-      await internalRedis.srem("expertLoginIds", user.id);
-    }
 
     // Remove the user's token from Redis using their ID as the key
     await internalRedis.del(user.id);

@@ -1,9 +1,10 @@
 const jwt = require("jsonwebtoken");
 const internalRedis = require("../config/internalRedisConnection");
+const { jwtSecret } = require("../config/contants");
 require("dotenv").config();
 
 function verifyToken(token) {
-  const decodedUser = jwt.verify(token, process.env.JWT_SECRET || "secret");
+  const decodedUser = jwt.verify(token, jwtSecret);
   return decodedUser ?? false;
 }
 

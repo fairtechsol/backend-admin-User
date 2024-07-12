@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, declareMatchResult, unDeclareMatchResult, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss } = require("../controllers/fairgameWalletController");
+const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, declareMatchResult, unDeclareMatchResult, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss, declareOtherMatchResult, unDeclareOtherMatchResult, declarRaceMatchResult, unDeclareRaceMatchResult, getUsersRacingProfitLoss, declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword } = require("../validators/fairgameWalletValidator");
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
@@ -14,11 +14,22 @@ router.post("/update/exposure", validator(SuperAdminExposureLimit), setExposureL
 router.post("/update/creditReference", validator(SuperAdminCreditReference), setCreditReferrenceSuperAdmin);
 router.post("/lockUnlock", validator(SuperAdminLockUnlock), lockUnlockSuperAdmin);
 router.post("/changePassword", validator(SuperAdminChangePassword), changePasswordSuperAdmin);
+
 router.post("/declare/result/session",  declareSessionResult);
 router.post("/declare/noResult/session",  declareSessionNoResult);
 router.post("/unDeclare/result/session",  unDeclareSessionResult);
+
 router.post("/declare/result/match",  declareMatchResult);
 router.post("/unDeclare/result/match",  unDeclareMatchResult);
+
+router.post("/declare/result/other/match", declareOtherMatchResult);
+router.post("/unDeclare/result/other/match",  unDeclareOtherMatchResult);
+
+router.post("/declare/result/race/match", declarRaceMatchResult);
+router.post("/unDeclare/result/race/match",  unDeclareRaceMatchResult);
+
+router.post("/declare/result/card/match", declarCardMatchResult);
+
 router.get("/getBet", getBetWallet);
 router.get("/user/exist", isUserExist);
 router.post("/total/profitLoss", totalProfitLossWallet);
@@ -26,6 +37,10 @@ router.post("/total/matchWise/profitLoss", totalProfitLossByMatch);
 router.post("/total/bet/profitLoss", getResultBetProfitLoss);
 router.post("/total/session/profitLoss", getSessionBetProfitLoss);
 router.post("/userwise/profitLoss", getUserWiseTotalProfitLoss);
+
+router.post("/card/total/profitLoss", totalProfitLossCardsWallet);
+router.post("/card/total/matchWise/profitLoss", totalProfitLossByRoundCards);
+router.post("/card/total/bet/profitLoss", getCardResultBetProfitLoss);
 
 router.get("/commissionMatch/:userId", getCommissionReportsMatch);
 router.get("/commissionBetPlaced/:userId", getCommissionBetPlaced);
@@ -35,7 +50,10 @@ router.get("/child/totalBalance", getTotalUserListBalance);
 router.get("/users/balanceSum/:id", getAllUserBalance);
 router.post("/userMatchLock", userMatchLock);
 router.post("/settle/commission", validator(settleCommission), settleCommissions);
+
 router.get("/user/profitLossData/:matchId", getUsersProfitLoss);
+router.get("/user/profitLossData/race/:matchId", getUsersRacingProfitLoss);
+
 router.post("/user/exposureLimitCheck", setExposureLimitByFGAdmin);
 router.post("/check/userBalance", checkUserBalance);
 router.delete("/user/delete/:id", deleteWalletUsers);
