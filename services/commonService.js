@@ -7,6 +7,8 @@ const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets,
 const { getUserById, getChildsWithOnlyUserRole, getAllUsers } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
+const { insertTransactions } = require("./transactionService");
+const { insertCommissions } = require("./commissionService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -283,9 +285,9 @@ exports.calculatePLAllBet = async (betPlace, userPartnerShip, oldLowerLimitOdds,
     }
 
     let i = 0;
-    for (var j = first - 5 > 0 ? first - 5 : 0; j <= last + 5; j++) {
+    for (let j = first - 5 > 0 ? first - 5 : 0; j <= last + 5; j++) {
       let profitLoss = 0.0;
-      for (var key in betPlace) {
+      for (let key in betPlace) {
         let partnership = 100;
         if (userPartnerShip) {
           partnership = userPartnerShip;
@@ -537,20 +539,20 @@ exports.settingBetsDataAtLogin = async (user) => {
         maxLoss = (Math.abs(Math.min(teamARate, teamBRate, isNaN(teamCRate) ? 0 : teamCRate, 0)) + Math.abs(Math.min(teamNoRateTie, teamYesRateTie, 0)) + Math.abs(Math.min(teamNoRateComplete, teamYesRateComplete, 0))) || 0;
         matchResult = {
           ...matchResult,
-          ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]:parseFloat(parseFloat((matchResult[redisKeys.userTeamARate + matchId]||0)+ teamARate).toFixed(2)) } : {}),
-          ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]:parseFloat(parseFloat((matchResult[redisKeys.userTeamBRate + matchId]||0)+ teamBRate).toFixed(2)) } : {}),
-          ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]:parseFloat(parseFloat((matchResult[redisKeys.userTeamCRate + matchId]||0)+ teamCRate).toFixed(2)) } : {}),
-          ...(teamYesRateTie != Number.MAX_VALUE && teamYesRateTie != null && teamYesRateTie != undefined ? { [redisKeys.yesRateTie + matchId]:parseFloat(parseFloat((matchResult[redisKeys.yesRateTie + matchId]||0)+ teamYesRateTie).toFixed(2)) } : {}),
-          ...(teamNoRateTie != Number.MAX_VALUE && teamNoRateTie != null && teamNoRateTie != undefined ? { [redisKeys.noRateTie + matchId]:parseFloat(parseFloat((matchResult[redisKeys.noRateTie + matchId]||0)+ teamNoRateTie).toFixed(2)) } : {}),
-          ...(teamYesRateComplete != Number.MAX_VALUE && teamYesRateComplete != null && teamYesRateComplete != undefined ? { [redisKeys.yesRateComplete + matchId]:parseFloat(parseFloat((matchResult[redisKeys.yesRateComplete + matchId]||0)+ teamYesRateComplete).toFixed(2)) } : {}),
-          ...(teamNoRateComplete != Number.MAX_VALUE && teamNoRateComplete != null && teamNoRateComplete != undefined ? { [redisKeys.noRateComplete + matchId]:parseFloat(parseFloat((matchResult[redisKeys.noRateComplete + matchId]||0)+ teamNoRateComplete).toFixed(2)) } : {})
+          ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]: parseFloat(parseFloat((matchResult[redisKeys.userTeamARate + matchId] || 0) + teamARate).toFixed(2)) } : {}),
+          ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]: parseFloat(parseFloat((matchResult[redisKeys.userTeamBRate + matchId] || 0) + teamBRate).toFixed(2)) } : {}),
+          ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]: parseFloat(parseFloat((matchResult[redisKeys.userTeamCRate + matchId] || 0) + teamCRate).toFixed(2)) } : {}),
+          ...(teamYesRateTie != Number.MAX_VALUE && teamYesRateTie != null && teamYesRateTie != undefined ? { [redisKeys.yesRateTie + matchId]: parseFloat(parseFloat((matchResult[redisKeys.yesRateTie + matchId] || 0) + teamYesRateTie).toFixed(2)) } : {}),
+          ...(teamNoRateTie != Number.MAX_VALUE && teamNoRateTie != null && teamNoRateTie != undefined ? { [redisKeys.noRateTie + matchId]: parseFloat(parseFloat((matchResult[redisKeys.noRateTie + matchId] || 0) + teamNoRateTie).toFixed(2)) } : {}),
+          ...(teamYesRateComplete != Number.MAX_VALUE && teamYesRateComplete != null && teamYesRateComplete != undefined ? { [redisKeys.yesRateComplete + matchId]: parseFloat(parseFloat((matchResult[redisKeys.yesRateComplete + matchId] || 0) + teamYesRateComplete).toFixed(2)) } : {}),
+          ...(teamNoRateComplete != Number.MAX_VALUE && teamNoRateComplete != null && teamNoRateComplete != undefined ? { [redisKeys.noRateComplete + matchId]: parseFloat(parseFloat((matchResult[redisKeys.noRateComplete + matchId] || 0) + teamNoRateComplete).toFixed(2)) } : {})
         }
         matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] || 0) + maxLoss).toFixed(2));
       }
 
     }
-    Object.keys(sessionResult)?.forEach((item)=>{
-      sessionResult[item]=JSON.stringify(sessionResult[item]);
+    Object.keys(sessionResult)?.forEach((item) => {
+      sessionResult[item] = JSON.stringify(sessionResult[item]);
     });
     return {
       ...matchExposure, ...matchResult, ...sessionExp, ...sessionResult
@@ -579,7 +581,7 @@ exports.settingBetsDataAtLogin = async (user) => {
         winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
         lossAmount: -parseFloat((parseFloat(item.lossAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2))
       };
-      if (betResult.session[item.betId]||betResult.match[item.betId]) {
+      if (betResult.session[item.betId] || betResult.match[item.betId]) {
         if (item.marketBetType == marketBetType.SESSION) {
           betResult.session[item.betId].push(itemData);
         }
@@ -652,8 +654,8 @@ exports.settingBetsDataAtLogin = async (user) => {
       matchExposure[`${redisKeys.userMatchExposure}${matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${matchId}`] || 0) + maxLoss).toFixed(2));
 
     }
-    Object.keys(sessionResult)?.forEach((item)=>{
-      sessionResult[item]=JSON.stringify(sessionResult[item]);
+    Object.keys(sessionResult)?.forEach((item) => {
+      sessionResult[item] = JSON.stringify(sessionResult[item]);
     });
     return {
       ...matchExposure, ...matchResult, ...sessionExp, ...sessionResult
@@ -661,12 +663,12 @@ exports.settingBetsDataAtLogin = async (user) => {
   }
 }
 
-exports.getUserProfitLossForUpperLevel = async (user)=>{
-  let users=[];
+exports.getUserProfitLossForUpperLevel = async (user) => {
+  let users = [];
   if (user.roleName == userRoleConstant.fairGameAdmin) {
     users = await getAllUsers({ superParentId: user.id });
   }
-  else{
+  else {
     users = await getChildsWithOnlyUserRole(user.id);
   }
   let betResult = { match: {} };
@@ -755,4 +757,73 @@ exports.profitLossPercentCol = (body, queryColumns) => {
       break;
   }
   return queryColumns;
+}
+
+exports.insertBulkTransactions = async (bulkWalletRecord) => {
+  const chunkSize = 5000;
+  const totalRecords = bulkWalletRecord.length;
+  for (let i = 0; i < totalRecords; i += chunkSize) {
+    const chunk = bulkWalletRecord.slice(i, i + chunkSize);
+    await insertTransactions(chunk);
+  }
+}
+
+exports.insertBulkCommissions = async (bulkWalletRecord) => {
+  const chunkSize = 5000;
+  const totalRecords = bulkWalletRecord.length;
+  for (let i = 0; i < totalRecords; i += chunkSize) {
+    const chunk = bulkWalletRecord.slice(i, i + chunkSize);
+    await insertCommissions(chunk);
+  }
+}
+exports.getRedisKeys = (matchBetType, matchId, redisKeys) => {
+  let teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey;
+
+  if (matchBetType === matchBettingType.tiedMatch1 || matchBetType === matchBettingType.tiedMatch2) {
+    teamArateRedisKey = redisKeys.yesRateTie + matchId;
+    teamBrateRedisKey = redisKeys.noRateTie + matchId;
+    teamCrateRedisKey = null;
+  } else if (matchBetType === matchBettingType.completeMatch || matchBetType === matchBettingType.completeManual) {
+    teamArateRedisKey = redisKeys.yesRateComplete + matchId;
+    teamBrateRedisKey = redisKeys.noRateComplete + matchId;
+    teamCrateRedisKey = null;
+  } else {
+    teamArateRedisKey = redisKeys.userTeamARate + matchId;
+    teamBrateRedisKey = redisKeys.userTeamBRate + matchId;
+    teamCrateRedisKey = redisKeys.userTeamCRate + matchId;
+  }
+
+  return { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey };
+}
+exports.parseRedisData = (redisKey, userRedisData) => {
+  return parseFloat((Number(userRedisData[redisKey]) || 0.0).toFixed(2));
+};
+exports.childIdquery = async (user, searchId) => {
+  let subquery;
+  if (user.roleName === userRoleConstant.user) {
+    subquery = `'${user.id}'`
+  }
+  else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
+    subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}')`;
+
+  } else {
+    let userId = searchId || user.id;
+
+    if (user.roleName === userRoleConstant.fairGameAdmin && !searchId) {
+      subquery = `(SELECT id FROM "users" WHERE "superParentId" = '${user.id}' AND "roleName" = '${userRoleConstant.user}')`;
+
+    } else {
+      const recursiveSubquery = `
+      WITH RECURSIVE p AS (
+        SELECT * FROM "users" WHERE "users"."id" = '${userId}'
+        UNION
+        SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+      )
+      SELECT "id" FROM p WHERE "deletedAt" IS NULL AND "roleName" = '${userRoleConstant.user}'
+    `;
+      subquery = `(${recursiveSubquery})`;
+
+    }
+  }
+  return subquery;
 }
