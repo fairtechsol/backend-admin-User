@@ -1950,7 +1950,7 @@ exports.declareMatchResult = async (req, res) => {
           myProfitLoss: -value["myProfitLoss"],
           exposure: -value["exposure"],
         });
-        await deleteKeyFromUserRedis(key, redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId);
+        await deleteKeyFromUserRedis(key, redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId,`${redisKeys.userSessionExposure}${matchId}`);
       }
 
       sendMessageToUser(key, socketData.matchResult, {
@@ -2243,7 +2243,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     });
 
 
-    await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId);
+    await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId, `${redisKeys.userSessionExposure}${matchId}`);
 
     if (user.user.createBy === user.user.id) {
       superAdminData[user.user.id] = {
