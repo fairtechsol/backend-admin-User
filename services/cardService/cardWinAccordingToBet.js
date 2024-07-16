@@ -487,7 +487,7 @@ class CardWinOrLose {
         const sid = this.betPlaceData?.browserDetail?.split("|")?.[1];
         const allMarketRate = desc?.split("|");
 
-        if (players?.includes(betOnTeamKey) && parseInt(sid) == parseInt(win)) {
+        if (players?.includes(betOnTeamKey) && ((parseInt(sid) == parseInt(win) && this.betType == betType.BACK) || parseInt(sid) != parseInt(win) && this.betType == betType.LAY)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if (betOnTeamKey?.includes("odd") || betOnTeamKey?.includes("even")) {
@@ -506,7 +506,13 @@ class CardWinOrLose {
                 return prev;
             }, {});
 
-            if (betOnTeamKey == "anythreecardblack" && playerCardTypeObj["black"] == "yes" || betOnTeamKey == "anythreecardred" && playerCardTypeObj["red"] == "yes" || betOnTeamKey == "twoblacktwored" && playerCardTypeObj["2-2"] == "yes") {
+            if ((betOnTeamKey == "anythreecardblack" && ((playerCardTypeObj["black"] == "yes" && this.betType == betType.BACK) || (playerCardTypeObj["black"] != "yes" && this.betType == betType.LAY)))) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+            else if ((betOnTeamKey == "anythreecardred" && ((playerCardTypeObj["red"] == "yes" && this.betType == betType.BACK) || (playerCardTypeObj["red"] != "yes" && this.betType == betType.LAY)))) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+            else if ((betOnTeamKey == "twoblacktwored" && ((playerCardTypeObj["2-2"] == "yes" && this.betType == betType.BACK) || (playerCardTypeObj["2-2"] != "yes" && this.betType == betType.LAY)))) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
         }
