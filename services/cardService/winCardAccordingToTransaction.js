@@ -183,7 +183,7 @@ class CardResultTypeWin {
     }
 
     casinoWar() {
-        return 'Player abandoned';
+        return `Player ${this.cardResult.sid}`;
     }
     race20() {
         switch (this.cardResult.win) {
