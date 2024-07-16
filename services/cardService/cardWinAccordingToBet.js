@@ -417,6 +417,7 @@ class CardWinOrLose {
         const { sid, cards } = this.result;
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
         const cardsData = cards?.split(",");
+        const cardNumber = cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(0, -2);
 
         if (betOnTeamKey?.includes("winner") && sid?.includes(betOnTeamKey?.[betOnTeamKey?.length - 1])) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
@@ -424,7 +425,7 @@ class CardWinOrLose {
         else if ((betOnTeamKey?.includes("black") && cardGameShapeColor[cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(-2)] == "black") || (betOnTeamKey?.includes("red") && cardGameShapeColor[cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(-2)] == "red")) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if ((betOnTeamKey?.includes("odd") && parseInt(cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(0, -2)) % 2 == 1) || (betOnTeamKey?.includes("even") && parseInt(cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(0, -2)) % 2 == 0)) {
+        else if ((betOnTeamKey?.includes("odd") && parseInt(cardsNo[cardNumber] || cardNumber) % 2 == 1) || (betOnTeamKey?.includes("even") && parseInt(cardsNo[cardNumber] || cardNumber) % 2 == 0)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if ((cardGameShapeCode[cardsData[parseInt(betOnTeamKey?.[betOnTeamKey?.length - 1]) - 1]?.slice(-2)] == betOnTeamKey?.slice(0, -1))) {
