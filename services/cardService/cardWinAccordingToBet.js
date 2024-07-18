@@ -302,7 +302,7 @@ class CardWinOrLose {
     }
     poker2020() {
         const { sid } = this.result;
-        const selectionId = this.betPlaceData?.browserDetail?.split("|")[betPlaceData?.browserDetail?.split("|")?.length - 1];
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
 
         if (sid?.split(",")?.includes(selectionId)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
@@ -312,6 +312,11 @@ class CardWinOrLose {
 
     poker() {
         const { sid, cards, win } = this.result;
+
+        if (parseInt(win) == 0) {
+            return { result: betResultStatus.TIE, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
         const cardsArray = cards?.split(",");
         const winSid = sid?.split(",");
@@ -357,22 +362,30 @@ class CardWinOrLose {
         else if (betOnTeamKey == "playera2cardbonus") {
             const conditions = bonus2CardCondition(0);
             const result = conditions.find(({ check }) => check);
-            return result ? calculateWinAmount(result.multiplier) : null;
+            if (result) {
+                return calculateWinAmount(result.multiplier)
+            }
         }
         else if (betOnTeamKey == "playerb2cardbonus") {
             const conditions = bonus2CardCondition(2);
             const result = conditions.find(({ check }) => check);
-            return result ? calculateWinAmount(result.multiplier) : null;
+            if (result) {
+                return calculateWinAmount(result.multiplier)
+            }
         }
         else if (betOnTeamKey == "playera7cardbonus") {
             const conditions = bonus7CardCondition(1);
             const result = conditions.find(({ check }) => check);
-            return result ? calculateWinAmount(result.multiplier) : null;
+            if (result) {
+                return calculateWinAmount(result.multiplier)
+            }
         }
         else if (betOnTeamKey == "playerb7cardbonus") {
             const conditions = bonus2CardCondition(2);
             const result = conditions.find(({ check }) => check);
-            return result ? calculateWinAmount(result.multiplier) : null;
+            if (result) {
+                return calculateWinAmount(result.multiplier)
+            }
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
