@@ -5915,3 +5915,14 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
 
+exports.changeBetsDeleteReason = async (req, res) => {
+  try {
+    let { deleteReason, betIds } = req.body;
+
+    await updatePlaceBet({ id: In(betIds), deleteReason: Not(IsNull()) }, { deleteReason: deleteReason });
+
+    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "Delete bet reason" } } }, req, res);
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
