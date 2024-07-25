@@ -3309,7 +3309,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
       }
     };
   }
-  else if (match?.type == cardGameType.teen9 && ((betObj?.betOnTeam[0]?.toLowerCase() == "t" && !currData?.tstatus) || (betObj?.betOnTeam[0]?.toLowerCase() == "l" && !currData?.lstatus) || (betObj?.betOnTeam[0]?.toLowerCase() == "d" && !currData?.dstatus))) {
+  else if (match?.type == cardGameType.teen9 && ((betObj?.teamName?.[0]?.toLowerCase() == "t" && !currData?.tstatus) || (betObj?.teamName[0]?.toLowerCase() == "l" && !currData?.lstatus) || (betObj?.teamName[0]?.toLowerCase() == "d" && !currData?.dstatus))) {
     throw {
       statusCode: 400,
       message: {
@@ -3366,7 +3366,7 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.teen:
       return ((betObj.betType == betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
     case cardGameType.teen9:
-      return ((betObj?.betOnTeam[0]?.toLowerCase() == "t" && currData?.trate != betObj?.odds) || (betObj?.betOnTeam[0]?.toLowerCase() == "l" && currData?.lrate != betObj?.odds) || (betObj?.betOnTeam[0]?.toLowerCase() == "d" && currData?.drate != betObj?.odds))
+      return ((betObj?.teamName[0]?.toLowerCase() == "t" && currData?.trate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "l" && currData?.lrate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "d" && currData?.drate != betObj?.odds))
     default:
       return betObj?.odds != currData?.rate
   }
