@@ -3297,6 +3297,9 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   else if (match?.type == cardGameType.poker && parseInt(selectionId) > 2) {
       currData = roundData?.t3?.find((item) => item?.sid == selectionId);
   }
+  else if(match?.type==cardGameType.teen9){
+    currData = roundData?.t2?.find((item) => [item?.tsection, item?.lsection, item?.dsection]?.includes(selectionId));
+  }
   else {
     currData = roundData?.t2?.find((item) => item?.sid == selectionId);
   }
