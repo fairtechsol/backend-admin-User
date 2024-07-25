@@ -51,6 +51,8 @@ class CardWinOrLose {
             case cardGameType.superover:
             case cardGameType.cricketv3:
                 return this.superOver();
+            case cardGameType.teen9:
+                return this.teenTest()
             default:
                 throw {
                     statusCode: 400,
@@ -533,6 +535,16 @@ class CardWinOrLose {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if (betOnTeamKey?.includes("single") && allMarketRate[3] == betOnTeamKey[betOnTeamKey?.length - 1]) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+
+    teenTest() {
+        const { sid } = this.result;
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
+
+        if (sid?.split(",")?.includes(selectionId)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };

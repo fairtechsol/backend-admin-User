@@ -18,6 +18,7 @@ class CardProfitLoss {
                 return this.dragonTiger();
             case cardGameType.teen20:
             case cardGameType.teen8:
+            case cardGameType.teen9:
                 return this.teen20();
             case cardGameType.lucky7:
             case cardGameType.lucky7eu:
