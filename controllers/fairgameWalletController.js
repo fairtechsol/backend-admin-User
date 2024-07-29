@@ -1414,10 +1414,12 @@ exports.unDeclareSessionResult = async (req, res) => {
       });
     }
 
+    let userIds = users.map(user => user.createBy);
     await updatePlaceBet(
       {
         betId: betId,
         deleteReason: IsNull(),
+        createBy: In(userIds)
       },
       {
         result: betResultStatus.PENDING,
@@ -2490,10 +2492,12 @@ exports.unDeclareMatchResult = async (req, res) => {
       });
     }
 
+    let userIds = users.map(user => user.createBy);
     await updatePlaceBet(
       {
         betId: In(betIds),
         deleteReason: IsNull(),
+        createBy: In(userIds)
       },
       {
         result: betResultStatus.PENDING,
@@ -3517,10 +3521,12 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
       });
     }
 
+    let userIds = users.map(user => user.createBy);
     await updatePlaceBet(
       {
         betId: In(betIds),
         deleteReason: IsNull(),
+        createBy: In(userIds)
       },
       {
         result: betResultStatus.PENDING,
@@ -5255,10 +5261,12 @@ exports.unDeclareRaceMatchResult = async (req, res) => {
       });
     }
 
+    let userIds = users.map(user => user.createBy);
     await updatePlaceBet(
       {
         betId: In(betIds),
         deleteReason: IsNull(),
+        createBy: In(userIds)
       },
       {
         result: betResultStatus.PENDING,
