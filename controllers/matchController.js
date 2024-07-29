@@ -185,6 +185,9 @@ exports.cardMatchDetails = async (req, res) => {
       if (type == cardGameType.teen) {
         cardRedisKeys = roundData?.t1?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
       }
+      else if (type == cardGameType.teen9) {
+        cardRedisKeys = roundData?.t2?.map((item) => [`${roundData?.t1?.[0]?.mid}_${item?.tsection}${redisKeys.card}`, `${roundData?.t1?.[0]?.mid}_${item?.lsection}${redisKeys.card}`, `${roundData?.t1?.[0]?.mid}_${item?.dsectionid}${redisKeys.card}`])?.flat(1);
+      }
       else if (type == cardGameType.poker) {
         cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
         cardRedisKeys = [...cardRedisKeys,...roundData?.t3?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`)];
