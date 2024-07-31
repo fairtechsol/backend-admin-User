@@ -3114,6 +3114,16 @@ exports.cardBettingBetPlaced = async (req, res) => {
           selectionId = 1;
         }
         break;
+      case cardGameType.aaa:
+        if (parseInt(selectionId) <= 3) {
+          selectionId = 1;
+        }
+        break;
+      case cardGameType.btable:
+        if (parseInt(selectionId) <= 6) {
+          selectionId = 1;
+        }
+        break;
       default:
         break;
     }
@@ -3338,7 +3348,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     };
   }
 
-  if (processBetPlaceCondition(betObj, currData, match)) {
+  if (processBetPlaceCondition(betObj, currData, match) && match?.type != cardGameType.worli2) {
     throw {
       statusCode: 400,
       message: {
@@ -3367,6 +3377,10 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.cricketv3:
     case cardGameType.war:
     case cardGameType.cmatch20:
+    case cardGameType.aaa:
+    case cardGameType.baccarat:
+    case cardGameType.baccarat2:
+    case cardGameType.btable:
       return ((betObj.betType == betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
       return ((betObj.betType == betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))

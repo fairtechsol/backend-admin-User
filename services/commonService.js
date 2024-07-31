@@ -523,6 +523,16 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
           sid = 1;
         }
         break;
+      case cardGameType.aaa:
+        if (parseInt(sid) <= 3) {
+          sid = 1;
+        }
+        break;
+      case cardGameType.btable:
+        if (parseInt(sid) <= 6) {
+          sid = 1;
+        }
+        break;
       default:
         break;
     }

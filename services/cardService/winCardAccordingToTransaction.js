@@ -47,6 +47,15 @@ class CardResultTypeWin {
                 return this.cricket55();
             case cardGameType.cmatch20:
                 return this.cricket20();
+            case cardGameType.aaa:
+                return this.amarAkbarAnthony();
+            case cardGameType.btable:
+                return this.bollywoodTable();
+            case cardGameType.worli2:
+                return this.instantWorli();
+            case cardGameType.baccarat:
+            case cardGameType.baccarat2:
+                return this.baccarat();
             default:
                 throw {
                     statusCode: 400,
@@ -239,8 +248,56 @@ class CardResultTypeWin {
         }
     }
 
+    amarAkbarAnthony() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'Amar';
+            case '2':
+                return 'Akbar';
+            case '3':
+                return 'Anthony';
+            default:
+                return 'Unknown';
+        }
+    }
+    bollywoodTable() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'Don';
+            case '2':
+                return 'Amar Akbar Anthony ';
+            case '3':
+                return 'Sahib Bibi Aur Ghulam';
+            case '4':
+                return 'Dharam Veer';
+            case '5':
+                return 'Kis Kis Ko Pyaar Karoon';
+            case '6':
+                return 'Ghulam';
+            default:
+                return 'Unknown';
+        }
+    }
+
     cricket20() {
         return this.cardResult.win;
+    }
+
+    instantWorli() {
+        return this.cardResult.sid;
+    }
+
+    baccarat() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'Player';
+            case '2':
+                return 'Banker';
+            case '3':
+                return 'Tie';
+            default:
+                return 'Unknown';
+        }
     }
 }
 

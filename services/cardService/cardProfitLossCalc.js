@@ -50,6 +50,15 @@ class CardProfitLoss {
                 return this.fivefivecricket();
             case cardGameType.cmatch20:
                 return this.cricket20();
+            case cardGameType.aaa:
+                return this.amarAkbarAnthony();
+            case cardGameType.btable:
+                return this.bollywoodTable();
+            case cardGameType.worli2:
+                return this.instantWorli();
+            case cardGameType.baccarat:
+            case cardGameType.baccarat2:
+                return this.baccarat();
             default:
                 throw {
                     statusCode: 400,
@@ -394,6 +403,98 @@ class CardProfitLoss {
         });
 
         return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {})?.map((item) => item?.pl), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss)?.map((item) => item?.pl), 0))) };
+    }
+
+    amarAkbarAnthony() {
+        const { bettingType, winAmount, lossAmount, playerName, partnership, sid } = this.data;
+
+        if (sid == 1) {
+            let oldProfitLossData = JSON.parse(this.oldProfitLoss || "{}");
+            let newProfitLoss = this.oldProfitLoss;
+            if (!newProfitLoss) {
+                newProfitLoss = {
+                    amar: 0,
+                    akbar: 0,
+                    anthony: 0
+                }
+            }
+            else {
+                newProfitLoss = { ...JSON.parse(newProfitLoss) };
+            }
+
+            Object.keys(newProfitLoss)?.forEach((item) => {
+
+                if ((item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
+                    newProfitLoss[item] += ((winAmount * partnership) / 100);
+                }
+                else if ((item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
+                    newProfitLoss[item] -= ((lossAmount * partnership) / 100);
+                }
+
+                newProfitLoss[item] = parseFloat((Number(newProfitLoss[item]) || 0.0).toFixed(2));
+            });
+
+            return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
+        }
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership) / 100) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+    }
+
+    bollywoodTable() {
+        const { bettingType, winAmount, lossAmount, playerName, partnership, sid } = this.data;
+
+        if (sid == 1) {
+            let oldProfitLossData = JSON.parse(this.oldProfitLoss || "{}");
+            let newProfitLoss = this.oldProfitLoss;
+            if (!newProfitLoss) {
+                newProfitLoss = {
+                    don: 0,
+                    amarakbaranthony: 0,
+                    sahibbibiaurghulam: 0,
+                    dharamveer: 0,
+                    kiskiskopyaarkaroon: 0,
+                    ghulam: 0,
+                }
+            }
+            else {
+                newProfitLoss = { ...JSON.parse(newProfitLoss) };
+            }
+
+            Object.keys(newProfitLoss)?.forEach((item) => {
+
+                if ((item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
+                    newProfitLoss[item] += ((winAmount * partnership) / 100);
+                }
+                else if ((item != this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.BACK) || (item == this.removeSpacesAndToLowerCase(playerName) && bettingType == betType.LAY)) {
+                    newProfitLoss[item] -= ((lossAmount * partnership) / 100);
+                }
+
+                newProfitLoss[item] = parseFloat((Number(newProfitLoss[item]) || 0.0).toFixed(2));
+            });
+
+            return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
+        }
+        else if (sid == 7) {
+            let currPL = this.oldProfitLoss || 0;
+            if ((bettingType == betType.BACK)) {
+                currPL += ((winAmount * partnership) / 100);
+            }
+            else if (bettingType == betType.LAY) {
+                currPL -= ((lossAmount * partnership) / 100);
+            }
+            currPL = parseFloat((Number(currPL) || 0.0).toFixed(2));
+            return { profitLoss: currPL, exposure: parseFloat(this.oldExposure || 0) - Math.abs(Math.min(this.oldProfitLoss, 0) + Math.abs(Math.min(currPL, 0))) };
+        }
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount || 0) * partnership) / 100) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+    }
+
+    instantWorli() {
+        const { lossAmount } = this.data;
+        return { profitLoss: 0, exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+    }
+
+    baccarat() {
+        const { lossAmount, partnership } = this.data;
+        return { profitLoss: -Math.abs(parseFloat((parseFloat((lossAmount * partnership) / 100 || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     removeSpacesAndToLowerCase(str) {
