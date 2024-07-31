@@ -3099,6 +3099,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       case cardGameType.card32:
       case cardGameType.teen:
       case cardGameType.cricketv3:
+      case cardGameType.cmatch20:
       case cardGameType.superover:
         selectionId = 1;
         break;

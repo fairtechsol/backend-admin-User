@@ -45,6 +45,8 @@ class CardResultTypeWin {
                 return this.superOver();
             case cardGameType.cricketv3:
                 return this.cricket55();
+            case cardGameType.cmatch20:
+                return this.cricket20();
             default:
                 throw {
                     statusCode: 400,
@@ -235,6 +237,10 @@ class CardResultTypeWin {
             default:
                 return 'Unknown';
         }
+    }
+
+    cricket20() {
+        return this.cardResult.win;
     }
 }
 

@@ -509,6 +509,7 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
       case cardGameType.teen:
       case cardGameType.cricketv3:
       case cardGameType.superover:
+      case cardGameType.cmatch20:
         sid = 1;
         break;
       case cardGameType.poker:

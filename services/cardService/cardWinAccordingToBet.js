@@ -555,7 +555,7 @@ class CardWinOrLose {
         const { win } = this.result;
         const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
 
-        if (parseInt(win) + parseInt(selectionId) + 1 >= 12) {
+        if (parseInt(win) + parseInt(selectionId) + 1 >= 12 && this.betType == betType.BACK || parseInt(win) + parseInt(selectionId) + 1 < 12 && this.betType == betType.LAY) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };

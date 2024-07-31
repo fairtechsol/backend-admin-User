@@ -48,7 +48,7 @@ class CardProfitLoss {
                 return this.superOver();
             case cardGameType.cricketv3:
                 return this.fivefivecricket();
-                case cardGameType.cmatch20:
+            case cardGameType.cmatch20:
                 return this.cricket20();
             default:
                 throw {
@@ -358,18 +358,20 @@ class CardProfitLoss {
     }
 
     cricket20() {
-        const { bettingType, winAmount, lossAmount, partnership,sid } = this.data;
+        const { bettingType, winAmount, lossAmount, partnership, playerName } = this.data;
+        const sid = playerName?.split(" ")[1];
         let oldProfitLossData = JSON.parse(this.oldProfitLoss || "{}");
         let newProfitLoss = this.oldProfitLoss;
         if (!newProfitLoss) {
-            newProfitLoss = Array.from({ length: 10 }, (_, i) => i+1).reduce((prev,curr)=>{
-                return{...prev,
+            newProfitLoss = Array.from({ length: 10 }, (_, i) => i + 1).reduce((prev, curr) => {
+                return {
+                    ...prev,
                     [curr]: {
                         pl: 0,
                         run: 0
                     }
                 }
-            },{})
+            }, {})
         }
         else {
             newProfitLoss = { ...JSON.parse(newProfitLoss) };
@@ -377,21 +379,21 @@ class CardProfitLoss {
 
         Object.keys(newProfitLoss)?.forEach((item) => {
 
-            if ((item + parseInt(sid) + 1 >= 12 && bettingType == betType.BACK) || (item + parseInt(sid) + 1 < 12 && bettingType == betType.LAY)) {
+            if ((parseInt(item) + parseInt(sid) >= 12 && bettingType == betType.BACK) || (parseInt(item) + parseInt(sid) < 12 && bettingType == betType.LAY)) {
                 newProfitLoss[item].pl += ((winAmount * partnership) / 100);
             }
-            else if ((item + parseInt(sid) + 1 < 12 && bettingType == betType.BACK) || (item + parseInt(sid) + 1 >= 12 && bettingType == betType.LAY)) {
+            else if ((parseInt(item) + parseInt(sid) < 12 && bettingType == betType.BACK) || (parseInt(item) + parseInt(sid) >= 12 && bettingType == betType.LAY)) {
                 newProfitLoss[item].pl -= ((lossAmount * partnership) / 100);
             }
 
             newProfitLoss[item].pl = parseFloat((Number(newProfitLoss[item].pl) || 0.0).toFixed(2));
 
-            if (item == parseInt(sid) + 1) {
+            if (parseInt(item) == parseInt(sid)) {
                 newProfitLoss[item].run = item;
             }
         });
 
-        return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
+        return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {})?.map((item) => item?.pl), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss)?.map((item) => item?.pl), 0))) };
     }
 
     removeSpacesAndToLowerCase(str) {
