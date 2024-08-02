@@ -116,8 +116,8 @@ class CardProfitLoss {
     }
 
     teen20() {
-        const { winAmount, lossAmount, partnership } = this.data;
-        return { profitLoss: parseFloat((parseFloat(((winAmount * partnership) / 100) || 0) + parseFloat(this.oldProfitLoss || 0)).toFixed(2)), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+        const { lossAmount, partnership } = this.data;
+        return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount * partnership) / 100) || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     dragonTiger1Day() {
