@@ -1,4 +1,4 @@
-const { userRoleConstant, betResultStatus, matchBettingType, partnershipPrefixByRole, marketBetType } = require("../config/contants");
+const { userRoleConstant, betResultStatus, matchBettingType, marketBetType } = require("../config/contants");
 const { In, IsNull, Not } = require("typeorm");
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");

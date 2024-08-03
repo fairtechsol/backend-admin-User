@@ -509,6 +509,7 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
       case cardGameType.teen:
       case cardGameType.cricketv3:
       case cardGameType.superover:
+      case cardGameType.cmatch20:
         sid = 1;
         break;
       case cardGameType.poker:
@@ -519,6 +520,16 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
       case cardGameType.card32eu:
       case cardGameType.race20:
         if (parseInt(sid) <= 4) {
+          sid = 1;
+        }
+        break;
+      case cardGameType.aaa:
+        if (parseInt(sid) <= 3) {
+          sid = 1;
+        }
+        break;
+      case cardGameType.btable:
+        if (parseInt(sid) <= 6) {
           sid = 1;
         }
         break;
