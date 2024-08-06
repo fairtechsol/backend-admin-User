@@ -3104,6 +3104,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
         selectionId = 1;
         break;
       case cardGameType.poker:
+      case cardGameType.dt6:
         if (parseInt(selectionId) <= 2) {
           selectionId = 1;
         }
