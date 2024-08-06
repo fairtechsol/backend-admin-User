@@ -190,7 +190,7 @@ exports.cardMatchDetails = async (req, res) => {
       }
       else if (type == cardGameType.poker) {
         cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
-        cardRedisKeys = [...cardRedisKeys,...roundData?.t3?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`)];
+        cardRedisKeys = [...(cardRedisKeys || []), ...roundData?.t3?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`)];
       }
       else {
         cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);

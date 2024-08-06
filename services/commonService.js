@@ -513,6 +513,7 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
         sid = 1;
         break;
       case cardGameType.poker:
+      case cardGameType.dt6:
         if (parseInt(sid) <= 2) {
           sid = 1;
         }
