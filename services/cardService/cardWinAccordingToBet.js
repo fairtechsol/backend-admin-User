@@ -617,10 +617,10 @@ class CardWinOrLose {
         if (parseInt(betOnTeamKey) == parseInt(win)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if ((betOnTeamKey == "line1" && parseInt(win) <= 5 && parseInt(win) != 0) || (betOnTeamKey == "line2" && (parseInt(win) > 5 || parseInt(win) == 0))) {
+        else if ((betOnTeamKey == "line1single" && parseInt(win) <= 5 && parseInt(win) != 0) || (betOnTeamKey == "line2single" && (parseInt(win) > 5 || parseInt(win) == 0))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if ((betOnTeamKey == "even" && parseInt(win) % 2 == 0) || (betOnTeamKey == "even" && (parseInt(win) % 2 != 0))) {
+        else if ((betOnTeamKey == "evensingle" && parseInt(win) % 2 == 0) || (betOnTeamKey == "oddsingle" && (parseInt(win) % 2 != 0))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
 
