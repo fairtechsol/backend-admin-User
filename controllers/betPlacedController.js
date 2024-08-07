@@ -3050,6 +3050,9 @@ exports.cardBettingBetPlaced = async (req, res) => {
     if (match?.type == cardGameType.race20 && selectionId == 6) {
       newCalculateOdd = bettingType == betType.BACK ? 90 : 105;
     }
+    else if (match?.type == cardGameType.worli2 && (betOnTeam?.includes("ODD") || betOnTeam?.includes("EVEN") || betOnTeam?.includes("Line"))) {
+      newCalculateOdd = 4;
+    }
     else {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
