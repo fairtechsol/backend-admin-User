@@ -4099,8 +4099,10 @@ exports.getCardResultBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    let subQuery = await childIdquery(user, searchId)
-    const result = await getBetsProfitLoss(where, totalLoss, subQuery);
+    let subQuery = await childIdquery(user, searchId);
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
+
+    const result = await getBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
     return SuccessResponse(
       {
         statusCode: 200, data: result
