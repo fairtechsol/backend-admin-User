@@ -576,8 +576,9 @@ class CardWinOrLose {
 
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
         const seperatedCardsData = desc.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
 
-        if (betOnTeamKey == seperatedCardsData[0] && this.betType == betType.BACK || betOnTeamKey != seperatedCardsData[0] && this.betType == betType.LAY) {
+        if ((betOnTeamKey == seperatedCardsData[0] && this.betType == betType.BACK || betOnTeamKey != seperatedCardsData[0] && this.betType == betType.LAY) && selectionId == 1) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if (seperatedCardsData?.slice(1)?.includes(betOnTeamKey)) {
@@ -594,8 +595,9 @@ class CardWinOrLose {
 
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
         const seperatedCardsData = desc.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
 
-        if (betOnTeamKey == seperatedCardsData[0] && this.betType == betType.BACK || betOnTeamKey != seperatedCardsData[0] && this.betType == betType.LAY) {
+        if ((betOnTeamKey == seperatedCardsData[0] && this.betType == betType.BACK || betOnTeamKey != seperatedCardsData[0] && this.betType == betType.LAY) && selectionId == 1) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if (betOnTeamKey == "odd" && ((this.betType == betType.BACK && seperatedCardsData[1] == "odd") || (this.betType == betType.LAY && seperatedCardsData[1] != "odd"))) {
