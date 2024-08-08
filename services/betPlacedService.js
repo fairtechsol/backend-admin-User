@@ -152,7 +152,7 @@ exports.getMatchBetPlaceWithUser = async (betId, select) => {
 
 exports.getMatchBetPlaceWithUserCard = async (where, select) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
-    .where({ ...where, result: betResultStatus.PENDING, deleteReason: IsNull() })
+    .where({ ...where, deleteReason: IsNull() })
     .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
     .leftJoinAndMapOne("betPlaced.userBalance", "userBalance", 'balance', 'betPlaced.createBy = balance.userId')
     .select(select)
