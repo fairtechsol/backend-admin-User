@@ -5615,7 +5615,7 @@ exports.declarCardMatchResult = async (req, res) => {
   try {
     const { result, matchDetails, type } = req.body;
     // await updatePlaceBet({ result: betResultStatus.PENDING, runnerId: Not(result?.mid), eventType: matchDetails?.type }, { result: betResultStatus.TIE });
-    const betPlaced = await getMatchBetPlaceWithUserCard({ runnerId: result?.mid });
+    const betPlaced = await getMatchBetPlaceWithUserCard({ runnerId: result?.mid, result: betResultStatus.PENDING, });
 
     if (betPlaced?.length <= 0) {
       return SuccessResponse(
