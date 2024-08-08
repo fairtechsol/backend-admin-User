@@ -604,7 +604,7 @@ class CardWinOrLose {
         else if (seperatedCardsData?.slice(2)?.includes(betOnTeamKey)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if (["baratij-a", "dulhadulhank-q"]?.includes(betOnTeamKey) && ["baratij", "dulhadulhank"]?.includes(seperatedCardsData[3])) {
+        else if ((betOnTeamKey == "baratij-a" && seperatedCardsData[3] == "barati") || (betOnTeamKey == "dulhadulhank-q" && seperatedCardsData[3] == "dulhadulhan")) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
@@ -617,10 +617,10 @@ class CardWinOrLose {
         if (parseInt(betOnTeamKey) == parseInt(win)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if ((betOnTeamKey == "line1" && parseInt(win) <= 5 && parseInt(win) != 0) || (betOnTeamKey == "line2" && (parseInt(win) > 5 || parseInt(win) == 0))) {
+        else if ((betOnTeamKey == "line1single" && parseInt(win) <= 5 && parseInt(win) != 0) || (betOnTeamKey == "line2single" && (parseInt(win) > 5 || parseInt(win) == 0))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if ((betOnTeamKey == "even" && parseInt(win) % 2 == 0) || (betOnTeamKey == "even" && (parseInt(win) % 2 != 0))) {
+        else if ((betOnTeamKey == "evensingle" && parseInt(win) % 2 == 0) || (betOnTeamKey == "oddsingle" && (parseInt(win) % 2 != 0))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
 

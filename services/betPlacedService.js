@@ -152,7 +152,7 @@ exports.getMatchBetPlaceWithUser = async (betId, select) => {
 
 exports.getMatchBetPlaceWithUserCard = async (where, select) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
-    .where({ ...where, result: betResultStatus.PENDING, deleteReason: IsNull() })
+    .where({ ...where, deleteReason: IsNull() })
     .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
     .leftJoinAndMapOne("betPlaced.userBalance", "userBalance", 'balance', 'betPlaced.createBy = balance.userId')
     .select(select)
@@ -509,7 +509,7 @@ exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selec
   return { result };
 }
 
-exports.getBetsProfitLoss = async (where, totalLoss, subQuery) => {
+exports.getBetsProfitLoss = async (where, totalLoss, subQuery,domain) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
     // .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
@@ -536,6 +536,7 @@ exports.getBetsProfitLoss = async (where, totalLoss, subQuery) => {
       'placeBet.deleteReason as "deleteReason"',
       'placeBet.bettingName  as "bettingName"',
     ])
+    .addSelect(`'${domain}'`, `domain`)
     .groupBy('placeBet.id, user.userName').orderBy('placeBet.createdAt', 'DESC');
   let result = await query.getRawMany();
 

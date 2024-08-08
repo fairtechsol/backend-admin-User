@@ -493,17 +493,18 @@ exports.calculateProfitLossForRacingMatchToResult = async (betId, userId, matchD
   return redisData;
 }
 
-exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type, partnership) => {
+exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type, partnership, isPending) => {
   let betPlace = await getMatchBetPlaceWithUserCard({
     createBy: userId,
-    runnerId: runnerId
-  }, ["betPlaced", ...(partnership ? [`user.${partnership}`] : [])]);
+    runnerId: runnerId,
+    ...(isPending ? { result: betResultStatus.PENDING } : {})
+  }, ["betPlaced.id", "betPlaced.teamName", "betPlaced.browserDetail", "betPlaced.betType", "betPlaced.winAmount", "betPlaced.lossAmount", ...(partnership ? [`user.${partnership}`] : [])]);
   let oldPl = {
     profitLoss: {},
     exposure: 0
   };
   for (let bets of betPlace) {
-    const sid = bets?.browserDetail?.split("|")?.[1];
+    let sid = bets?.browserDetail?.split("|")?.[1];
     switch (type) {
       case cardGameType.card32:
       case cardGameType.teen:
@@ -513,6 +514,7 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
         sid = 1;
         break;
       case cardGameType.poker:
+      case cardGameType.dt6:
         if (parseInt(sid) <= 2) {
           sid = 1;
         }

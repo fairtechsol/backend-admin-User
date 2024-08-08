@@ -190,7 +190,7 @@ exports.cardMatchDetails = async (req, res) => {
       }
       else if (type == cardGameType.poker) {
         cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
-        cardRedisKeys = [...cardRedisKeys,...roundData?.t3?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`)];
+        cardRedisKeys = [...(cardRedisKeys || []), ...(roundData?.t3?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`) || [])];
       }
       else {
         cardRedisKeys = roundData?.t2?.map((item) => `${roundData?.t1?.[0]?.mid}_${item?.sid}${redisKeys.card}`);
@@ -208,7 +208,7 @@ exports.cardMatchDetails = async (req, res) => {
         if (req.user.roleName != userRoleConstant.user) {
           const adminUsers = await getChildUser(req.user.id);
           // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
-          redisData = await calculateProfitLossForCardMatchToResult(In(adminUsers?.map((item) => item?.id)), roundData?.t1?.[0]?.mid, type,`${partnershipPrefixByRole[req.user.roleName]}Partnership`);
+          redisData = await calculateProfitLossForCardMatchToResult(In(adminUsers?.map((item) => item?.id)), roundData?.t1?.[0]?.mid, type, `${partnershipPrefixByRole[req.user.roleName]}Partnership`, true);
           let maxLoss = redisData?.exposure;
           redisData = redisData?.profitLoss;
           casinoDetails.profitLoss = redisData?.profitLoss;
@@ -218,7 +218,7 @@ exports.cardMatchDetails = async (req, res) => {
         }
         else {
           // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
-          redisData = await calculateProfitLossForCardMatchToResult(req.user?.id, roundData?.t1?.[0]?.mid, type);
+          redisData = await calculateProfitLossForCardMatchToResult(req.user?.id, roundData?.t1?.[0]?.mid, type, null, true);
           let maxLoss = redisData?.exposure;
           redisData = redisData?.profitLoss;
           casinoDetails.profitLoss = redisData?.profitLoss;

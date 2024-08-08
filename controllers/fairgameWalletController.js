@@ -4105,8 +4105,10 @@ exports.getCardResultBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    let subQuery = await childIdquery(user, searchId)
-    const result = await getBetsProfitLoss(where, totalLoss, subQuery);
+    let subQuery = await childIdquery(user, searchId);
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
+
+    const result = await getBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -4160,8 +4162,10 @@ exports.getResultBetProfitLoss = async (req, res) => {
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    let subQuery = await childIdquery(user, searchId)
-    const result = await getBetsProfitLoss(where, totalLoss, subQuery);
+    let subQuery = await childIdquery(user, searchId);
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
+
+    const result = await getBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -5619,7 +5623,7 @@ exports.declarCardMatchResult = async (req, res) => {
   try {
     const { result, matchDetails, type } = req.body;
     // await updatePlaceBet({ result: betResultStatus.PENDING, runnerId: Not(result?.mid), eventType: matchDetails?.type }, { result: betResultStatus.TIE });
-    const betPlaced = await getMatchBetPlaceWithUserCard({ runnerId: result?.mid });
+    const betPlaced = await getMatchBetPlaceWithUserCard({ runnerId: result?.mid, result: betResultStatus.PENDING, });
 
     if (betPlaced?.length <= 0) {
       return SuccessResponse(
