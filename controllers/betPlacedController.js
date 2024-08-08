@@ -1911,9 +1911,9 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
     if (Object.values(rateCuttingBetType)?.includes(matchBetType)) {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
-    // if (Object.values(marketBettingTypeByBettingType)?.includes(matchBetType) && newCalculateOdd > 400) {
-    //   return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: gameType } } }, req, res);
-    // }
+    if (Object.values(marketBettingTypeByBettingType)?.includes(matchBetType) && newCalculateOdd > 400) {
+      return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: gameType } } }, req, res);
+    }
 
     if (bettingType == betType.BACK) {
       winAmount = (stake * newCalculateOdd) / 100;
