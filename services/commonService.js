@@ -860,9 +860,9 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
 
           matchResult = {
             ...matchResult,
-            [otherEventMatchBettingRedisKey[plData?.type].a + currBets.matchId]: plData?.rates?.a,
-            [otherEventMatchBettingRedisKey[plData?.type].b + currBets.matchId]: plData?.rates?.b,
-            ...(plData?.rates?.c ? { [otherEventMatchBettingRedisKey[plData?.type].c + currBets.matchId]: plData?.rates?.c } : {}),
+            [otherEventMatchBettingRedisKey[plData?.type].a + currBets.matchId]: plData?.rates?.a + (matchResult?.[otherEventMatchBettingRedisKey[plData?.type]?.a + currBets.matchId] || 0),
+            [otherEventMatchBettingRedisKey[plData?.type].b + currBets.matchId]: plData?.rates?.b + (matchResult?.[otherEventMatchBettingRedisKey[plData?.type]?.b + currBets.matchId] || 0),
+            ...(plData?.rates?.c ? { [otherEventMatchBettingRedisKey[plData?.type].c + currBets.matchId]: plData?.rates?.c + (matchResult?.[otherEventMatchBettingRedisKey[plData?.type]?.c + currBets.matchId] || 0) } : {}),
           }
         });
 
