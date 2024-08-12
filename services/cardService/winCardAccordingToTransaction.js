@@ -295,6 +295,10 @@ class CardResultTypeWin {
                 return 'Banker';
             case '3':
                 return 'Tie';
+            case '4':
+                return 'Banker';
+            case '5':
+                return 'Player';
             default:
                 return 'Unknown';
         }

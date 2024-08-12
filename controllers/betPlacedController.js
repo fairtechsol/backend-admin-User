@@ -3053,6 +3053,9 @@ exports.cardBettingBetPlaced = async (req, res) => {
     else if (match?.type == cardGameType.worli2 && (betOnTeam?.includes("ODD") || betOnTeam?.includes("EVEN") || betOnTeam?.includes("Line"))) {
       newCalculateOdd = 400;
     }
+    else if ([cardGameType.baccarat, cardGameType.baccarat2]?.includes(match?.type)) {
+      newCalculateOdd = (newCalculateOdd) * 100;
+    }
     else {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
