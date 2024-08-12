@@ -578,7 +578,7 @@ class CardWinOrLose {
         const seperatedCardsData = desc.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
         const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
 
-        if ((betOnTeamKey == seperatedCardsData[0] && this.betType == betType.BACK || betOnTeamKey != seperatedCardsData[0] && this.betType == betType.LAY) && selectionId == 1) {
+        if (((betOnTeamKey == seperatedCardsData[0] && this.betType == betType.BACK) || (betOnTeamKey != seperatedCardsData[0] && this.betType == betType.LAY)) && parseInt(selectionId) <= 3) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if (seperatedCardsData?.slice(1)?.includes(betOnTeamKey)) {
@@ -597,7 +597,7 @@ class CardWinOrLose {
         const seperatedCardsData = desc.split("|")?.map((item) => this.removeSpacesAndToLowerCase(item));
         const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
 
-        if ((betOnTeamKey == seperatedCardsData[0] && this.betType == betType.BACK || betOnTeamKey != seperatedCardsData[0] && this.betType == betType.LAY) && selectionId == 1) {
+        if (((betOnTeamKey == seperatedCardsData[0] && this.betType == betType.BACK) || (betOnTeamKey != seperatedCardsData[0] && this.betType == betType.LAY)) && parseInt(selectionId) <= 6) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         else if (betOnTeamKey == "odd" && ((this.betType == betType.BACK && seperatedCardsData[1] == "odd") || (this.betType == betType.LAY && seperatedCardsData[1] != "odd"))) {
@@ -679,19 +679,19 @@ class CardWinOrLose {
         else if (parseInt(win) == 3 && !["player", "banker"].includes(betOnTeamKey)) {
             return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if (betOnTeamKey == "score1-4" && ((parseInt(win) == 1 && playerCardScore <= 4 && playerCardScore >= 1) || (parseInt(win) == 2 && bankerCardScore <= 4 && bankerCardScore >= 1))) {
+        else if (betOnTeamKey == "score1-4" && (((parseInt(win) == 1 || parseInt(win) == 5) && playerCardScore <= 4 && playerCardScore >= 1) || ((parseInt(win) == 2 || parseInt(win) == 4) && bankerCardScore <= 4 && bankerCardScore >= 1))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if (betOnTeamKey == "score5-6" && ((parseInt(win) == 1 && playerCardScore <= 6 && playerCardScore >= 5) || (parseInt(win) == 2 && bankerCardScore <= 6 && bankerCardScore >= 5))) {
+        else if (betOnTeamKey == "score5-6" && (((parseInt(win) == 1 || parseInt(win) == 5) && playerCardScore <= 6 && playerCardScore >= 5) || ((parseInt(win) == 2 || parseInt(win) == 4) && bankerCardScore <= 6 && bankerCardScore >= 5))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if (betOnTeamKey == "score7" && ((parseInt(win) == 1 && playerCardScore == 7) || (parseInt(win) == 2 && bankerCardScore == 7))) {
+        else if (betOnTeamKey == "score7" && (((parseInt(win) == 1 || parseInt(win) == 5) && playerCardScore == 7) || ((parseInt(win) == 2 || parseInt(win) == 4) && bankerCardScore == 7))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if (betOnTeamKey == "score8" && ((parseInt(win) == 1 && playerCardScore == 8) || (parseInt(win) == 2 && bankerCardScore == 8))) {
+        else if (betOnTeamKey == "score8" && (((parseInt(win) == 1 || parseInt(win) == 5) && playerCardScore == 8) || ((parseInt(win) == 2 || parseInt(win) == 4) && bankerCardScore == 8))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
-        else if (betOnTeamKey == "score9" && ((parseInt(win) == 1 && playerCardScore == 9) || (parseInt(win) == 2 && bankerCardScore == 9))) {
+        else if (betOnTeamKey == "score9" && (((parseInt(win) == 1 || parseInt(win) == 5) && playerCardScore == 9) || ((parseInt(win) == 2 || parseInt(win) == 4) && bankerCardScore == 9))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
