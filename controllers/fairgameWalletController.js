@@ -5930,7 +5930,7 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
 
 exports.changeBetsDeleteReason = async (req, res) => {
   try {
-    let { deleteReason, betIds } = req.body;
+    let { deleteReason, betIds, matchId } = req.body;
 
     await updatePlaceBet({ id: In(betIds), deleteReason: Not(IsNull()) }, { deleteReason: deleteReason });
 
@@ -5987,7 +5987,8 @@ exports.changeBetsDeleteReason = async (req, res) => {
     Object.keys(userWiseBetId)?.forEach((item)=>{
       sendMessageToUser(item, socketData.updateDeleteReason, {
         betIds: userWiseBetId?.[item]?.bets,
-        deleteReason: deleteReason
+        deleteReason: deleteReason,
+        matchId: matchId
       });
     });
 
