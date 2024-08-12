@@ -234,9 +234,10 @@ exports.getMultipleAccountCardMatchProfitLoss = async (runnerId, userId) => {
   return betPlaced;
 };
 
-exports.findAllPlacedBet = async (whereObj) => {
+exports.findAllPlacedBet = async (whereObj,select) => {
   return await BetPlaced.find({
-    where: whereObj
+    where: whereObj,
+    select: select
   });
 }
 
