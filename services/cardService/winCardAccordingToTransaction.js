@@ -284,7 +284,7 @@ class CardResultTypeWin {
     }
 
     instantWorli() {
-        return this.cardResult.sid;
+        return `Player ${this.cardResult.win} Single`;
     }
 
     baccarat() {
