@@ -470,6 +470,7 @@ module.exports.socketData = {
   betBlockEvent: "userBetBlock",
   declaredMatchResultAllUser:"matchResultDeclareAllUser",
   unDeclaredMatchResultAllUser:"matchResultUnDeclareAllUser",
+  updateDeleteReason: "updateDeleteReason"
 };
 
 exports.marketBetType = {

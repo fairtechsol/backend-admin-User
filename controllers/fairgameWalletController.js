@@ -44,7 +44,8 @@ const {
   parseRedisData,
   calculateProfitLossForRacingMatchToResult,
   getUserProfitLossRacingForUpperLevel,
-  calculateProfitLossForCardMatchToResult
+  calculateProfitLossForCardMatchToResult,
+  findUserPartnerShipObj
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -5929,11 +5930,69 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
 
 exports.changeBetsDeleteReason = async (req, res) => {
   try {
-    let { deleteReason, betIds } = req.body;
+    let { deleteReason, betIds, matchId } = req.body;
 
     await updatePlaceBet({ id: In(betIds), deleteReason: Not(IsNull()) }, { deleteReason: deleteReason });
 
-    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "Delete bet reason" } } }, req, res);
+    const userIds = await findAllPlacedBet({ id: In(betIds) }, ["createBy","id"]);
+
+    const userWiseBetId = {};
+    const walletWiseBetId = {};
+
+    for(let item of userIds){
+      if (!userWiseBetId?.[item?.createBy]) {
+        let userRedisData = await getUserRedisData(item?.createBy);
+        let isUserLogin = userRedisData ? true : false;
+        let partnership = {};
+        if (isUserLogin) {
+          partnership = JSON.parse(userRedisData.partnerShips);
+        }
+        else {
+          const user = await getUserById(item?.createBy, [
+            "id",
+            "roleName",
+            "createBy",
+          ]);
+          partnership = await findUserPartnerShipObj(user);
+          partnership = JSON.parse(partnership);
+        }
+        const adminIds = Object.values(partnershipPrefixByRole)?.filter((items) => !!partnership[`${items}PartnershipId`] && items != partnershipPrefixByRole[userRoleConstant.fairGameAdmin] && items != partnershipPrefixByRole[userRoleConstant.fairGameWallet])?.map((items) => partnership[`${items}PartnershipId`]);
+        const superAdminIds = Object.keys(partnership)?.filter((items) => [`${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}PartnershipId`,`${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}PartnershipId`].includes(items) )?.map((items) => partnership[items]);
+        userWiseBetId[item?.createBy] = {
+          bets: [],
+          parent: adminIds,
+          superParent: superAdminIds
+        };
+      }
+      userWiseBetId?.[item?.createBy]?.bets?.push(item?.id);
+      for (let parentItem of userWiseBetId?.[item?.createBy]?.parent) {
+        if (!userWiseBetId?.[parentItem]) {
+          userWiseBetId[parentItem] = { bets: [item?.id] };
+        }
+        else {
+          userWiseBetId?.[parentItem]?.bets?.push(item?.id);
+
+        }
+      }
+      for (let parentItem of userWiseBetId?.[item?.createBy]?.superParent) {
+        if (!walletWiseBetId?.[parentItem]) {
+          walletWiseBetId[parentItem] = { bets: [item?.id] };
+        }
+        else {
+          walletWiseBetId?.[parentItem]?.bets?.push(item?.id);
+        }
+      }
+    };
+
+    Object.keys(userWiseBetId)?.forEach((item)=>{
+      sendMessageToUser(item, socketData.updateDeleteReason, {
+        betIds: userWiseBetId?.[item]?.bets,
+        deleteReason: deleteReason,
+        matchId: matchId
+      });
+    });
+
+    return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "Delete bet reason" } }, data: walletWiseBetId }, req, res);
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
