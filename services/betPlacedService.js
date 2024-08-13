@@ -585,7 +585,8 @@ exports.getPlacedBetsWithCategory = async (userId) => {
       "betPlaced.bettingName AS groupedMarketType",
     ])
     .where({ createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull() })
-    .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType');
+    .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType')
+    .orderBy('MAX(betPlaced.createdAt)', 'DESC');
 
   const data = await query.getRawMany();
 
