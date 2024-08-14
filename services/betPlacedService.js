@@ -234,9 +234,10 @@ exports.getMultipleAccountCardMatchProfitLoss = async (runnerId, userId) => {
   return betPlaced;
 };
 
-exports.findAllPlacedBet = async (whereObj) => {
+exports.findAllPlacedBet = async (whereObj,select) => {
   return await BetPlaced.find({
-    where: whereObj
+    where: whereObj,
+    select: select
   });
 }
 
@@ -584,7 +585,8 @@ exports.getPlacedBetsWithCategory = async (userId) => {
       "betPlaced.bettingName AS groupedMarketType",
     ])
     .where({ createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull() })
-    .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType');
+    .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType')
+    .orderBy('MAX(betPlaced.createdAt)', 'DESC');
 
   const data = await query.getRawMany();
 

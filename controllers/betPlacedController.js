@@ -3033,7 +3033,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       })
       return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
     }
-    
+
     // getting match
     const match = await getCardMatch({ id: matchId });
     // let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
@@ -3051,28 +3051,36 @@ exports.cardBettingBetPlaced = async (req, res) => {
       newCalculateOdd = bettingType == betType.BACK ? 90 : 105;
     }
     else if (match?.type == cardGameType.worli2 && (betOnTeam?.includes("ODD") || betOnTeam?.includes("EVEN") || betOnTeam?.includes("Line"))) {
-      newCalculateOdd = 4;
+      newCalculateOdd = 400;
+    }
+    else if ([cardGameType.baccarat, cardGameType.baccarat2]?.includes(match?.type)) {
+      newCalculateOdd = (newCalculateOdd) * 100;
     }
     else {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
 
-    if (bettingType == betType.BACK) {
-      winAmount = (stake * (newCalculateOdd)) / 100;
+    if (match?.type == cardGameType.worli2 && (betOnTeam?.includes("ODD") || betOnTeam?.includes("EVEN") || betOnTeam?.includes("Line"))) {
+      winAmount = ((stake / 5) * (newCalculateOdd)) / 100;
       lossAmount = stake;
     }
-    else if (bettingType == betType.LAY) {
-      winAmount = stake;
-      lossAmount = (stake * (newCalculateOdd)) / 100;
-    }
     else {
-      logger.info({
-        info: `Get invalid betting type`,
-        data: req.body
-      });
-      return ErrorResponse({ statusCode: 400, message: { msg: "invalid", keys: { name: "Bet type" } } }, req, res);
+      if (bettingType == betType.BACK) {
+        winAmount = (stake * (newCalculateOdd)) / 100;
+        lossAmount = stake;
+      }
+      else if (bettingType == betType.LAY) {
+        winAmount = stake;
+        lossAmount = (stake * (newCalculateOdd)) / 100;
+      }
+      else {
+        logger.info({
+          info: `Get invalid betting type`,
+          data: req.body
+        });
+        return ErrorResponse({ statusCode: 400, message: { msg: "invalid", keys: { name: "Bet type" } } }, req, res);
+      }
     }
-
     winAmount = Number(winAmount.toFixed(2));
     lossAmount = Number(lossAmount.toFixed(2));
 
