@@ -36,13 +36,20 @@ exports.allApiRoutes = {
   getMatchByCompetitionAndDate:"/match/competition/getMatch",
   MATCHES: {
     matchDetails: "/superAdmin/match/",
+    raceDetails: "/superAdmin/match/racing/",
+    matchDetailsForFootball:"/superadmin/otherMatch/",
     matchList: "/superAdmin/match/list",
+    racingMatchList: "/superAdmin/match/racing/list",
+    racingMatchCountryCodeList: "/superAdmin/match/racing/countryCode",
     MatchBettingDetail : "/superAdmin/matchBetting/",
+    raceBettingDetail : "/superAdmin/raceBetting/",
     sessionDetail: "/superAdmin/session/"
   },
   WALLET:{
     updateBalance:"/superAdmin/update/balance/SA",
-    autoLockUnlockUser:"/superAdmin/auto/lockUnlockUser"
+    autoLockUnlockUser:"/superAdmin/auto/lockUnlockUser",
+    cardResultList:"/superadmin/cards/result/",
+    cardResultDetail:"/superadmin/cards/result/detail/"
   },
   EXPERT:{
     partnershipId:"/superAdmin/partnershipId/"
@@ -51,5 +58,8 @@ exports.allApiRoutes = {
     matchOdd : "/matchOdds/",
     bookmaker : "/bookmaker/",
     session : "/session/",
+    casinoData: "/api/tunnel/casino/odds/",
+    cardResultDetail: "/api/tunnel/casino/individual-result/",
+    cardTopTenResultDetail: "/api/tunnel/casino/result/",
   }
 }

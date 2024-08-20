@@ -1,3 +1,4 @@
+const { Not } = require("typeorm");
 const { getTransactions } = require("../services/transactionService");
 const FileGenerate = require("../utils/generateFile");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -14,7 +15,7 @@ exports.getAccountStatement = async (req, res) => {
      * @filters : for filters you need to give the filters like the key value pair like ->
      * if you want query like username=="client" then give the filter like username : eqclient
      *   **/
-    const { type, ...query } = req.query;
+    const { type, gameName, ...query } = req.query;
     
     if (!userId) {
       return ErrorResponse(
@@ -28,10 +29,17 @@ exports.getAccountStatement = async (req, res) => {
         res
       );
     }
-
+    
     let filters = {
       searchId: userId,
     };
+
+    if (gameName == "upper") {
+      filters.actionBy = Not(userId);
+    }
+    else if (gameName == "down") {
+      filters.actionBy = userId;
+    }
 
     const select = [
       "transaction.id",
@@ -44,6 +52,7 @@ exports.getAccountStatement = async (req, res) => {
       "transaction.actionBy",
       "transaction.description",
       "transaction.uniqueId",
+      "transaction.betId",
       "user.id",
       "user.userName",
       "user.phoneNumber",

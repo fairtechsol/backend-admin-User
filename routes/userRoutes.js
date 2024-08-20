@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
-const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate, CheckOldPassword } = require('../validators/userValidator');
-const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch, deleteUser, checkOldPasswordData } = require('../controllers/userController');
+const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate, CheckOldPassword, oldUserMatchLockValidate } = require('../validators/userValidator');
+const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch, deleteUser, checkOldPasswordData, checkMatchLock } = require('../controllers/userController');
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 const { totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getUserWiseTotalProfitLoss } = require('../controllers/fairgameWalletController');
 
@@ -25,6 +25,9 @@ router.post("/generateTransactionPassword", isAuthenticate, validator(generateTr
 router.get("/generalReport", isAuthenticate, generalReport);
 router.post("/totalProfitLoss", isAuthenticate, totalProfitLossWallet);
 router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), userMatchLock);
+router.post("/oldUserMatchLock", isAuthenticate, checkTransactionPassword, validator(oldUserMatchLockValidate), userMatchLock);
+router.get("/check/match/lock", isAuthenticate, checkMatchLock);
+
 router.get("/getMatchLockAllChild", isAuthenticate, getMatchLockAllChild);
 router.get("/getUserDetailsForParent", isAuthenticate, getUserDetailsForParent);
 router.get("/checkChildDeactivate", isAuthenticate, checkChildDeactivate);

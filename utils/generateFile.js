@@ -23,10 +23,10 @@ class FileGenerate {
    * @param {Array<Object>} formattedData - An array of objects representing report data.
    * @returns {Promise<string>} - The generated report file name.
    */
-  async generateReport(formattedData, header) {
+  async generateReport(formattedData, header,heading ) {
     switch (this.reportType) {
       case fileType.pdf:
-        return this.generatePdf(formattedData, header);
+        return this.generatePdf(formattedData, header, heading);
       case fileType.excel:
         return this.generateExcel(formattedData, header);
       default:
@@ -40,10 +40,10 @@ class FileGenerate {
    * @param {Array<Object>} formattedData - An array of objects representing report data.
    * @returns {Promise<string>} - The generated PDF file name.
    */
-  async generatePdf(formattedData, headers) {
+  async generatePdf(formattedData, headers, heading) {
     pdfMake.vfs = pdfFonts.pdfMake.vfs;
     const pdfHeaders = headers.map((item) => {
-      return item.excelHeader;
+      return { text: item.excelHeader, color: "#ffffff", fillColor: '#2d4154' };
     });
 
     if (formattedData && formattedData?.length > 0) {
@@ -61,18 +61,47 @@ class FileGenerate {
         pageSize: "A3",
         pageOrientation: "landscape",
         content: [
+          ...(heading?[{
+            text: heading,
+            style: 'title',
+            margin: [0, 0, 0, 12]
+          }] : []),
           {
-            table: {
-              headerRows: 1,
-              body: [pdfHeaders, ...rows],
-            },
-            layout: {
-              fillColor: function (rowIndex) {
-                return rowIndex % 2 === 0 ? "#CCCCCC" : null; // Alternate row colors for better readability
+            columns: [
+              { width: '*', text: '' },
+              {
+                width: 'auto', table: {
+                  alignment: 'center',
+                  headerRows: 1,
+                  body: [pdfHeaders, ...rows],
+                },
+                layout: {
+                  fillColor: function (rowIndex) {
+                    return rowIndex % 2 === 0 ? "#CCCCCC" : null; // Alternate row colors for better readability
+                  },
+                },
               },
-            },
+            { width: '*', text: '' },
+            ]
           },
         ],
+        styles:{
+          title:{
+            alignment: 'center',
+            fontSize: 20,
+            bold: true
+          },
+          table:{
+            alignment:"center"
+          },
+          tableExample:{
+            alignment:"center",
+            width:"*"
+          }
+        },
+        defaultStyle: {
+          alignment:"center"
+        }
       };
 
       const pdfDocGenerator = pdfMake.createPdf(docDefinition);

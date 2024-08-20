@@ -92,3 +92,14 @@ module.exports.SuperAdminChangePassword = Joi.object({
   password: Joi.string().required()
 });
 
+
+module.exports.changeBetsDeleteReasonValidator = Joi.object({
+  deleteReason: Joi.string().required(),
+  betIds:
+    Joi.array().items(
+      Joi.string().guid({ version: 'uuidv4' })
+    ).min(1),
+  matchId: Joi.string().guid({ version: 'uuidv4' }).required().messages({
+    'any.required': 'Match id is required',
+  })
+});
