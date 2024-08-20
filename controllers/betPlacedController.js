@@ -1063,7 +1063,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
 
     }
     else {
-      url = microServiceUrl + allApiRoutes.MICROSERVICE.matchOdd + matchBettingDetail.marketId
+      url = microServiceUrl + allApiRoutes.MICROSERVICE.matchOdd + matchBettingDetail.marketId + (matchBettingDetail?.apiType ? `?apiType=${matchBettingDetail?.apiType}` : "")
 
     }
     let data = await apiCall(apiMethod.get, url);
