@@ -157,7 +157,7 @@ exports.cardMatchDetails = async (req, res) => {
       const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.casinoData + type
 
       let data = await apiCall(apiMethod.get, url);
-      roundData = data?.data?.data?.data;
+      roundData = data?.data;
     }
     catch (error) {
       throw {
@@ -170,7 +170,7 @@ exports.cardMatchDetails = async (req, res) => {
       const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.cardTopTenResultDetail + type
 
       let data = await apiCall(apiMethod.get, url);
-      casinoDetails.topTenResult = data?.data?.data?.data;
+      casinoDetails.topTenResult = data?.data;
     }
     catch (error) {
       throw {
@@ -221,7 +221,7 @@ exports.cardMatchDetails = async (req, res) => {
           redisData = await calculateProfitLossForCardMatchToResult(req.user?.id, roundData?.t1?.[0]?.mid, type, null, true);
           let maxLoss = redisData?.exposure;
           redisData = redisData?.profitLoss;
-          casinoDetails.profitLoss = redisData?.profitLoss;
+          casinoDetails.profitLoss = redisData;
           await updateUserDataRedis(req.user.id, {
             ...redisData, [`${redisKeys.userMatchExposure}${roundData?.t1?.[0]?.mid}`]: maxLoss
           });

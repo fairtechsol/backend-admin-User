@@ -3301,7 +3301,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.casinoData + match?.type
 
     let data = await apiCall(apiMethod.get, url);
-    roundData = data?.data?.data?.data;
+    roundData = data?.data;
   }
   catch (error) {
     throw {

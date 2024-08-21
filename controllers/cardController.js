@@ -37,7 +37,7 @@ exports.getCardResultDetailByFGWallet = async (req, res) => {
       result = await apiCall(apiMethod.get, casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.cardResultDetail + id, null, null, null);
       result = {
         data: {
-          result: result?.data?.data?.data?.[0]
+          result: result?.data?.[0]
         }
       }
     }
