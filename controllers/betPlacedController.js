@@ -1521,7 +1521,7 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
 
   const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys);
 
-  let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch || matchBettingType.completeManual].includes(matchBetType);
+  let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
 
   let teamA = isTiedOrCompMatch ? tiedManualTeamName.yes : matchDetails.teamA;
   let teamB = isTiedOrCompMatch ? tiedManualTeamName.no : matchDetails.teamB;
