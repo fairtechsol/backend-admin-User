@@ -693,7 +693,11 @@ exports.cardGameType = {
   aaa: "aaa",
   btable: "btable",
   race20:"race20",
-  cricketv3:"cricketv3"
+  cricketv3:"cricketv3",
+  cmeter: "cmeter",
+  worli: "worli",
+  queen: "queen",
+  ballbyball: "ballbyball"
 }
 
 exports.cardGameShapeCode = {
