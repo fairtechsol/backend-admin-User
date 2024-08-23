@@ -663,6 +663,24 @@ exports.cardGames = [
     type: "cricketv3",
     name: "FIVE FIVE CRICKET",
     id: "7a5e7d3e-7a5e-4a5e-9a7e-7a5e7d3e7a63"
+  },
+  {
+    type: "cmeter",
+    name: "Casino Meter",
+    id: "7a5e7d3e-7a5e-4a5e-9a7e-9a5e7d3e7a63"
+  },
+  {
+    type: "worli",
+    name: "Worli Matka",
+    id: "7a5e7d3e-7a5a-4a5e-9a7e-7a5e7d3e7a63"
+  }, {
+    type: "queen",
+    name: "Queen",
+    id: "7a5e7d3e-7a5a-4a5e-9a7e-7a5e7b3e7a63"
+  }, {
+    type: "ballbyball",
+    name: "Ball By Ball",
+    id: "7a5e7d3e-7a5e-4a5e-9a7e-7a5e7d3e8c63"
   }];
 
 exports.cardGameType = {
