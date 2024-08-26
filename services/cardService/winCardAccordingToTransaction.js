@@ -56,6 +56,8 @@ class CardResultTypeWin {
             case cardGameType.baccarat:
             case cardGameType.baccarat2:
                 return this.baccarat();
+            case cardGameType["3cardj"]:
+                return this.threeCardJ();
             default:
                 throw {
                     statusCode: 400,
@@ -302,6 +304,10 @@ class CardResultTypeWin {
             default:
                 return 'Unknown';
         }
+    }
+
+    threeCardJ() {
+        return this.cardResult.sid;
     }
 }
 

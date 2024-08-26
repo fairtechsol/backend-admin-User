@@ -65,6 +65,8 @@ class CardWinOrLose {
                 return this.baccarat();
             case cardGameType.baccarat2:
                 return this.baccarat2();
+                case cardGameType["3cardj"]:
+                return this.threeCardJ();
             default:
                 throw {
                     statusCode: 400,
@@ -694,6 +696,22 @@ class CardWinOrLose {
         else if (betOnTeamKey == "score9" && (((parseInt(win) == 1 || parseInt(win) == 5) && playerCardScore == 9) || ((parseInt(win) == 2 || parseInt(win) == 4) && bankerCardScore == 9))) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    threeCardJ(){
+        const {cards}=this.result;
+        const splittedCards=cards?.split(",")?.map((item)=>item?.slice(0, -2));
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+
+        
+            for(let item of splittedCards){
+                if(betOnTeamKey?.includes(item)&&betOnTeamKey?.includes("yes")){
+                    return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+                }
+                else if(!betOnTeamKey?.includes(item)&&betOnTeamKey?.includes("no")){
+                    return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+                }
+            }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 }
