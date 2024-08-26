@@ -177,6 +177,7 @@ module.exports.accountStatementType = {
 module.exports.matchBettingType = {
   matchOdd: "matchOdd",
   bookmaker: "bookmaker",
+  bookmaker2: "bookmaker2",
   quickbookmaker1: "quickbookmaker1",
   quickbookmaker2: "quickbookmaker2",
   quickbookmaker3: "quickbookmaker3",
@@ -236,6 +237,7 @@ module.exports.rateCuttingBetType = {
 module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.matchOdd]: "matchOdd",
   [this.matchBettingType.bookmaker]: "marketBookmaker",
+  [this.matchBettingType.bookmaker2]: "marketBookmaker2",
   [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
@@ -256,6 +258,7 @@ module.exports.marketBettingTypeByBettingType = {
 module.exports.profitLossKeys={
   [this.matchBettingType.matchOdd]: "matchPL",
   [this.matchBettingType.bookmaker]: "matchPL",
+  [this.matchBettingType.bookmaker2]: "matchPL",
   [this.matchBettingType.quickbookmaker1]:  "matchPL",
   [this.matchBettingType.quickbookmaker2]:  "matchPL",
   [this.matchBettingType.quickbookmaker3]:  "matchPL",
@@ -278,7 +281,7 @@ module.exports.profitLossKeys={
   }, {}))
 }
 
-module.exports.matchWithTeamName = [this.matchBettingType.matchOdd, this.matchBettingType.bookmaker, this.matchBettingType.quickbookmaker1, this.matchBettingType.quickbookmaker2, this.matchBettingType.quickbookmaker3, this.matchBettingType.halfTime, ...(Array.from({ length: 20 }, (_, index) => index).map((prev, curr) => { return `setWinner${curr}`; }))];
+module.exports.matchWithTeamName = [this.matchBettingType.matchOdd, this.matchBettingType.bookmaker, this.matchBettingType.bookmaker2, this.matchBettingType.quickbookmaker1, this.matchBettingType.quickbookmaker2, this.matchBettingType.quickbookmaker3, this.matchBettingType.halfTime, ...(Array.from({ length: 20 }, (_, index) => index).map((prev, curr) => { return `setWinner${curr}`; }))];
 
 module.exports.matchesTeamName={
   
@@ -370,6 +373,11 @@ module.exports.otherEventMatchBettingRedisKey = {
     "c": this.redisKeys.userTeamCRate,
   },
   [this.matchBettingType.bookmaker]: {
+    "a": this.redisKeys.userTeamARate,
+    "b": this.redisKeys.userTeamBRate,
+    "c": this.redisKeys.userTeamCRate,
+  },
+  [this.matchBettingType.bookmaker2]: {
     "a": this.redisKeys.userTeamARate,
     "b": this.redisKeys.userTeamBRate,
     "c": this.redisKeys.userTeamCRate,
@@ -499,6 +507,7 @@ module.exports.matchWiseBlockType = {
 
 module.exports.redisKeysMarketWise = {
   [this.matchBettingType.bookmaker]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
+  [this.matchBettingType.bookmaker2]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
   [this.matchBettingType.quickbookmaker1]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
   [this.matchBettingType.quickbookmaker2]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
   [this.matchBettingType.quickbookmaker3]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate],
