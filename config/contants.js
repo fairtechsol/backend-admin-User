@@ -16,6 +16,16 @@ module.exports.gameType = {
   horseRacing: "horseRacing",
   greyHound: "greyHound"
 }
+
+module.exports.sessionBettingType = {
+  session: "session",
+  overByOver: "overByover",
+  ballByBall: "ballByBall",
+  oddEven: "oddEven",
+  cricketCasino: "cricketCasino",
+  fancy1: "fancy1",
+};
+
 module.exports.tiedManualTeamName = {
   yes: "YES",
   no: "NO"

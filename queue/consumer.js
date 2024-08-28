@@ -1,10 +1,10 @@
 const Queue = require('bee-queue');
 const lodash = require('lodash');
 const { getUserRedisData, incrementValuesRedis } = require('../services/redis/commonfunction');
-const { redisKeys, userRoleConstant, socketData, partnershipPrefixByRole } = require('../config/contants');
+const { redisKeys, userRoleConstant, socketData, partnershipPrefixByRole, sessionBettingType } = require('../config/contants');
 const { logger } = require('../config/logger');
 const { updateUserExposure } = require('../services/userBalanceService');
-const { calculateExpertRate, calculateProfitLossSession, parseRedisData, calculateRacingExpertRate } = require('../services/commonService');
+const { calculateExpertRate, calculateProfitLossSession, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket } = require('../services/commonService');
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 
@@ -153,11 +153,27 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
               )
               : null;
 
-            let redisData = await calculateProfitLossSession(
-              redisBetData,
-              placedBetObject,
-              partnership
-            );
+            let redisData;
+
+            switch (jobData?.placedBet?.marketType) {
+              case sessionBettingType.session:
+              case sessionBettingType.overByOver:
+              case sessionBettingType.ballByBall:
+                redisData = await calculateProfitLossSession(
+                  sessionProfitLossData,
+                  betPlaceObject,
+                  partnership
+                );
+                break;
+              case sessionBettingType.oddEven:
+                redisData = await calculateProfitLossSessionOddEven(sessionProfitLossData, betPlaceObject, partnership);
+                break;
+              case sessionBettingType.cricketCasino:
+                redisData = await calculateProfitLossSessionCasinoCricket(sessionProfitLossData, betPlaceObject, partnership);
+                break;
+              default:
+                break;
+            }
 
             await updateUserExposure(partnershipId, partnerSessionExposure);
             await incrementValuesRedis(partnershipId, { [redisKeys.userAllExposure]: parseFloat(parseFloat(partnerSessionExposure).toFixed(2)), [`${redisKeys.userSessionExposure}${placedBetObject?.betPlacedData?.matchId}`]: parseFloat(redisData?.maxLoss || 0.0) - parseFloat(redisBetData?.maxLoss || 0.0) }, {

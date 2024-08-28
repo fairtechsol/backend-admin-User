@@ -1,12 +1,12 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol } = require('../services/commonService');
+const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue, CardMatchBetQueue, WalletCardMatchBetQueue, ExpertCardMatchBetQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
@@ -445,6 +445,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       odds,
       ratePercent,
       stake,
+      teamName
     } = req.body;
     const { id } = req.user;
 
@@ -572,6 +573,7 @@ exports.sessionBetPlace = async (req, res, next) => {
         matchId: matchId,
         betId: betId,
         rate: parseFloat(ratePercent),
+        teamName: teamName
       },
       userBalance: parseFloat(userData?.currentBalance) || 0,
     };
@@ -591,10 +593,27 @@ exports.sessionBetPlace = async (req, res, next) => {
       maxSessionLoss = parseFloat(sessionProfitLossData["maxLoss"]);
     }
 
-    let redisData = await calculateProfitLossSession(
-      sessionProfitLossData,
-      betPlaceObject
-    );
+    let redisData;
+
+    switch (sessionDetails?.type) {
+      case sessionBettingType.session:
+      case sessionBettingType.overByOver:
+      case sessionBettingType.ballByBall:
+        redisData = await calculateProfitLossSession(
+          sessionProfitLossData,
+          betPlaceObject
+        );
+        break;
+      case sessionBettingType.oddEven:
+        redisData = await calculateProfitLossSessionOddEven(sessionProfitLossData, betPlaceObject);
+        break;
+      case sessionBettingType.cricketCasino:
+        redisData = await calculateProfitLossSessionCasinoCricket(sessionProfitLossData, betPlaceObject);
+        break;
+      default:
+        break;
+    }
+
 
     betPlaceObject.maxLoss = Math.abs(redisData.maxLoss - maxSessionLoss);
     let redisSessionExp = Number(
@@ -651,7 +670,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       lossAmount: loseAmount,
       betType: sessionBetType,
       rate: ratePercent,
-      teamName: sessionDetails?.name + " / " + ratePercent,
+      teamName: `${sessionDetails?.name} + " / " + ${ratePercent} - ${teamName || ""}`,
       marketType: sessionDetails?.type,
       marketBetType: marketBetType.SESSION,
       ipAddress: ipAddress || req.ip || req.connection.remoteAddress,
@@ -1281,7 +1300,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
 
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, betId: betId, createBy: userId, deleteReason: IsNull() });
-    let userAllBetProfitLoss = await calculatePLAllBet(placedBet, 100);
+    let userAllBetProfitLoss = await calculatePLAllBet(placedBet, placedBet?.[0]?.marketType, 100);
     oldProfitLoss = {
       lowerLimitOdds: userAllBetProfitLoss.lowerLimitOdds,
       upperLimitOdds: userAllBetProfitLoss.upperLimitOdds,
@@ -1298,7 +1317,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   }
   let oldLowerLimitOdds = parseFloat(oldProfitLoss.lowerLimitOdds);
   let oldUpperLimitOdds = parseFloat(oldProfitLoss.upperLimitOdds);
-  let userDeleteProfitLoss = await calculatePLAllBet(bets, 100, oldLowerLimitOdds, oldUpperLimitOdds);
+  let userDeleteProfitLoss = await calculatePLAllBet(bets, bets?.[0]?.marketType, 100, oldLowerLimitOdds, oldUpperLimitOdds);
 
   await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced);
 
