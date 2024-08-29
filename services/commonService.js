@@ -430,7 +430,7 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip, oldLowerLimi
         }
         profitLoss = await this.calculateProfitLossSessionOddEven(profitLoss, data);
       }
-      return profitLoss;
+      return { betData: profitLoss.betPlaced, maxLoss: profitLoss.maxLoss, total_bet: profitLoss?.totalBet };
     case sessionBettingType.cricketCasino:
       if (!Array.isArray(betPlace) || betPlace.length === 0) {
         return {
@@ -450,7 +450,7 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip, oldLowerLimi
         }
         profitLoss = await this.calculateProfitLossSessionCasinoCricket(profitLoss, data);
       }
-      return profitLoss;
+      return { betData: profitLoss.betPlaced, maxLoss: profitLoss.maxLoss, total_bet: profitLoss?.totalBet };
     default:
       return {};
   }
@@ -654,44 +654,60 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
   return oldPl;
 }
 
-exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
-  if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
-    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
-      const newEntry = {
-        odds: newbetPlaced[0].odds - 1,
-        profitLoss: newbetPlaced[0].profitLoss,
-      };
-      newbetPlaced.unshift(newEntry);
-    }
-  }
-  if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
-    while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
-      const newEntry = {
-        odds: oldbetPlaced[0].odds - 1,
-        profitLoss: oldbetPlaced[0].profitLoss,
-      };
-      oldbetPlaced.unshift(newEntry);
-    }
-  }
+exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced, type = sessionBettingType.session) => {
 
-  if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
-    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
-      const newEntry = {
-        odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
-        profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
-      };
-      oldbetPlaced.push(newEntry);
-    }
+  switch (type) {
+    case sessionBettingType.ballByBall:
+    case sessionBettingType.overByOver:
+    case sessionBettingType.session:
+      if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
+        while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+          const newEntry = {
+            odds: newbetPlaced[0].odds - 1,
+            profitLoss: newbetPlaced[0].profitLoss,
+          };
+          newbetPlaced.unshift(newEntry);
+        }
+      }
+      if (newbetPlaced[0].odds < oldbetPlaced[0].odds) {
+        while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
+          const newEntry = {
+            odds: oldbetPlaced[0].odds - 1,
+            profitLoss: oldbetPlaced[0].profitLoss,
+          };
+          oldbetPlaced.unshift(newEntry);
+        }
+      }
+    
+      if (newbetPlaced[newbetPlaced.length - 1].odds > oldbetPlaced[oldbetPlaced.length - 1].odds) {
+        while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+          const newEntry = {
+            odds: oldbetPlaced[oldbetPlaced.length - 1].odds + 1,
+            profitLoss: oldbetPlaced[oldbetPlaced.length - 1].profitLoss,
+          };
+          oldbetPlaced.push(newEntry);
+        }
+      }
+      if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
+        while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
+          const newEntry = {
+            odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
+            profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
+          };
+          newbetPlaced.push(newEntry);
+        }
+      }
+      return;
+    case sessionBettingType.oddEven:
+    case sessionBettingType.cricketCasino:
+      Object.keys(newbetPlaced)?.forEach((item) => {
+        newbetPlaced[item].profitLoss = oldbetPlaced[item]?.profitLoss - newbetPlaced[item]?.profitLoss;
+      });
+      return;
+    default:
+      return;
   }
-  if (newbetPlaced[newbetPlaced.length - 1].odds < oldbetPlaced[oldbetPlaced.length - 1].odds) {
-    while (newbetPlaced[newbetPlaced.length - 1].odds != oldbetPlaced[oldbetPlaced.length - 1].odds) {
-      const newEntry = {
-        odds: newbetPlaced[newbetPlaced.length - 1].odds + 1,
-        profitLoss: newbetPlaced[newbetPlaced.length - 1].profitLoss,
-      };
-      newbetPlaced.push(newEntry);
-    }
-  }
+  
 };
 
 exports.findUserPartnerShipObj = async (user) => {

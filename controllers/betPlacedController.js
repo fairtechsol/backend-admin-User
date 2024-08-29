@@ -1319,7 +1319,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   let oldUpperLimitOdds = parseFloat(oldProfitLoss.upperLimitOdds);
   let userDeleteProfitLoss = await calculatePLAllBet(bets, bets?.[0]?.marketType, 100, oldLowerLimitOdds, oldUpperLimitOdds);
 
-  await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced);
+  await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced, bets?.[0]?.marketType);
 
   let oldBetPlacedPL = oldProfitLoss.betPlaced;
   let newMaxLoss = 0;
@@ -1454,7 +1454,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             let newMaxLossParent = 0;
             let oldMaxLossParent = oldProfitLossParent?.maxLoss;
 
-            await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
+            await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced, bets?.[0]?.marketType);
 
             userDeleteProfitLoss.betData.forEach((ob, index) => {
               let partnershipData = (ob.profitLoss * partnership) / 100;
@@ -1512,7 +1512,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     matchId: matchId,
     deleteReason: deleteReason,
     domainUrl: domainUrl,
-    betPlacedId: betPlacedId
+    betPlacedId: betPlacedId,
+    sessionType: bets?.[0]?.marketType
   }
   const walletJob = walletSessionBetDeleteQueue.createJob(queueObject);
   await walletJob.save();
