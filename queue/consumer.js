@@ -4,7 +4,7 @@ const { getUserRedisData, incrementValuesRedis } = require('../services/redis/co
 const { redisKeys, userRoleConstant, socketData, partnershipPrefixByRole, sessionBettingType } = require('../config/contants');
 const { logger } = require('../config/logger');
 const { updateUserExposure } = require('../services/userBalanceService');
-const { calculateExpertRate, calculateProfitLossSession, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket } = require('../services/commonService');
+const { calculateExpertRate, calculateProfitLossSession, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1 } = require('../services/commonService');
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 
@@ -160,16 +160,22 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
               case sessionBettingType.overByOver:
               case sessionBettingType.ballByBall:
                 redisData = await calculateProfitLossSession(
-                  sessionProfitLossData,
-                  betPlaceObject,
+                  redisBetData,
+                  placedBetObject,
                   partnership
                 );
                 break;
               case sessionBettingType.oddEven:
-                redisData = await calculateProfitLossSessionOddEven(sessionProfitLossData, betPlaceObject, partnership);
+                redisData = await calculateProfitLossSessionOddEven(redisBetData,
+                  placedBetObject, partnership);
                 break;
               case sessionBettingType.cricketCasino:
-                redisData = await calculateProfitLossSessionCasinoCricket(sessionProfitLossData, betPlaceObject, partnership);
+                redisData = await calculateProfitLossSessionCasinoCricket(redisBetData,
+                  placedBetObject, partnership);
+                break;
+              case sessionBettingType.fancy1:
+                redisData = await calculateProfitLossSessionFancy1(redisBetData,
+                  placedBetObject, partnership);
                 break;
               default:
                 break;

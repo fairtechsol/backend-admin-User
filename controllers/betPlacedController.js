@@ -6,7 +6,7 @@ const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket } = require('../services/commonService');
+const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1 } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue, CardMatchBetQueue, WalletCardMatchBetQueue, ExpertCardMatchBetQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
@@ -527,28 +527,49 @@ exports.sessionBetPlace = async (req, res, next) => {
     let winAmount = 0,
       loseAmount = 0;
 
-    // Calculate win and lose amounts based on the bet type
-    if (sessionBetType == betType.YES) {
-      winAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
-      loseAmount = parseFloat(stake);
-    } else if (sessionBetType == betType.NO) {
-      winAmount = parseFloat(stake);
-      loseAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
-    } else {
-      // Return an error response for an invalid bet type
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "invalid",
-            keys: {
-              name: "Bet type",
+    if (sessionDetails?.type == sessionBettingType.fancy1) {
+
+      if (sessionBetType == betType.BACK) {
+        winAmount = parseFloat((stake * (ratePercent - 1))).toFixed(2);
+        loseAmount = parseFloat(stake);
+      } else if (sessionBetType == betType.LAY) {
+        winAmount = parseFloat(stake);
+        loseAmount = parseFloat((stake * (ratePercent - 1))).toFixed(2);
+      }
+    }
+    else if ([sessionBettingType.oddEven, sessionBettingType.cricketCasino].includes(sessionDetails?.type)) {
+      if (sessionBetType == betType.YES) {
+        winAmount = parseFloat((stake * (ratePercent - 1))).toFixed(2);
+        loseAmount = parseFloat(stake);
+      } else if (sessionBetType == betType.NO) {
+        winAmount = parseFloat(stake);
+        loseAmount = parseFloat((stake * (ratePercent - 1))).toFixed(2);
+      }
+    }
+    else {
+      // Calculate win and lose amounts based on the bet type
+      if (sessionBetType == betType.YES) {
+        winAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
+        loseAmount = parseFloat(stake);
+      } else if (sessionBetType == betType.NO) {
+        winAmount = parseFloat(stake);
+        loseAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
+      } else {
+        // Return an error response for an invalid bet type
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "invalid",
+              keys: {
+                name: "Bet type",
+              },
             },
           },
-        },
-        req,
-        res
-      );
+          req,
+          res
+        );
+      }
     }
 
     const userData = await getUserRedisData(id);
@@ -610,6 +631,9 @@ exports.sessionBetPlace = async (req, res, next) => {
       case sessionBettingType.cricketCasino:
         redisData = await calculateProfitLossSessionCasinoCricket(sessionProfitLossData, betPlaceObject);
         break;
+      case sessionBettingType.fancy1:
+        redisData = await calculateProfitLossSessionFancy1(sessionProfitLossData, betPlaceObject);
+        break;
       default:
         break;
     }
@@ -670,7 +694,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       lossAmount: loseAmount,
       betType: sessionBetType,
       rate: ratePercent,
-      teamName: `${sessionDetails?.name} + " / " + ${ratePercent} - ${teamName || ""}`,
+      teamName: `${sessionDetails?.name} + " / " + ${ratePercent} ${teamName ? `- ${teamName}` : ""}`,
       marketType: sessionDetails?.type,
       marketBetType: marketBetType.SESSION,
       ipAddress: ipAddress || req.ip || req.connection.remoteAddress,

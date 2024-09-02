@@ -46,7 +46,10 @@ const {
   calculateProfitLossForRacingMatchToResult,
   getUserProfitLossRacingForUpperLevel,
   calculateProfitLossForCardMatchToResult,
-  findUserPartnerShipObj
+  findUserPartnerShipObj,
+  calculateProfitLossSessionOddEven,
+  calculateProfitLossSessionCasinoCricket,
+  calculateProfitLossSessionFancy1
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -711,15 +714,22 @@ exports.declareSessionResult = async (req, res) => {
           }
           break;
         case sessionBettingType.oddEven:
-          let currBetType = item?.teamName?.split("-")?.pop()?.trim();
+          let currBetType = item?.teamName?.split("-")?.pop()?.trim()?.toLowerCase();
           if ((currBetType == "odd" && score % 2 == 1) || (currBetType == "even" && score % 2 == 0)) {
             item.result = betResultStatus.WIN;
           } else if ((currBetType == "odd" && score % 2 != 1) || (currBetType == "even" && score % 2 != 0)) {
             item.result = betResultStatus.LOSS;
           }
           break;
+        case sessionBettingType.fancy1:
+          if ((item.betType == betType.BACK && score == "yes") || (item.betType == betType.LAY && score == "no")) {
+            item.result = betResultStatus.WIN;
+          } else if ((item.betType == betType.BACK && score != "yes") || (item.betType == betType.LAY && score != "no")) {
+            item.result = betResultStatus.LOSS;
+          }
+          break;
         case sessionBettingType.cricketCasino:
-          let currBet = item?.teamName?.split("-")?.pop()?.trim()?.split(" ")?.[1];
+          let currBet = parseInt(item?.teamName?.split("-")?.pop()?.trim()?.split(" ")?.[1]);
           if ((currBet == parseInt(score) % 10)) {
             item.result = betResultStatus.WIN;
           } else {
@@ -1629,14 +1639,70 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
         for (const placedBets of betPlace) {
-          upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSession(upperUserObj[patentUser.id].profitLossObj, {
-            betPlacedData: {
-              betType: placedBets?.betType,
-              odds: placedBets?.odds,
-            },
-            loseAmount: placedBets?.lossAmount,
-            winAmount: placedBets?.winAmount,
-          }, user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+          for (const placedBets of betPlace) {
+            switch (placedBets?.marketType) {
+              case sessionBettingType.session:
+              case sessionBettingType.overByOver:
+              case sessionBettingType.ballByBall:
+                upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSession(
+                  upperUserObj[patentUser.id].profitLossObj,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                    },
+                    loseAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]
+                );
+                break;
+              case sessionBettingType.oddEven:
+                upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSessionOddEven(
+                  upperUserObj[patentUser.id].profitLossObj,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                      teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
+                    },
+                    loseAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                break;
+              case sessionBettingType.cricketCasino:
+                upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSessionCasinoCricket(
+                  upperUserObj[patentUser.id].profitLossObj,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                      teamName: item?.teamName?.split("-")?.pop()?.trim()
+                    },
+                    loseAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                break;
+              case sessionBettingType.fancy1:
+                upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSessionFancy1(
+                  upperUserObj[patentUser.id].profitLossObj,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                    },
+                    loseAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                break;
+              default:
+                break;
+            }
+            
+          }
         }
       } else {
         upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
@@ -1683,18 +1749,68 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       };
     } else {
       for (const placedBets of betPlace) {
-        faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSession(
-          faAdminCal.walletData.profitLossObjWallet,
-          {
-            betPlacedData: {
-              betType: placedBets?.betType,
-              odds: placedBets?.odds,
-            },
-            loseAmount: placedBets?.lossAmount,
-            winAmount: placedBets?.winAmount,
-          },
-          user?.user[`fwPartnership`]
-        );
+        switch (placedBets?.marketType) {
+          case sessionBettingType.session:
+          case sessionBettingType.overByOver:
+          case sessionBettingType.ballByBall:
+            faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSession(
+              faAdminCal.walletData.profitLossObjWallet,
+              {
+                betPlacedData: {
+                  betType: placedBets?.betType,
+                  odds: placedBets?.odds,
+                },
+                loseAmount: placedBets?.lossAmount,
+                winAmount: placedBets?.winAmount,
+              },
+              user?.user[`fwPartnership`]
+            );
+            break;
+          case sessionBettingType.oddEven:
+            faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionOddEven(
+              faAdminCal.walletData.profitLossObjWallet,
+              {
+                betPlacedData: {
+                  betType: placedBets?.betType,
+                  odds: placedBets?.odds,
+                  teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
+                },
+                loseAmount: placedBets?.lossAmount,
+                winAmount: placedBets?.winAmount,
+              },
+              user?.user[`fwPartnership`]);
+            break;
+          case sessionBettingType.cricketCasino:
+            faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionCasinoCricket(
+              faAdminCal.walletData.profitLossObjWallet,
+              {
+                betPlacedData: {
+                  betType: placedBets?.betType,
+                  odds: placedBets?.odds,
+                  teamName: item?.teamName?.split("-")?.pop()?.trim()
+                },
+                loseAmount: placedBets?.lossAmount,
+                winAmount: placedBets?.winAmount,
+              },
+              user?.user[`fwPartnership`]);
+            break;
+          case sessionBettingType.fancy1:
+            faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionFancy1(
+              faAdminCal.walletData.profitLossObjWallet,
+              {
+                betPlacedData: {
+                  betType: placedBets?.betType,
+                  odds: placedBets?.odds,
+                },
+                loseAmount: placedBets?.lossAmount,
+                winAmount: placedBets?.winAmount,
+              },
+              user?.user[`fwPartnership`]);
+            break;
+          default:
+            break;
+        }
+        
       }
     }
     if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
@@ -1714,18 +1830,64 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         };
       } else {
         for (const placedBets of betPlace) {
-          faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSession(
-            faAdminCal.userData[user.user.superParentId].profitLossData,
-            {
-              betPlacedData: {
-                betType: placedBets?.betType,
-                odds: placedBets?.odds,
-              },
-              loseAmount: placedBets?.lossAmount,
-              winAmount: placedBets?.winAmount,
-            },
-            user?.user[`faPartnership`]
-          );
+          switch (placedBets?.marketType) {
+            case sessionBettingType.session:
+            case sessionBettingType.overByOver:
+            case sessionBettingType.ballByBall:
+              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSession(
+                faAdminCal.userData[user.user.superParentId].profitLossData,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                  },
+                  loseAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
+                },
+                user?.user[`faPartnership`]
+              );
+              break;
+            case sessionBettingType.oddEven:
+              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionOddEven(faAdminCal.userData[user.user.superParentId].profitLossData,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                    teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
+                  },
+                  loseAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
+                },
+                user?.user[`faPartnership`]);
+              break;
+            case sessionBettingType.cricketCasino:
+              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionCasinoCricket(faAdminCal.userData[user.user.superParentId].profitLossData,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                    teamName: item?.teamName?.split("-")?.pop()?.trim()
+                  },
+                  loseAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
+                },
+                user?.user[`faPartnership`]);
+              break;
+            case sessionBettingType.fancy1:
+              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionFancy1(faAdminCal.userData[user.user.superParentId].profitLossData,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                  },
+                  loseAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
+                },
+                user?.user[`faPartnership`]);
+              break;
+            default:
+              break;
+          }
         }
       }
     }
