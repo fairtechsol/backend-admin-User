@@ -14,6 +14,7 @@ const { getUserBalanceDataByUserId, updateUserExposure } = require('../services/
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { getCardMatch } = require('../services/cardMatchService');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
+const { getMatchData } = require('../services/matchService');
 
 exports.getBet = async (req, res) => {
   try {
@@ -445,7 +446,9 @@ exports.sessionBetPlace = async (req, res, next) => {
       odds,
       ratePercent,
       stake,
-      teamName
+      teamName,
+      mid,
+      betPlaceIndex
     } = req.body;
     const { id } = req.user;
 
@@ -500,6 +503,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
     }
+    const matchDetail = await getMatchData({ id: matchId }, ["id", "eventId"]);
 
     let sessionDetails;
 
@@ -517,6 +521,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
       // Extract session details from the API response
       sessionDetails = response?.data;
+      sessionDetails.eventId = matchDetail.eventId;
     } catch (err) {
       // Handle API call error and return an error response
       return ErrorResponse(err?.response?.data, req, res);
@@ -530,20 +535,20 @@ exports.sessionBetPlace = async (req, res, next) => {
     if (sessionDetails?.type == sessionBettingType.fancy1) {
 
       if (sessionBetType == betType.BACK) {
-        winAmount = parseFloat((stake * (ratePercent - 1))).toFixed(2);
+        winAmount = parseFloat((stake * (odds - 1))).toFixed(2);
         loseAmount = parseFloat(stake);
       } else if (sessionBetType == betType.LAY) {
         winAmount = parseFloat(stake);
-        loseAmount = parseFloat((stake * (ratePercent - 1))).toFixed(2);
+        loseAmount = parseFloat((stake * (odds - 1))).toFixed(2);
       }
     }
     else if ([sessionBettingType.oddEven, sessionBettingType.cricketCasino].includes(sessionDetails?.type)) {
       if (sessionBetType == betType.YES) {
-        winAmount = parseFloat((stake * (ratePercent - 1))).toFixed(2);
+        winAmount = parseFloat((stake * (odds - 1))).toFixed(2);
         loseAmount = parseFloat(stake);
       } else if (sessionBetType == betType.NO) {
         winAmount = parseFloat(stake);
-        loseAmount = parseFloat((stake * (ratePercent - 1))).toFixed(2);
+        loseAmount = parseFloat((stake * (odds - 1))).toFixed(2);
       }
     }
     else {
@@ -880,7 +885,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
   try {
     let data = await apiCall(
       apiMethod.get,
-      microServiceUrl + allApiRoutes.MICROSERVICE.session + apiBetData.marketId
+      microServiceUrl + allApiRoutes.MICROSERVICE.getAllRateCricket + apiBetData.eventId
     ).catch(error => {
       logger.error({
         error: `Error at session bet check validate with third party url api hit.`,
@@ -889,20 +894,56 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       });
       throw error
     });
-
-    let filterData = data?.find(
-      (d) => d.SelectionId == apiBetData.selectionId
+    const sessionDetail = data?.data?.find(
+      (d) => d.mid?.toString() == betDetail.mid?.toString()
     );
+    let filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == betDetail?.selectionId?.toString());
 
-    if (
-      betDetail.betType == betType.NO && (betDetail.odds != filterData["LayPrice1"] || betDetail.ratePercent != filterData["LaySize1"])
-    ) {
-      return true;
-    } else if (
-      betDetail.betType == betType.YES && (betDetail.odds != filterData["BackPrice1"] || betDetail.ratePercent != filterData["BackSize1"])
-    ) {
-      return true;
-    } else {
+    if (sessionDetail?.mname == "oddeven") {
+      if (
+        (betDetail.teamName == "even") && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "lay")?.odds)
+      ) {
+        return true;
+      } else if (
+        betDetail.teamName == "odd" && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.odds)
+      ) {
+        return true;
+      }
+      return false;
+
+    }
+    else if (sessionDetail?.gtype == "cricketcasino") {
+      if (
+        (betDetail.betType == betType.BACK) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.odds)
+      ) {
+        return true;
+      }
+      return false;
+    }
+    else if (sessionDetail?.mname == "fancy1") {
+      if (
+        (betDetail.betType == betType.LAY) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "lay")?.odds)
+      ) {
+        return true;
+      } else if (
+        betDetail.betType == betType.BACK && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.odds)
+      ) {
+        return true;
+      }
+      return false;
+
+    }
+    else {
+
+      if (
+        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "lay")?.size)
+      ) {
+        return true;
+      } else if (
+        betDetail.betType == betType.YES && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.size)
+      ) {
+        return true;
+      }
       return false;
     }
   } catch (error) {

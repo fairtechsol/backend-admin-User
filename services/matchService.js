@@ -11,6 +11,11 @@ exports.updateMatchData = async (where, body) => {
   await match.update(where, body);
 };
 
+exports.getMatchData = async (where, select) => {
+  return await match.findOne({ where:where, select: select });
+};
+
+
 exports.listMatch = async (keyword) => {
   let matchList = await match.query(`SELECT title, "matchType", "startAt", "id" FROM matchs where "stopAt" is NULL AND title ILIKE $1
   UNION

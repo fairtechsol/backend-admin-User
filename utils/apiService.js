@@ -61,5 +61,6 @@ exports.allApiRoutes = {
     casinoData: "/getdata/",
     cardResultDetail: "/getdetailresult/",
     cardTopTenResultDetail: "/getresult/",
+    getAllRateCricket: "/getAllRateCricket/"
   }
 }
