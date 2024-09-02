@@ -24,6 +24,7 @@ const {
   profitLossKeys,
   racingBettingType,
   walletDomain,
+  sessionBettingType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss } = require("../services/betPlacedService");
@@ -697,12 +698,35 @@ exports.declareSessionResult = async (req, res) => {
     let bulkCommission = {};
 
     for (let item of betPlaced) {
-      if ((item.betType == betType.YES && item.odds <= score) || (item.betType == betType.NO && item.odds > score)) {
-        item.result = betResultStatus.WIN;
-      } else if ((item.betType == betType.YES && item.odds > score) || (item.betType == betType.NO && item.odds <= score)) {
-        item.result = betResultStatus.LOSS;
-      }
 
+      switch (item?.marketType) {
+        case sessionBettingType.ballByBall:
+        case sessionBettingType.overByOver:
+        case sessionBettingType.session:
+
+          if ((item.betType == betType.YES && item.odds <= score) || (item.betType == betType.NO && item.odds > score)) {
+            item.result = betResultStatus.WIN;
+          } else if ((item.betType == betType.YES && item.odds > score) || (item.betType == betType.NO && item.odds <= score)) {
+            item.result = betResultStatus.LOSS;
+          }
+          break;
+        case sessionBettingType.oddEven:
+          let currBetType = item?.teamName?.split("-")?.pop()?.trim();
+          if ((currBetType == "odd" && score % 2 == 1) || (currBetType == "even" && score % 2 == 0)) {
+            item.result = betResultStatus.WIN;
+          } else if ((currBetType == "odd" && score % 2 != 1) || (currBetType == "even" && score % 2 != 0)) {
+            item.result = betResultStatus.LOSS;
+          }
+          break;
+        case sessionBettingType.cricketCasino:
+          let currBet = item?.teamName?.split("-")?.pop()?.trim()?.split(" ")?.[1];
+          if ((currBet == parseInt(score) % 10)) {
+            item.result = betResultStatus.WIN;
+          } else {
+            item.result = betResultStatus.LOSS;
+          }
+          break;
+      }
       if (item.user['sessionCommission'] != 0 && item.user['sessionCommission'] != null) {
         let commissionAmount = Number((parseFloat(item.amount) * (parseFloat(item.user['sessionCommission']) / 100)).toFixed(2));
         commissionAmount = Math.abs(commissionAmount);
@@ -1473,7 +1497,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
 
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
     let betPlace = await findAllPlacedBetWithUserIdAndBetId(user?.user?.id, betId);
-    let redisData = await calculatePLAllBet(betPlace, 100);
+    let redisData = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, 100);
     maxLoss = redisData.maxLoss || 0;
 
     redisSesionExposureValue = redisSesionExposureValue + maxLoss;
@@ -1621,7 +1645,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
           upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(commissionData?.find((item) => item?.userId == patentUser.id)?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
         }
 
-        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
 
         upperUserObj[patentUser.id] = {
           ...upperUserObj[patentUser.id], profitLossObj: {
@@ -1647,6 +1671,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
     if (!faAdminCal.walletData.profitLossObjWallet) {
       const betPlaceProfitLoss = await calculatePLAllBet(
         betPlace,
+        betPlace?.[0]?.marketType,
         -user?.user[`fwPartnership`]
       );
       faAdminCal.walletData.profitLossObjWallet = {
@@ -1677,6 +1702,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         faAdminCal.userData[user.user.superParentId] = {};
         const betPlaceProfitLoss = await calculatePLAllBet(
           betPlace,
+          betPlace?.[0]?.marketType,
           -user?.user[`faPartnership`]
         );
         faAdminCal.userData[user.user.superParentId].profitLossData = {
