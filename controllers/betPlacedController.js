@@ -897,7 +897,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     const sessionDetail = data?.data?.find(
       (d) => d.mid?.toString() == betDetail.mid?.toString()
     );
-    let filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == betDetail?.selectionId?.toString());
+    let filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == apiBetData?.selectionId?.toString());
 
     if (sessionDetail?.mname == "oddeven") {
       if (
