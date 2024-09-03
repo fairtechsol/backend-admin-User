@@ -19,7 +19,9 @@ module.exports.MatchBetPlacedValidator = Joi.object({
     browserDetail :  Joi.string().allow(""),
     bettingName: Joi.string().allow(""),
     userId: Joi.string().allow(""),
-    gameType: Joi.string().allow("")
+    gameType: Joi.string().allow(""),
+    mid: Joi.string(),
+    selectionId: Joi.string()
   });
   
   module.exports.SessionBetPlacedValidator = Joi.object({

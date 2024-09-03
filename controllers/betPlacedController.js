@@ -159,7 +159,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       data: req.body
     });
     let reqUser = req.user;
-    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName } = req.body;
+    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, mid, selectionId } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     let user = userBalanceData?.user;
@@ -234,7 +234,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       throw error?.response?.data;
     }
     let { match, matchBetting } = apiResponse.data;
-
+    matchBetting.eventId = match?.eventId;
     if (match.matchType != gameType.cricket) {
       return ErrorResponse({ statusCode: 400, message: { msg: "bet.validGameType" } }, req, res);
     }
@@ -263,7 +263,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       eventType: match.matchType,
       bettingName: bettingName
     }
-    await validateMatchBettingDetails(matchBetting, betPlacedObj, { teamA, teamB, teamC, placeIndex });
+    await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { teamA, teamB, teamC, placeIndex });
 
     const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys);
 
@@ -1174,30 +1174,25 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
   let url = "";
   const microServiceUrl = microServiceDomain;
   try {
-    if (matchBettingDetail.type == matchBettingType.bookmaker) {
-      url = microServiceUrl + allApiRoutes.MICROSERVICE.bookmaker + matchBettingDetail.marketId
+    
+      url = microServiceUrl + allApiRoutes.MICROSERVICE.getAllRateCricket + matchBettingDetail.eventId
 
-    }
-    else {
-      url = microServiceUrl + allApiRoutes.MICROSERVICE.matchOdd + matchBettingDetail.marketId + (matchBettingDetail?.apiType ? `?apiType=${matchBettingDetail?.apiType}` : "")
-
-    }
+    
     let data = await apiCall(apiMethod.get, url);
-    if (data) {
-      if (data[0]['ex'] && betObj.betType == betType.BACK && teams.teamA == betObj.teamName && data[0]['ex'].availableToBack[teams.placeIndex].price != betObj.odds) {
+
+    const matchBettingData = data?.data?.find(
+      (d) => d.mid?.toString() == betObj.mid?.toString()
+    );
+    let filterData = matchBettingData?.section?.find((item) => item?.sid?.toString() == betObj?.selectionId?.toString());
+
+    if (filterData) {
+      if (filterData?.odds?.find((item) => item?.tno == teams?.placeIndex && item?.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
         return true;
-      } else if (data[0]['ex'] && betObj.betType == betType.LAY && teams.teamA == betObj.teamName && data[0]['ex'].availableToLay[teams.placeIndex].price != betObj.odds) {
-        return true;
-      } else if (data[1]['ex'] && betObj.betType == betType.BACK && teams.teamB == betObj.teamName && data[1]['ex'].availableToBack[teams.placeIndex].price != betObj.odds) {
-        return true;
-      } else if (data[1]['ex'] && betObj.betType == betType.LAY && teams.teamB == betObj.teamName && data[1]['ex'].availableToLay[teams.placeIndex].price != betObj.odds) {
-        return true;
-      } else {
-        return false;
       }
-    } else {
-      return true;
+      return false;
     }
+    return true;
+
   }
   catch (error) {
     throw {
