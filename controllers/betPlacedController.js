@@ -933,11 +933,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
 
     if (sessionDetail?.mname == "oddeven") {
       if (
-        (betDetail.teamName == "even") && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "lay")?.odds)
+        (betDetail.teamName == "even") && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds)
       ) {
         return true;
       } else if (
-        betDetail.teamName == "odd" && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.odds)
+        betDetail.teamName == "odd" && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -946,7 +946,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     }
     else if (sessionDetail?.gtype == "cricketcasino") {
       if (
-        (betDetail.betType == betType.BACK) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.odds)
+        (betDetail.betType == betType.BACK) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -954,11 +954,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     }
     else if (sessionDetail?.mname == "fancy1") {
       if (
-        (betDetail.betType == betType.LAY) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "lay")?.odds)
+        (betDetail.betType == betType.LAY) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds)
       ) {
         return true;
       } else if (
-        betDetail.betType == betType.BACK && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.odds)
+        betDetail.betType == betType.BACK && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -968,11 +968,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     else {
 
       if (
-        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "lay")?.size)
+        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.size)
       ) {
         return true;
       } else if (
-        betDetail.betType == betType.YES && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && betDetail?.otype == "back")?.size)
+        betDetail.betType == betType.YES && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.size)
       ) {
         return true;
       }

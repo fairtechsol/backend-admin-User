@@ -35,6 +35,7 @@ module.exports.MatchBetPlacedValidator = Joi.object({
     ratePercent: Joi.number(),
     userId: Joi.string().allow(""),
     mid: Joi.string(),
+    teamName: Joi.string(),
     betPlaceIndex: Joi.number().allow(0)
   });
 
