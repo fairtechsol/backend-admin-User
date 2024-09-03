@@ -729,7 +729,7 @@ exports.declareSessionResult = async (req, res) => {
           }
           break;
         case sessionBettingType.cricketCasino:
-          let currBet = parseInt(item?.teamName?.split("-")?.pop()?.trim()?.split(" ")?.[1]);
+          let currBet = parseInt(item?.teamName?.split("-")?.pop()?.trim()?.split(" ")?.[0]);
           if ((currBet == parseInt(score) % 10)) {
             item.result = betResultStatus.WIN;
           } else {

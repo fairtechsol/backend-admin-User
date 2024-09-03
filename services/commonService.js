@@ -378,7 +378,7 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
   let betProfitloss = redisProfitLoss?.betPlaced ?? {};
 
   Array.from({ length: 10 }, (_, index) => index)?.forEach((item)=>{
-    if(betData?.betPlacedData?.teamName?.split(" ")?.[1]==item){
+    if(betData?.betPlacedData?.teamName?.split(" ")?.[0]==item){
       betProfitloss[item] = ((betProfitloss[item] || 0) + betData?.winAmount) * partnership / 100;
     }
     else{
@@ -451,8 +451,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip=100, oldLower
 
       for (let item of betPlace) {
         let data = {
-          winAmount: !isPartnership ? -item?.winAmount : item?.winAmount,
-          lossAmount: !isPartnership ? -item?.lossAmount : item?.lossAmount,
+          winAmount: isPartnership ? -item?.winAmount : item?.winAmount,
+          lossAmount: isPartnership ? -item?.lossAmount : item?.lossAmount,
           betPlacedData: {
             teamName: item?.teamName?.split("-")?.pop()?.trim(),
           },
@@ -471,8 +471,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip=100, oldLower
 
       for (let item of betPlace) {
         let data = {
-          winAmount: !isPartnership ? -item?.winAmount : item?.winAmount,
-          lossAmount: !isPartnership ? -item?.lossAmount : item?.lossAmount,
+          winAmount: isPartnership ? -item?.winAmount : item?.winAmount,
+          lossAmount: isPartnership ? -item?.lossAmount : item?.lossAmount,
           betPlacedData: {
             teamName: item?.teamName?.split("-")?.pop()?.trim()
           },
@@ -491,8 +491,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip=100, oldLower
 
       for (let item of betPlace) {
         let data = {
-          winAmount: !isPartnership ? -item?.winAmount : item?.winAmount,
-          lossAmount: !isPartnership ? -item?.lossAmount : item?.lossAmount,
+          winAmount: isPartnership ? -item?.winAmount : item?.winAmount,
+          lossAmount: isPartnership ? -item?.lossAmount : item?.lossAmount,
           betPlacedData: {
             betType: item?.betType
           },

@@ -929,7 +929,16 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     const sessionDetail = data?.data?.find(
       (d) => d.mid?.toString() == betDetail.mid?.toString()
     );
-    let filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == apiBetData?.selectionId?.toString());
+    let filterData;
+    if (sessionDetail?.gtype == "cricketcasino") {
+      filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == (parseInt(betDetail?.teamName?.split(" ")?.[0]) + 1)?.toString());
+    }
+    else {
+      filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == apiBetData?.selectionId?.toString());
+    }
+    if (filterData?.gstatus != "" && filterData?.gstatus != "OPEN") {
+      return true;
+    }
 
     if (sessionDetail?.mname == "oddeven") {
       if (
