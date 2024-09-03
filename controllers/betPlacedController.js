@@ -541,14 +541,46 @@ exports.sessionBetPlace = async (req, res, next) => {
         winAmount = parseFloat(stake);
         loseAmount = parseFloat((stake * (odds - 1))).toFixed(2);
       }
+      else {
+        // Return an error response for an invalid bet type
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "invalid",
+              keys: {
+                name: "Bet type",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
     }
     else if ([sessionBettingType.oddEven, sessionBettingType.cricketCasino].includes(sessionDetails?.type)) {
-      if (sessionBetType == betType.YES) {
+      if (sessionBetType == betType.BACK) {
         winAmount = parseFloat((stake * (odds - 1))).toFixed(2);
         loseAmount = parseFloat(stake);
-      } else if (sessionBetType == betType.NO) {
+      } else if (sessionBetType == betType.LAY) {
         winAmount = parseFloat(stake);
         loseAmount = parseFloat((stake * (odds - 1))).toFixed(2);
+      }
+      else {
+        // Return an error response for an invalid bet type
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "invalid",
+              keys: {
+                name: "Bet type",
+              },
+            },
+          },
+          req,
+          res
+        );
       }
     }
     else {
