@@ -1639,7 +1639,6 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
         for (const placedBets of betPlace) {
-          for (const placedBets of betPlace) {
             switch (placedBets?.marketType) {
               case sessionBettingType.session:
               case sessionBettingType.overByOver:
@@ -1666,10 +1665,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                       odds: placedBets?.odds,
                       teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
                     },
-                    lossAmount: placedBets?.lossAmount,
-                    winAmount: placedBets?.winAmount,
+                    lossAmount: -placedBets?.lossAmount,
+                    winAmount: -placedBets?.winAmount,
                   },
-                 -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
                 break;
               case sessionBettingType.cricketCasino:
                 upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSessionCasinoCricket(
@@ -1680,10 +1679,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                       odds: placedBets?.odds,
                       teamName: item?.teamName?.split("-")?.pop()?.trim()
                     },
-                    lossAmount: placedBets?.lossAmount,
-                    winAmount: placedBets?.winAmount,
+                    lossAmount: -placedBets?.lossAmount,
+                    winAmount: -placedBets?.winAmount,
                   },
-                 -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
                 break;
               case sessionBettingType.fancy1:
                 upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSessionFancy1(
@@ -1693,16 +1692,15 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                       betType: placedBets?.betType,
                       odds: placedBets?.odds,
                     },
-                    lossAmount: placedBets?.lossAmount,
-                    winAmount: placedBets?.winAmount,
+                    lossAmount: -placedBets?.lossAmount,
+                    winAmount: -placedBets?.winAmount,
                   },
-                 -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
                 break;
               default:
                 break;
             }
             
-          }
         }
       } else {
         upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
@@ -1711,7 +1709,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
           upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(commissionData?.find((item) => item?.userId == patentUser.id)?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
         }
 
-        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
 
         upperUserObj[patentUser.id] = {
           ...upperUserObj[patentUser.id], profitLossObj: {
@@ -1738,7 +1736,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       const betPlaceProfitLoss = await calculatePLAllBet(
         betPlace,
         betPlace?.[0]?.marketType,
-        -user?.user[`fwPartnership`]
+        user?.user[`fwPartnership`]
       );
       faAdminCal.walletData.profitLossObjWallet = {
         upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
@@ -1775,10 +1773,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                   odds: placedBets?.odds,
                   teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
                 },
-                lossAmount: placedBets?.lossAmount,
-                winAmount: placedBets?.winAmount,
+                lossAmount: -placedBets?.lossAmount,
+                winAmount: -placedBets?.winAmount,
               },
-              -user?.user[`fwPartnership`]);
+              user?.user[`fwPartnership`]);
             break;
           case sessionBettingType.cricketCasino:
             faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionCasinoCricket(
@@ -1789,10 +1787,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                   odds: placedBets?.odds,
                   teamName: item?.teamName?.split("-")?.pop()?.trim()
                 },
-                lossAmount: placedBets?.lossAmount,
-                winAmount: placedBets?.winAmount,
+                lossAmount: -placedBets?.lossAmount,
+                winAmount: -placedBets?.winAmount,
               },
-              -user?.user[`fwPartnership`]);
+              user?.user[`fwPartnership`]);
             break;
           case sessionBettingType.fancy1:
             faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionFancy1(
@@ -1802,10 +1800,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                   betType: placedBets?.betType,
                   odds: placedBets?.odds,
                 },
-                lossAmount: placedBets?.lossAmount,
-                winAmount: placedBets?.winAmount,
+                lossAmount: -placedBets?.lossAmount,
+                winAmount: -placedBets?.winAmount,
               },
-              -user?.user[`fwPartnership`]);
+              user?.user[`fwPartnership`]);
             break;
           default:
             break;
@@ -1819,7 +1817,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         const betPlaceProfitLoss = await calculatePLAllBet(
           betPlace,
           betPlace?.[0]?.marketType,
-          -user?.user[`faPartnership`]
+          user?.user[`faPartnership`]
         );
         faAdminCal.userData[user.user.superParentId].profitLossData = {
           upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
@@ -1855,10 +1853,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                     odds: placedBets?.odds,
                     teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
                   },
-                  lossAmount: placedBets?.lossAmount,
-                  winAmount: placedBets?.winAmount,
+                  lossAmount: -placedBets?.lossAmount,
+                  winAmount: -placedBets?.winAmount,
                 },
-                -user?.user[`faPartnership`]);
+                user?.user[`faPartnership`]);
               break;
             case sessionBettingType.cricketCasino:
               faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionCasinoCricket(faAdminCal.userData[user.user.superParentId].profitLossData,
@@ -1868,10 +1866,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                     odds: placedBets?.odds,
                     teamName: item?.teamName?.split("-")?.pop()?.trim()
                   },
-                  lossAmount: placedBets?.lossAmount,
-                  winAmount: placedBets?.winAmount,
+                  lossAmount: -placedBets?.lossAmount,
+                  winAmount: -placedBets?.winAmount,
                 },
-                -user?.user[`faPartnership`]);
+                user?.user[`faPartnership`]);
               break;
             case sessionBettingType.fancy1:
               faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionFancy1(faAdminCal.userData[user.user.superParentId].profitLossData,
@@ -1880,10 +1878,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                     betType: placedBets?.betType,
                     odds: placedBets?.odds,
                   },
-                  lossAmount: placedBets?.lossAmount,
-                  winAmount: placedBets?.winAmount,
+                  lossAmount: -placedBets?.lossAmount,
+                  winAmount: -placedBets?.winAmount,
                 },
-                -user?.user[`faPartnership`]);
+                user?.user[`faPartnership`]);
               break;
             default:
               break;

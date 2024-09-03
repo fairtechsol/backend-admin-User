@@ -332,7 +332,7 @@ exports.calculateProfitLossSessionOddEven = async (redisProfitLoss, betData, par
   // Return the result
   return {
     betPlaced: betProfitloss,
-    maxLoss: parseFloat(maxLoss),
+    maxLoss: parseFloat(Math.abs(maxLoss)),
     totalBet: redisProfitLoss?.totalBet ? parseInt(redisProfitLoss?.totalBet) + 1 : 1
   };
 };
@@ -361,7 +361,7 @@ exports.calculateProfitLossSessionFancy1 = async (redisProfitLoss, betData, part
   // Return the result
   return {
     betPlaced: betProfitloss,
-    maxLoss: parseFloat(maxLoss),
+    maxLoss: parseFloat(Math.abs(maxLoss)),
     totalBet: redisProfitLoss?.totalBet ? parseInt(redisProfitLoss?.totalBet) + 1 : 1
   };
 };
@@ -390,14 +390,14 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
   // Return the result
   return {
     betPlaced: betProfitloss,
-    maxLoss: parseFloat(maxLoss),
+    maxLoss: parseFloat(Math.abs(maxLoss)),
     totalBet: redisProfitLoss?.totalBet ? parseInt(redisProfitLoss?.totalBet) + 1 : 1
   };
 };
 
 exports.calculatePLAllBet = async (betPlace, type, userPartnerShip=100, oldLowerLimitOdds, oldUpperLimitOdds) => {
   let profitLoss = {};
-
+  let isPartnership = userPartnerShip != 100;
   switch (type) {
     case sessionBettingType.ballByBall:
     case sessionBettingType.overByOver:
@@ -451,8 +451,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip=100, oldLower
 
       for (let item of betPlace) {
         let data = {
-          winAmount: item?.winAmount,
-          lossAmount: item?.lossAmount,
+          winAmount: !isPartnership ? -item?.winAmount : item?.winAmount,
+          lossAmount: !isPartnership ? -item?.lossAmount : item?.lossAmount,
           betPlacedData: {
             teamName: item?.teamName?.split("-")?.pop()?.trim(),
           },
@@ -471,8 +471,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip=100, oldLower
 
       for (let item of betPlace) {
         let data = {
-          winAmount: item?.winAmount,
-          lossAmount: item?.lossAmount,
+          winAmount: !isPartnership ? -item?.winAmount : item?.winAmount,
+          lossAmount: !isPartnership ? -item?.lossAmount : item?.lossAmount,
           betPlacedData: {
             teamName: item?.teamName?.split("-")?.pop()?.trim()
           },
@@ -491,8 +491,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip=100, oldLower
 
       for (let item of betPlace) {
         let data = {
-          winAmount: item?.winAmount,
-          lossAmount: item?.lossAmount,
+          winAmount: !isPartnership ? -item?.winAmount : item?.winAmount,
+          lossAmount: !isPartnership ? -item?.lossAmount : item?.lossAmount,
           betPlacedData: {
             betType: item?.betType
           },

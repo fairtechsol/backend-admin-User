@@ -731,7 +731,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       lossAmount: loseAmount,
       betType: sessionBetType,
       rate: ratePercent,
-      teamName: `${sessionDetails?.name} / ${ratePercent} ${teamName ? `- ${teamName}` : odds}`,
+      teamName: `${sessionDetails?.name} / ${ratePercent} - ${teamName ?? odds}`,
       marketType: sessionDetails?.type,
       marketBetType: marketBetType.SESSION,
       ipAddress: ipAddress || req.ip || req.connection.remoteAddress,
