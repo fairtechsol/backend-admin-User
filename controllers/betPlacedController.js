@@ -622,7 +622,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     let betPlaceObject = {
       winAmount: parseFloat(winAmount),
-      loseAmount: parseFloat(loseAmount),
+      lossAmount: parseFloat(loseAmount),
       betPlacedData: {
         userName: user.userName,
         odds: parseFloat(odds),
