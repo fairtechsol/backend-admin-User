@@ -395,7 +395,7 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
   };
 };
 
-exports.calculatePLAllBet = async (betPlace, type, userPartnerShip, oldLowerLimitOdds, oldUpperLimitOdds) => {
+exports.calculatePLAllBet = async (betPlace, type, userPartnerShip=100, oldLowerLimitOdds, oldUpperLimitOdds) => {
   let profitLoss = {};
 
   switch (type) {
@@ -451,8 +451,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip, oldLowerLimi
 
       for (let item of betPlace) {
         let data = {
-          winAmount: parseFloat(item?.winAmount),
-          lossAmount: parseFloat(item?.lossAmount),
+          winAmount: parseFloat(parseFloat(item?.winAmount * parseFloat(userPartnerShip) / 100).toFixed(2)),
+          lossAmount: parseFloat(parseFloat(item?.lossAmount * parseFloat(userPartnerShip) / 100).toFixed(2)),
           betPlacedData: {
             teamName: item?.teamName?.split("-")?.pop()?.trim(),
           },
@@ -471,8 +471,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip, oldLowerLimi
 
       for (let item of betPlace) {
         let data = {
-          winAmount: parseFloat(item?.winAmount),
-          lossAmount: parseFloat(item?.lossAmount),
+          winAmount: parseFloat(parseFloat(item?.winAmount * parseFloat(userPartnerShip) / 100).toFixed(2)),
+          lossAmount: parseFloat(parseFloat(item?.lossAmount * parseFloat(userPartnerShip) / 100).toFixed(2)),
           betPlacedData: {
             teamName: item?.teamName?.split("-")?.pop()?.trim()
           },
@@ -491,8 +491,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip, oldLowerLimi
 
       for (let item of betPlace) {
         let data = {
-          winAmount: parseFloat(item?.winAmount),
-          lossAmount: parseFloat(item?.lossAmount),
+          winAmount: parseFloat(parseFloat(item?.winAmount * parseFloat(userPartnerShip) / 100).toFixed(2)),
+          lossAmount: parseFloat(parseFloat(item?.lossAmount * parseFloat(userPartnerShip) / 100).toFixed(2)),
           betPlacedData: {
             betType: item?.betType
           },

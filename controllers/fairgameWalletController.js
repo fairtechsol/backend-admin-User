@@ -715,9 +715,9 @@ exports.declareSessionResult = async (req, res) => {
           break;
         case sessionBettingType.oddEven:
           let currBetType = item?.teamName?.split("-")?.pop()?.trim()?.toLowerCase();
-          if ((currBetType == "odd" && score % 2 == 1) || (currBetType == "even" && score % 2 == 0)) {
+          if ((currBetType == "odd" && parseInt(score) % 2 == 1) || (currBetType == "even" && parseInt(score) % 2 == 0)) {
             item.result = betResultStatus.WIN;
-          } else if ((currBetType == "odd" && score % 2 != 1) || (currBetType == "even" && score % 2 != 0)) {
+          } else if ((currBetType == "odd" && parseInt(score) % 2 != 1) || (currBetType == "even" && parseInt(score) % 2 != 0)) {
             item.result = betResultStatus.LOSS;
           }
           break;
