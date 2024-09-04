@@ -3243,6 +3243,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
         break;
       case cardGameType.card32eu:
       case cardGameType.race20:
+      case cardGameType.queen:
         if (parseInt(selectionId) <= 4) {
           selectionId = 1;
         }
@@ -3433,7 +3434,10 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   }
   let currData;
   if (match?.type == cardGameType.teen) {
-    currData = roundData?.t1?.find((item) => item?.sid == selectionId);
+    currData = roundData?.t1?.find((item) => item?.sectionId == selectionId);
+  }
+  else if (match?.type == cardGameType.ballbyball) {
+    currData = roundData?.t1?.sub?.find((item) => item?.sid?.toString() == selectionId?.toString());
   }
   else if (match?.type == cardGameType.dt6 && betObj?.teamName == "Tiger") {
     currData = roundData?.t2?.find((item) => item?.sid == 2);
@@ -3448,7 +3452,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     currData = roundData?.t2?.find((item) => item?.sid == selectionId);
   }
 
-  if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "active" && currData?.status?.toLowerCase() != "active" && match?.type != cardGameType.teen9) {
+  if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "open" && currData?.gstatus?.toLowerCase() != "active" && currData?.status?.toLowerCase() != "active" && match?.type != cardGameType.teen9) {
     throw {
       statusCode: 400,
       message: {
@@ -3505,6 +3509,7 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.dt6:
     case cardGameType.poker:
     case cardGameType.race20:
+    case cardGameType.queen:
     case cardGameType.card32eu:
     case cardGameType.superover:
     case cardGameType.cricketv3:
@@ -3514,11 +3519,14 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.baccarat:
     case cardGameType.baccarat2:
     case cardGameType.btable:
+    case cardGameType.cmeter:
       return ((betObj.betType == betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
       return ((betObj.betType == betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
     case cardGameType.teen9:
       return ((betObj?.teamName[0]?.toLowerCase() == "t" && currData?.trate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "l" && currData?.lrate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "d" && currData?.drate != betObj?.odds))
+    case cardGameType.ballbyball:
+      return ((betObj.betType == betType.BACK && parseFloat(currData.b) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l) != parseFloat(betObj.odds)))
     default:
       return betObj?.odds != currData?.rate
   }

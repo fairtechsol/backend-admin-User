@@ -678,6 +678,7 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
         break;
       case cardGameType.card32eu:
       case cardGameType.race20:
+      case cardGameType.queen:
         if (parseInt(sid) <= 4) {
           sid = 1;
         }

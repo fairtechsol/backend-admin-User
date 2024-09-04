@@ -48,6 +48,8 @@ class CardWinOrLose {
                 return this.casinoWar();
             case cardGameType.race20:
                 return this.race20();
+            case cardGameType.queen:
+                return this.queen();
             case cardGameType.superover:
             case cardGameType.cricketv3:
                 return this.superOver();
@@ -65,7 +67,9 @@ class CardWinOrLose {
                 return this.baccarat();
             case cardGameType.baccarat2:
                 return this.baccarat2();
-                case cardGameType["3cardj"]:
+            case cardGameType.ballbyball:
+                return this.ballbyball();
+            case cardGameType["3cardj"]:
                 return this.threeCardJ();
             default:
                 throw {
@@ -698,20 +702,57 @@ class CardWinOrLose {
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
-    threeCardJ(){
-        const {cards}=this.result;
-        const splittedCards=cards?.split(",")?.map((item)=>item?.slice(0, -2));
+    threeCardJ() {
+        const { cards } = this.result;
+        const splittedCards = cards?.split(",")?.map((item) => item?.slice(0, -2));
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
 
-        
-            for(let item of splittedCards){
-                if(betOnTeamKey?.includes(item)&&betOnTeamKey?.includes("yes")){
-                    return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
-                }
-                else if(!betOnTeamKey?.includes(item)&&betOnTeamKey?.includes("no")){
-                    return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
-                }
+
+        for (let item of splittedCards) {
+            if (betOnTeamKey?.includes(item) && betOnTeamKey?.includes("yes")) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
+            else if (!betOnTeamKey?.includes(item) && betOnTeamKey?.includes("no")) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+
+    queen() {
+        const { win } = this.result;
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
+
+        if (selectionId?.toString() == win?.toString()) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    ballbyball() {
+        const { win } = this.result;
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
+
+        if(parseInt(selectionId)<=6){
+            if (selectionId?.toString() == win?.toString()) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        else if(parseInt(selectionId)==17){
+            if (["5", "6"].includes(win?.toString())) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        else if (parseInt(selectionId) == 18) {
+            if (parseInt(win) >= 7 && win <= 12) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        else if (parseInt(selectionId) == 19) {
+            if (parseInt(win) >= 13 && win <= 16) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 }
