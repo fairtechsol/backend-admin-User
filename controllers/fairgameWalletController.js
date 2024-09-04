@@ -1984,10 +1984,10 @@ exports.declareMatchResult = async (req, res) => {
 
     for (let item of betPlaced) {
       if (result === resultType.tie) {
-        if ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName === tiedManualTeamName.no)) {
+        if ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName?.toUpperCase() === tiedManualTeamName.no)) {
           item.result = betResultStatus.WIN;
         }
-        else if ((item.betType === betType.LAY && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.BACK && item.teamName === tiedManualTeamName.no)) {
+        else if ((item.betType === betType.LAY && item.teamName?.toUpperCase() === tiedManualTeamName.yes) || (item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.no)) {
           item.result = betResultStatus.LOSS;
         }
         else {
@@ -1995,10 +1995,10 @@ exports.declareMatchResult = async (req, res) => {
         }
       } else if (result === resultType.noResult) {
         if (!(item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch2)) {
-          if ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName === tiedManualTeamName.no)) {
+          if ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName?.toUpperCase() === tiedManualTeamName.no)) {
             item.result = betResultStatus.LOSS;
           }
-          else if ((item.betType === betType.LAY && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.BACK && item.teamName === tiedManualTeamName.no)) {
+          else if ((item.betType === betType.LAY && item.teamName?.toUpperCase() === tiedManualTeamName.yes) || (item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.no)) {
             item.result = betResultStatus.WIN
           }
           else {
@@ -2010,8 +2010,8 @@ exports.declareMatchResult = async (req, res) => {
         }
       } else {
         const isWinCondition = !(Object.values(tieCompleteBetType).includes(item.marketType)) && ((item.betType === betType.BACK && item.teamName === result) || (item.betType === betType.LAY && item.teamName !== result));
-        const isTiedMatchCondition = (item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch2) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.no) || (item.betType === betType.LAY && item.teamName == tiedManualTeamName.yes));
-        const isCompleteMatchCondition = (item.marketType === matchBettingType.completeMatch || item.marketType === matchBettingType.completeManual) && ((item.betType === betType.BACK && item.teamName === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName == tiedManualTeamName.no));
+        const isTiedMatchCondition = (item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch2) && ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.no) || (item.betType === betType.LAY && item.teamName?.toUpperCase() == tiedManualTeamName.yes));
+        const isCompleteMatchCondition = (item.marketType === matchBettingType.completeMatch || item.marketType === matchBettingType.completeManual) && ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName?.toUpperCase() == tiedManualTeamName.no));
         item.result = isWinCondition || isTiedMatchCondition || isCompleteMatchCondition ? betResultStatus.WIN : betResultStatus.LOSS;
       }
       if (item.user.matchCommission && item.result == betResultStatus.LOSS && item.user.matchComissionType == matchComissionTypeConstant.entryWise) {
