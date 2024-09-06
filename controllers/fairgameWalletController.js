@@ -1709,7 +1709,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
           upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(commissionData?.find((item) => item?.userId == patentUser.id)?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
         }
 
-        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
 
         upperUserObj[patentUser.id] = {
           ...upperUserObj[patentUser.id], profitLossObj: {
@@ -1736,7 +1736,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       const betPlaceProfitLoss = await calculatePLAllBet(
         betPlace,
         betPlace?.[0]?.marketType,
-        user?.user[`fwPartnership`]
+        -user?.user[`fwPartnership`]
       );
       faAdminCal.walletData.profitLossObjWallet = {
         upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
@@ -1817,7 +1817,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         const betPlaceProfitLoss = await calculatePLAllBet(
           betPlace,
           betPlace?.[0]?.marketType,
-          user?.user[`faPartnership`]
+          -user?.user[`faPartnership`]
         );
         faAdminCal.userData[user.user.superParentId].profitLossData = {
           upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,

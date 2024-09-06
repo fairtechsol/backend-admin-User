@@ -451,8 +451,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip = 100, oldLow
 
       for (let item of betPlace) {
         let data = {
-          winAmount: isPartnership ? -item?.winAmount : item?.winAmount,
-          lossAmount: isPartnership ? -item?.lossAmount : item?.lossAmount,
+          winAmount:  item?.winAmount,
+          lossAmount: item?.lossAmount,
           betPlacedData: {
             teamName: item?.teamName?.split("-")?.pop()?.trim(),
           },
@@ -471,8 +471,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip = 100, oldLow
 
       for (let item of betPlace) {
         let data = {
-          winAmount: isPartnership ? -item?.winAmount : item?.winAmount,
-          lossAmount: isPartnership ? -item?.lossAmount : item?.lossAmount,
+          winAmount:  item?.winAmount,
+          lossAmount: item?.lossAmount,
           betPlacedData: {
             teamName: item?.teamName?.split("-")?.pop()?.trim()
           },
@@ -491,8 +491,8 @@ exports.calculatePLAllBet = async (betPlace, type, userPartnerShip = 100, oldLow
 
       for (let item of betPlace) {
         let data = {
-          winAmount: isPartnership ? -item?.winAmount : item?.winAmount,
-          lossAmount: isPartnership ? -item?.lossAmount : item?.lossAmount,
+          winAmount:  item?.winAmount,
+          lossAmount: item?.lossAmount,
           betPlacedData: {
             betType: item?.betType
           },
@@ -704,12 +704,8 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
   return oldPl;
 }
 
-exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced, type = sessionBettingType.session) => {
+exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced) => {
 
-  switch (type) {
-    case sessionBettingType.ballByBall:
-    case sessionBettingType.overByOver:
-    case sessionBettingType.session:
       if (newbetPlaced[0].odds > oldbetPlaced[0].odds) {
         while (newbetPlaced[0].odds != oldbetPlaced[0].odds) {
           const newEntry = {
@@ -747,18 +743,6 @@ exports.mergeProfitLoss = (newbetPlaced, oldbetPlaced, type = sessionBettingType
           newbetPlaced.push(newEntry);
         }
       }
-      return;
-    case sessionBettingType.oddEven:
-    case sessionBettingType.fancy1:
-    case sessionBettingType.cricketCasino:
-      Object.keys(newbetPlaced)?.forEach((item) => {
-        newbetPlaced[item].profitLoss = oldbetPlaced[item]?.profitLoss - newbetPlaced[item]?.profitLoss;
-      });
-      return;
-    default:
-      return;
-  }
-
 };
 
 exports.findUserPartnerShipObj = async (user) => {
