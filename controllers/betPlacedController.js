@@ -731,7 +731,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       lossAmount: loseAmount,
       betType: sessionBetType,
       rate: ratePercent,
-      teamName: `${sessionDetails?.name} / ${ratePercent} - ${teamName ?? odds}`,
+      teamName: `${sessionDetails?.name} ${sessionDetails?.type == sessionBettingType.fancy1 ? "" : [sessionBettingType.oddEven, sessionBettingType.cricketCasino]?.includes(sessionDetails?.type) ? `-${teamName?.toUpperCase()}` : `/ ${ratePercent}`}`,
       marketType: sessionDetails?.type,
       marketBetType: marketBetType.SESSION,
       ipAddress: ipAddress || req.ip || req.connection.remoteAddress,
@@ -1239,7 +1239,7 @@ exports.deleteMultipleBet = async (req, res) => {
     let isAnyMatchBet = false;
     placedBet.forEach(bet => {
       let isSessionBet = false;
-      if (bet.betType == betType.YES || bet.betType == betType.NO) {
+      if (bet.marketBetType == 'SESSION') {
         isSessionBet = true;
       } else {
         isAnyMatchBet = true;
@@ -1420,17 +1420,28 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   let oldUpperLimitOdds = parseFloat(oldProfitLoss.upperLimitOdds);
   let userDeleteProfitLoss = await calculatePLAllBet(bets, bets?.[0]?.marketType, 100, oldLowerLimitOdds, oldUpperLimitOdds);
 
-  await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced, bets?.[0]?.marketType);
-
+  if (![sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
+    await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced);
+  }
   let oldBetPlacedPL = oldProfitLoss.betPlaced;
   let newMaxLoss = 0;
 
   oldProfitLoss.totalBet = oldProfitLoss.totalBet - userDeleteProfitLoss.total_bet;
+  if ([sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
+    for (let item of Object.keys(userDeleteProfitLoss.betData)) {
+      oldBetPlacedPL[item] = oldBetPlacedPL[item] - userDeleteProfitLoss.betData[item];
+      if (newMaxLoss < Math.abs(oldBetPlacedPL[item]) && oldBetPlacedPL[item] < 0) {
+        newMaxLoss = Math.abs(oldBetPlacedPL[item]);
+      }
+    }
+  }
+  else {
+    for (let i = 0; i < oldBetPlacedPL.length; i++) {
+      oldBetPlacedPL[i].profitLoss = oldBetPlacedPL[i].profitLoss - userDeleteProfitLoss.betData[i].profitLoss;
+      if (newMaxLoss < Math.abs(oldBetPlacedPL[i].profitLoss) && oldBetPlacedPL[i].profitLoss < 0) {
+        newMaxLoss = Math.abs(oldBetPlacedPL[i].profitLoss);
+      }
 
-  for (let i = 0; i < oldBetPlacedPL.length; i++) {
-    oldBetPlacedPL[i].profitLoss = oldBetPlacedPL[i].profitLoss - userDeleteProfitLoss.betData[i].profitLoss;
-    if (newMaxLoss < Math.abs(oldBetPlacedPL[i].profitLoss) && oldBetPlacedPL[i].profitLoss < 0) {
-      newMaxLoss = Math.abs(oldBetPlacedPL[i].profitLoss);
     }
   }
   oldProfitLoss.betPlaced = oldBetPlacedPL;
@@ -1555,17 +1566,31 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             let newMaxLossParent = 0;
             let oldMaxLossParent = oldProfitLossParent?.maxLoss;
 
-            await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced, bets?.[0]?.marketType);
+            if (![sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
+              await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
+            }
 
-            userDeleteProfitLoss.betData.forEach((ob, index) => {
-              let partnershipData = (ob.profitLoss * partnership) / 100;
-              if (ob.odds == parentPLbetPlaced[index].odds) {
-                parentPLbetPlaced[index].profitLoss = parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData;
-                if (newMaxLossParent < Math.abs(parentPLbetPlaced[index].profitLoss) && parentPLbetPlaced[index].profitLoss < 0) {
-                  newMaxLossParent = Math.abs(parentPLbetPlaced[index].profitLoss);
+            if ([sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
+              Object.keys(userDeleteProfitLoss.betData).forEach((ob, index) => {
+                let partnershipData = (ob * partnership) / 100;
+                parentPLbetPlaced[item] = parentPLbetPlaced[item] + partnershipData;
+                if (newMaxLossParent < Math.abs(parentPLbetPlaced[item]) && parentPLbetPlaced[item] < 0) {
+                  newMaxLossParent = Math.abs(parentPLbetPlaced[item]);
                 }
-              }
-            });
+              });
+            }
+            else {
+
+              userDeleteProfitLoss.betData.forEach((ob, index) => {
+                let partnershipData = (ob.profitLoss * partnership) / 100;
+                if (ob.odds == parentPLbetPlaced[index].odds) {
+                  parentPLbetPlaced[index].profitLoss = parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData;
+                  if (newMaxLossParent < Math.abs(parentPLbetPlaced[index].profitLoss) && parentPLbetPlaced[index].profitLoss < 0) {
+                    newMaxLossParent = Math.abs(parentPLbetPlaced[index].profitLoss);
+                  }
+                }
+              });
+            }
             oldProfitLossParent.betPlaced = parentPLbetPlaced;
             oldProfitLossParent.maxLoss = newMaxLossParent;
             oldProfitLossParent.totalBet = oldProfitLossParent.totalBet - userDeleteProfitLoss.total_bet;
