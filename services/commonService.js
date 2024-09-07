@@ -1479,7 +1479,7 @@ exports.insertBulkCommissions = async (bulkWalletRecord) => {
     await insertCommissions(chunk);
   }
 }
-exports.getRedisKeys = (matchBetType, matchId, redisKeys) => {
+exports.getRedisKeys = (matchBetType, matchId, redisKeys, betId) => {
   let teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey;
 
   if (matchBetType === matchBettingType.tiedMatch1 || matchBetType === matchBettingType.tiedMatch3 || matchBetType === matchBettingType.tiedMatch2) {
@@ -1490,7 +1490,13 @@ exports.getRedisKeys = (matchBetType, matchId, redisKeys) => {
     teamArateRedisKey = redisKeys.yesRateComplete + matchId;
     teamBrateRedisKey = redisKeys.noRateComplete + matchId;
     teamCrateRedisKey = null;
-  } else {
+  }
+  else if(matchBetType == matchBettingType.other){
+    teamArateRedisKey = redisKeys.userTeamARateOther + betId + "_" + matchId;
+    teamBrateRedisKey = redisKeys.userTeamBRateOther + betId + "_" + matchId;
+    teamCrateRedisKey = redisKeys.userTeamCRateOther + betId + "_" + matchId;
+  }
+  else {
     teamArateRedisKey = redisKeys.userTeamARate + matchId;
     teamBrateRedisKey = redisKeys.userTeamBRate + matchId;
     teamCrateRedisKey = redisKeys.userTeamCRate + matchId;

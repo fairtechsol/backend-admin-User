@@ -372,6 +372,10 @@ module.exports.redisKeys = {
     return prev;
   }, {})),
 
+  userTeamARateOther: "userTeamARateOther_",
+  userTeamBRateOther: "userTeamBRateOther_",
+  userTeamCRateOther: "userTeamCRateOther_",
+
   profitLoss: "_profitLoss",
   card: "_card"
 }
@@ -540,6 +544,7 @@ module.exports.redisKeysMarketWise = {
   [this.matchBettingType.tiedMatch3]: [this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
   [this.matchBettingType.completeMatch]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
   [this.matchBettingType.completeManual]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
+  [this.matchBettingType.other]: [this.redisKeys.userTeamARateOther, this.redisKeys.userTeamBRateOther, this.redisKeys.userTeamCRateOther],
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = [this.redisKeys[`yesRateUnderOver${curr}.5`], this.redisKeys[`noRateUnderOver${curr}.5`]]
     return prev;
