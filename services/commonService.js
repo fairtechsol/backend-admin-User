@@ -519,7 +519,7 @@ exports.calculateRatesMatch = async (betPlace, partnerShip = 100, matchData) => 
   let teamYesRateComplete = 0;
 
   for (let placedBets of betPlace) {
-    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch].includes(placedBets?.marketType);
+    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(placedBets?.marketType);
     let isTiedMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2].includes(placedBets?.marketType);
     let isCompleteMatch = [matchBettingType.completeMatch, matchBettingType.completeManual].includes(placedBets?.marketType);
 
