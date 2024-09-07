@@ -519,8 +519,8 @@ exports.calculateRatesMatch = async (betPlace, partnerShip = 100, matchData) => 
   let teamYesRateComplete = 0;
 
   for (let placedBets of betPlace) {
-    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(placedBets?.marketType);
-    let isTiedMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2].includes(placedBets?.marketType);
+    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual, matchBettingType.tiedMatch3].includes(placedBets?.marketType);
+    let isTiedMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.tiedMatch3].includes(placedBets?.marketType);
     let isCompleteMatch = [matchBettingType.completeMatch, matchBettingType.completeManual].includes(placedBets?.marketType);
 
     let calculatedRates = await this.calculateRate({
@@ -1482,7 +1482,7 @@ exports.insertBulkCommissions = async (bulkWalletRecord) => {
 exports.getRedisKeys = (matchBetType, matchId, redisKeys) => {
   let teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey;
 
-  if (matchBetType === matchBettingType.tiedMatch1 || matchBetType === matchBettingType.tiedMatch2) {
+  if (matchBetType === matchBettingType.tiedMatch1 || matchBetType === matchBettingType.tiedMatch3 || matchBetType === matchBettingType.tiedMatch2) {
     teamArateRedisKey = redisKeys.yesRateTie + matchId;
     teamBrateRedisKey = redisKeys.noRateTie + matchId;
     teamCrateRedisKey = null;

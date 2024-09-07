@@ -1994,7 +1994,7 @@ exports.declareMatchResult = async (req, res) => {
           item.result = betResultStatus.TIE;
         }
       } else if (result === resultType.noResult) {
-        if (!(item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch2)) {
+        if (!(item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch3 || item.marketType === matchBettingType.tiedMatch2)) {
           if ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName?.toUpperCase() === tiedManualTeamName.no)) {
             item.result = betResultStatus.LOSS;
           }
@@ -2010,7 +2010,7 @@ exports.declareMatchResult = async (req, res) => {
         }
       } else {
         const isWinCondition = !(Object.values(tieCompleteBetType).includes(item.marketType)) && ((item.betType === betType.BACK && item.teamName === result) || (item.betType === betType.LAY && item.teamName !== result));
-        const isTiedMatchCondition = (item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch2) && ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.no) || (item.betType === betType.LAY && item.teamName?.toUpperCase() == tiedManualTeamName.yes));
+        const isTiedMatchCondition = (item.marketType === matchBettingType.tiedMatch1 || item.marketType === matchBettingType.tiedMatch3 || item.marketType === matchBettingType.tiedMatch2) && ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.no) || (item.betType === betType.LAY && item.teamName?.toUpperCase() == tiedManualTeamName.yes));
         const isCompleteMatchCondition = (item.marketType === matchBettingType.completeMatch || item.marketType === matchBettingType.completeManual) && ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName?.toUpperCase() == tiedManualTeamName.no));
         item.result = isWinCondition || isTiedMatchCondition || isCompleteMatchCondition ? betResultStatus.WIN : betResultStatus.LOSS;
       }
@@ -2401,7 +2401,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         lossAmount: parseFloat(getMultipleAmount.lossAmountTied),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO",
-        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2)?.map((item) => item?.id)
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2 || item?.type == matchBettingType.tiedMatch3)?.map((item) => item?.id)
       }] : []),
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountComplete),
@@ -2892,7 +2892,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountTied).toFixed(2)),
         type: "Tied Match",
         result: result == resultType.tie ? "YES" : "NO",
-        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2)?.map((item) => item?.id)
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.tiedMatch1 || item?.type == matchBettingType.tiedMatch2 || item?.type == matchBettingType.tiedMatch3)?.map((item) => item?.id)
       }] : []),
 
       ...(parseFloat(getMultipleAmount.completeBetsCount || 0) > 0 ? [{
