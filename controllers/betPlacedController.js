@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -194,13 +194,13 @@ exports.matchBettingBetPlaced = async (req, res) => {
     }
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
-    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType)) {
+    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType)) {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
     else if ([matchBettingType.tiedMatch3]?.includes(matchBetType)) {
       newCalculateOdd = (newCalculateOdd) * 100;
     }
-    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch]?.includes(matchBetType) && newCalculateOdd > 400) {
+    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType) && newCalculateOdd > 400) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
     }
 
@@ -227,7 +227,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let apiResponse = {};
 
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + matchBetType;
+      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + matchBetType + "&id=" + betId;
       apiResponse = await apiCall(apiMethod.get, url);
     } catch (error) {
       logger.info({
@@ -422,8 +422,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
   } catch (error) {
     logger.error({
       error: `Error at match betting bet placed.`,
-      stack: error.stack,
-      message: error.message,
+      stack: error?.stack,
+      message: error?.message,
     });
     return ErrorResponse(error, req, res)
   }
@@ -1029,17 +1029,17 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     } else {
       isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
     }
-    if (isRateChange) {
-      throw {
-        statusCode: 400,
-        message: {
-          msg: "bet.marketRateChanged",
-          keys: {
-            marketType: "Match betting",
-          },
-        },
-      };
-    }
+    // if (isRateChange) {
+    //   throw {
+    //     statusCode: 400,
+    //     message: {
+    //       msg: "bet.marketRateChanged",
+    //       keys: {
+    //         marketType: "Match betting",
+    //       },
+    //     },
+    //   };
+    // }
   }
 
 }
@@ -1670,7 +1670,7 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
 
   const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys, betId);
 
-  let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
+  let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual, matchBettingType.completeMatch1].includes(matchBetType);
 
   let teamA = isTiedOrCompMatch ? tiedManualTeamName.yes : matchDetails.teamA;
   let teamB = isTiedOrCompMatch ? tiedManualTeamName.no : matchDetails.teamB;

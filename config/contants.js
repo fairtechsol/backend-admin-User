@@ -195,6 +195,7 @@ module.exports.matchBettingType = {
   tiedMatch2: "tiedMatch2",
   tiedMatch3: "tiedMatch3",
   completeMatch: "completeMatch",
+  completeMatch1: "completeMatch1",
   completeManual: "completeManual",
   other: "other",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
@@ -227,6 +228,7 @@ module.exports.tieCompleteBetType = {
   tiedMatch2: "tiedMatch2",
   tiedMatch2: "tiedMatch3",
   completeMatch: "completeMatch",
+  completeMatch1: "completeMatch1",
   completeManual: "completeManual",
 };
 
@@ -254,6 +256,7 @@ module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
   [this.matchBettingType.tiedMatch3]: "marketTiedMatch2",
   [this.matchBettingType.completeMatch]: "marketCompleteMatch",
+  [this.matchBettingType.completeMatch1]: "marketCompleteMatch1",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnder${curr}.5`
     return prev;
@@ -280,7 +283,9 @@ module.exports.profitLossKeys={
   [this.matchBettingType.tiedMatch2]: "tiePL",
   [this.matchBettingType.tiedMatch3]: "tiePL",
   [this.matchBettingType.completeMatch]: "completePL",
+  [this.matchBettingType.completeMatch1]: "completePL",
   [this.matchBettingType.completeManual]: "completePL",
+  [this.matchBettingType.other]: "otherPL",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnderPL${curr}.5`
     return prev;
@@ -313,6 +318,10 @@ module.exports.matchesTeamName={
     b:this.matchBettingsTeamName.no
   },
   [this.matchBettingType.completeMatch]: {
+    a:this.matchBettingsTeamName.yes,
+    b:this.matchBettingsTeamName.no
+  },
+  [this.matchBettingType.completeMatch1]: {
     a:this.matchBettingsTeamName.yes,
     b:this.matchBettingsTeamName.no
   },
@@ -436,9 +445,18 @@ module.exports.otherEventMatchBettingRedisKey = {
     "a": this.redisKeys.yesRateComplete,
     "b": this.redisKeys.noRateComplete
   },
+  [this.matchBettingType.completeMatch1]: {
+    "a": this.redisKeys.yesRateComplete,
+    "b": this.redisKeys.noRateComplete
+  },
   [this.matchBettingType.completeManual]: {
     "a": this.redisKeys.yesRateComplete,
     "b": this.redisKeys.noRateComplete
+  },
+  [this.matchBettingType.other]: {
+    "a": this.redisKeys.userTeamARateOther,
+    "b": this.redisKeys.userTeamBRateOther,
+    "c": this.redisKeys.userTeamCRateOther
   },
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = {
@@ -543,6 +561,7 @@ module.exports.redisKeysMarketWise = {
   [this.matchBettingType.tiedMatch2]: [this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
   [this.matchBettingType.tiedMatch3]: [this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
   [this.matchBettingType.completeMatch]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
+  [this.matchBettingType.completeMatch1]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
   [this.matchBettingType.completeManual]: [this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete],
   [this.matchBettingType.other]: [this.redisKeys.userTeamARateOther, this.redisKeys.userTeamBRateOther, this.redisKeys.userTeamCRateOther],
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
