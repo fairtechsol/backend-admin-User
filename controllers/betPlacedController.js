@@ -203,6 +203,12 @@ exports.matchBettingBetPlaced = async (req, res) => {
     if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType) && newCalculateOdd > 400) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
     }
+    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
+    if(isTiedOrCompMatch){
+      teamA = teamA.toUpperCase();
+      teamB = teamA.toUpperCase();
+      teamC = teamC ? teamC.toUpperCase() : teamC;
+    }
 
     if (bettingType == betType.BACK) {
       winAmount = (stake * newCalculateOdd) / 100;
@@ -1575,10 +1581,10 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
             if ([sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
               Object.keys(userDeleteProfitLoss.betData).forEach((ob, index) => {
-                let partnershipData = (ob * partnership) / 100;
-                parentPLbetPlaced[item] = parentPLbetPlaced[item] + partnershipData;
-                if (newMaxLossParent < Math.abs(parentPLbetPlaced[item]) && parentPLbetPlaced[item] < 0) {
-                  newMaxLossParent = Math.abs(parentPLbetPlaced[item]);
+                let partnershipData = (userDeleteProfitLoss.betData[ob] * partnership) / 100;
+                parentPLbetPlaced[ob] = parentPLbetPlaced[ob] + partnershipData;
+                if (newMaxLossParent < Math.abs(parentPLbetPlaced[ob]) && parentPLbetPlaced[ob] < 0) {
+                  newMaxLossParent = Math.abs(parentPLbetPlaced[ob]);
                 }
               });
             }

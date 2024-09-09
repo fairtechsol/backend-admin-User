@@ -835,11 +835,15 @@ exports.settingBetsDataAtLogin = async (user) => {
         let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id);
         sessionResult[`${currBets.betId}${redisKeys.profitLoss}`] = {
           maxLoss: result.maxLoss,
-          upperLimitOdds: result.upperLimitOdds,
-          lowerLimitOdds: result.lowerLimitOdds,
           betPlaced: result.betData,
           totalBet: result.total_bet
         };
+        if(result.upperLimitOdds){
+          sessionResult[`${currBets.betId}${redisKeys.profitLoss}`].upperLimitOdds = result.upperLimitOdds;
+        }
+        if(result.lowerLimitOdds){
+          sessionResult[`${currBets.betId}${redisKeys.profitLoss}`].lowerLimitOdds = result.lowerLimitOdds;
+        }
         sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] = parseFloat((parseFloat(sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] || 0) + result.maxLoss).toFixed(2));
       }
       else {
