@@ -1035,17 +1035,17 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     } else {
       isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
     }
-    // if (isRateChange) {
-    //   throw {
-    //     statusCode: 400,
-    //     message: {
-    //       msg: "bet.marketRateChanged",
-    //       keys: {
-    //         marketType: "Match betting",
-    //       },
-    //     },
-    //   };
-    // }
+    if (isRateChange) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.marketRateChanged",
+          keys: {
+            marketType: "Match betting",
+          },
+        },
+      };
+    }
   }
 
 }
