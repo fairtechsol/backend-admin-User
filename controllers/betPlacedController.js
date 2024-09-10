@@ -208,6 +208,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       teamA = teamA.toUpperCase();
       teamB = teamB.toUpperCase();
       teamC = teamC ? teamC.toUpperCase() : teamC;
+      betOnTeam = betOnTeam?.toUpperCase();
     }
 
     if (bettingType == betType.BACK) {
@@ -1035,17 +1036,17 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     } else {
       isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
     }
-    if (isRateChange) {
-      throw {
-        statusCode: 400,
-        message: {
-          msg: "bet.marketRateChanged",
-          keys: {
-            marketType: "Match betting",
-          },
-        },
-      };
-    }
+    // if (isRateChange) {
+    //   throw {
+    //     statusCode: 400,
+    //     message: {
+    //       msg: "bet.marketRateChanged",
+    //       keys: {
+    //         marketType: "Match betting",
+    //       },
+    //     },
+    //   };
+    // }
   }
 
 }

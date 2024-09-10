@@ -564,7 +564,7 @@ exports.calculateRatesOtherMatch = async (betPlace, partnerShip = 100, matchData
     const betType = placedBets?.marketType;
     let profitLossKey;
     if (betType == matchBettingType.other) {
-      profitLossKey = profitLossKeys[betType] + placedBets?.id;
+      profitLossKey = profitLossKeys[betType] + placedBets?.betId;
     }
     else{
       profitLossKey = profitLossKeys[betType];
