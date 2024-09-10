@@ -23,7 +23,6 @@ const {
   scoreBasedMarket,
   profitLossKeys,
   racingBettingType,
-  walletDomain,
   sessionBettingType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
