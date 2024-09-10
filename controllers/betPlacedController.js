@@ -206,7 +206,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
     if(isTiedOrCompMatch){
       teamA = teamA.toUpperCase();
-      teamB = teamA.toUpperCase();
+      teamB = teamB.toUpperCase();
       teamC = teamC ? teamC.toUpperCase() : teamC;
     }
 
