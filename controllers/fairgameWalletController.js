@@ -24,6 +24,7 @@ const {
   profitLossKeys,
   racingBettingType,
   sessionBettingType,
+  casinoButtonValue,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss } = require("../services/betPlacedService");
@@ -255,6 +256,11 @@ exports.createSuperAdmin = async (req, res) => {
         {
           type: buttonType.SESSION,
           value: sessiontButtonValue.buttons,
+          createBy: insertUser.id
+        },
+        {
+          type: buttonType.CASINO,
+          value: casinoButtonValue.buttons,
           createBy: insertUser.id
         }
       ]

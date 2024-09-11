@@ -143,9 +143,14 @@ module.exports.sessiontButtonValue = {
   buttons:
     '{"5000":"5000","10000":"10000","15000":"15000","25000":"25000","50000":"50000","100000":"100000","200000":"200000","500000":"500000"}',
 };
+module.exports.casinoButtonValue = {
+  buttons:
+    '{"25":"25","50":"50","100":"100","500":"500","1000":"1000","2000":"2000","5000":"5000","10000":"10000"}',
+};
 module.exports.buttonType = {
   MATCH: "Match",
   SESSION: "Session",
+  CASINO: "Casino",
 };
 
 module.exports.walletDescription = {
