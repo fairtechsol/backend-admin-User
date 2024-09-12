@@ -3206,7 +3206,12 @@ exports.cardBettingBetPlaced = async (req, res) => {
     let winAmount = 0, lossAmount = 0;
 
     if (match?.type == cardGameType.race20 && selectionId == 6) {
-      newCalculateOdd = bettingType == betType.BACK ? 90 : 105;
+      if (selectionId == 6) {
+        newCalculateOdd = bettingType == betType.BACK ? 90 : 105;
+      }
+      else if (selectionId == 5) {
+        newCalculateOdd = 100;
+      }
     }
     else if (match?.type == cardGameType.worli2 && (betOnTeam?.includes("ODD") || betOnTeam?.includes("EVEN") || betOnTeam?.includes("Line"))) {
       newCalculateOdd = 400;
@@ -3322,7 +3327,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       runnerId: betPlacedObj.runnerId
     });
 
-    let cardProfitLossAndExposure = new CardProfitLoss(match.type, teamRates, { bettingType: bettingType, winAmount: winAmount, lossAmount: lossAmount, playerName: betOnTeam, partnership: 100, sid: selectionId }, userPreviousExposure).getCardGameProfitLoss()
+    let cardProfitLossAndExposure = new CardProfitLoss(match.type, teamRates, { bettingType: bettingType, winAmount: winAmount, lossAmount: lossAmount, playerName: betOnTeam, partnership: 100, sid: selectionId, rate: betPlacedObj?.rate }, userPreviousExposure).getCardGameProfitLoss()
     let newTeamRateData = cardProfitLossAndExposure.profitLoss;
 
     let newUserExposure = cardProfitLossAndExposure.exposure;
