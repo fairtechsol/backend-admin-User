@@ -545,7 +545,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
   }
   if (roleName == userRoleConstant.user) {
     let userRedisObj = {
-      [`${jobData?.matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamData)
+      [`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`]: JSON.stringify(teamData)
     }
 
     // updating redis
@@ -588,7 +588,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
             let masterExposure = masterRedisData?.exposure ? masterRedisData.exposure : 0;
             let partnerExposure = (parseFloat(masterExposure) || 0) - userOldExposure + userCurrentExposure;
 
-            let teamRates = masterRedisData?.[`${jobData?.matchId}${redisKeys.profitLoss}`];
+            let teamRates = masterRedisData?.[`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`];
 
             if (teamRates) {
               teamRates = JSON.parse(teamRates);
@@ -608,7 +608,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
 
             let teamData = await calculateRacingExpertRate(teamRates, obj, partnership);
             let userRedisObj = {
-              [`${jobData?.matchId}${redisKeys.profitLoss}`]: JSON.stringify(teamData)
+              [`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`]: JSON.stringify(teamData)
             }
             
              // updating redis

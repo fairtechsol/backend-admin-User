@@ -546,7 +546,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
    
     let userTotalExposure = matchExposure;
 
-    let teamRates = userRedisData?.[`${matchId}${redisKeys.profitLoss}`];
+    let teamRates = userRedisData?.[`${betId}${redisKeys.profitLoss}_${matchId}`];
 
     if (teamRates) {
       teamRates = JSON.parse(teamRates);
