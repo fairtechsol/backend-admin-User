@@ -7,7 +7,7 @@ const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesR
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1 } = require('../services/commonService');
-const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue, CardMatchBetQueue, WalletCardMatchBetQueue, ExpertCardMatchBetQueue } = require('../queue/consumer');
+const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue, CardMatchBetQueue, WalletCardMatchBetQueue, ExpertCardMatchBetQueue, MatchTournamentBetQueue, WalletMatchTournamentBetQueue, ExpertMatchTournamentBetQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
 const { getUserBalanceDataByUserId, updateUserExposure } = require('../services/userBalanceService');
@@ -429,6 +429,281 @@ exports.matchBettingBetPlaced = async (req, res) => {
       error: `Error at match betting bet placed.`,
       stack: error?.stack,
       message: error?.message,
+    });
+    return ErrorResponse(error, req, res)
+  }
+}
+
+exports.tournamentBettingBetPlaced = async (req, res) => {
+  try {
+    logger.info({
+      info: `tournament match betting bet placed`,
+      data: req.body
+    });
+    let reqUser = req.user;
+    let { stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, selectionId, runnerId, gType, mid } = req.body;
+
+    let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
+    let user = userBalanceData?.user;
+    if (!user) {
+      logger.info({
+        info: `user not found for login id ${reqUser.id}`,
+        data: req.body
+      });
+      return ErrorResponse({ statusCode: 403, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
+    }
+    if (user.userBlock) {
+      logger.info({
+        info: `user is blocked for login id ${reqUser.id}`,
+        data: req.body
+      });
+      return ErrorResponse({ statusCode: 403, message: { msg: "user.blocked" } }, req, res);
+    }
+    if (user.betBlock) {
+      logger.info({
+        info: `user is blocked for betting id ${reqUser.id}`,
+        data: req.body
+      })
+      return ErrorResponse({ statusCode: 403, message: { msg: "user.betBlockError" } }, req, res);
+    }
+    let getMatchLockData = await userService.getUserMatchLock({ matchId: matchId, userId: reqUser.id, matchLock: true });
+    if (getMatchLockData?.matchLock) {
+      logger.info({
+        info: `user is blocked for the match ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
+        data: req.body
+      })
+      return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
+    }
+    let newCalculateOdd = odd;
+    let winAmount = 0, lossAmount = 0;
+    if (gType == "match") {
+      newCalculateOdd = (newCalculateOdd - 1) * 100;
+    }
+    if (bettingType == betType.BACK) {
+      winAmount = (stake * newCalculateOdd) / 100;
+      lossAmount = stake;
+    }
+    else if (bettingType == betType.LAY) {
+      winAmount = stake;
+      lossAmount = (stake * newCalculateOdd) / 100;
+    }
+    else {
+      logger.info({
+        info: `Get invalid betting type`,
+        data: req.body
+      });
+      return ErrorResponse({ statusCode: 400, message: { msg: "invalid", keys: { name: "Bet type" } } }, req, res);
+    }
+
+    winAmount = Number(winAmount.toFixed(2));
+    lossAmount = Number(lossAmount.toFixed(2));
+
+    //fetched match details from expert
+    let apiResponse = {};
+
+    try {
+      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBetType + "&id="+ betId;
+      apiResponse = await apiCall(apiMethod.get, url);
+    } catch (error) {
+      logger.info({
+        info: `Error at get match details.`,
+        data: req.body
+      });
+      throw error?.response?.data;
+    }
+    let { match, matchBetting, runners } = apiResponse.data;
+
+    if (match?.stopAt) {
+      return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
+    }
+
+    let betPlacedObj = {
+      matchId: matchId,
+      betId: betId,
+      winAmount,
+      lossAmount,
+      result: betResultStatus.PENDING,
+      teamName: betOnTeam,
+      amount: stake,
+      odds: odd,
+      betType: bettingType,
+      rate: 0,
+      createBy: reqUser.id,
+      marketType: matchBetType,
+      marketBetType: marketBetType.RACING,
+      ipAddress: ipAddress || req.ip || req.connection.remoteAddress,
+      browserDetail: browserDetail || req.headers['user-agent'],
+      eventName: match.title,
+      eventType: match.matchType,
+      bettingName: bettingName,
+      runnerId: runnerId
+    }
+    await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { placeIndex });
+
+    let userCurrentBalance = userBalanceData.currentBalance;
+    let userRedisData = await getUserRedisData(reqUser.id);
+    let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]) : 0.0;
+   
+    let userTotalExposure = matchExposure;
+
+    let teamRates = userRedisData?.[`${matchId}${redisKeys.profitLoss}`];
+
+    if (teamRates) {
+      teamRates = JSON.parse(teamRates);
+    }
+
+    if(!teamRates){
+      teamRates = runners.reduce((acc, key) => {
+        acc[key?.id] = 0;
+        return acc;
+      }, {});
+    }
+
+    teamRates = Object.keys(teamRates).reduce((acc, key) => {
+      acc[key] = parseRedisData(key, teamRates);
+      return acc;
+    }, {});
+
+    let userPreviousExposure = parseFloat(userRedisData[redisKeys.userAllExposure]) || 0.0;
+    let userOtherMatchExposure = userPreviousExposure - userTotalExposure;
+    let userExposureLimit = parseFloat(user.exposureLimit);
+
+    logger.info({
+      info: `User's match and session exposure and teams rate in redis with userId ${reqUser.id} `,
+      userCurrentBalance,
+      matchExposure,
+      userTotalExposure,
+      teamRates,
+      userPreviousExposure,
+      userOtherMatchExposure
+    });
+
+    let newTeamRateData = await calculateRacingRate(teamRates, { runners, winAmount, lossAmount, bettingType, runnerId }, 100);
+    let maximumLoss = 0;
+
+    maximumLoss = Math.min(...Object.values(newTeamRateData),0);
+
+    let newUserExposure = calculateRacingUserExposure(userPreviousExposure, teamRates, newTeamRateData);
+    if (newUserExposure > userExposureLimit) {
+      logger.info({
+        info: `User exceeded the limit of total exposure for a day`,
+        userId: reqUser.id,
+        newUserExposure,
+        userExposureLimit
+      })
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
+    }
+    matchExposure = Math.abs(maximumLoss);
+    userCurrentBalance = userCurrentBalance - (newUserExposure);
+    if (userCurrentBalance < 0) {
+      logger.info({
+        info: `user exposure balance insufficient to place this bet user id is ${reqUser.id}`,
+        betId,
+        matchId,
+        userCurrentBalance,
+        maximumLoss,
+        newUserExposure,
+        runnerId
+      })
+      return ErrorResponse({ statusCode: 400, message: { msg: "userBalance.insufficientBalance" } }, req, res);
+    }
+    logger.info({
+      info: `updating user exposure balance in redis for user id is ${reqUser.id}`,
+      betId,
+      matchId,
+      userCurrentBalance,
+      matchExposure, maximumLoss
+    });
+
+    let newBet = await betPlacedService.addNewBet(betPlacedObj);
+    let jobData = {
+      userId: reqUser.id,
+      runners, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam,
+      runnerId,
+      winAmount,
+      lossAmount,
+      newUserExposure,
+      userPreviousExposure,
+      userCurrentBalance,
+      newTeamRateData,
+      newBet,
+      userName: user.userName,
+      matchExposure: matchExposure,
+      selectionId
+    }
+
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
+
+    let walletJobData = {
+      domainUrl: domainUrl,
+      partnerships: userRedisData.partnerShips,
+      userId: reqUser.id,
+      stake: jobData.stake,
+      userUpdatedExposure: Math.abs(parseFloat(newUserExposure) - parseFloat(userPreviousExposure)),
+      newUserExposure, userPreviousExposure,
+      winAmount, lossAmount, teamRates,
+      bettingType, betOnTeam, newBet, runnerId, runners, selectionId,
+      userName: user.userName,
+      matchId: matchId,
+      betId: betId
+    }
+    //add redis queue function
+    const job = MatchTournamentBetQueue.createJob(jobData);
+    await job.save().then(data => {
+      logger.info({
+        info: `add match tournament betting job save in the redis for user ${reqUser.id}`,
+        matchId, jobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at match tournament betting job save in the redis for user ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
+      betPlacedService.deleteBetByEntityOnError(newBet);
+      throw error;
+    });
+
+    const walletJob = WalletMatchTournamentBetQueue.createJob(walletJobData);
+    await walletJob.save().then(data => {
+      logger.info({
+        info: `add match tournament betting job save in the redis for wallet ${reqUser.id}`,
+        matchId, walletJobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at match tournament betting job save in the redis for wallet ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
+    });
+
+    const expertJob = ExpertMatchTournamentBetQueue.createJob(walletJobData);
+    await expertJob.save().then(data => {
+      logger.info({
+        info: `add match tournament betting job save in the redis for expert ${reqUser.id}`,
+        matchId, walletJobData
+      });
+    }).catch(error => {
+      logger.error({
+        error: `Error at match tournament betting job save in the redis for expert ${reqUser.id}.`,
+        stack: error.stack,
+        message: error.message,
+        errorFile: error
+      });
+      betPlacedService.deleteBetByEntityOnError(newBet);
+      throw error;
+    });
+    return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
+
+
+  } catch (error) {
+    logger.error({
+      error: `Error at match tournament betting bet placed.`,
+      stack: error.stack,
+      message: error.message,
     });
     return ErrorResponse(error, req, res)
   }

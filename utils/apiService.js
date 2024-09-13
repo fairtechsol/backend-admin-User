@@ -43,6 +43,7 @@ exports.allApiRoutes = {
     racingMatchCountryCodeList: "/superAdmin/match/racing/countryCode",
     MatchBettingDetail : "/superAdmin/matchBetting/",
     raceBettingDetail : "/superAdmin/raceBetting/",
+    tournamentBettingDetail : "/superAdmin/tournamentBetting/",
     sessionDetail: "/superAdmin/session/"
   },
   WALLET:{
