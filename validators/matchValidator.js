@@ -8,13 +8,11 @@ module.exports.addMatchValidate = Joi.object({
       "string.base": "Match type must be a string",
       "any.required": "Match type is required",
     }),
-    competitionId: Joi.string().required().messages({
+    competitionId: Joi.string().allow(null).messages({
       "string.base": "Competition ID must be a string",
-      "any.required": "Competition ID is required",
     }),
-    competitionName: Joi.string().required().messages({
+    competitionName: Joi.string().allow(null).messages({
       "string.base": "Competition name must be a string",
-      "any.required": "Competition name is required",
     }),
     title: Joi.string().required().messages({
       "string.base": "Title must be a string",
@@ -43,10 +41,13 @@ module.exports.addMatchValidate = Joi.object({
       "date.base": "Start date must be a valid date",
       "any.required": "Start date is required",
     }),
-    createdAt: Joi.date().required().messages({
-        "date.base": "Created at date must be a valid date",
-        "any.required": "Created at date is required",
-      })
+  isTv: Joi.boolean().allow(null),
+  isFancy: Joi.boolean().allow(null),
+  isBookmaker: Joi.boolean().allow(null),
+  createdAt: Joi.date().required().messages({
+    "date.base": "Created at date must be a valid date",
+    "any.required": "Created at date is required",
+  })
   }).messages({
     "object.base": "Invalid input. Please provide a valid object.",
   });

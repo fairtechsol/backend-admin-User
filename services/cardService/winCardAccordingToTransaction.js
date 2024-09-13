@@ -56,6 +56,12 @@ class CardResultTypeWin {
             case cardGameType.baccarat:
             case cardGameType.baccarat2:
                 return this.baccarat();
+            case cardGameType["3cardj"]:
+                return this.threeCardJ();
+            case cardGameType.queen:
+                return this.queen();
+            case cardGameType.ballbyball:
+                return this.ballbyball();
             default:
                 throw {
                     statusCode: 400,
@@ -302,6 +308,28 @@ class CardResultTypeWin {
             default:
                 return 'Unknown';
         }
+    }
+
+    threeCardJ() {
+        return this.cardResult.sid;
+    }
+
+    queen() {
+        switch (this.cardResult.win) {
+            case '1':
+                return 'Total 0';
+            case '2':
+                return 'Total 1';
+            case '3':
+                return 'Total 2';
+            case '4':
+                return 'Total 3';
+            default:
+                return null;
+        }
+    }
+    threeCardJ() {
+        return this.cardResult.desc;
     }
 }
 

@@ -1,12 +1,12 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, marketBettingTypeByBettingType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol } = require('../services/commonService');
+const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult,getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1 } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue, CardMatchBetQueue, WalletCardMatchBetQueue, ExpertCardMatchBetQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
@@ -14,6 +14,7 @@ const { getUserBalanceDataByUserId, updateUserExposure } = require('../services/
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { getCardMatch } = require('../services/cardMatchService');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
+const { getMatchData } = require('../services/matchService');
 
 exports.getBet = async (req, res) => {
   try {
@@ -158,7 +159,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       data: req.body
     });
     let reqUser = req.user;
-    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName } = req.body;
+    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, mid, selectionId } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     let user = userBalanceData?.user;
@@ -193,11 +194,21 @@ exports.matchBettingBetPlaced = async (req, res) => {
     }
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
-    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType)) {
+    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType)) {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
-    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType) && newCalculateOdd > 400) {
+    else if ([matchBettingType.tiedMatch3]?.includes(matchBetType)) {
+      newCalculateOdd = (newCalculateOdd) * 100;
+    }
+    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType) && newCalculateOdd > 400) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
+    }
+    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
+    if(isTiedOrCompMatch){
+      teamA = teamA.toUpperCase();
+      teamB = teamB.toUpperCase();
+      teamC = teamC ? teamC.toUpperCase() : teamC;
+      betOnTeam = betOnTeam?.toUpperCase();
     }
 
     if (bettingType == betType.BACK) {
@@ -223,7 +234,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let apiResponse = {};
 
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + matchBetType;
+      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + matchBetType + "&id=" + betId;
       apiResponse = await apiCall(apiMethod.get, url);
     } catch (error) {
       logger.info({
@@ -233,7 +244,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       throw error?.response?.data;
     }
     let { match, matchBetting } = apiResponse.data;
-
+    matchBetting.eventId = match?.eventId;
     if (match.matchType != gameType.cricket) {
       return ErrorResponse({ statusCode: 400, message: { msg: "bet.validGameType" } }, req, res);
     }
@@ -262,9 +273,9 @@ exports.matchBettingBetPlaced = async (req, res) => {
       eventType: match.matchType,
       bettingName: bettingName
     }
-    await validateMatchBettingDetails(matchBetting, betPlacedObj, { teamA, teamB, teamC, placeIndex });
+    await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { teamA, teamB, teamC, placeIndex });
 
-    const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys);
+    const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys, betId);
 
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
@@ -418,8 +429,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
   } catch (error) {
     logger.error({
       error: `Error at match betting bet placed.`,
-      stack: error.stack,
-      message: error.message,
+      stack: error?.stack,
+      message: error?.message,
     });
     return ErrorResponse(error, req, res)
   }
@@ -445,6 +456,9 @@ exports.sessionBetPlace = async (req, res, next) => {
       odds,
       ratePercent,
       stake,
+      teamName,
+      mid,
+      betPlaceIndex
     } = req.body;
     const { id } = req.user;
 
@@ -499,6 +513,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
     }
+    const matchDetail = await getMatchData({ id: matchId }, ["id", "eventId"]);
 
     let sessionDetails;
 
@@ -516,6 +531,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
       // Extract session details from the API response
       sessionDetails = response?.data;
+      sessionDetails.eventId = matchDetail.eventId;
     } catch (err) {
       // Handle API call error and return an error response
       return ErrorResponse(err?.response?.data, req, res);
@@ -526,28 +542,81 @@ exports.sessionBetPlace = async (req, res, next) => {
     let winAmount = 0,
       loseAmount = 0;
 
-    // Calculate win and lose amounts based on the bet type
-    if (sessionBetType == betType.YES) {
-      winAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
-      loseAmount = parseFloat(stake);
-    } else if (sessionBetType == betType.NO) {
-      winAmount = parseFloat(stake);
-      loseAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
-    } else {
-      // Return an error response for an invalid bet type
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "invalid",
-            keys: {
-              name: "Bet type",
+    if (sessionDetails?.type == sessionBettingType.fancy1) {
+
+      if (sessionBetType == betType.BACK) {
+        winAmount = parseFloat((stake * (odds - 1))).toFixed(2);
+        loseAmount = parseFloat(stake);
+      } else if (sessionBetType == betType.LAY) {
+        winAmount = parseFloat(stake);
+        loseAmount = parseFloat((stake * (odds - 1))).toFixed(2);
+      }
+      else {
+        // Return an error response for an invalid bet type
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "invalid",
+              keys: {
+                name: "Bet type",
+              },
             },
           },
-        },
-        req,
-        res
-      );
+          req,
+          res
+        );
+      }
+    }
+    else if ([sessionBettingType.oddEven, sessionBettingType.cricketCasino].includes(sessionDetails?.type)) {
+      if (sessionBetType == betType.BACK) {
+        winAmount = parseFloat((stake * (odds - 1))).toFixed(2);
+        loseAmount = parseFloat(stake);
+      } else if (sessionBetType == betType.LAY) {
+        winAmount = parseFloat(stake);
+        loseAmount = parseFloat((stake * (odds - 1))).toFixed(2);
+      }
+      else {
+        // Return an error response for an invalid bet type
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "invalid",
+              keys: {
+                name: "Bet type",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
+    else {
+      // Calculate win and lose amounts based on the bet type
+      if (sessionBetType == betType.YES) {
+        winAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
+        loseAmount = parseFloat(stake);
+      } else if (sessionBetType == betType.NO) {
+        winAmount = parseFloat(stake);
+        loseAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
+      } else {
+        // Return an error response for an invalid bet type
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "invalid",
+              keys: {
+                name: "Bet type",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
     }
 
     const userData = await getUserRedisData(id);
@@ -563,7 +632,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     let betPlaceObject = {
       winAmount: parseFloat(winAmount),
-      loseAmount: parseFloat(loseAmount),
+      lossAmount: parseFloat(loseAmount),
       betPlacedData: {
         userName: user.userName,
         odds: parseFloat(odds),
@@ -572,6 +641,7 @@ exports.sessionBetPlace = async (req, res, next) => {
         matchId: matchId,
         betId: betId,
         rate: parseFloat(ratePercent),
+        teamName: teamName
       },
       userBalance: parseFloat(userData?.currentBalance) || 0,
     };
@@ -591,10 +661,30 @@ exports.sessionBetPlace = async (req, res, next) => {
       maxSessionLoss = parseFloat(sessionProfitLossData["maxLoss"]);
     }
 
-    let redisData = await calculateProfitLossSession(
-      sessionProfitLossData,
-      betPlaceObject
-    );
+    let redisData;
+
+    switch (sessionDetails?.type) {
+      case sessionBettingType.session:
+      case sessionBettingType.overByOver:
+      case sessionBettingType.ballByBall:
+        redisData = await calculateProfitLossSession(
+          sessionProfitLossData,
+          betPlaceObject
+        );
+        break;
+      case sessionBettingType.oddEven:
+        redisData = await calculateProfitLossSessionOddEven(sessionProfitLossData, betPlaceObject);
+        break;
+      case sessionBettingType.cricketCasino:
+        redisData = await calculateProfitLossSessionCasinoCricket(sessionProfitLossData, betPlaceObject);
+        break;
+      case sessionBettingType.fancy1:
+        redisData = await calculateProfitLossSessionFancy1(sessionProfitLossData, betPlaceObject);
+        break;
+      default:
+        break;
+    }
+
 
     betPlaceObject.maxLoss = Math.abs(redisData.maxLoss - maxSessionLoss);
     let redisSessionExp = Number(
@@ -651,7 +741,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       lossAmount: loseAmount,
       betType: sessionBetType,
       rate: ratePercent,
-      teamName: sessionDetails?.name + " / " + ratePercent,
+      teamName: `${sessionDetails?.name} ${sessionDetails?.type == sessionBettingType.fancy1 ? "" : [sessionBettingType.oddEven, sessionBettingType.cricketCasino]?.includes(sessionDetails?.type) ? `-${teamName?.toUpperCase()}` : `/ ${ratePercent}`}`,
       marketType: sessionDetails?.type,
       marketBetType: marketBetType.SESSION,
       ipAddress: ipAddress || req.ip || req.connection.remoteAddress,
@@ -837,7 +927,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
   try {
     let data = await apiCall(
       apiMethod.get,
-      microServiceUrl + allApiRoutes.MICROSERVICE.session + apiBetData.marketId
+      microServiceUrl + allApiRoutes.MICROSERVICE.getAllRateCricket + apiBetData.eventId
     ).catch(error => {
       logger.error({
         error: `Error at session bet check validate with third party url api hit.`,
@@ -846,20 +936,65 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       });
       throw error
     });
-
-    let filterData = data?.find(
-      (d) => d.SelectionId == apiBetData.selectionId
+    const sessionDetail = data?.data?.find(
+      (d) => d.mid?.toString() == betDetail.mid?.toString()
     );
+    let filterData;
+    if (sessionDetail?.gtype == "cricketcasino") {
+      filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == (parseInt(betDetail?.teamName?.split(" ")?.[0]) + 1)?.toString());
+    }
+    else {
+      filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == apiBetData?.selectionId?.toString());
+    }
+    if (filterData?.gstatus != "" && filterData?.gstatus != "OPEN") {
+      return true;
+    }
 
-    if (
-      betDetail.betType == betType.NO && (betDetail.odds != filterData["LayPrice1"] || betDetail.ratePercent != filterData["LaySize1"])
-    ) {
-      return true;
-    } else if (
-      betDetail.betType == betType.YES && (betDetail.odds != filterData["BackPrice1"] || betDetail.ratePercent != filterData["BackSize1"])
-    ) {
-      return true;
-    } else {
+    if (sessionDetail?.mname == "oddeven") {
+      if (
+        (betDetail.teamName == "even") && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds)
+      ) {
+        return true;
+      } else if (
+        betDetail.teamName == "odd" && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+      ) {
+        return true;
+      }
+      return false;
+
+    }
+    else if (sessionDetail?.gtype == "cricketcasino") {
+      if (
+        (betDetail.betType == betType.BACK) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+      ) {
+        return true;
+      }
+      return false;
+    }
+    else if (sessionDetail?.mname == "fancy1") {
+      if (
+        (betDetail.betType == betType.LAY) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds)
+      ) {
+        return true;
+      } else if (
+        betDetail.betType == betType.BACK && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+      ) {
+        return true;
+      }
+      return false;
+
+    }
+    else {
+
+      if (
+        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.size)
+      ) {
+        return true;
+      } else if (
+        betDetail.betType == betType.YES && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.size)
+      ) {
+        return true;
+      }
       return false;
     }
   } catch (error) {
@@ -901,17 +1036,17 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     } else {
       isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
     }
-    if (isRateChange) {
-      throw {
-        statusCode: 400,
-        message: {
-          msg: "bet.marketRateChanged",
-          keys: {
-            marketType: "Match betting",
-          },
-        },
-      };
-    }
+    // if (isRateChange) {
+    //   throw {
+    //     statusCode: 400,
+    //     message: {
+    //       msg: "bet.marketRateChanged",
+    //       keys: {
+    //         marketType: "Match betting",
+    //       },
+    //     },
+    //   };
+    // }
   }
 
 }
@@ -1058,30 +1193,25 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
   let url = "";
   const microServiceUrl = microServiceDomain;
   try {
-    if (matchBettingDetail.type == matchBettingType.bookmaker) {
-      url = microServiceUrl + allApiRoutes.MICROSERVICE.bookmaker + matchBettingDetail.marketId
+    
+      url = microServiceUrl + allApiRoutes.MICROSERVICE.getAllRateCricket + matchBettingDetail.eventId
 
-    }
-    else {
-      url = microServiceUrl + allApiRoutes.MICROSERVICE.matchOdd + matchBettingDetail.marketId
-
-    }
+    
     let data = await apiCall(apiMethod.get, url);
-    if (data) {
-      if (data[0]['ex'] && betObj.betType == betType.BACK && teams.teamA == betObj.teamName && data[0]['ex'].availableToBack[teams.placeIndex].price != betObj.odds) {
+
+    const matchBettingData = data?.data?.find(
+      (d) => d.mid?.toString() == betObj.mid?.toString()
+    );
+    let filterData = matchBettingData?.section?.find((item) => item?.sid?.toString() == betObj?.selectionId?.toString());
+
+    if (filterData) {
+      if (filterData?.odds?.find((item) => item?.tno == teams?.placeIndex && item?.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
         return true;
-      } else if (data[0]['ex'] && betObj.betType == betType.LAY && teams.teamA == betObj.teamName && data[0]['ex'].availableToLay[teams.placeIndex].price != betObj.odds) {
-        return true;
-      } else if (data[1]['ex'] && betObj.betType == betType.BACK && teams.teamB == betObj.teamName && data[1]['ex'].availableToBack[teams.placeIndex].price != betObj.odds) {
-        return true;
-      } else if (data[1]['ex'] && betObj.betType == betType.LAY && teams.teamB == betObj.teamName && data[1]['ex'].availableToLay[teams.placeIndex].price != betObj.odds) {
-        return true;
-      } else {
-        return false;
       }
-    } else {
-      return true;
+      return false;
     }
+    return true;
+
   }
   catch (error) {
     throw {
@@ -1119,7 +1249,7 @@ exports.deleteMultipleBet = async (req, res) => {
     let isAnyMatchBet = false;
     placedBet.forEach(bet => {
       let isSessionBet = false;
-      if (bet.betType == betType.YES || bet.betType == betType.NO) {
+      if (bet.marketBetType == 'SESSION') {
         isSessionBet = true;
       } else {
         isAnyMatchBet = true;
@@ -1134,11 +1264,11 @@ exports.deleteMultipleBet = async (req, res) => {
         }
       }
     });
-    let matchDetails;
+    let matchDetails, matchBettingData;
     if (isAnyMatchBet) {
       let apiResponse = {};
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + matchBettingType.quickbookmaker1;
+        let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + matchBettingType.other;
         apiResponse = await apiCall(apiMethod.get, url);
       } catch (error) {
         logger.info({
@@ -1149,6 +1279,7 @@ exports.deleteMultipleBet = async (req, res) => {
       }
       let { match, matchBetting } = apiResponse.data;
       matchDetails = match;
+      matchBettingData = matchBetting;
     }
     const domainUrl = `${req.protocol}://${req.get('host')}`;
     if (Object.keys(updateObj).length > 0) {
@@ -1161,7 +1292,7 @@ exports.deleteMultipleBet = async (req, res) => {
           if (bet.isSessionBet) {
             await updateUserAtSession(userId, betId, matchId, bet.array, deleteReason, domainUrl);
           } else {
-            await updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason, domainUrl, matchDetails);
+            await updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason, domainUrl, matchDetails, matchBettingData);
           }
         };
       }
@@ -1281,7 +1412,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
 
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, betId: betId, createBy: userId, deleteReason: IsNull() });
-    let userAllBetProfitLoss = await calculatePLAllBet(placedBet, 100);
+    let userAllBetProfitLoss = await calculatePLAllBet(placedBet, placedBet?.[0]?.marketType, 100);
     oldProfitLoss = {
       lowerLimitOdds: userAllBetProfitLoss.lowerLimitOdds,
       upperLimitOdds: userAllBetProfitLoss.upperLimitOdds,
@@ -1298,19 +1429,30 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   }
   let oldLowerLimitOdds = parseFloat(oldProfitLoss.lowerLimitOdds);
   let oldUpperLimitOdds = parseFloat(oldProfitLoss.upperLimitOdds);
-  let userDeleteProfitLoss = await calculatePLAllBet(bets, 100, oldLowerLimitOdds, oldUpperLimitOdds);
+  let userDeleteProfitLoss = await calculatePLAllBet(bets, bets?.[0]?.marketType, 100, oldLowerLimitOdds, oldUpperLimitOdds);
 
-  await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced);
-
+  if (![sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
+    await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced);
+  }
   let oldBetPlacedPL = oldProfitLoss.betPlaced;
   let newMaxLoss = 0;
 
   oldProfitLoss.totalBet = oldProfitLoss.totalBet - userDeleteProfitLoss.total_bet;
+  if ([sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
+    for (let item of Object.keys(userDeleteProfitLoss.betData)) {
+      oldBetPlacedPL[item] = oldBetPlacedPL[item] - userDeleteProfitLoss.betData[item];
+      if (newMaxLoss < Math.abs(oldBetPlacedPL[item]) && oldBetPlacedPL[item] < 0) {
+        newMaxLoss = Math.abs(oldBetPlacedPL[item]);
+      }
+    }
+  }
+  else {
+    for (let i = 0; i < oldBetPlacedPL.length; i++) {
+      oldBetPlacedPL[i].profitLoss = oldBetPlacedPL[i].profitLoss - userDeleteProfitLoss.betData[i].profitLoss;
+      if (newMaxLoss < Math.abs(oldBetPlacedPL[i].profitLoss) && oldBetPlacedPL[i].profitLoss < 0) {
+        newMaxLoss = Math.abs(oldBetPlacedPL[i].profitLoss);
+      }
 
-  for (let i = 0; i < oldBetPlacedPL.length; i++) {
-    oldBetPlacedPL[i].profitLoss = oldBetPlacedPL[i].profitLoss - userDeleteProfitLoss.betData[i].profitLoss;
-    if (newMaxLoss < Math.abs(oldBetPlacedPL[i].profitLoss) && oldBetPlacedPL[i].profitLoss < 0) {
-      newMaxLoss = Math.abs(oldBetPlacedPL[i].profitLoss);
     }
   }
   oldProfitLoss.betPlaced = oldBetPlacedPL;
@@ -1435,17 +1577,31 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             let newMaxLossParent = 0;
             let oldMaxLossParent = oldProfitLossParent?.maxLoss;
 
-            await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
+            if (![sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
+              await mergeProfitLoss(userDeleteProfitLoss.betData, parentPLbetPlaced);
+            }
 
-            userDeleteProfitLoss.betData.forEach((ob, index) => {
-              let partnershipData = (ob.profitLoss * partnership) / 100;
-              if (ob.odds == parentPLbetPlaced[index].odds) {
-                parentPLbetPlaced[index].profitLoss = parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData;
-                if (newMaxLossParent < Math.abs(parentPLbetPlaced[index].profitLoss) && parentPLbetPlaced[index].profitLoss < 0) {
-                  newMaxLossParent = Math.abs(parentPLbetPlaced[index].profitLoss);
+            if ([sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
+              Object.keys(userDeleteProfitLoss.betData).forEach((ob, index) => {
+                let partnershipData = (userDeleteProfitLoss.betData[ob] * partnership) / 100;
+                parentPLbetPlaced[ob] = parentPLbetPlaced[ob] + partnershipData;
+                if (newMaxLossParent < Math.abs(parentPLbetPlaced[ob]) && parentPLbetPlaced[ob] < 0) {
+                  newMaxLossParent = Math.abs(parentPLbetPlaced[ob]);
                 }
-              }
-            });
+              });
+            }
+            else {
+
+              userDeleteProfitLoss.betData.forEach((ob, index) => {
+                let partnershipData = (ob.profitLoss * partnership) / 100;
+                if (ob.odds == parentPLbetPlaced[index].odds) {
+                  parentPLbetPlaced[index].profitLoss = parseFloat(parentPLbetPlaced[index].profitLoss) + partnershipData;
+                  if (newMaxLossParent < Math.abs(parentPLbetPlaced[index].profitLoss) && parentPLbetPlaced[index].profitLoss < 0) {
+                    newMaxLossParent = Math.abs(parentPLbetPlaced[index].profitLoss);
+                  }
+                }
+              });
+            }
             oldProfitLossParent.betPlaced = parentPLbetPlaced;
             oldProfitLossParent.maxLoss = newMaxLossParent;
             oldProfitLossParent.totalBet = oldProfitLossParent.totalBet - userDeleteProfitLoss.total_bet;
@@ -1493,7 +1649,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     matchId: matchId,
     deleteReason: deleteReason,
     domainUrl: domainUrl,
-    betPlacedId: betPlacedId
+    betPlacedId: betPlacedId,
+    sessionType: bets?.[0]?.marketType
   }
   const walletJob = walletSessionBetDeleteQueue.createJob(queueObject);
   await walletJob.save();
@@ -1503,7 +1660,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
 }
 
-const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails) => {
+const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails,matchBetting) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = !!userRedisData;
   let userOldExposure = 0;
@@ -1519,13 +1676,14 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
   let currUserBalance;
 
 
-  const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys);
+  const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys, betId);
 
-  let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.completeMatch || matchBettingType.completeManual].includes(matchBetType);
+  let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual, matchBettingType.completeMatch1].includes(matchBetType);
+  const otherMatch = matchBetType == matchBettingType.other ? matchBetting?.find((matchBetItem) => matchBetItem?.id == betId) : null;
 
-  let teamA = isTiedOrCompMatch ? tiedManualTeamName.yes : matchDetails.teamA;
-  let teamB = isTiedOrCompMatch ? tiedManualTeamName.no : matchDetails.teamB;
-  let teamC = isTiedOrCompMatch ? null : matchDetails.teamC;
+  let teamA = isTiedOrCompMatch ? tiedManualTeamName.yes : otherMatch ? otherMatch?.metaData?.teamA : matchDetails.teamA;
+  let teamB = isTiedOrCompMatch ? tiedManualTeamName.no : otherMatch ? otherMatch?.metaData?.teamB : matchDetails.teamB;
+  let teamC = isTiedOrCompMatch ? null : otherMatch ? otherMatch?.metaData?.teamC : matchDetails.teamC;
 
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
@@ -1545,8 +1703,8 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
     currUserBalance = parseFloat(userBalance.currentBalance);
     let redisData = await calculateProfitLossForMatchToResult([betId], userId, { teamA, teamB, teamC });
     teamRates = {
-      teamA: !isTiedOrCompMatch ? redisData.teamARate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? redisData.teamYesRateTie : redisData.teamYesRateComplete,
-      teamB: !isTiedOrCompMatch ? redisData.teamBRate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2) ? redisData.teamNoRateTie : redisData.teamNoRateComplete,
+      teamA: !isTiedOrCompMatch ? redisData.teamARate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2|| matchBetType == matchBettingType.tiedMatch3) ? redisData.teamYesRateTie : redisData.teamYesRateComplete,
+      teamB: !isTiedOrCompMatch ? redisData.teamBRate : (matchBetType == matchBettingType.tiedMatch1 || matchBetType == matchBettingType.tiedMatch2 || matchBetType == matchBettingType.tiedMatch3) ? redisData.teamNoRateTie : redisData.teamNoRateComplete,
       teamC: !isTiedOrCompMatch ? redisData.teamCRate : 0
     };
   }
@@ -2188,9 +2346,9 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
     let redisData = await calculateProfitLossForOtherMatchToResult([betId], userId, { teamA, teamB, teamC });
 
     teamRates = {
-      teamA: parseFloat((Number(redisData[teamArateRedisKey]) || 0.0).toFixed(2)),
-      teamB: parseFloat((Number(redisData[teamBrateRedisKey]) || 0.0).toFixed(2)),
-      teamC: teamCrateRedisKey ? parseFloat((Number(redisData[teamCrateRedisKey]) || 0.0).toFixed(2)) : 0.0
+      teamA: parseFloat((Number(redisData[teamArateRedisKey]?.rates?.a) || 0.0).toFixed(2)),
+      teamB: parseFloat((Number(redisData[teamBrateRedisKey]?.rates?.b) || 0.0).toFixed(2)),
+      teamC: teamCrateRedisKey ? parseFloat((Number(redisData[teamCrateRedisKey]?.rates?.c) || 0.0).toFixed(2)) : 0.0
     };
   }
   let maximumLossOld = 0;
@@ -3048,7 +3206,12 @@ exports.cardBettingBetPlaced = async (req, res) => {
     let winAmount = 0, lossAmount = 0;
 
     if (match?.type == cardGameType.race20 && selectionId == 6) {
-      newCalculateOdd = bettingType == betType.BACK ? 90 : 105;
+      if (selectionId == 6) {
+        newCalculateOdd = bettingType == betType.BACK ? 90 : 105;
+      }
+      else if (selectionId == 5) {
+        newCalculateOdd = 100;
+      }
     }
     else if (match?.type == cardGameType.worli2 && (betOnTeam?.includes("ODD") || betOnTeam?.includes("EVEN") || betOnTeam?.includes("Line"))) {
       newCalculateOdd = 400;
@@ -3122,6 +3285,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
         break;
       case cardGameType.card32eu:
       case cardGameType.race20:
+      case cardGameType.queen:
         if (parseInt(selectionId) <= 4) {
           selectionId = 1;
         }
@@ -3163,7 +3327,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       runnerId: betPlacedObj.runnerId
     });
 
-    let cardProfitLossAndExposure = new CardProfitLoss(match.type, teamRates, { bettingType: bettingType, winAmount: winAmount, lossAmount: lossAmount, playerName: betOnTeam, partnership: 100, sid: selectionId }, userPreviousExposure).getCardGameProfitLoss()
+    let cardProfitLossAndExposure = new CardProfitLoss(match.type, teamRates, { bettingType: bettingType, winAmount: winAmount, lossAmount: lossAmount, playerName: betOnTeam, partnership: 100, sid: selectionId, rate: betPlacedObj?.rate }, userPreviousExposure).getCardGameProfitLoss()
     let newTeamRateData = cardProfitLossAndExposure.profitLoss;
 
     let newUserExposure = cardProfitLossAndExposure.exposure;
@@ -3301,7 +3465,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.casinoData + match?.type
 
     let data = await apiCall(apiMethod.get, url);
-    roundData = data?.data?.data?.data;
+    roundData = data?.data;
   }
   catch (error) {
     throw {
@@ -3312,7 +3476,10 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
   }
   let currData;
   if (match?.type == cardGameType.teen) {
-    currData = roundData?.t1?.find((item) => item?.sid == selectionId);
+    currData = roundData?.t1?.find((item) => item?.sectionId == selectionId);
+  }
+  else if (match?.type == cardGameType.ballbyball) {
+    currData = roundData?.t1?.sub?.find((item) => item?.sid?.toString() == selectionId?.toString());
   }
   else if (match?.type == cardGameType.dt6 && betObj?.teamName == "Tiger") {
     currData = roundData?.t2?.find((item) => item?.sid == 2);
@@ -3327,7 +3494,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
     currData = roundData?.t2?.find((item) => item?.sid == selectionId);
   }
 
-  if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "active" && currData?.status?.toLowerCase() != "active" && match?.type != cardGameType.teen9) {
+  if (currData?.gstatus != "1" && currData?.gstatus?.toLowerCase() != "open" && currData?.gstatus?.toLowerCase() != "active" && currData?.status?.toLowerCase() != "active" && match?.type != cardGameType.teen9) {
     throw {
       statusCode: 400,
       message: {
@@ -3384,6 +3551,7 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.dt6:
     case cardGameType.poker:
     case cardGameType.race20:
+    case cardGameType.queen:
     case cardGameType.card32eu:
     case cardGameType.superover:
     case cardGameType.cricketv3:
@@ -3393,11 +3561,14 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.baccarat:
     case cardGameType.baccarat2:
     case cardGameType.btable:
+    case cardGameType.cmeter:
       return ((betObj.betType == betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
       return ((betObj.betType == betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
     case cardGameType.teen9:
       return ((betObj?.teamName[0]?.toLowerCase() == "t" && currData?.trate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "l" && currData?.lrate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "d" && currData?.drate != betObj?.odds))
+    case cardGameType.ballbyball:
+      return ((betObj.betType == betType.BACK && parseFloat(currData.b) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l) != parseFloat(betObj.odds)))
     default:
       return betObj?.odds != currData?.rate
   }

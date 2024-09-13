@@ -87,3 +87,17 @@ exports.deleteHashKeysByPattern = async (key,pattern) => {
     }
   } while (cursor !== '0');
 }
+
+exports.getHashKeysByPattern = async (key, pattern) => {
+  let cursor = '0';
+  let resultObj={};
+  do {
+    const result = await internalRedis.hscan(key, cursor, 'MATCH', pattern);
+    cursor = result[0];
+    const keys = result[1];
+    for (let i = 0; i < keys?.length - 1; i += 2) {
+      resultObj[keys[i]] = keys[i + 1];
+    }
+  } while (cursor !== '0');
+  return resultObj;
+}
