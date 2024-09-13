@@ -611,7 +611,7 @@ exports.calculateRatesRacingMatch = async (betPlace, partnerShip = 100, matchDat
   for (let placedBets of betPlace) {
     const matchId = placedBets?.matchId;
     const betId = placedBets?.betId;
-    const teamRate = teamRates[![gameType.greyHound, gameType.greyHound].includes(placedBets.eventType) ? `${betId}${redisKeys.profitLoss}_${jobData?.matchId}` : `${matchId}${redisKeys.profitLoss}`] || runners.reduce((acc, key) => {
+    const teamRate = teamRates[![gameType.greyHound, gameType.greyHound].includes(placedBets.eventType) ? `${betId}${redisKeys.profitLoss}_${matchId}` : `${matchId}${redisKeys.profitLoss}`] || runners.reduce((acc, key) => {
       acc[key?.id] = 0;
       return acc;
     }, {});
@@ -628,7 +628,7 @@ exports.calculateRatesRacingMatch = async (betPlace, partnerShip = 100, matchDat
       partnerShip
     );
 
-    teamRates[![gameType.greyHound, gameType.greyHound].includes(placedBets.eventType) ? `${betId}${redisKeys.profitLoss}_${jobData?.matchId}` : `${matchId}${redisKeys.profitLoss}`] = calculatedRates;
+    teamRates[![gameType.greyHound, gameType.greyHound].includes(placedBets.eventType) ? `${betId}${redisKeys.profitLoss}_${matchId}` : `${matchId}${redisKeys.profitLoss}`] = calculatedRates;
   }
 
   return teamRates;
