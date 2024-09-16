@@ -1522,22 +1522,27 @@ exports.deleteMultipleBet = async (req, res) => {
     let isAnyMatchBet = false;
     placedBet.forEach(bet => {
       let isSessionBet = false;
+      let isTournamentBet = false;
       if (bet.marketBetType == 'SESSION') {
         isSessionBet = true;
-      } else {
+      }
+      else if (bet.marketType == matchBettingType.tournament) {
+        isTournamentBet = false;
+      }
+       else {
         isAnyMatchBet = true;
       }
       if (!updateObj[bet.createBy]) {
-        updateObj[bet.createBy] = { [bet.betId]: { isSessionBet: isSessionBet, array: [bet] } };
+        updateObj[bet.createBy] = { [bet.betId]: { isSessionBet: isSessionBet, isTournamentBet: isTournamentBet, array: [bet] } };
       } else {
         if (!updateObj[bet.createBy][bet.betId]) {
-          updateObj[bet.createBy][bet.betId] = { isSessionBet: isSessionBet, array: [bet] };
+          updateObj[bet.createBy][bet.betId] = { isSessionBet: isSessionBet, isTournamentBet: isTournamentBet, array: [bet] };
         } else {
           updateObj[bet.createBy][bet.betId].array.push(bet);
         }
       }
     });
-    let matchDetails, matchBettingData;
+    let matchDetails, matchBettingData, tournamentBettingDetail;
     if (isAnyMatchBet) {
       let apiResponse = {};
       try {
@@ -1553,6 +1558,20 @@ exports.deleteMultipleBet = async (req, res) => {
       let { match, matchBetting } = apiResponse.data;
       matchDetails = match;
       matchBettingData = matchBetting;
+
+      
+    try {
+      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBettingType.tournament;
+      apiResponse = await apiCall(apiMethod.get, url);
+    } catch (error) {
+      logger.info({
+        info: `Error at get match details for delete match bet.`,
+        data: req.body
+      });
+      throw error?.response?.data;
+      }
+      let { matchBetting: matchBettingTournament } = apiResponse.data;
+      tournamentBettingDetail = matchBettingTournament;
     }
     const domainUrl = `${req.protocol}://${req.get('host')}`;
     if (Object.keys(updateObj).length > 0) {
@@ -1564,7 +1583,11 @@ exports.deleteMultipleBet = async (req, res) => {
           let bet = userDataDelete[value];
           if (bet.isSessionBet) {
             await updateUserAtSession(userId, betId, matchId, bet.array, deleteReason, domainUrl);
-          } else {
+          }
+          else if(bet.isTournamentBet){
+            await updateUserAtMatchOddsTournament(userId, betId, matchId, bet.array, deleteReason, domainUrl, tournamentBettingDetail?.find((item) => item?.id == betId)?.runners);
+          }
+          else {
             await updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason, domainUrl, matchDetails, matchBettingData);
           }
         };
@@ -1607,17 +1630,21 @@ exports.deleteMultipleBetForOther = async (req, res) => {
 
     let updateObj = {};
     placedBet.forEach(bet => {
+      let isTournamentBet = false;
+      if (bet.marketType == matchBettingType.tournament) {
+        isTournamentBet = false;
+      }
       if (!updateObj[bet.createBy]) {
-        updateObj[bet.createBy] = { [bet.betId]: { array: [bet] } };
+        updateObj[bet.createBy] = { [bet.betId]: {isTournamentBet: isTournamentBet, array: [bet] } };
       } else {
         if (!updateObj[bet.createBy][bet.betId]) {
-          updateObj[bet.createBy][bet.betId] = { array: [bet] };
+          updateObj[bet.createBy][bet.betId] = {isTournamentBet: isTournamentBet, array: [bet] };
         } else {
           updateObj[bet.createBy][bet.betId].array.push(bet);
         }
       }
     });
-    let matchDetails;
+    let matchDetails, tournamentBettingDetail;
     let apiResponse = {};
     try {
       let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "/?type=" + placedBet[0].marketType;
@@ -1632,6 +1659,19 @@ exports.deleteMultipleBetForOther = async (req, res) => {
     let { match } = apiResponse.data;
     matchDetails = match;
 
+    try {
+      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBettingType.tournament;
+      apiResponse = await apiCall(apiMethod.get, url);
+    } catch (error) {
+      logger.info({
+        info: `Error at get match details for delete match bet.`,
+        data: req.body
+      });
+      throw error?.response?.data;
+      }
+      let { matchBetting: matchBettingTournament } = apiResponse.data;
+      tournamentBettingDetail = matchBettingTournament;
+
     const domainUrl = `${req.protocol}://${req.get('host')}`;
     if (Object.keys(updateObj).length > 0) {
       for (let key in updateObj) {
@@ -1640,8 +1680,12 @@ exports.deleteMultipleBetForOther = async (req, res) => {
         for (let value in userDataDelete) {
           let betId = value;
           let bet = userDataDelete[value];
-          await updateUserAtMatchOddsForOther(userId, betId, matchId, bet.array, deleteReason, domainUrl, matchDetails);
-
+          if(bet.isTournamentBet){
+            await updateUserAtMatchOddsTournament(userId, betId, matchId, bet.array, deleteReason, domainUrl, tournamentBettingDetail?.find((item) => item?.id == betId)?.runners);
+          }
+          else {
+            await updateUserAtMatchOddsForOther(userId, betId, matchId, bet.array, deleteReason, domainUrl, matchDetails);
+          }
         };
       }
     }
@@ -3430,79 +3474,6 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
 
   const expertJob = expertRaceMatchBetDeleteQueue.createJob(queueObject);
   await expertJob.save();
-}
-
-
-exports.deleteTournamentMultipleBet = async (req, res) => {
-  try {
-    const {
-      matchId, data, deleteReason
-    } = req.body;
-  
-    if (data?.length == 0) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "NoData",
-          },
-        },
-        req,
-        res
-      );
-    }
-    let placedBetIdArray = [];
-    data.forEach(obj => {
-      placedBetIdArray.push(obj.placeBetId);
-    });
-    let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, id: In(placedBetIdArray) });
-    let updateObj = {};
-    placedBet.forEach(bet => {
-     
-      if (!updateObj[bet.createBy]) {
-        updateObj[bet.createBy] = { [bet.betId]: { array: [bet] } };
-      } else {
-        if (!updateObj[bet.createBy][bet.betId]) {
-          updateObj[bet.createBy][bet.betId] = { array: [bet] };
-        } else {
-          updateObj[bet.createBy][bet.betId].array.push(bet);
-        }
-      }
-    });
-
-    let apiResponse = {};
-    try {
-      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBettingType.tournament + "&id="+ betId;      apiResponse = await apiCall(apiMethod.get, url);
-    } catch (error) {
-      logger.info({
-        info: `Error at get match details for delete match bet.`,
-        data: req.body
-      });
-      throw error?.response?.data;
-    }
-    let { runners } = apiResponse.data;
-
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
-    if (Object.keys(updateObj).length > 0) {
-      for (let key in updateObj) {
-        let userId = key;
-        let userDataDelete = updateObj[key];
-        for (let value in userDataDelete) {
-          let betId = value;
-          let bet = userDataDelete[value];
-          await updateUserAtMatchOddsTournament(userId, betId, matchId, bet.array, deleteReason, domainUrl, runners);
-        };
-      }
-    }
-    return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
-  } catch (error) {
-    logger.error({
-      error: `Error at delete bet for the user.`,
-      stack: error.stack,
-      message: error.message,
-    });
-    return ErrorResponse(error, req, res);
-  }
 }
 
 const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, deleteReason, domainUrl, runners) => {

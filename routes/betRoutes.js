@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getBet, matchBettingBetPlaced, sessionBetPlace, deleteMultipleBet, getSessionProfitLoss, profitLoss, getMyMarket, otherMatchBettingBetPlaced,deleteMultipleBetForOther, racingBettingBetPlaced, deleteRaceMultipleBet, cardBettingBetPlaced, getAccountStatementBet, tournamentBettingBetPlaced, deleteTournamentMultipleBet } = require('../controllers/betPlacedController');
+const { getBet, matchBettingBetPlaced, sessionBetPlace, deleteMultipleBet, getSessionProfitLoss, profitLoss, getMyMarket, otherMatchBettingBetPlaced,deleteMultipleBetForOther, racingBettingBetPlaced, deleteRaceMultipleBet, cardBettingBetPlaced, getAccountStatementBet, tournamentBettingBetPlaced } = require('../controllers/betPlacedController');
 
 const validator = require('../middleware/joi.validator');
 const { isAuthenticate } = require('../middleware/auth');
@@ -21,7 +21,6 @@ router.post('/cardBetting', apiLimiter, isAuthenticate, validator(CardBetPlacedV
 router.post('/deleteMultipleBet', deleteMultipleBet);
 router.post('/deleteMultipleBetForOther', deleteMultipleBetForOther);
 router.post('/deleteMultipleBetForRace', deleteRaceMultipleBet);
-router.post('/deleteMultipleBetForTournament', deleteTournamentMultipleBet);
 
 router.post('/profitLoss',isAuthenticate, profitLoss);
 router.get('/myMarket',isAuthenticate, getMyMarket);
