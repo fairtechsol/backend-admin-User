@@ -653,7 +653,7 @@ exports.calculateProfitLossForOtherMatchToResult = async (betId, userId, matchDa
 }
 
 exports.calculateProfitLossForRacingMatchToResult = async (betId, userId, matchData) => {
-  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId), { eventType: In([gameType.horseRacing, gameType.greyHound]) });
+  let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, In(betId));
   let redisData = await this.calculateRatesRacingMatch(betPlace, 100, matchData);
   return redisData;
 }

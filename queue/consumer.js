@@ -42,6 +42,7 @@ const WalletCardMatchBetQueue = new Queue('walletCardMatchBetQueue', externalRed
 const walletSessionBetDeleteQueue = new Queue('walletSessionBetDeleteQueue', externalRedisOption);
 const walletMatchBetDeleteQueue = new Queue('walletMatchBetDeleteQueue', externalRedisOption);
 const walletRaceMatchBetDeleteQueue = new Queue('walletRaceMatchBetDeleteQueue', externalRedisOption);
+const walletTournamentMatchBetDeleteQueue = new Queue('walletTournamentMatchBetDeleteQueue', externalRedisOption);
 
 
 const ExpertMatchBetQueue = new Queue('expertMatchBetQueue', externalRedisOption);
@@ -52,6 +53,7 @@ const ExpertMatchTournamentBetQueue = new Queue('expertMatchTournamentBetQueue',
 const expertSessionBetDeleteQueue = new Queue('expertSessionBetDeleteQueue', externalRedisOption);
 const expertMatchBetDeleteQueue = new Queue('expertMatchBetDeleteQueue', externalRedisOption);
 const expertRaceMatchBetDeleteQueue = new Queue('expertRaceMatchBetDeleteQueue', externalRedisOption);
+const expertTournamentMatchBetDeleteQueue = new Queue('expertTournamentMatchBetDeleteQueue', externalRedisOption);
 
 SessionMatchBetQueue.process(async function (job, done) {
   let jobData = job.data;
@@ -765,5 +767,5 @@ module.exports = {
   // ExpertCardMatchBetQueue: ExpertCardMatchBetQueue,
   WalletCardMatchBetQueue: WalletCardMatchBetQueue,
   walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue,
-  ExpertMatchTournamentBetQueue, WalletMatchTournamentBetQueue, MatchTournamentBetQueue
+  ExpertMatchTournamentBetQueue, WalletMatchTournamentBetQueue, MatchTournamentBetQueue, walletTournamentMatchBetDeleteQueue, expertTournamentMatchBetDeleteQueue
 };
