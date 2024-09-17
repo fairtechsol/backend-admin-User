@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { gameType } = require('../config/contants');
 
 // create common api call function using axios to call external server http call for whole project GET <POST< PUT< DELETE
 exports.apiMethod = {
@@ -62,6 +63,11 @@ exports.allApiRoutes = {
     casinoData: "/getdata/",
     cardResultDetail: "/getdetailresult/",
     cardTopTenResultDetail: "/getresult/",
-    getAllRateCricket: "/getAllRateCricket/"
+    getAllRateCricket: "/getAllRateCricket/",
+    getAllRates:{
+      [gameType.cricket]: "/getAllRateCricket/",
+      [gameType.football]:"/getAllRateFootBallTennis/",
+      [gameType.tennis]: "/getAllRateFootBallTennis/"
+    }
   }
 }

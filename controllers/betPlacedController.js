@@ -512,7 +512,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       throw error?.response?.data;
     }
     let { match, matchBetting, runners } = apiResponse.data;
-
+    matchBetting.eventId = match.eventId;
     if (match?.stopAt) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
     }
@@ -1309,17 +1309,17 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     } else {
       isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
     }
-    // if (isRateChange) {
-    //   throw {
-    //     statusCode: 400,
-    //     message: {
-    //       msg: "bet.marketRateChanged",
-    //       keys: {
-    //         marketType: "Match betting",
-    //       },
-    //     },
-    //   };
-    // }
+    if (isRateChange) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.marketRateChanged",
+          keys: {
+            marketType: "Match betting",
+          },
+        },
+      };
+    }
   }
 
 }
@@ -1466,8 +1466,8 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
   let url = "";
   const microServiceUrl = microServiceDomain;
   try {
-    
-      url = microServiceUrl + allApiRoutes.MICROSERVICE.getAllRateCricket + matchBettingDetail.eventId
+  
+      url = microServiceUrl + allApiRoutes.MICROSERVICE.getAllRates[betObj?.eventType ] + matchBettingDetail.eventId
 
     
     let data = await apiCall(apiMethod.get, url);
