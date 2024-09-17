@@ -826,7 +826,7 @@ exports.findUserPartnerShipObj = async (user) => {
  */
 exports.settingBetsDataAtLogin = async (user) => {
   if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id, { eventType: "cricket" });
+    const bets = await getUserDistinctBets(user.id, { eventType: "cricket", marketType: Not(matchBettingType.tournament) });
     let sessionResult = {};
     let sessionExp = {};
     let matchResult = {};
@@ -895,7 +895,7 @@ exports.settingBetsDataAtLogin = async (user) => {
     let matchResult = {};
     let matchExposure = {};
 
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: "cricket" });
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: "cricket", marketType: Not(matchBettingType.tournament) });
     bets?.forEach((item) => {
       let itemData = {
         ...item,
@@ -1040,7 +1040,7 @@ exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + currBets.matchId + "?type=" + matchBettingType.tournament + "&id=" + betId;
+        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + placedBet;
         apiResponse = await apiCall(apiMethod.get, url);
       } catch (error) {
         logger.info({
@@ -1076,7 +1076,7 @@ exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
 
 exports.settingOtherMatchBetsDataAtLogin = async (user) => {
   if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id, { eventType: In([gameType.tennis, gameType.football]) });
+    const bets = await getUserDistinctBets(user.id, { eventType: In([gameType.tennis, gameType.football]), marketType: Not(matchBettingType.tournament) });
     let sessionResult = {};
     let sessionExp = {};
     let matchResult = {};

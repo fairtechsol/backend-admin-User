@@ -530,7 +530,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       rate: 0,
       createBy: reqUser.id,
       marketType: matchBetType,
-      marketBetType: marketBetType.RACING,
+      marketBetType: marketBetType.MATCHBETTING,
       ipAddress: ipAddress || req.ip || req.connection.remoteAddress,
       browserDetail: browserDetail || req.headers['user-agent'],
       eventName: match.title,
