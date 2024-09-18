@@ -4032,6 +4032,27 @@ const validateCardBettingDetails = async (match, betObj, selectionId, userId) =>
       };
     }
   }
+  if([cardGameType.dt20, cardGameType.dt202].includes(match?.type)) {
+    const bets = await betPlacedService.findAllPlacedBet({ runnerId: roundData?.t1?.[0]?.mid, createBy: userId });
+    if (betObj?.teamName?.toLowerCase()?.includes("dragon") && bets?.find((item) => item?.teamName?.toLowerCase()?.includes("tiger"))){
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.alreadyPlacedOnDiff",
+          keys: { name: "Tiger" }
+        }
+      };
+    }
+    else if(betObj?.teamName?.toLowerCase()?.includes("tiger") && bets?.find((item) => item?.teamName?.toLowerCase()?.includes("dragon"))){
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.alreadyPlacedOnDiff",
+          keys: { name: "Dragon" }
+        }
+      };
+    }
+  }
   let currData;
   if (match?.type == cardGameType.teen) {
     currData = roundData?.t1?.find((item) => item?.sectionId == selectionId);
