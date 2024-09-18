@@ -4118,7 +4118,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId, userId) =>
     };
   }
 
-  betObj.runnerId = roundData?.t1?.[0]?.mid;
+  betObj.runnerId = roundData?.t1?.[0]?.mid || roundData?.t1?.mid;
 }
 
 const processBetPlaceCondition = (betObj, currData, match) => {
