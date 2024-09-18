@@ -3804,7 +3804,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       eventType: match.type,
       bettingName: bettingName
     }
-    await validateCardBettingDetails(match, betPlacedObj, selectionId);
+    await validateCardBettingDetails(match, betPlacedObj, selectionId, reqUser.id);
 
     switch (match.type) {
       case cardGameType.card32:
@@ -3996,7 +3996,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
   }
 }
 
-const validateCardBettingDetails = async (match, betObj, selectionId) => {
+const validateCardBettingDetails = async (match, betObj, selectionId, userId) => {
   let roundData = null;
   try {
     const url = casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.casinoData + match?.type
@@ -4010,6 +4010,27 @@ const validateCardBettingDetails = async (match, betObj, selectionId) => {
         msg: "bet.notLive"
       }
     };
+  }
+  if([cardGameType.lucky7, cardGameType.lucky7eu, cardGameType.cmeter].includes(match?.type)) {
+    const bets = await betPlacedService.findAllPlacedBet({ runnerId: roundData?.t1?.[0]?.mid, createBy: userId });
+    if (betObj?.teamName?.toLowerCase()?.includes("low") && bets?.find((item) => item?.teamName?.toLowerCase()?.includes("high"))){
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.alreadyPlacedOnDiff",
+          keys: { name: "High" }
+        }
+      };
+    }
+    else if(betObj?.teamName?.toLowerCase()?.includes("high") && bets?.find((item) => item?.teamName?.toLowerCase()?.includes("low"))){
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.alreadyPlacedOnDiff",
+          keys: { name: "Low" }
+        }
+      };
+    }
   }
   let currData;
   if (match?.type == cardGameType.teen) {
