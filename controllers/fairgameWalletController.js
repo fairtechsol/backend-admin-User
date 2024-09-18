@@ -4774,7 +4774,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
 
 exports.declarTournamentMatchResult = async (req, res) => {
   try {
-    const { result, matchDetails, userId, matchId, match, betId, betType: matchBetType } = req.body;
+    const { result, matchDetails, isMatchDeclare, userId, matchId, match, betId, betType: matchBetType } = req.body;
    
     const betIds = [betId];
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
@@ -4901,11 +4901,12 @@ exports.declarTournamentMatchResult = async (req, res) => {
         ...parentUser,
         betId: betId,
         matchId,
-        betType: matchBetType
+        betType: matchBetType,
+        isMatchDeclare: isMatchDeclare
       });
     }
     // insertBulkCommissions(commissionReport);
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType, isMatchDeclare: isMatchDeclare });
     return SuccessResponse(
       {
         statusCode: 200,
@@ -5002,7 +5003,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
     }
 
  
-    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId: currBetId, matchId, userBalanceData });
+    sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId: currBetId, matchId, userBalanceData, isMatchDeclare: isMatchDeclare });
 
 
     let currBal = user.user.userBalance.currentBalance;
