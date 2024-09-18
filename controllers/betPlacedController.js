@@ -1467,9 +1467,8 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
   const microServiceUrl = microServiceDomain;
   try {
   
-      url = microServiceUrl + allApiRoutes.MICROSERVICE.getAllRates[betObj?.eventType ] + matchBettingDetail.eventId
+    url = microServiceUrl + allApiRoutes.MICROSERVICE.getAllRates[betObj?.eventType ] + matchBettingDetail.eventId
 
-    
     let data = await apiCall(apiMethod.get, url);
 
     const matchBettingData = data?.data?.find(
