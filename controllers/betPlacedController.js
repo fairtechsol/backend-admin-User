@@ -1524,7 +1524,8 @@ exports.deleteMultipleBet = async (req, res) => {
         isSessionBet = true;
       }
       else if (bet.marketType == matchBettingType.tournament) {
-        isTournamentBet = false;
+        isTournamentBet = true;
+        isAnyMatchBet = true;
       }
       else {
         isAnyMatchBet = true;
@@ -1629,7 +1630,7 @@ exports.deleteMultipleBetForOther = async (req, res) => {
     placedBet.forEach(bet => {
       let isTournamentBet = false;
       if (bet.marketType == matchBettingType.tournament) {
-        isTournamentBet = false;
+        isTournamentBet = true;
       }
       if (!updateObj[bet.createBy]) {
         updateObj[bet.createBy] = { [bet.betId]: { isTournamentBet: isTournamentBet, array: [bet] } };
@@ -1995,9 +1996,9 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
   let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual, matchBettingType.completeMatch1].includes(matchBetType);
   const otherMatch = matchBetType == matchBettingType.other ? matchBetting?.find((matchBetItem) => matchBetItem?.id == betId) : null;
 
-  let teamA = isTiedOrCompMatch ? tiedManualTeamName.yes : otherMatch ? otherMatch?.metaData?.teamA : matchDetails.teamA;
-  let teamB = isTiedOrCompMatch ? tiedManualTeamName.no : otherMatch ? otherMatch?.metaData?.teamB : matchDetails.teamB;
-  let teamC = isTiedOrCompMatch ? null : otherMatch ? otherMatch?.metaData?.teamC : matchDetails.teamC;
+  let teamA = isTiedOrCompMatch ? tiedManualTeamName.yes : otherMatch ? otherMatch?.metaData?.teamA : matchDetails?.teamA;
+  let teamB = isTiedOrCompMatch ? tiedManualTeamName.no : otherMatch ? otherMatch?.metaData?.teamB : matchDetails?.teamB;
+  let teamC = isTiedOrCompMatch ? null : otherMatch ? otherMatch?.metaData?.teamC : matchDetails?.teamC;
 
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
