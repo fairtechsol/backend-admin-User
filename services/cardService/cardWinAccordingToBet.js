@@ -761,8 +761,8 @@ class CardWinOrLose {
         const { cards } = this.result;
         const splittedCards = cards?.split(",");
         const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
-        const lowCardRank = 0;
-        const highCardRank = 0;
+        let lowCardRank = 0;
+        let highCardRank = 0;
 
         for (let item of splittedCards) {
             const splitNumber = parseInt(cardsNo[item?.slice(0, -2)] || item?.slice(0, -2));
