@@ -7,7 +7,7 @@ exports.getCardResultByFGWallet = async (req, res) => {
   try {
     const { type } = req.params;
     const query = req.query;
-    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultList + type, null, null, query); 
+    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultList + type, null, null, query);
     return SuccessResponse(
       {
         statusCode: 200,
@@ -42,7 +42,7 @@ exports.getCardResultDetailByFGWallet = async (req, res) => {
         }
       }
     }
-    
+
     let betPlaced = await getBetsCondition(req.user, { "betPlaced.runnerId": id });
     if (betPlaced[1]) {
       result.data.bets = {
