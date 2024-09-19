@@ -20,52 +20,9 @@ exports.getBet = async (req, res) => {
   try {
     const reqUser = req.user;
     let { isCurrentBets, ...query } = req.query;
-    let where = {};
-    let result;
     
-    let select = [
-      "betPlaced.id", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.ipAddress", "betPlaced.browserDetail", "betPlaced.bettingName", "match.id", "betPlaced.runnerId"
-    ];
-
-    if (isCurrentBets) {
-      select.push("racingMatch.title", "racingMatch.startAt", "racingMatch.id")
-    }
-
-    if (query.status && query.status == "MATCHED") {
-      where.result = In([betResultStatus.LOSS, betResultStatus.TIE, betResultStatus.WIN]);
-      query = lodash.omit(query, ['status']);
-    }
-    else if (query.status && query.status == betResultStatus.PENDING) {
-      where.result = betResultStatus.PENDING;
-      query = lodash.omit(query, ['status']);
-    }
-    else if (query.status && query.status == "DELETED") {
-      where.deleteReason = Not(IsNull());
-      where.result = betResultStatus.UNDECLARE;
-      query = lodash.omit(query, ['status']);
-    } else {
-      query = lodash.omit(query, ['status']);
-    }
-
-    if (reqUser.roleName == userRoleConstant.user) {
-      where.createBy = reqUser.id;
-      result = await betPlacedService.getBet(where, query, reqUser.roleName, select, null, true, isCurrentBets);
-    } else {
-      let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
-      childsId = childsId.map(item => item.id);
-      if (!childsId.length) {
-        return SuccessResponse({
-          statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
-            count: 0,
-            rows: []
-          }
-        }, req, res)
-      }
-      let partnershitColumn = partnershipPrefixByRole[reqUser.roleName] + 'Partnership';
-      select.push("user.id", "user.userName", `user.${partnershitColumn}`);
-      where.createBy = In(childsId);
-      result = await betPlacedService.getBet(where, query, reqUser.roleName, select, null, true, isCurrentBets);
-    }
+    const result = await this.getBetsCondition(reqUser, query, isCurrentBets);
+    
     if (!result[1]) return SuccessResponse({
       statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
         count: 0,
@@ -84,6 +41,47 @@ exports.getBet = async (req, res) => {
   }
 
 };
+
+exports.getBetsCondition = async (reqUser, query, isCurrentBets) => {
+  let where = {};
+  let select = [
+    "betPlaced.id", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.ipAddress", "betPlaced.browserDetail", "betPlaced.bettingName", "match.id", "betPlaced.runnerId"
+  ];
+
+  if (isCurrentBets) {
+    select.push("racingMatch.title", "racingMatch.startAt", "racingMatch.id");
+  }
+
+  if (query.status == "MATCHED") {
+    where.result = In([betResultStatus.LOSS, betResultStatus.TIE, betResultStatus.WIN]);
+    query = lodash.omit(query, ['status']);
+  } else if (query.status == betResultStatus.PENDING) {
+    where.result = betResultStatus.PENDING;
+    query = lodash.omit(query, ['status']);
+  } else if (query.status == "DELETED") {
+    where.deleteReason = Not(IsNull());
+    where.result = betResultStatus.UNDECLARE;
+    query = lodash.omit(query, ['status']);
+  } else {
+    query = lodash.omit(query, ['status']);
+  }
+
+  if (reqUser.roleName == userRoleConstant.user) {
+    where.createBy = reqUser.id;
+    return await betPlacedService.getBet(where, query, reqUser.roleName, select, null, true, isCurrentBets);
+  } else {
+    let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
+    childsId = childsId.map(item => item.id);
+    if (!childsId.length) {
+      return [];
+    }
+    let partnershipColumn = partnershipPrefixByRole[reqUser.roleName] + 'Partnership';
+    select.push("user.id", "user.userName", `user.${partnershipColumn}`);
+    where.createBy = In(childsId);
+    return await betPlacedService.getBet(where, query, reqUser.roleName, select, null, true, isCurrentBets);
+  }
+};
+
 
 exports.getAccountStatementBet = async (req, res) => {
   try {
