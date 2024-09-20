@@ -5,7 +5,6 @@ const bodyParser = require("body-parser");
 const http2 = require("http2"); // Use http2 instead of http
 const http = require("http");
 const fs = require("fs");
-const path = require("path");
 const { socketManager } = require("./sockets/socketManager.js");
 const route = require("./routes/index.js");
 const swaggerUi = require("swagger-ui-express");
@@ -75,8 +74,8 @@ let server;
 if (process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev") {
   // Production SSL configuration with Let's Encrypt certificates
   const sslOptions = {
-    key: fs.readFileSync("/etc/letsencrypt/live/devbetfairapi.fairgame.club/privkey.pem"),
-    cert: fs.readFileSync("/etc/letsencrypt/live/devbetfairapi.fairgame.club/fullchain.pem"),
+    key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/privkey.pem`),
+    cert: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/fullchain.pem`),
     allowHTTP1: true, // Allows HTTP/1.1 fallback
   };
 
