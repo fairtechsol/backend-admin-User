@@ -1790,7 +1790,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                 betPlacedData: {
                   betType: placedBets?.betType,
                   odds: placedBets?.odds,
-                  teamName: item?.teamName?.split("-")?.pop()?.trim()
+                  teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
                 },
                 lossAmount: -placedBets?.lossAmount,
                 winAmount: -placedBets?.winAmount,
@@ -1869,7 +1869,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                   betPlacedData: {
                     betType: placedBets?.betType,
                     odds: placedBets?.odds,
-                    teamName: item?.teamName?.split("-")?.pop()?.trim()
+                    teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
                   },
                   lossAmount: -placedBets?.lossAmount,
                   winAmount: -placedBets?.winAmount,
