@@ -4830,7 +4830,8 @@ exports.declarTournamentMatchResult = async (req, res) => {
       result,
       match,
       betId,
-      matchDetails
+      matchDetails,
+      isMatchDeclare
     );
 
     insertBulkTransactions(bulkWalletRecord);
@@ -4927,7 +4928,7 @@ exports.declarTournamentMatchResult = async (req, res) => {
   }
 };
 
-const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, currBetId, matchDetails) => {
+const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, result, matchData, currBetId, matchDetails, isMatchDeclare) => {
 
   let faAdminCal = {
     userData: {}
@@ -4950,8 +4951,8 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
     logger.info({ message: "Updated users", data: user.user });
    
     // check if data is already present in the redis or not
-    if (userRedisData?.[`${betId}${redisKeys.profitLoss}_${matchId}`]) {
-      maxLoss = (Math.abs(Math.min(...Object.values(JSON.parse(userRedisData?.[`${betId}${redisKeys.profitLoss}_${matchId}`]) || {}), 0))) || 0;
+    if (userRedisData?.[`${currBetId}${redisKeys.profitLoss}_${matchId}`]) {
+      maxLoss = (Math.abs(Math.min(...Object.values(JSON.parse(userRedisData?.[`${currBetId}${redisKeys.profitLoss}_${matchId}`]) || {}), 0))) || 0;
     }
     else {
       // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
@@ -5012,7 +5013,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
       ...(result != resultType.noResult ? [{
         winAmount: parseFloat(getMultipleAmount.winAmount),
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
-        type: matchDetails?.[0]?.type,
+        type: matchDetails?.[0]?.name,
         result: result,
         betId: betId
       }] : [])
@@ -5353,7 +5354,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
       ...(result != resultType.noResult ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmount).toFixed(2)),
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
-        type:matchDetails?.[0]?.type,
+        type:matchDetails?.[0]?.name,
         result: result,
         betId: betId
       }] : [])
