@@ -4053,6 +4053,27 @@ const validateCardBettingDetails = async (match, betObj, selectionId, userId) =>
       };
     }
   }
+  if ([cardGameType.aaa].includes(match?.type)) {
+    const bets = await betPlacedService.findAllPlacedBet({ runnerId: roundData?.t1?.[0]?.mid, createBy: userId });
+    if (betObj?.teamName?.toLowerCase()?.includes("under 7") && bets?.find((item) => item?.teamName?.toLowerCase()?.includes("over 7"))) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.alreadyPlacedOnDiff",
+          keys: { name: "Over 7" }
+        }
+      };
+    }
+    else if (betObj?.teamName?.toLowerCase()?.includes("over 7") && bets?.find((item) => item?.teamName?.toLowerCase()?.includes("under 7"))) {
+      throw {
+        statusCode: 400,
+        message: {
+          msg: "bet.alreadyPlacedOnDiff",
+          keys: { name: "Under 7" }
+        }
+      };
+    }
+  }
   let currData;
   if (match?.type == cardGameType.teen) {
     currData = roundData?.t1?.find((item) => item?.sectionId == selectionId);
