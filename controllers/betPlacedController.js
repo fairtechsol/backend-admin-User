@@ -4034,7 +4034,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId, userId) =>
   }
   if ([cardGameType.dt20, cardGameType.dt202].includes(match?.type)) {
     const bets = await betPlacedService.findAllPlacedBet({ runnerId: roundData?.t1?.[0]?.mid, createBy: userId });
-    if (betObj?.teamName?.toLowerCase()?.includes("dragon") && bets?.find((item) => item?.teamName?.toLowerCase()?.includes("tiger"))) {
+    if (betObj?.teamName?.toLowerCase() == "dragon" && bets?.find((item) => item?.teamName?.toLowerCase() == "tiger")) {
       throw {
         statusCode: 400,
         message: {
@@ -4043,7 +4043,7 @@ const validateCardBettingDetails = async (match, betObj, selectionId, userId) =>
         }
       };
     }
-    else if (betObj?.teamName?.toLowerCase()?.includes("tiger") && bets?.find((item) => item?.teamName?.toLowerCase()?.includes("dragon"))) {
+    else if (betObj?.teamName?.toLowerCase() == "tiger" && bets?.find((item) => item?.teamName?.toLowerCase() == "dragon")) {
       throw {
         statusCode: 400,
         message: {
