@@ -71,6 +71,8 @@ class CardWinOrLose {
                 return this.ballbyball();
             case cardGameType["3cardj"]:
                 return this.threeCardJ();
+            case cardGameType.cmeter:
+                return this.cmeter();
             default:
                 throw {
                     statusCode: 400,
@@ -733,12 +735,12 @@ class CardWinOrLose {
         const { win } = this.result;
         const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
 
-        if(parseInt(selectionId)<=6){
+        if (parseInt(selectionId) <= 6) {
             if (selectionId?.toString() == win?.toString()) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
         }
-        else if(parseInt(selectionId)==17){
+        else if (parseInt(selectionId) == 17) {
             if (["5", "6"].includes(win?.toString())) {
                 return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
             }
@@ -754,6 +756,30 @@ class CardWinOrLose {
             }
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    cmeter() {
+        const { cards } = this.result;
+        const splittedCards = cards?.split(",");
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        let lowCardRank = 0;
+        let highCardRank = 0;
+
+        for (let item of splittedCards) {
+            const splitNumber = parseInt(cardsNo[item?.slice(0, -2)] || item?.slice(0, -2));
+            if (betOnTeamKey == "low" && (item == "9HH" || item == "10HH")) {
+                highCardRank += splitNumber;
+            }
+            else if (betOnTeamKey == "high" && (item == "9HH" || item == "10HH")) {
+                lowCardRank += splitNumber;
+            }
+            else if (splitNumber <= 9) {
+                lowCardRank += splitNumber;
+            }
+            else if (splitNumber >= 10) {
+                highCardRank += splitNumber;
+            }
+        }
+        return { result: ((highCardRank > lowCardRank && betOnTeamKey == "high") || (highCardRank < lowCardRank && betOnTeamKey == "low")) ? betResultStatus.WIN : highCardRank == lowCardRank ? betResultStatus.TIE : betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 }
 

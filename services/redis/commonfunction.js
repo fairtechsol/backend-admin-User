@@ -72,7 +72,7 @@ exports.getUserRedisSingleKey = async (userId,key)=>{
   return  userData;
 }
 
-exports.setCardBetPlaceRedis = async (mid,key,value)=>{
+exports.setCardBetPlaceRedis = async (mid, key, value) => {
   await externalRedis.hincrbyfloat(`${mid}${redisKeys.card}`, key, value);
 }
 

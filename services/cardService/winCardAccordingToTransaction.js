@@ -62,6 +62,8 @@ class CardResultTypeWin {
                 return this.queen();
             case cardGameType.ballbyball:
                 return this.ballbyball();
+            case cardGameType.cmeter:
+                return this.cmeter();
             default:
                 throw {
                     statusCode: 400,
@@ -328,7 +330,11 @@ class CardResultTypeWin {
                 return null;
         }
     }
-    threeCardJ() {
+    ballbyball() {
+        return this.cardResult.desc;
+    }
+
+    cmeter() {
         return this.cardResult.desc;
     }
 }

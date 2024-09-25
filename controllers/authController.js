@@ -12,7 +12,7 @@ const {
   getUserWithUserBalance,
 } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin } = require("../services/commonService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
 
@@ -54,6 +54,7 @@ const setUserDetailsRedis = async (user) => {
     let betData = await settingBetsDataAtLogin(user);
     let otherMatchBetData = await settingOtherMatchBetsDataAtLogin(user);
     let racingMatchData = await settingRacingMatchBetsDataAtLogin(user);
+    let tournamentBetData = await settingTournamentMatchBetsDataAtLogin(user);
     // Set user details and partnerships in Redis
     await updateUserDataRedis(user.id, {
       exposure: user?.userBal?.exposure || 0,
@@ -64,7 +65,8 @@ const setUserDetailsRedis = async (user) => {
       roleName: user.roleName,
       ...(betData || {}),
       ...(otherMatchBetData || {}),
-      ...(racingMatchData|| {}),
+      ...(racingMatchData || {}),
+      ...(tournamentBetData || {}),
       partnerShips: await findUserPartnerShipObj(user),
       userRole: user.roleName,
     });

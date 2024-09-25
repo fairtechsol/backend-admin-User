@@ -196,6 +196,7 @@ module.exports.matchBettingType = {
   quickbookmaker1: "quickbookmaker1",
   quickbookmaker2: "quickbookmaker2",
   quickbookmaker3: "quickbookmaker3",
+  tournament: "tournament",
   tiedMatch1: "tiedMatch1",
   tiedMatch2: "tiedMatch2",
   tiedMatch3: "tiedMatch3",
@@ -256,6 +257,7 @@ module.exports.rateCuttingBetType = {
 
 module.exports.marketBettingTypeByBettingType = {
   [this.matchBettingType.matchOdd]: "matchOdd",
+  [this.matchBettingType.tournament]: "tournament",
   [this.matchBettingType.bookmaker]: "marketBookmaker",
   [this.matchBettingType.bookmaker2]: "marketBookmaker2",
   [this.matchBettingType.tiedMatch1]: "marketTiedMatch",
@@ -291,6 +293,7 @@ module.exports.profitLossKeys={
   [this.matchBettingType.completeMatch1]: "completePL",
   [this.matchBettingType.completeManual]: "completePL",
   [this.matchBettingType.other]: "otherPL",
+  [this.matchBettingType.tournament]: "tournamentPL",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`overUnder${curr}.5`] = `overUnderPL${curr}.5`
     return prev;

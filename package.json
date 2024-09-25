@@ -14,14 +14,14 @@
     "migration:revert": "typeorm migration:revert -d ./orm.config.js"
   },
   "dependencies": {
-    "axios": "^1.7.3",
+    "axios": "^1.7.7",
     "bcryptjs": "^2.4.3",
     "bee-queue": "^1.7.1",
-    "body-parser": "^1.20.2",
+    "body-parser": "^1.20.3",
     "cors": "^2.8.5",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.5",
-    "express": "^4.19.2",
+    "express": "^4.21.0",
     "express-rate-limit": "^7.4.0",
     "helmet": "^7.1.0",
     "i18n": "^0.15.1",
@@ -29,18 +29,18 @@
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
-    "pdfmake": "^0.2.11",
-    "pg": "^8.12.0",
-    "socket.io": "^4.7.5",
+    "pdfmake": "^0.2.13",
+    "pg": "^8.13.0",
+    "socket.io": "^4.8.0",
     "socket.io-redis": "^6.1.1",
     "swagger-autogen": "^2.23.7",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.20",
-    "winston": "^3.14.1",
+    "winston": "^3.14.2",
     "winston-daily-rotate-file": "^5.0.0",
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4"
+    "nodemon": "^3.1.7"
   }
 }

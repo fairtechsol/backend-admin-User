@@ -39,7 +39,7 @@ const matchSchema = new EntitySchema({
     },
     teamB: {
       type: "varchar",
-      nullable: false,
+      nullable: true,
       length: 100,
     },
     teamC: {

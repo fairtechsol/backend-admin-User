@@ -1,12 +1,13 @@
 const { walletDomain, casinoMicroServiceDomain } = require("../config/contants");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
+const { getBetsCondition } = require("./betPlacedController");
 
 exports.getCardResultByFGWallet = async (req, res) => {
   try {
     const { type } = req.params;
     const query = req.query;
-    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultList + type, null, null, query)
+    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultList + type, null, null, query);
     return SuccessResponse(
       {
         statusCode: 200,
@@ -40,6 +41,14 @@ exports.getCardResultDetailByFGWallet = async (req, res) => {
           result: result?.data?.[0]
         }
       }
+    }
+
+    let betPlaced = await getBetsCondition(req.user, { "betPlaced.runnerId": id });
+    if (betPlaced[1]) {
+      result.data.bets = {
+        count: betPlaced[1],
+        rows: betPlaced[0]
+      };
     }
     return SuccessResponse(
       {
