@@ -328,7 +328,7 @@ exports.calculateProfitLossSessionOddEven = async (redisProfitLoss, betData, par
     betProfitloss.even = (betProfitloss.even || 0) + (betData?.winAmount * partnership / 100);
   }
 
-  maxLoss = Number(Math.min(...Object.values(betProfitloss)).toFixed(2));
+  maxLoss = Number(Math.min(...Object.values(betProfitloss), 0).toFixed(2));
   // Return the result
   return {
     betPlaced: betProfitloss,
@@ -357,7 +357,7 @@ exports.calculateProfitLossSessionFancy1 = async (redisProfitLoss, betData, part
     betProfitloss.no = (betProfitloss.no || 0) + (betData?.winAmount * partnership / 100);
   }
 
-  maxLoss = Number(Math.min(...Object.values(betProfitloss)).toFixed(2));
+  maxLoss = Number(Math.min(...Object.values(betProfitloss), 0).toFixed(2));
   // Return the result
   return {
     betPlaced: betProfitloss,
@@ -386,7 +386,7 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
     }
   });
 
-  maxLoss = Number(Math.min(...Object.values(betProfitloss)).toFixed(2));
+  maxLoss = Number(Math.min(...Object.values(betProfitloss), 0).toFixed(2));
   // Return the result
   return {
     betPlaced: betProfitloss,
