@@ -18,8 +18,9 @@ class CardProfitLoss {
                 return this.dragonTiger();
             case cardGameType.teen20:
             case cardGameType.teen8:
-            case cardGameType.teen9:
                 return this.teen20();
+            case cardGameType.teen9:
+                return this.teenTest();
             case cardGameType.lucky7:
             case cardGameType.lucky7eu:
                 return this.lucky7();
@@ -124,6 +125,11 @@ class CardProfitLoss {
     teen20() {
         const { lossAmount, partnership } = this.data;
         return { profitLoss: -Math.abs(parseFloat((parseFloat(((lossAmount * partnership) / 100) || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
+    }
+
+    teenTest() {
+        const { lossAmount, partnership, winAmount } = this.data;
+        return { profitLoss: Math.abs(parseFloat((parseFloat(((winAmount * partnership) / 100) || 0) + parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     dragonTiger1Day() {
