@@ -32,6 +32,7 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
 
 exports.allApiRoutes = {
   notification: "/general/notification",
+  blinkingTabs: "/superAdmin/blinkingTabs",
   getCompetitionList:"/match/competitionList",
   getDatesByCompetition:"/match/competition/dates",
   getMatchByCompetitionAndDate:"/match/competition/getMatch",

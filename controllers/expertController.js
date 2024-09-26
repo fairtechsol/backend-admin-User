@@ -24,6 +24,25 @@ exports.getNotification = async (req, res) => {
   }
 };
 
+exports.getBlinkingTabs = async (req, res) => {
+  try {
+    let response = await apiCall(
+      apiMethod.get,
+      expertDomain + allApiRoutes.blinkingTabs
+    );
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: response.data,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    return ErrorResponse(err?.response?.data, req, res);
+  }
+};
+
 exports.getMatchCompetitionsByType = async (req, res) => {
   try {
     const { type } = req.params;
