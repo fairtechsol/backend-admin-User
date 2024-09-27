@@ -169,8 +169,8 @@ exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
 
   const matchTypes = [
     [matchBettingType.bookmaker, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3, matchBettingType.matchOdd],
-    [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2],
-    [matchBettingType.completeMatch, matchBettingType.completeManual],
+    [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.tiedMatch3],
+    [matchBettingType.completeMatch, matchBettingType.completeManual, matchBettingType.completeMatch1],
   ];
 
   const betPlaced = await BetPlaced.createQueryBuilder().select([
@@ -582,10 +582,11 @@ exports.getPlacedBetsWithCategory = async (userId) => {
       'betPlaced.eventType AS "eventType"',
       'betPlaced.eventName AS "eventName"',
       'betPlaced.matchId AS "matchId"',
+      'betPlaced.marketType AS "marketType"',
       "betPlaced.bettingName AS groupedMarketType",
     ])
     .where({ createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull() })
-    .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType')
+    .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType, betPlaced.marketType')
     .orderBy('MAX(betPlaced.createdAt)', 'DESC');
 
   const data = await query.getRawMany();

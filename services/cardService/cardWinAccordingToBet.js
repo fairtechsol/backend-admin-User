@@ -48,6 +48,8 @@ class CardWinOrLose {
                 return this.casinoWar();
             case cardGameType.race20:
                 return this.race20();
+            case cardGameType.queen:
+                return this.queen();
             case cardGameType.superover:
             case cardGameType.cricketv3:
                 return this.superOver();
@@ -65,6 +67,12 @@ class CardWinOrLose {
                 return this.baccarat();
             case cardGameType.baccarat2:
                 return this.baccarat2();
+            case cardGameType.ballbyball:
+                return this.ballbyball();
+            case cardGameType["3cardj"]:
+                return this.threeCardJ();
+            case cardGameType.cmeter:
+                return this.cmeter();
             default:
                 throw {
                     statusCode: 400,
@@ -695,6 +703,83 @@ class CardWinOrLose {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
         return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    threeCardJ() {
+        const { cards } = this.result;
+        const splittedCards = cards?.split(",")?.map((item) => item?.slice(0, -2));
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+
+
+        for (let item of splittedCards) {
+            if (betOnTeamKey?.includes(item) && betOnTeamKey?.includes("yes")) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+            else if (!betOnTeamKey?.includes(item) && betOnTeamKey?.includes("no")) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+
+    queen() {
+        const { win } = this.result;
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
+
+        if (selectionId?.toString() == win?.toString()) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    ballbyball() {
+        const { win } = this.result;
+        const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
+
+        if (parseInt(selectionId) <= 6) {
+            if (selectionId?.toString() == win?.toString()) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        else if (parseInt(selectionId) == 17) {
+            if (["5", "6"].includes(win?.toString())) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        else if (parseInt(selectionId) == 18) {
+            if (parseInt(win) >= 7 && win <= 12) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        else if (parseInt(selectionId) == 19) {
+            if (parseInt(win) >= 13 && win <= 16) {
+                return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+            }
+        }
+        return { result: betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+    }
+    cmeter() {
+        const { cards } = this.result;
+        const splittedCards = cards?.split(",");
+        const betOnTeamKey = this.removeSpacesAndToLowerCase(this.betOnTeam);
+        let lowCardRank = 0;
+        let highCardRank = 0;
+
+        for (let item of splittedCards) {
+            const splitNumber = parseInt(cardsNo[item?.slice(0, -2)] || item?.slice(0, -2));
+            if (betOnTeamKey == "low" && (item == "9HH" || item == "10HH")) {
+                highCardRank += splitNumber;
+            }
+            else if (betOnTeamKey == "high" && (item == "9HH" || item == "10HH")) {
+                lowCardRank += splitNumber;
+            }
+            else if (splitNumber <= 9) {
+                lowCardRank += splitNumber;
+            }
+            else if (splitNumber >= 10) {
+                highCardRank += splitNumber;
+            }
+        }
+        return { result: ((highCardRank > lowCardRank && betOnTeamKey == "high") || (highCardRank < lowCardRank && betOnTeamKey == "low")) ? betResultStatus.WIN : highCardRank == lowCardRank ? betResultStatus.TIE : betResultStatus.LOSS, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
     }
 }
 
