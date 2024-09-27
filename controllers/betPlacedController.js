@@ -269,7 +269,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       eventType: match.matchType,
       bettingName: bettingName
     }
-    await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { teamA, teamB, teamC, placeIndex });
+    await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId, matchBetType }, { teamA, teamB, teamC, placeIndex });
 
     const { teamArateRedisKey, teamBrateRedisKey, teamCrateRedisKey } = getRedisKeys(matchBetType, matchId, redisKeys, betId);
 
@@ -1283,7 +1283,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       }
     };
   }
-  else if (betObj.amount < matchBettingDetail?.minBet) {
+  if (betObj.amount < matchBettingDetail?.minBet) {
     throw {
       statusCode: 400,
       message: {
@@ -1291,7 +1291,8 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       }
     };
   }
-  else if (betObj.amount > matchBettingDetail?.maxBet) {
+  let isBookmakerMarket = [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker2]?.includes(betObj.matchBetType);
+  if (betObj.amount > matchBettingDetail?.maxBet && !(isBookmakerMarket && matchBettingDetail?.maxBet * (teams.placeIndex + 1) >= betObj.amount)) {
     throw {
       statusCode: 400,
       message: {
@@ -1299,25 +1300,24 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       }
     };
   }
-  else {
-    let isRateChange = false;
-    let manualBets = Object.values(manualMatchBettingType);
-    if (manualBets.includes(matchBettingDetail?.type)) {
-      isRateChange = await checkRate(matchBettingDetail, betObj, teams);
-    } else {
-      isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
-    }
-    if (isRateChange) {
-      throw {
-        statusCode: 400,
-        message: {
-          msg: "bet.marketRateChanged",
-          keys: {
-            marketType: "Match betting",
-          },
+
+  let isRateChange = false;
+  let manualBets = Object.values(manualMatchBettingType);
+  if (manualBets.includes(matchBettingDetail?.type)) {
+    isRateChange = await checkRate(matchBettingDetail, betObj, teams);
+  } else {
+    isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
+  }
+  if (isRateChange) {
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.marketRateChanged",
+        keys: {
+          marketType: "Match betting",
         },
-      };
-    }
+      },
+    };
   }
 
 }
@@ -2345,7 +2345,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       data: req.body
     });
     let reqUser = req.user;
-    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, gameType = "cricket",mid, selectionId } = req.body;
+    let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, gameType = "cricket", mid, selectionId } = req.body;
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     if (!userBalanceData?.user) {
