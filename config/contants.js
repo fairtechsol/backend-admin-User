@@ -14,7 +14,8 @@ module.exports.gameType = {
   football: "football",
   tennis: "tennis",
   horseRacing: "horseRacing",
-  greyHound: "greyHound"
+  greyHound: "greyHound",
+  politics: "politics",
 }
 
 module.exports.sessionBettingType = {

@@ -67,6 +67,7 @@ exports.allApiRoutes = {
     getAllRateCricket: "/getAllRateCricket/",
     getAllRates:{
       [gameType.cricket]: "/getAllRateCricket/",
+      [gameType.politics]: "/getAllRateCricket/",
       [gameType.football]:"/getAllRateFootBallTennis/",
       [gameType.tennis]: "/getAllRateFootBallTennis/"
     }

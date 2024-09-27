@@ -290,7 +290,7 @@ exports.matchDetailsForFootball = async (req, res) => {
   } catch (error) {
     logger.error({
       error: `Error at get match details for ${matchType}`,
-      stack: error.stack,
+      stack: error?.stack,
       message: error.message,
     });
     return ErrorResponse(error, req, res);
