@@ -327,19 +327,18 @@ class CardProfitLoss {
                 newProfitLoss = { ...JSON.parse(newProfitLoss) };
             }
 
-            Object.keys(newProfitLoss)?.forEach((item) => {
 
-                if ((bettingType == betType.BACK)) {
-                    newProfitLoss.p1 += ((winAmount * partnership) / 100);
-                    newProfitLoss.p2 -= ((lossAmount * partnership) / 100);
-                }
-                else if ((bettingType == betType.LAY)) {
-                    newProfitLoss.p1 -= ((lossAmount * partnership) / 100);
-                    newProfitLoss.p2 += ((winAmount * partnership) / 100);
-                }
+            if ((bettingType == betType.BACK)) {
+                newProfitLoss.p1 += ((winAmount * partnership) / 100);
+                newProfitLoss.p2 -= ((lossAmount * partnership) / 100);
+            }
+            else if ((bettingType == betType.LAY)) {
+                newProfitLoss.p1 -= ((lossAmount * partnership) / 100);
+                newProfitLoss.p2 += ((winAmount * partnership) / 100);
+            }
 
-                newProfitLoss[item] = parseFloat((Number(newProfitLoss[item]) || 0.0).toFixed(2));
-            });
+            newProfitLoss.p1 = parseFloat((Number(newProfitLoss.p1) || 0.0).toFixed(2));
+            newProfitLoss.p2 = parseFloat((Number(newProfitLoss.p2) || 0.0).toFixed(2));
 
             return { profitLoss: JSON.stringify(newProfitLoss), exposure: Math.abs(parseFloat(this.oldExposure || 0) - Math.abs(Math.min(...Object.values(oldProfitLossData || {}), 0)) + Math.abs(Math.min(...Object.values(newProfitLoss), 0))) };
         }
