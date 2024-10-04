@@ -3,7 +3,7 @@ const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDo
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard } = require("./betPlacedService");
+const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard, getBetCountData } = require("./betPlacedService");
 const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
@@ -1633,4 +1633,13 @@ exports.childIdquery = async (user, searchId) => {
 exports.extractNumbersFromString = (str) => {
   const matches = str.match(/\d+(\.\d+)?/);
   return matches ? parseFloat(matches[0]) : null;
+}
+
+exports.checkBetLimit = async (betLimit, betId, userId) => {
+  if (betLimit != 0) {
+    const currBetCount = await getBetCountData({ betId: betId, createBy: userId });
+    if (currBetCount >= betLimit) {
+      throw { message: { msg: "bet.limitExceed", keys: { limit: betLimit } } }
+    }
+  }
 }

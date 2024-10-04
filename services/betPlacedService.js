@@ -14,6 +14,12 @@ exports.getBetById = async (id, select) => {
   });
 }
 
+exports.getBetCountData = async (where) => {
+  return await BetPlaced.count({
+    where: where
+  });
+}
+
 exports.getBetByUserId = async (id, select) => {
   return await BetPlaced.find({
     where: { createBy: id },
