@@ -40,7 +40,7 @@ exports.isUserExist = async (req, res) => {
 
 exports.createUser = async (req, res) => {
   try {
-    const { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, remark, exposureLimit, maxBetLimit, minBetLimit, sessionCommission, matchComissionType, matchCommission, delayTime } = req.body;
+    const { userName, fullName, password, phoneNumber, city, roleName, myPartnership, createdBy, creditRefrence, remark, exposureLimit, maxBetLimit, minBetLimit,  matchComissionType, matchCommission, delayTime } = req.body;
     let reqUser = req.user || {};
     const creator = await getUserById(reqUser.id || createdBy);
 
@@ -76,7 +76,6 @@ exports.createUser = async (req, res) => {
       exposureLimit: exposureLimit || creator.exposureLimit,
       maxBetLimit: maxBetLimit ?? creator.maxBetLimit,
       minBetLimit: minBetLimit ?? creator.minBetLimit,
-      sessionCommission,
       matchComissionType,
       matchCommission,
       superParentType: creator.superParentType,
@@ -158,21 +157,20 @@ exports.createUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    let { fullName, phoneNumber, city, id, remark, sessionCommission, matchComissionType, matchCommission } = req.body;
+    let { fullName, phoneNumber, city, id, remark, matchComissionType, matchCommission } = req.body;
     let reqUser = req.user || {}
-    let updateUser = await getUser({ id, createBy: reqUser.id }, ["id", "createBy", "fullName", "phoneNumber", "city", "sessionCommission", "matchComissionType", "matchCommission"]);
+    let updateUser = await getUser({ id, createBy: reqUser.id }, ["id", "createBy", "fullName", "phoneNumber", "city", "matchComissionType", "matchCommission"]);
     if (!updateUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
 
     updateUser.fullName = fullName ?? updateUser.fullName;
     updateUser.phoneNumber = phoneNumber ?? updateUser.phoneNumber;
     updateUser.city = city || updateUser.city;
-    updateUser.sessionCommission = sessionCommission || updateUser.sessionCommission;
     updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
     updateUser.matchCommission = matchCommission || updateUser.matchCommission;
     updateUser.remark = remark || updateUser.remark;
     updateUser = await addUser(updateUser);
 
-    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city", "sessionCommission", "matchComissionType", "matchCommission"])
+    let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city", "matchComissionType", "matchCommission"])
     return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "User" } }, data: response }, req, res)
   } catch (err) {
     return ErrorResponse(err, req, res);
@@ -735,7 +733,6 @@ exports.userList = async (req, res, next) => {
         { excelHeader: "Available Balance", dbKey: "availableBalance" },
         { excelHeader: "UL", dbKey: "userBlock" },
         { excelHeader: "BL", dbKey: "betBlock" },
-        { excelHeader: "S Com %", dbKey: "sessionCommission" },
         { excelHeader: "Match Com Type", dbKey: "matchComissionType" },
         { excelHeader: "M Com %", dbKey: "matchCommission" },
         { excelHeader: "Exposure Limit", dbKey: "exposureLimit" },

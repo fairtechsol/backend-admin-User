@@ -133,12 +133,6 @@ const userSchema = new EntitySchema({
       default: 0,
       transformer: new ColumnNumericTransformer()
     },
-    sessionCommission: {
-      type: 'float',
-      nullable: false,
-      default: 0,
-      transformer: new ColumnNumericTransformer()
-    },
     matchComissionType: {
       type: 'enum',
       enum: Object.values(matchComissionTypeConstant),
