@@ -1293,7 +1293,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       }
     };
   }
-  let isBookmakerMarket = [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker2]?.includes(betObj.matchBetType);
+  let isBookmakerMarket = [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3]?.includes(betObj.matchBetType);
   if (betObj.amount > matchBettingDetail?.maxBet && !(isBookmakerMarket && matchBettingDetail?.maxBet * (teams.placeIndex + 1) >= betObj.amount)) {
     throw {
       statusCode: 400,
