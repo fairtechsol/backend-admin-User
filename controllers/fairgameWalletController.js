@@ -127,7 +127,6 @@ exports.createSuperAdmin = async (req, res) => {
       minBetLimit,
       domain,
       isOldFairGame,
-      sessionCommission,
       matchComissionType,
       matchCommission,
       superParentType,
@@ -217,7 +216,6 @@ exports.createSuperAdmin = async (req, res) => {
       remark,
       delayTime: delayTime || 5,
       ...(isOldFairGame ? {
-        sessionCommission,
         matchComissionType,
         matchCommission
       } : {})
@@ -702,8 +700,6 @@ exports.declareSessionResult = async (req, res) => {
     });
 
     let updateRecords = [];
-    let commissions = {};
-    let bulkCommission = {};
 
     for (let item of betPlaced) {
 
@@ -742,31 +738,6 @@ exports.declareSessionResult = async (req, res) => {
           }
           break;
       }
-      if (item.user['sessionCommission'] != 0 && item.user['sessionCommission'] != null) {
-        let commissionAmount = Number((parseFloat(item.amount) * (parseFloat(item.user['sessionCommission']) / 100)).toFixed(2));
-        commissionAmount = Math.abs(commissionAmount);
-        if (commissions[item?.user?.id]) {
-          commissions[item?.user?.id] = parseFloat(commissions[item?.user?.id]) + parseFloat(commissionAmount);
-        } else {
-
-          commissions[item?.user?.id] = commissionAmount;
-        }
-      }
-      bulkCommission[item?.user?.id] = [...(bulkCommission[item?.user?.id] || []),
-      {
-        matchId: matchId,
-        betId: betId,
-        betPlaceId: item?.id,
-        amount: item?.amount,
-        sessionName: item?.eventName,
-        betPlaceDate: item?.createdAt,
-        odds: item?.odds,
-        betType: item?.betType,
-        stake: item?.amount,
-        superParent: item?.user?.superParentId,
-        userName: item?.user.userName
-      }
-      ];
 
       updateRecords.push(item);
     }
@@ -777,7 +748,6 @@ exports.declareSessionResult = async (req, res) => {
 
     let upperUserObj = {};
     let bulkWalletRecord = [];
-    let commissionReport = [];
     const profitLossData = await calculateProfitLossSessionForUserDeclare(
       users,
       betId,
@@ -789,9 +759,6 @@ exports.declareSessionResult = async (req, res) => {
       bulkWalletRecord,
       upperUserObj,
       score,
-      commissions,
-      bulkCommission,
-      commissionReport,
       match
     );
 
@@ -822,7 +789,6 @@ exports.declareSessionResult = async (req, res) => {
       parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
       parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
       parentUser.exposure = parentExposure - value["exposure"];
-      parentUser.totalCommission = (parentUser.totalCommission || 0) + (value["totalCommission"] || 0);
       if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
@@ -841,7 +807,6 @@ exports.declareSessionResult = async (req, res) => {
         profitLoss: value?.["profitLoss"],
         myProfitLoss: -value["myProfitLoss"],
         exposure: -value["exposure"],
-        totalCommission: value["totalCommission"] || 0
       });
 
       logger.info({
@@ -870,7 +835,6 @@ exports.declareSessionResult = async (req, res) => {
         matchId
       });
     }
-    insertBulkCommissions(commissionReport);
 
     return SuccessResponse(
       {
@@ -894,10 +858,9 @@ exports.declareSessionResult = async (req, res) => {
   }
 }
 
-const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, score, commission, bulkCommission, commissionReport, match) => {
+const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, score, match) => {
 
   let faAdminCal = {
-    commission: [],
     userData: {}
   };
   let superAdminData = {};
@@ -944,7 +907,6 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
 
     getWinAmount = getMultipleAmount[0].winamount;
     getLossAmount = getMultipleAmount[0].lossamount;
-    let totalStack = getMultipleAmount[0].totalStack;
     profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
 
     fwProfitLoss = parseFloat(fwProfitLoss.toString()) + parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString());
@@ -964,13 +926,10 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
       exposure: -maxLoss
     };
 
-    if (commission[user.user.id]) {
-      userBalanceData.totalCommission = Number((parseFloat(commission[user.user.id])).toFixed(2));
-    }
     await updateUserBalanceData(user.user.id, userBalanceData);
 
     if (userRedisData?.exposure) {
-      let { totalCommission, ...userBalance } = userBalanceData;
+      let { ...userBalance } = userBalanceData;
       await incrementValuesRedis(user.user.id, {
         ...userBalance,
         currentBalance: profitLoss,
@@ -979,41 +938,6 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
     }
 
-    if (user?.user?.sessionCommission) {
-
-      bulkCommission[user?.user?.id]?.forEach((item) => {
-        commissionReport.push({
-          createBy: user.user.id,
-          matchId: item.matchId,
-          betId: item?.betId,
-          betPlaceId: item?.betPlaceId,
-          commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(user?.user?.sessionCommission) / 100).toFixed(2)),
-          parentId: user.user.id,
-        });
-      });
-
-      if (user?.user?.id == user?.user?.createBy) {
-        bulkCommission[user?.user?.id]?.forEach((item) => {
-          faAdminCal.commission.push({
-            createBy: user.user.id,
-            matchId: item.matchId,
-            betId: item?.betId,
-            betPlaceId: item?.betPlaceId,
-            parentId: user.user.id,
-            teamName: item?.sessionName,
-            betPlaceDate: new Date(item?.betPlaceDate),
-            odds: item?.odds,
-            betType: item?.betType,
-            stake: item?.stake,
-            commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(user?.user?.sessionCommission) / 100).toFixed(2)),
-            partnerShip: 100,
-            matchName: match?.title,
-            matchStartDate: new Date(match?.startAt),
-            userName: user.user.userName
-          });
-        });
-      }
-    }
 
     sendMessageToUser(user.user.id, redisEventName, {
       ...user.user, betId, matchId, sessionExposure: redisSesionExposureValue, userBalanceData: {
@@ -1044,7 +968,6 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
         profitLoss: profitLoss,
         myProfitLoss: profitLoss,
         exposure: maxLoss,
-        totalCommission: (commission[user.user.id] || 0)
       };
     }
 
@@ -1068,18 +991,14 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
         ((profitLoss * upLinePartnership) / 100).toString()
       );
 
-      let parentCommission = parseFloat((((parseFloat(patentUser?.sessionCommission) * parseFloat(totalStack)) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
 
       if (upperUserObj[patentUser.id]) {
         upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
         upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
         upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
-        if (patentUser?.sessionCommission && parseFloat(patentUser?.sessionCommission) != 0) {
-          upperUserObj[patentUser.id].totalCommission += parentCommission;
-        }
       } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss, ...(patentUser?.sessionCommission && parseFloat(patentUser?.sessionCommission) != 0 ? { totalCommission: parentCommission } : {}) };
+        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
       }
 
       if (patentUser.createBy === patentUser.id) {
@@ -1089,52 +1008,16 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
         };
       }
 
-      if (patentUser?.sessionCommission) {
-
-        bulkCommission[user?.user?.id]?.forEach((item) => {
-          commissionReport.push({
-            createBy: user.user.id,
-            matchId: item.matchId,
-            betId: item?.betId,
-            betPlaceId: item?.betPlaceId,
-            commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(patentUser?.sessionCommission) / 100).toFixed(2)),
-            parentId: patentUser.id,
-          });
-        });
-
-        if (patentUser?.id == patentUser?.createBy) {
-          bulkCommission[user?.user?.id]?.forEach((item) => {
-            faAdminCal.commission.push({
-              createBy: user.user.id,
-              matchId: item.matchId,
-              betId: item?.betId,
-              betPlaceId: item?.betPlaceId,
-              parentId: patentUser.id,
-              teamName: item?.sessionName,
-              betPlaceDate: new Date(item?.betPlaceDate),
-              odds: item?.odds,
-              betType: item?.betType,
-              stake: item?.stake,
-              commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(patentUser?.sessionCommission) / 100).toFixed(2)),
-              partnerShip: upLinePartnership,
-              matchName: match?.title,
-              matchStartDate: new Date(match?.startAt),
-              userName: user.user.userName
-            });
-          });
-        }
-      }
     }
     faAdminCal.userData[user.user.superParentId] = {
       profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
       exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
       myProfitLoss: parseFloat(faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0) + parseFloat(parseFloat((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? (parseFloat(user.user.fwPartnership) / 100) : 1)).toFixed(2)),
-      totalCommission: parseFloat((parseFloat(totalStack) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) / 100 : 1)).toFixed(2)) + (faAdminCal.userData?.[user.user.superParentId]?.totalCommission || 0),
       role: user.user.superParentType
     }
 
   };
-  return { fwProfitLoss, faAdminCal, superAdminData, bulkCommission };
+  return { fwProfitLoss, faAdminCal, superAdminData };
 }
 
 exports.declareSessionNoResult = async (req, res) => {
@@ -1358,7 +1241,6 @@ exports.unDeclareSessionResult = async (req, res) => {
 
     let upperUserObj = {};
     let bulkWalletRecord = [];
-    const commissionData = await getCombinedCommission(betId);
     const profitLossData = await calculateProfitLossSessionForUserUnDeclare(
       users,
       betId,
@@ -1369,9 +1251,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       userId,
       bulkWalletRecord,
       upperUserObj,
-      commissionData
     );
-    deleteCommission(betId);
     insertBulkTransactions(bulkWalletRecord);
     logger.info({
       message: "Upper user for this bet.",
@@ -1401,7 +1281,6 @@ exports.unDeclareSessionResult = async (req, res) => {
       parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
       parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
       parentUser.exposure = parentExposure + value["exposure"];
-      parentUser.totalCommission = parentUser.totalCommission - value["totalCommission"];
       if (parentUser.exposure < 0) {
         logger.info({
           message: "Exposure in negative for user: ",
@@ -1420,7 +1299,6 @@ exports.unDeclareSessionResult = async (req, res) => {
         profitLoss: -value?.["profitLoss"],
         myProfitLoss: +value["myProfitLoss"],
         exposure: +value["exposure"],
-        totalCommission: -(value["totalCommission"] || 0)
       });
 
       logger.info({
@@ -1488,7 +1366,7 @@ exports.unDeclareSessionResult = async (req, res) => {
   }
 }
 
-const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, commissionData) => {
+const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj) => {
 
   let faAdminCal = { userData: {}, walletData: {} };
   let superAdminData = {};
@@ -1544,10 +1422,6 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       exposure: maxLoss,
     }
 
-    let userCommission = commissionData?.find((item) => item?.userId == user.user.id);
-    if (userCommission) {
-      userBalanceData.totalCommission = - parseFloat(commissionData?.find((item) => item?.userId == user.user.id)?.amount || 0);
-    }
 
     if (user.user.createBy === user.user.id) {
       superAdminData[user.user.id] = {
@@ -1555,7 +1429,6 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         profitLoss: profitLoss,
         myProfitLoss: profitLoss,
         exposure: maxLoss,
-        totalCommission: parseFloat(commissionData?.find((item) => item?.userId == user.user.id)?.amount || 0)
       };
     }
 
@@ -1563,7 +1436,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
 
 
     if (userRedisData?.exposure) {
-      const { totalCommission, ...userBalance } = userBalanceData;
+      const { ...userBalance } = userBalanceData;
 
       await incrementValuesRedis(user.user.id, {
         ...userBalance,
@@ -1591,7 +1464,6 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         profitLoss: user.user.userBalance.profitLoss - profitLoss,
         myProfitLoss: user.user.userBalance.myProfitLoss - profitLoss,
         exposure: user.user.userBalance.exposure,
-        totalCommission: parseFloat(user.user.userBalance.totalCommission) - parseFloat(commissionData?.find((item) => item?.userId == user.user.id)?.amount || 0)
       },
       profitLossData: JSON.stringify({
         upperLimitOdds: redisData?.betData?.[redisData?.betData?.length - 1]?.odds,
@@ -1709,11 +1581,6 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         }
       } else {
         upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-        let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
-        if (userCommission) {
-          upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(commissionData?.find((item) => item?.userId == patentUser.id)?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
-        }
-
         const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
 
         upperUserObj[patentUser.id] = {
