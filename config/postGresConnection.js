@@ -34,6 +34,7 @@ if (process.env.NODE_ENV == 'production') {
   dataSourceOption.ssl = {
     rejectUnauthorized: false
   }
+  dataSourceOption.logging = false;
 }
 
 const AppDataSource = new DataSource(dataSourceOption);
