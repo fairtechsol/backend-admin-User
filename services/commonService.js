@@ -1637,7 +1637,7 @@ exports.extractNumbersFromString = (str) => {
 
 exports.checkBetLimit = async (betLimit, betId, userId) => {
   if (betLimit != 0) {
-    const currBetCount = await getBetCountData({ betId: betId, createBy: userId });
+    const currBetCount = await getBetCountData({ betId: betId, deleteReason: IsNull(), createBy: userId });
     if (currBetCount >= betLimit) {
       throw { message: { msg: "bet.limitExceed", keys: { limit: betLimit } } }
     }
