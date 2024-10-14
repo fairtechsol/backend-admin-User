@@ -6,7 +6,7 @@ const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult, getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, checkBetLimit } = require('../services/commonService');
+const { calculateRate, calculateProfitLossSession, calculatePLAllBet, mergeProfitLoss, findUserPartnerShipObj, calculateProfitLossForMatchToResult, forceLogoutUser, calculateProfitLossForOtherMatchToResult, getRedisKeys, parseRedisData, calculateRacingRate, calculateProfitLossForRacingMatchToResult, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, checkBetLimit, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
 const { MatchBetQueue, WalletMatchBetQueue, SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, ExpertMatchBetQueue, walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletMatchBetDeleteQueue, expertMatchBetDeleteQueue, MatchRacingBetQueue, WalletMatchRacingBetQueue, ExpertMatchRacingBetQueue, walletRaceMatchBetDeleteQueue, expertRaceMatchBetDeleteQueue, CardMatchBetQueue, WalletCardMatchBetQueue, ExpertCardMatchBetQueue, MatchTournamentBetQueue, WalletMatchTournamentBetQueue, ExpertMatchTournamentBetQueue, walletTournamentMatchBetDeleteQueue, expertTournamentMatchBetDeleteQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
@@ -866,6 +866,54 @@ exports.sessionBetPlace = async (req, res, next) => {
         );
       }
     }
+    else if (sessionDetails?.type == sessionBettingType.khado) {
+      if (sessionBetType == betType.BACK) {
+        winAmount = parseFloat((stake * ratePercent) / 100).toFixed(2);
+        loseAmount = parseFloat(stake);
+      }
+      else {
+        // Return an error response for an invalid bet type
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "invalid",
+              keys: {
+                name: "Bet type",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
+    else if (sessionDetails?.type == sessionBettingType.meter) {
+      if (sessionBetType == betType.YES) {
+        winAmount = parseFloat((stake * ratePercent)).toFixed(2);
+        loseAmount = parseFloat(stake * odds).toFixed(2);
+      }
+     else if (sessionBetType == betType.NO) {
+        winAmount = parseFloat((stake * odds)).toFixed(2);
+        loseAmount = parseFloat((stake * ratePercent)).toFixed(2);
+      }
+      else {
+        // Return an error response for an invalid bet type
+        return ErrorResponse(
+          {
+            statusCode: 400,
+            message: {
+              msg: "invalid",
+              keys: {
+                name: "Bet type",
+              },
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
     else {
       // Calculate win and lose amounts based on the bet type
       if (sessionBetType == betType.YES) {
@@ -914,7 +962,8 @@ exports.sessionBetPlace = async (req, res, next) => {
         matchId: matchId,
         betId: betId,
         rate: parseFloat(ratePercent),
-        teamName: teamName
+        teamName: teamName,
+        eventName: eventName
       },
       userBalance: parseFloat(userData?.currentBalance) || 0,
     };
@@ -953,6 +1002,18 @@ exports.sessionBetPlace = async (req, res, next) => {
         break;
       case sessionBettingType.fancy1:
         redisData = await calculateProfitLossSessionFancy1(sessionProfitLossData, betPlaceObject);
+        break;
+      case sessionBettingType.khado:
+        redisData = await calculateProfitLossKhado(
+          sessionProfitLossData,
+          betPlaceObject
+        );
+        break;
+      case sessionBettingType.meter:
+        redisData = await calculateProfitLossMeter(
+          sessionProfitLossData,
+          betPlaceObject
+        );
         break;
       default:
         break;
