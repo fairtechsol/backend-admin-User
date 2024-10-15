@@ -1230,7 +1230,7 @@ exports.settingBetsDataAtLogin = async (user) => {
       if (betResult.session[item.betId] || betResult.match[item.betId]) {
         if (item.marketBetType == marketBetType.SESSION) {
           if(!matchIdDetail[item?.matchId]){
-            matchIdDetail[item?.matchId] = await getMatchData({ id: matchId }, ["id", "teamC"]);
+            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId].push(itemData);
         }
@@ -1243,7 +1243,7 @@ exports.settingBetsDataAtLogin = async (user) => {
 
         if(item.marketBetType == marketBetType.SESSION) {
           if(!matchIdDetail[item?.matchId]){
-            matchIdDetail[item?.matchId] = await getMatchData({ id: matchId }, ["id", "teamC"]);
+            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId] = [itemData];
         }
@@ -1487,7 +1487,7 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
       if (betResult.session[item.betId] || betResult.match[item.betId]) {
         if (item.marketBetType == marketBetType.SESSION) {
           if(!matchIdDetail[item?.matchId]){
-            matchIdDetail[item?.matchId] = await getMatchData({ id: matchId }, ["id", "teamC"]);
+            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId].push(itemData);
         }
@@ -1500,7 +1500,7 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
 
         if (item.marketBetType == marketBetType.SESSION) {
           if(!matchIdDetail[item?.matchId]){
-            matchIdDetail[item?.matchId] = await getMatchData({ id: matchId }, ["id", "teamC"]);
+            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId] = [itemData];
         }
