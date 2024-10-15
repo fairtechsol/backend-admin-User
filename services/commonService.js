@@ -500,7 +500,7 @@ exports.calculateProfitLossMeter = async (redisProfitLoss, betData, partnership)
           return {
             odds: (redisProfitLoss?.upperLimitOdds ?? 0) + index + 1,
             profitLoss: parseFloat(
-              betProfitloss[betProfitloss?.length - 1]?.profitLoss
+              (betProfitloss[betProfitloss?.length - 1]?.profitLoss) + ((parseFloat(betProfitloss[betProfitloss?.length - 1]?.profitLoss) - parseFloat(betProfitloss[betProfitloss?.length - 2]?.profitLoss)) * (index + 1))
             ),
           };
         }),
