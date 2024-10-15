@@ -786,7 +786,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.matchLock" } }, req, res);
     }
-    const matchDetail = await getMatchData({ id: matchId }, ["id", "eventId"]);
+    const matchDetail = await getMatchData({ id: matchId }, ["id", "eventId", "teamC"]);
 
     let sessionDetails;
 
@@ -963,7 +963,8 @@ exports.sessionBetPlace = async (req, res, next) => {
         betId: betId,
         rate: parseFloat(ratePercent),
         teamName: teamName,
-        eventName: eventName
+        eventName: eventName,
+        isTeamC: !!matchDetail?.teamC
       },
       userBalance: parseFloat(userData?.currentBalance) || 0,
     };
@@ -1773,6 +1774,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   let redisSesionExposureName = redisKeys.userSessionExposure + matchId;
   let oldProfitLoss;
   let currUserBalance;
+  const matchDetail = await getMatchData({ id: matchId }, ["id", "teamC"])
 
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
@@ -1790,7 +1792,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
 
     let placedBet = await betPlacedService.findAllPlacedBet({ matchId: matchId, betId: betId, createBy: userId, deleteReason: IsNull() });
-    let userAllBetProfitLoss = await calculatePLAllBet(placedBet, placedBet?.[0]?.marketType, 100);
+    let userAllBetProfitLoss = await calculatePLAllBet(placedBet, placedBet?.[0]?.marketType, 100, null, null, matchDetail);
     oldProfitLoss = {
       lowerLimitOdds: userAllBetProfitLoss.lowerLimitOdds,
       upperLimitOdds: userAllBetProfitLoss.upperLimitOdds,
@@ -1807,7 +1809,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
   }
   let oldLowerLimitOdds = parseFloat(oldProfitLoss.lowerLimitOdds);
   let oldUpperLimitOdds = parseFloat(oldProfitLoss.upperLimitOdds);
-  let userDeleteProfitLoss = await calculatePLAllBet(bets, bets?.[0]?.marketType, 100, oldLowerLimitOdds, oldUpperLimitOdds);
+  let userDeleteProfitLoss = await calculatePLAllBet(bets, bets?.[0]?.marketType, 100, oldLowerLimitOdds, oldUpperLimitOdds, matchDetail);
 
   if (![sessionBettingType.oddEven, sessionBettingType.fancy1, sessionBettingType.cricketCasino].includes(bets?.[0]?.marketType)) {
     await mergeProfitLoss(userDeleteProfitLoss.betData, oldProfitLoss.betPlaced);
