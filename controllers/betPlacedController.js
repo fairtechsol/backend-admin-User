@@ -1347,6 +1347,14 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       }
     };
   }
+  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.minAmountViolate"
+      }
+    };
+  }
   if (betObj.amount < matchBettingDetail?.minBet) {
     throw {
       statusCode: 400,
@@ -1355,8 +1363,8 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       }
     };
   }
-  let isBookmakerMarket = [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3]?.includes(betObj.matchBetType);
-  if (betObj.amount > matchBettingDetail?.maxBet && !(isBookmakerMarket && matchBettingDetail?.maxBet * (teams.placeIndex + 1) >= betObj.amount)) {
+  let isManuallBookmakerMarket = [matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3]?.includes(betObj.matchBetType);
+  if (betObj.amount > matchBettingDetail?.maxBet || (isManuallBookmakerMarket && matchBettingDetail?.maxBet / (3 - teams.placeIndex) < betObj.amount)) {
     throw {
       statusCode: 400,
       message: {
@@ -1365,12 +1373,15 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
+  
+  let isBookmakerMarket = [matchBettingType.bookmaker, matchBettingType.bookmaker2]?.includes(betObj.matchBetType);
+
   let isRateChange = false;
   let manualBets = Object.values(manualMatchBettingType);
   if (manualBets.includes(matchBettingDetail?.type)) {
     isRateChange = await checkRate(matchBettingDetail, betObj, teams);
   } else {
-    isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
+    isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams, isBookmakerMarket);
   }
   if (isRateChange) {
     throw {
@@ -1524,7 +1535,7 @@ let calculateRacingUserExposure = (userOldExposure, oldTeamRate, newTeamRate) =>
   return Number(newExposure.toFixed(2));
 }
 
-let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
+let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerMarket) => {
   let url = "";
   const microServiceUrl = microServiceDomain;
   try {
@@ -1537,6 +1548,17 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
       (d) => d.mid?.toString() == betObj.mid?.toString()
     );
     let filterData = matchBettingData?.section?.find((item) => item?.sid?.toString() == betObj?.selectionId?.toString());
+    if (isBookmakerMarket) {
+      let oddLength = filterData.odds.length / 2;
+      if (matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
+        throw {
+          statusCode: 400,
+          message: {
+            msg: "bet.maxAmountViolate"
+          }
+        };
+      }
+    }
 
     if (filterData) {
       if (filterData?.odds?.find((item) => item?.tno == teams?.placeIndex && item?.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
