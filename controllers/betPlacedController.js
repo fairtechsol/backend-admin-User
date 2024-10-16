@@ -1190,6 +1190,15 @@ const validateSessionBet = async (apiBetData, betDetails) => {
     };
   }
 
+  if(apiBetData?.minBet == apiBetData?.maxBet){
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.maxAmountViolate"
+      }
+    };
+  }
+
   if (betDetails.stake < apiBetData.minBet) {
     throw {
       statusCode: 400,
@@ -1351,7 +1360,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     throw {
       statusCode: 400,
       message: {
-        msg: "bet.minAmountViolate"
+        msg: "bet.maxAmountViolate"
       }
     };
   }
