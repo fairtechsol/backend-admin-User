@@ -1190,14 +1190,6 @@ const validateSessionBet = async (apiBetData, betDetails) => {
     };
   }
 
-  if(apiBetData?.minBet == apiBetData?.maxBet){
-    throw {
-      statusCode: 400,
-      message: {
-        msg: "bet.maxAmountViolate"
-      }
-    };
-  }
 
   if (betDetails.stake < apiBetData.minBet) {
     throw {
@@ -1207,6 +1199,16 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       }
     };
   }
+  
+  if(apiBetData?.minBet == apiBetData?.maxBet){
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.maxAmountViolate"
+      }
+    };
+  }
+
   if (betDetails.stake > apiBetData.maxBet) {
     throw {
       statusCode: 400,
@@ -1356,14 +1358,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       }
     };
   }
-  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
-    throw {
-      statusCode: 400,
-      message: {
-        msg: "bet.maxAmountViolate"
-      }
-    };
-  }
+
   if (betObj.amount < matchBettingDetail?.minBet) {
     throw {
       statusCode: 400,
@@ -1372,6 +1367,16 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
       }
     };
   }
+
+  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.maxAmountViolate"
+      }
+    };
+  }
+
   let isManuallBookmakerMarket = [matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3]?.includes(betObj.matchBetType);
   if (betObj.amount > matchBettingDetail?.maxBet || (isManuallBookmakerMarket && matchBettingDetail?.maxBet / (3 - teams.placeIndex) < betObj.amount)) {
     throw {
