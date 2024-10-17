@@ -591,13 +591,34 @@ exports.getPlacedBetsWithCategory = async (userId) => {
       'betPlaced.marketType AS "marketType"',
       "betPlaced.bettingName AS groupedMarketType",
     ])
-    .where({ createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull() })
+    .where({
+      createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull(), marketBetType
+        : marketBetType.MATCHBETTING
+    })
     .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType, betPlaced.marketType')
     .orderBy('MAX(betPlaced.createdAt)', 'DESC');
 
   const data = await query.getRawMany();
 
-  return data;
+  const query2 = BetPlaced.createQueryBuilder()
+    .leftJoinAndMapOne("betPlaced.match", "match", "match", "betPlaced.matchId=match.id")
+    .select([
+      'COUNT(*) AS "trade"',
+      'betPlaced.eventType AS "eventType"',
+      'betPlaced.matchId AS "matchId"',
+      'betPlaced.marketType AS "marketType"',
+      'match.title AS "eventName"',
+    ])
+    .where({
+      createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull(), marketBetType
+        : marketBetType.SESSION
+    })
+    .groupBy('betPlaced.matchId, match.title, betPlaced.eventType, betPlaced.marketType')
+    .orderBy('MAX(betPlaced.createdAt)', 'DESC');
+
+  const data2 = await query2.getRawMany();
+
+  return [...data, ...data2];
 }
 
 exports.getPlacedBetTotalLossAmount = (where) => {

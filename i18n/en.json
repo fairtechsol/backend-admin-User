@@ -74,6 +74,6 @@
     "wrongCardBetType": "Wrong card bet type.",
     "placeBetAfter5": "Place bet after {time} seconds",
     "alreadyPlacedOnDiff": "Bet not confirm bet already exists on {name} Card.",
-    "limitExceed":"You can not place the bet more than this limit {limit}"
+    "limitExceed":"You cannot place a bet more than {limit} times."
   }
 }

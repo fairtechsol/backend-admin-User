@@ -25,6 +25,8 @@ module.exports.sessionBettingType = {
   oddEven: "oddEven",
   cricketCasino: "cricketCasino",
   fancy1: "fancy1",
+  khado: "khado",
+  meter: "meter",
 };
 
 module.exports.tiedManualTeamName = {

@@ -49,7 +49,9 @@ const {
   findUserPartnerShipObj,
   calculateProfitLossSessionOddEven,
   calculateProfitLossSessionCasinoCricket,
-  calculateProfitLossSessionFancy1
+  calculateProfitLossSessionFancy1,
+  calculateProfitLossKhado,
+  calculateProfitLossMeter
 } = require("../services/commonService");
 const {
   updateDomainData,
@@ -96,7 +98,7 @@ const { sendMessageToUser, broadcastEvent } = require("../sockets/socketManager"
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertCommissions, getCombinedCommission, deleteCommission} = require("../services/commissionService");
 const { insertButton } = require("../services/buttonService");
-const { updateMatchData } = require("../services/matchService");
+const { updateMatchData, getMatchData } = require("../services/matchService");
 const { updateRaceMatchData } = require("../services/racingServices");
 const { CardWinOrLose } = require("../services/cardService/cardWinAccordingToBet");
 const { apiMethod, allApiRoutes, apiCall } = require("../utils/apiService");
@@ -737,6 +739,22 @@ exports.declareSessionResult = async (req, res) => {
             item.result = betResultStatus.LOSS;
           }
           break;
+        case sessionBettingType.meter:
+          if ((item.betType == betType.YES && item.odds <= score) || (item.betType == betType.NO && item.odds > score)) {
+            item.result = betResultStatus.WIN;
+            item.winAmount = ((parseFloat(item.amount) * parseFloat(item.rate) / 100) * Math.abs(parseInt(score) - parseInt(item.odds)));
+          } else if ((item.betType == betType.YES && item.odds > score) || (item.betType == betType.NO && item.odds <= score)) {
+            item.result = betResultStatus.LOSS;
+            item.lossAmount = ((parseFloat(item.amount) * parseFloat(item.rate) / 100) * Math.abs(parseInt(score) - parseInt(item.odds)));
+          }
+          break;
+          case sessionBettingType.khado:
+            if ( (item.betType === betType.BACK && (parseInt(score) >= item.odds && parseInt(score) < item.odds + parseInt(item.eventName.split("-").pop())))) {
+              item.result = betResultStatus.WIN;
+            } else {
+              item.result = betResultStatus.LOSS;
+            }
+            break;
       }
 
       updateRecords.push(item);
@@ -1229,7 +1247,7 @@ exports.unDeclareSessionResult = async (req, res) => {
   try {
 
     const { betId, matchId, sessionDetails, userId } = req.body;
-
+    const matchDetail = await getMatchData({ id: matchId }, ["id", "teamC"]);
     logger.info({
       message: "Session result un declared.",
       data: {
@@ -1251,6 +1269,7 @@ exports.unDeclareSessionResult = async (req, res) => {
       userId,
       bulkWalletRecord,
       upperUserObj,
+      matchDetail
     );
     insertBulkTransactions(bulkWalletRecord);
     logger.info({
@@ -1366,7 +1385,7 @@ exports.unDeclareSessionResult = async (req, res) => {
   }
 }
 
-const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj) => {
+const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, resultDeclare, redisEventName, userId, bulkWalletRecord, upperUserObj, matchDetail) => {
 
   let faAdminCal = { userData: {}, walletData: {} };
   let superAdminData = {};
@@ -1390,7 +1409,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
 
     // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
     let betPlace = await findAllPlacedBetWithUserIdAndBetId(user?.user?.id, betId);
-    let redisData = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, 100);
+    let redisData = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, 100, null, null, matchDetail);
     maxLoss = redisData.maxLoss || 0;
 
     redisSesionExposureValue = redisSesionExposureValue + maxLoss;
@@ -1530,7 +1549,39 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                     lossAmount: placedBets?.lossAmount,
                     winAmount: placedBets?.winAmount,
                   },
-                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]
+                  user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]
+                );
+                break;
+              case sessionBettingType.khado:
+                upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossKhado(
+                  upperUserObj[patentUser.id].profitLossObj,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                      eventName: placedBets?.eventName
+                    },
+                    lossAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                  user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]
+                );
+                break;
+              case sessionBettingType.meter:
+                upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossMeter(
+                  upperUserObj[patentUser.id].profitLossObj,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                      rate: placedBets?.rate,
+                      stake: placedBets?.amount,
+                      isTeamC: !!matchDetail?.teamC
+                    },
+                    lossAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                  user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]
                 );
                 break;
               case sessionBettingType.oddEven:
@@ -1581,7 +1632,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         }
       } else {
         upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`], null, null, matchDetail);
 
         upperUserObj[patentUser.id] = {
           ...upperUserObj[patentUser.id], profitLossObj: {
@@ -1608,7 +1659,8 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       const betPlaceProfitLoss = await calculatePLAllBet(
         betPlace,
         betPlace?.[0]?.marketType,
-        -user?.user[`fwPartnership`]
+        -user?.user[`fwPartnership`],
+        null, null, matchDetail
       );
       faAdminCal.walletData.profitLossObjWallet = {
         upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
@@ -1636,6 +1688,38 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
               user?.user[`fwPartnership`]
             );
             break;
+            case sessionBettingType.khado:
+              faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossKhado(
+                faAdminCal.walletData.profitLossObjWallet,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                    eventName: placedBets?.eventName
+                  },
+                  lossAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
+                },
+                user?.user[`fwPartnership`]
+              );
+              break;
+            case sessionBettingType.meter:
+              faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossMeter(
+                faAdminCal.walletData.profitLossObjWallet,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                    rate: placedBets?.rate,
+                    stake:placedBets?.amount,
+                    isTeamC: !!matchDetail?.teamC
+                  },
+                  lossAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
+                },
+                user?.user[`fwPartnership`]
+              );
+              break;
           case sessionBettingType.oddEven:
             faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionOddEven(
               faAdminCal.walletData.profitLossObjWallet,
@@ -1689,7 +1773,8 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         const betPlaceProfitLoss = await calculatePLAllBet(
           betPlace,
           betPlace?.[0]?.marketType,
-          -user?.user[`faPartnership`]
+          -user?.user[`faPartnership`],
+          null, null, matchDetail
         );
         faAdminCal.userData[user.user.superParentId].profitLossData = {
           upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
@@ -1710,6 +1795,38 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                   betPlacedData: {
                     betType: placedBets?.betType,
                     odds: placedBets?.odds,
+                  },
+                  lossAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
+                },
+                user?.user[`faPartnership`]
+              );
+              break;
+            case sessionBettingType.khado:
+              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossKhado(
+                faAdminCal.userData[user.user.superParentId].profitLossData,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                    eventName: placedBets?.eventName
+                  },
+                  lossAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
+                },
+                user?.user[`faPartnership`]
+              );
+              break;
+            case sessionBettingType.meter:
+              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossMeter(
+                faAdminCal.userData[user.user.superParentId].profitLossData,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                    stake: placedBets?.amount,
+                    rate: placedBets?.rate,
+                    isTeamC: !!matchDetail?.teamC
                   },
                   lossAmount: placedBets?.lossAmount,
                   winAmount: placedBets?.winAmount,
@@ -1779,7 +1896,7 @@ exports.getBetWallet = async (req, res) => {
     let { roleName, userId, isTeamNameAllow, ...queryData } = req.query;
     let result;
     let select = [
-      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt", "betPlaced.runnerId"
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt", "match.teamC", "betPlaced.runnerId"
     ];
 
     select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
