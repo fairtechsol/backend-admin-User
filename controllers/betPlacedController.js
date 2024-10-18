@@ -1190,6 +1190,15 @@ const validateSessionBet = async (apiBetData, betDetails) => {
     };
   }
 
+    
+  if(apiBetData?.minBet == apiBetData?.maxBet){
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.equalMinMax"
+      }
+    };
+  }
 
   if (betDetails.stake < apiBetData.minBet) {
     throw {
@@ -1199,15 +1208,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       }
     };
   }
-  
-  if(apiBetData?.minBet == apiBetData?.maxBet){
-    throw {
-      statusCode: 400,
-      message: {
-        msg: "bet.maxAmountViolate"
-      }
-    };
-  }
+
 
   if (betDetails.stake > apiBetData.maxBet) {
     throw {
@@ -1359,20 +1360,20 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
+  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.equalMinMax"
+      }
+    };
+  }
+
   if (betObj.amount < matchBettingDetail?.minBet) {
     throw {
       statusCode: 400,
       message: {
         msg: "bet.minAmountViolate"
-      }
-    };
-  }
-
-  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
-    throw {
-      statusCode: 400,
-      message: {
-        msg: "bet.maxAmountViolate"
       }
     };
   }
@@ -1450,6 +1451,14 @@ const validateRacingBettingDetails = async (matchBettingDetail, betObj, placeInd
       statusCode: 400,
       message: {
         msg: "bet.notLive"
+      }
+    };
+  }
+  if (matchBettingDetail?.minBet == matchBettingDetail?.maxBet) {
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.equalMinMax"
       }
     };
   }
