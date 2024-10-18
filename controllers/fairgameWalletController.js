@@ -7390,6 +7390,8 @@ exports.declarCardMatchResult = async (req, res) => {
           exposure: -value["exposure"],
         });
         await deleteHashKeysByPattern(key, result?.mid + "*");
+        await deleteKeyFromUserRedis(key, `${redisKeys.userMatchExposure}${result?.mid}`);
+
       }
 
       sendMessageToUser(key, socketData.matchResult, {
