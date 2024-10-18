@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -1190,6 +1190,15 @@ const validateSessionBet = async (apiBetData, betDetails) => {
     };
   }
 
+    
+  if(apiBetData?.minBet == apiBetData?.maxBet){
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.equalMinMax"
+      }
+    };
+  }
 
   if (betDetails.stake < apiBetData.minBet) {
     throw {
@@ -1199,15 +1208,7 @@ const validateSessionBet = async (apiBetData, betDetails) => {
       }
     };
   }
-  
-  if(apiBetData?.minBet == apiBetData?.maxBet){
-    throw {
-      statusCode: 400,
-      message: {
-        msg: "bet.maxAmountViolate"
-      }
-    };
-  }
+
 
   if (betDetails.stake > apiBetData.maxBet) {
     throw {
@@ -1359,20 +1360,20 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
+  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.equalMinMax"
+      }
+    };
+  }
+
   if (betObj.amount < matchBettingDetail?.minBet) {
     throw {
       statusCode: 400,
       message: {
         msg: "bet.minAmountViolate"
-      }
-    };
-  }
-
-  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
-    throw {
-      statusCode: 400,
-      message: {
-        msg: "bet.maxAmountViolate"
       }
     };
   }
@@ -1450,6 +1451,14 @@ const validateRacingBettingDetails = async (matchBettingDetail, betObj, placeInd
       statusCode: 400,
       message: {
         msg: "bet.notLive"
+      }
+    };
+  }
+  if (matchBettingDetail?.minBet == matchBettingDetail?.maxBet) {
+    throw {
+      statusCode: 400,
+      message: {
+        msg: "bet.equalMinMax"
       }
     };
   }
