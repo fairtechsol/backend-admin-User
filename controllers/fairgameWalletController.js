@@ -1950,6 +1950,7 @@ exports.declareMatchResult = async (req, res) => {
 
     if (betPlaced?.length <= 0) {
       broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betType: matchBettingType.quickbookmaker1, betId: betIds });
+      await updateMatchData({ id: matchId }, { stopAt: new Date() });
       return SuccessResponse(
         {
           statusCode: 200,
@@ -3745,6 +3746,9 @@ exports.declareOtherMatchResult = async (req, res) => {
 
     if (betPlaced?.length <= 0) {
     broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
+    if (matchBetType == matchBettingType.quickbookmaker1) {
+      await updateMatchData({ id: matchId }, { stopAt: new Date() });
+    }
     return SuccessResponse(
         {
           statusCode: 200,
@@ -4764,8 +4768,11 @@ exports.declarTournamentMatchResult = async (req, res) => {
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
     if (betPlaced?.length <= 0) {
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
-    return SuccessResponse(
+      broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
+      if (isMatchDeclare) {
+        await updateMatchData({ id: matchId }, { stopAt: new Date() });
+      }
+      return SuccessResponse(
         {
           statusCode: 200,
           message: { msg: "bet.resultDeclared" },
@@ -4892,6 +4899,9 @@ exports.declarTournamentMatchResult = async (req, res) => {
     }
     // insertBulkCommissions(commissionReport);
     broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType, isMatchDeclare: isMatchDeclare });
+    if (isMatchDeclare) {
+      await updateMatchData({ id: matchId }, { stopAt: new Date() });
+    }
     return SuccessResponse(
       {
         statusCode: 200,
@@ -5208,7 +5218,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
     );
 
     broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betIds, betType: matchBettingType.tournament });
-
+    await updateMatchData({ id: matchId }, { stopAt: null });
     return SuccessResponse(
       {
         statusCode: 200,
@@ -6251,6 +6261,8 @@ exports.declarRaceMatchResult = async (req, res) => {
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
     if (betPlaced?.length <= 0) {
+      broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
+      await updateRaceMatchData({ id: matchId }, { stopAt: new Date() });
       return SuccessResponse(
         {
           statusCode: 200,
@@ -7378,6 +7390,8 @@ exports.declarCardMatchResult = async (req, res) => {
           exposure: -value["exposure"],
         });
         await deleteHashKeysByPattern(key, result?.mid + "*");
+        await deleteKeyFromUserRedis(key, `${redisKeys.userMatchExposure}${result?.mid}`);
+
       }
 
       sendMessageToUser(key, socketData.matchResult, {
