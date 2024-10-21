@@ -4768,7 +4768,7 @@ exports.declarTournamentMatchResult = async (req, res) => {
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
     if (betPlaced?.length <= 0) {
-      broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
+      broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, isMatchDeclare, gameType: match?.matchType, betId: betId, betType: matchBetType });
       if (isMatchDeclare) {
         await updateMatchData({ id: matchId }, { stopAt: new Date() });
       }
