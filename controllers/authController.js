@@ -192,6 +192,7 @@ exports.login = async (req, res) => {
           isTransPasswordCreated: isTransPasswordCreated,
           roleName: roleName,
           forceChangePassword,
+          userId: user?.id
         },
       },
       req,
