@@ -643,3 +643,22 @@ exports.getBetsWithMatchId = (where, betCondition = {}) => {
     .select(['betPlaced.matchId as "matchId"', "COUNT(betPlaced.matchId) as count"])
     .getRawMany();
 }
+
+
+exports.getChildUsersPlaceBets = (id) => {
+
+  return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
+    SELECT id, "roleName", "createBy"
+    FROM public.users
+    WHERE id = $1
+    UNION
+    SELECT ur.id, ur."roleName", ur."createBy"
+    FROM public.users ur
+    JOIN RoleHierarchy rh ON ur."createBy" = rh.id
+  ) select distinct "betId","marketBetType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId"  where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" = 'SESSION'`, [id]);
+}
+
+exports.pendingCasinoResult = () => {
+
+  return BetPlaced.query(`select distinct "runnerId" , "eventType" from "betPlaceds" where result = 'PENDING' and "marketBetType" = 'CARD';`);
+}

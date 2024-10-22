@@ -12,6 +12,7 @@ const expertRoutes = require('./expertRoutes.js');
 const matchRoutes = require("./matchRoutes");
 const betRoutes = require("./betRoutes.js");
 const cardRoutes = require("./cardRoutes.js");
+const { pendingCardResult } = require('../controllers/matchController.js');
 
 
 // Define routes
@@ -45,5 +46,7 @@ router.use("/bet", betRoutes
 router.use("/card", cardRoutes
 // #swagger.tags = ['card']
 );
+
+router.get("/pendingCardResult", pendingCardResult)
 
 module.exports = router;
