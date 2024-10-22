@@ -442,6 +442,7 @@ exports.marketAnalysis = async (req, res) => {
           matchDetails.push({
             title: item?.title,
             matchId: item?.matchId,
+            startAt: item?.startAt,
             betType: {
               [item?.marketType]: [{
                 betId: item?.betId,
