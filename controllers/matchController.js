@@ -1,6 +1,6 @@
 const { In } = require("typeorm");
 const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType } = require("../config/contants");
-const { findAllPlacedBet, getChildUsersPlaceBets } = require("../services/betPlacedService");
+const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getUsers, getChildUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -470,6 +470,24 @@ exports.marketAnalysis = async (req, res) => {
       {
         statusCode: 200,
         data: matchDetails
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.pendingCardResult = async (req, res) => {
+  try {
+    const cardResult = await pendingCasinoResult();
+   
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: cardResult
       },
       req,
       res
