@@ -1,6 +1,6 @@
 const { In } = require("typeorm");
 const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType } = require("../config/contants");
-const { findAllPlacedBet } = require("../services/betPlacedService");
+const { findAllPlacedBet, getChildUsersPlaceBets } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getUsers, getChildUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -296,6 +296,7 @@ exports.matchDetailsForFootball = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 };
+
 exports.listMatch = async (req, res) => {
   try {
     let user = req.user;
@@ -419,6 +420,60 @@ exports.listSearchMatch = async (req, res) => {
       req,
       res
     );
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.marketAnalysis = async (req, res) => {
+  try {
+    const userId=req.user.id;
+    const matchesBetsByUsers = await getChildUsersPlaceBets(userId);
+    const sessionKeys = matchesBetsByUsers?.map((item) => item?.betId + redisKeys.profitLoss);
+    const matchDetails = [];
+
+    if (sessionKeys?.length) {
+        let redisData = await getUserRedisKeys(userId, sessionKeys);
+        
+      for (let [index, item] of matchesBetsByUsers?.entries()) {
+        const currMatchDetail = matchDetails.findIndex((items) => items?.matchId == item?.matchId);
+        const currRedisData = JSON.parse(redisData?.[index])?.maxLoss;
+        if (currMatchDetail == -1) {
+          matchDetails.push({
+            title: item?.title,
+            matchId: item?.matchId,
+            betType: {
+              [item?.marketType]: [{
+                betId: item?.betId,
+                eventName: item?.eventName,
+                maxLoss: currRedisData
+              }]
+            }
+          })
+        }
+        else {
+          if(!matchDetails[currMatchDetail].betType[item?.marketType]){
+            matchDetails[currMatchDetail].betType[item?.marketType] = [];
+          }
+          matchDetails[currMatchDetail].betType[item?.marketType].push({
+            betId: item?.betId,
+            eventName: item?.eventName,
+            maxLoss: currRedisData
+          });
+        }
+      }
+    }
+
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: matchDetails
+      },
+      req,
+      res
+    );
+
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
