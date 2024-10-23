@@ -528,6 +528,7 @@ exports.marketAnalysis = async (req, res) => {
               eventType:item?.eventType,
               betType: {
                 match: [{
+                  marketName:item?.bettingName,
                   betId: item?.betId,
                   eventName: item?.eventName,
                   profitLoss: currRedisData,
@@ -542,6 +543,7 @@ exports.marketAnalysis = async (req, res) => {
               result[currMatchDetail].betType.match = [];
             }
             result[currMatchDetail].betType.match.push({
+              marketName: item?.bettingName,
               betId: item?.betId,
               eventName: item?.eventName,
               profitLoss: currRedisData,
