@@ -3977,7 +3977,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
     else {
       // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
       let redisData = await calculateProfitLossForOtherMatchToResult(betId, user.user?.id, matchData);
-      const redisKeys = Object.values(redisData)?.find((item) => item?.type == currMatchBettingDetailsType);
+      const redisKeys = redisData?.[profitLossKeys?.[currMatchBettingDetailsType]];
       let teamARate = redisKeys?.rates?.a ?? Number.MAX_VALUE;
       let teamBRate = redisKeys?.rates?.b ?? Number.MAX_VALUE;
       let teamCRate = redisKeys?.rates?.c ?? Number.MAX_VALUE;
@@ -4495,7 +4495,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
       redisPLData = redisData?.[profitLossKeys.matchOdd];
     }
     else {
-      redisPLData = Object.values(redisData)?.find((item) => item?.type == merketBetType);
+      redisPLData = redisData?.[profitLossKeys[merketBetType]];
     }
     let teamARate = redisPLData?.rates?.a ?? Number.MAX_VALUE;
     let teamBRate = redisPLData?.rates?.b ?? Number.MAX_VALUE;
