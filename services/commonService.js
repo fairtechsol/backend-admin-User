@@ -1221,7 +1221,8 @@ exports.settingBetsDataAtLogin = async (user) => {
     let matchExposure = {};
     const matchIdDetail = {};
     const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: "cricket", marketType: Not(matchBettingType.tournament) });
-    bets?.forEach(async (item) => {
+    for (let item of bets) {
+
       let itemData = {
         ...item,
         winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
@@ -1229,7 +1230,7 @@ exports.settingBetsDataAtLogin = async (user) => {
       };
       if (betResult.session[item.betId] || betResult.match[item.betId]) {
         if (item.marketBetType == marketBetType.SESSION) {
-          if(!matchIdDetail[item?.matchId]){
+          if (!matchIdDetail[item?.matchId]) {
             matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId].push(itemData);
@@ -1241,8 +1242,8 @@ exports.settingBetsDataAtLogin = async (user) => {
       }
       else {
 
-        if(item.marketBetType == marketBetType.SESSION) {
-          if(!matchIdDetail[item?.matchId]){
+        if (item.marketBetType == marketBetType.SESSION) {
+          if (!matchIdDetail[item?.matchId]) {
             matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId] = [itemData];
@@ -1252,8 +1253,7 @@ exports.settingBetsDataAtLogin = async (user) => {
 
         }
       }
-    });
-
+    }
     for (const placedBet of Object.keys(betResult.session)) {
 
       const betPlaceProfitLoss = await this.calculatePLAllBet(betResult.session[placedBet], betResult?.session?.[placedBet]?.[0]?.marketType, 100, null, null, matchIdDetail[betResult?.session?.[placedBet]?.[0]?.matchId]);
@@ -1352,7 +1352,7 @@ exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
     let matchExposure = {};
 
     const bets = await getBetsWithUserRole(users?.map((item) => item.id), {  marketType: matchBettingType.tournament });
-    bets?.forEach((item) => {
+    for(let item of bets){
       let itemData = {
         ...item,
         winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
@@ -1364,7 +1364,7 @@ exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
       else {
         betResult.match[item.betId] = [itemData];
       }
-    });
+    }
 
     for (const placedBet of Object.keys(betResult.match)) {
       const matchId = betResult.match[placedBet]?.[0]?.matchId;
@@ -1477,8 +1477,9 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
     let matchResult = {};
     let matchExposure = {};
 
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: In([gameType.tennis, gameType.football]) });
-    bets?.forEach(async (item) => {
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: In([gameType.tennis, gameType.football]), marketType: Not(matchBettingType.tournament) });
+    for (let item of bets) {
+
       let itemData = {
         ...item,
         winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
@@ -1486,7 +1487,7 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
       };
       if (betResult.session[item.betId] || betResult.match[item.betId]) {
         if (item.marketBetType == marketBetType.SESSION) {
-          if(!matchIdDetail[item?.matchId]){
+          if (!matchIdDetail[item?.matchId]) {
             matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId].push(itemData);
@@ -1499,7 +1500,7 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
       else {
 
         if (item.marketBetType == marketBetType.SESSION) {
-          if(!matchIdDetail[item?.matchId]){
+          if (!matchIdDetail[item?.matchId]) {
             matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId] = [itemData];
@@ -1509,7 +1510,7 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
 
         }
       }
-    });
+    }
 
     for (const placedBet of Object.keys(betResult.session)) {
 
@@ -1545,8 +1546,8 @@ exports.settingOtherMatchBetsDataAtLogin = async (user) => {
 
         matchResult = {
           ...matchResult,
-          [otherEventMatchBettingRedisKey[plData?.type].a + matchId]: plData?.rates?.a + (matchResult?.[otherEventMatchBettingRedisKey[plData?.type]?.a + matchId] || 0),
-          [otherEventMatchBettingRedisKey[plData?.type].b + matchId]: plData?.rates?.b + (matchResult?.[otherEventMatchBettingRedisKey[plData?.type]?.b + matchId] || 0),
+          [otherEventMatchBettingRedisKey[plData?.type]?.a + matchId]: plData?.rates?.a + (matchResult?.[otherEventMatchBettingRedisKey[plData?.type]?.a + matchId] || 0),
+          [otherEventMatchBettingRedisKey[plData?.type]?.b + matchId]: plData?.rates?.b + (matchResult?.[otherEventMatchBettingRedisKey[plData?.type]?.b + matchId] || 0),
           ...(plData?.rates?.c ? { [otherEventMatchBettingRedisKey[plData?.type].c + matchId]: plData?.rates?.c + (matchResult?.[otherEventMatchBettingRedisKey[plData?.type]?.c + matchId] || 0) } : {}),
         }
       });
@@ -1609,7 +1610,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
     let matchExposure = {};
 
     const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: In([gameType.horseRacing, gameType.greyHound]) });
-    bets?.forEach((item) => {
+    for (let item of bets) {
       let itemData = {
         ...item,
         winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
@@ -1621,7 +1622,7 @@ exports.settingRacingMatchBetsDataAtLogin = async (user) => {
       else {
         betResult.match[item.betId] = [itemData];
       }
-    });
+    }
 
     for (const placedBet of Object.keys(betResult.match)) {
       const matchId = betResult.match[placedBet]?.[0]?.matchId;

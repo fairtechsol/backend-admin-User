@@ -686,6 +686,11 @@ exports.userList = async (req, res, next) => {
 
     let data = await Promise.all(
       users[0].map(async (element) => {
+
+        if (element?.roleName != userRoleConstant.user) {
+          element.userBal['exposure'] = 0;
+        }
+
         element['percentProfitLoss'] = element.userBal['myProfitLoss'];
         let partner_ships = 100;
         if (partnershipCol && partnershipCol.length) {
@@ -697,8 +702,6 @@ exports.userList = async (req, res, next) => {
           let childUsersBalances = await getChildUserBalanceSum(element.id);
 
           let balanceSum = childUsersBalances?.[0]?.balance;
-
-
           element['balance'] = Number((parseFloat(balanceSum || 0)).toFixed(2));
         } else {
           element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
@@ -829,7 +832,7 @@ exports.getTotalUserListBalance = async (req, res, next) => {
       roleName: Not(userRole)
     };
 
-    let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum,SUM(UB.downLevelBalance) as "downLevelBalance", SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure",SUM(UB.totalCommission) as totalCommission`;
+    let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum,SUM(UB.downLevelBalance) as "downLevelBalance", SUM(UB.currentBalance) as "availableBalance",SUM(CASE WHEN user.roleName = 'user' THEN UB.exposure ELSE 0 END) AS "totalExposure",SUM(UB.totalCommission) as totalCommission`;
 
     switch (userRole) {
       case (userRoleConstant.fairGameWallet):

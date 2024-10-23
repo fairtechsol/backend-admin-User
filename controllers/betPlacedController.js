@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType, profitLossKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -2773,9 +2773,9 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
     let redisData = await calculateProfitLossForOtherMatchToResult([betId], userId, { teamA, teamB, teamC });
 
     teamRates = {
-      teamA: parseFloat((Number(redisData[teamArateRedisKey]?.rates?.a) || 0.0).toFixed(2)),
-      teamB: parseFloat((Number(redisData[teamBrateRedisKey]?.rates?.b) || 0.0).toFixed(2)),
-      teamC: teamCrateRedisKey ? parseFloat((Number(redisData[teamCrateRedisKey]?.rates?.c) || 0.0).toFixed(2)) : 0.0
+      teamA: parseFloat((Number(redisData[profitLossKeys[matchBetType]]?.rates?.a) || 0.0).toFixed(2)),
+      teamB: parseFloat((Number(redisData[profitLossKeys[matchBetType]]?.rates?.b) || 0.0).toFixed(2)),
+      teamC: redisData[profitLossKeys[matchBetType]] ? parseFloat((Number(redisData[profitLossKeys[matchBetType]]?.rates?.c) || 0.0).toFixed(2)) : 0.0
     };
   }
   let maximumLossOld = 0;
