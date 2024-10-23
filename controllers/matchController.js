@@ -435,18 +435,19 @@ exports.marketAnalysis = async (req, res) => {
       matchIds.add(item.matchId);
     }
     let matchDetails;
-    try {
-      matchDetails = await apiCall(
-        apiMethod.get,
-        expertDomain + allApiRoutes.MATCHES.matchDetails + Array.from(matchIds).join(",")
-      );
-    } catch (error) {
-      throw error?.response?.data;
-    }
+
 
     const result = [];
 
     if (matchesBetsByUsers?.length) {
+      try {
+        matchDetails = await apiCall(
+          apiMethod.get,
+          expertDomain + allApiRoutes.MATCHES.matchDetails + Array.from(matchIds).join(",")
+        );
+      } catch (error) {
+        throw error?.response?.data;
+      }
       let redisData = await getUserRedisData(userId);
 
       for (let item of matchesBetsByUsers) {
