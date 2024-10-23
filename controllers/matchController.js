@@ -445,6 +445,9 @@ exports.marketAnalysis = async (req, res) => {
           apiMethod.get,
           expertDomain + allApiRoutes.MATCHES.matchDetails + Array.from(matchIds).join(",")
         );
+        if (!Array.isArray(matchDetails?.data)) {
+          matchDetails.data = [matchDetails?.data];
+        }
       } catch (error) {
         throw error?.response?.data;
       }
