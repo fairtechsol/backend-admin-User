@@ -235,7 +235,7 @@ module.exports.mainMatchMarketType = [this.matchBettingType.matchOdd, this.match
 module.exports.tieCompleteBetType = {
   tiedMatch1: "tiedMatch1",
   tiedMatch2: "tiedMatch2",
-  tiedMatch2: "tiedMatch3",
+  tiedMatch3: "tiedMatch3",
   completeMatch: "completeMatch",
   completeMatch1: "completeMatch1",
   completeManual: "completeManual",

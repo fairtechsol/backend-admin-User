@@ -356,6 +356,14 @@ const calculatePartnership = async (userData, creator) => {
       }
     }
       break;
+      case (userRoleConstant.agent): {
+        switch (userData.roleName) {
+          default: {
+            agPartnership = parseInt(creator.agPartnership);
+          }
+        }
+      }
+        break;
   }
 
   if (userData.roleName != userRoleConstant.expert && fwPartnership + faPartnership + saPartnership + aPartnership + smPartnership + mPartnership + agPartnership != 100) {
