@@ -32,6 +32,7 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
 
 exports.allApiRoutes = {
   notification: "/general/notification",
+  blinkingTabs: "/superAdmin/blinkingTabs",
   getCompetitionList:"/match/competitionList",
   getDatesByCompetition:"/match/competition/dates",
   getMatchByCompetitionAndDate:"/match/competition/getMatch",
@@ -66,6 +67,7 @@ exports.allApiRoutes = {
     getAllRateCricket: "/getAllRateCricket/",
     getAllRates:{
       [gameType.cricket]: "/getAllRateCricket/",
+      [gameType.politics]: "/getAllRateCricket/",
       [gameType.football]:"/getAllRateFootBallTennis/",
       [gameType.tennis]: "/getAllRateFootBallTennis/"
     }

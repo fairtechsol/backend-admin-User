@@ -27,7 +27,6 @@ module.exports.CreateUser = Joi.object({
     'any.only': 'Confirm Password must match Password',
   }),
   delayTime: Joi.string().allow(""),
-  sessionCommission: Joi.number(),
   matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
   matchCommission: Joi.number(),
 });
@@ -39,8 +38,7 @@ module.exports.ChangePassword = Joi.object({
     'any.required': 'Password is required',
   }),
   userId: Joi.string().guid({ version: 'uuidv4' }),
-  transactionPassword: Joi.string()
-  ,
+  transactionPassword: Joi.string(),
   confirmPassword: Joi.string()
     .valid(Joi.ref("newPassword"))
     .label("Confirm Password")
@@ -69,7 +67,7 @@ module.exports.generateTransactionPass = Joi.object({
 });
 
 module.exports.updateUserValid = Joi.object({
-  //sessionCommission,matchComissionType,matchCommission,id,createBy
+  //matchComissionType,matchCommission,id,createBy
   fullName: Joi.string().allow(""),
   city: Joi.string().allow(""),
   remark:Joi.string().trim().allow(""),
@@ -80,13 +78,12 @@ module.exports.updateUserValid = Joi.object({
     'any.required': '"Transaction Password" is required',
     'string.empty': '"Transaction Password" can not be empty.'
   }),
-  sessionCommission: Joi.number(),
   matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
   matchCommission: Joi.number(),
 });
 
 module.exports.setExposureLimitValid = Joi.object({
-  //sessionCommission,matchComissionType,matchCommission,id,createBy
+  //matchComissionType,matchCommission,id,createBy
   amount: Joi.number().required(),
   transactionPassword: Joi.string().required(),
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
@@ -104,7 +101,7 @@ module.exports.LockUnlockUser = Joi.object({
 });
 
 module.exports.setCreditRefValidate = Joi.object({
-  //sessionCommission,matchComissionType,matchCommission,id,createBy
+  //matchComissionType,matchCommission,id,createBy
   amount: Joi.number().required(),
   transactionPassword: Joi.string().required(),
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),

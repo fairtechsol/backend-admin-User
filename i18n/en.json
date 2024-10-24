@@ -73,6 +73,8 @@
     "placingBetBeforeTime": "You can place bet before {min} minutes of match start time.",
     "wrongCardBetType": "Wrong card bet type.",
     "placeBetAfter5": "Place bet after {time} seconds",
-    "alreadyPlacedOnDiff": "Bet not confirm bet already exists on {name} Card."
+    "alreadyPlacedOnDiff": "Bet not confirm bet already exists on {name} Card.",
+    "limitExceed":"You cannot place a bet more than {limit} times.",
+    "equalMinMax":"Bet Not Confirm Reason Min And Max Bet Range Not Valid."
   }
 }

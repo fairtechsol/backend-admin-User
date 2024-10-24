@@ -4,7 +4,7 @@ const { getUserRedisData, incrementValuesRedis } = require('../services/redis/co
 const { redisKeys, userRoleConstant, socketData, partnershipPrefixByRole, sessionBettingType } = require('../config/contants');
 const { logger } = require('../config/logger');
 const { updateUserExposure } = require('../services/userBalanceService');
-const { calculateExpertRate, calculateProfitLossSession, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1 } = require('../services/commonService');
+const { calculateExpertRate, calculateProfitLossSession, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 
@@ -165,6 +165,20 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
               case sessionBettingType.overByOver:
               case sessionBettingType.ballByBall:
                 redisData = await calculateProfitLossSession(
+                  redisBetData,
+                  placedBetObject,
+                  partnership
+                );
+                break;
+              case sessionBettingType.khado:
+                redisData = await calculateProfitLossKhado(
+                  redisBetData,
+                  placedBetObject,
+                  partnership
+                );
+                break;
+              case sessionBettingType.meter:
+                redisData = await calculateProfitLossMeter(
                   redisBetData,
                   placedBetObject,
                   partnership

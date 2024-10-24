@@ -14,6 +14,12 @@ exports.getBetById = async (id, select) => {
   });
 }
 
+exports.getBetCountData = async (where) => {
+  return await BetPlaced.count({
+    where: where
+  });
+}
+
 exports.getBetByUserId = async (id, select) => {
   return await BetPlaced.find({
     where: { createBy: id },
@@ -168,7 +174,7 @@ exports.getMultipleAccountProfitLoss = async (betId, userId) => {
 exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
 
   const matchTypes = [
-    [matchBettingType.bookmaker, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3, matchBettingType.matchOdd],
+    [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3, matchBettingType.matchOdd],
     [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.tiedMatch3],
     [matchBettingType.completeMatch, matchBettingType.completeManual, matchBettingType.completeMatch1],
   ];
@@ -585,13 +591,34 @@ exports.getPlacedBetsWithCategory = async (userId) => {
       'betPlaced.marketType AS "marketType"',
       "betPlaced.bettingName AS groupedMarketType",
     ])
-    .where({ createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull() })
+    .where({
+      createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull(), marketBetType
+        : marketBetType.MATCHBETTING
+    })
     .groupBy('betPlaced.bettingName, betPlaced.matchId, betPlaced.eventName, betPlaced.eventType, betPlaced.marketType')
     .orderBy('MAX(betPlaced.createdAt)', 'DESC');
 
   const data = await query.getRawMany();
 
-  return data;
+  const query2 = BetPlaced.createQueryBuilder()
+    .leftJoinAndMapOne("betPlaced.match", "match", "match", "betPlaced.matchId=match.id")
+    .select([
+      'COUNT(*) AS "trade"',
+      'betPlaced.eventType AS "eventType"',
+      'betPlaced.matchId AS "matchId"',
+      'betPlaced.marketType AS "marketType"',
+      'match.title AS "eventName"',
+    ])
+    .where({
+      createBy: userId, result: betResultStatus.PENDING, deleteReason: IsNull(), marketBetType
+        : marketBetType.SESSION
+    })
+    .groupBy('betPlaced.matchId, match.title, betPlaced.eventType, betPlaced.marketType')
+    .orderBy('MAX(betPlaced.createdAt)', 'DESC');
+
+  const data2 = await query2.getRawMany();
+
+  return [...data, ...data2];
 }
 
 exports.getPlacedBetTotalLossAmount = (where) => {
@@ -615,4 +642,23 @@ exports.getBetsWithMatchId = (where, betCondition = {}) => {
     .groupBy("betPlaced.matchId")
     .select(['betPlaced.matchId as "matchId"', "COUNT(betPlaced.matchId) as count"])
     .getRawMany();
+}
+
+
+exports.getChildUsersPlaceBets = (id) => {
+
+  return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
+    SELECT id, "roleName", "createBy"
+    FROM public.users
+    WHERE id = $1
+    UNION
+    SELECT ur.id, ur."roleName", ur."createBy"
+    FROM public.users ur
+    JOIN RoleHierarchy rh ON ur."createBy" = rh.id
+  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId"  where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD'`, [id]);
+}
+
+exports.pendingCasinoResult = () => {
+
+  return BetPlaced.query(`select distinct "runnerId" , "eventType" from "betPlaceds" where result = 'PENDING' and "marketBetType" = 'CARD';`);
 }

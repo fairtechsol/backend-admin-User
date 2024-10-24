@@ -9,7 +9,29 @@ exports.getNotification = async (req, res) => {
   try {
     let response = await apiCall(
       apiMethod.get,
-      expertDomain + allApiRoutes.notification
+      expertDomain + allApiRoutes.notification,
+      null,
+      null,
+      req.query
+    );
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: response.data,
+      },
+      req,
+      res
+    );
+  } catch (err) {
+    return ErrorResponse(err?.response?.data, req, res);
+  }
+};
+
+exports.getBlinkingTabs = async (req, res) => {
+  try {
+    let response = await apiCall(
+      apiMethod.get,
+      expertDomain + allApiRoutes.blinkingTabs
     );
     return SuccessResponse(
       {
