@@ -3,6 +3,12 @@ const {
   redisTimeOut,
   differLoginTypeByRoles,
   jwtSecret,
+  transType,
+  walletDescription,
+  defaultButtonValue,
+  buttonType,
+  sessiontButtonValue,
+  casinoButtonValue,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -20,6 +26,7 @@ const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
 const { insertTransactions } = require("../services/transactionService");
 const { addInitialUserBalance } = require("../services/userBalanceService");
 const { insertButton } = require("../services/buttonService");
+const lodash = require('lodash');
 
 
 // Function to validate a user by username and password
@@ -260,7 +267,7 @@ exports.loginWithDemoUser = async (req, res) => {
     const currTime = new Date().getTime();
     const upperCaseUserName = `DEMO${currTime}`;
 
-    const hashedPassword = await bcrypt.hash(Math.floor(1000000000 + Math.random() * 9000000000), process.env.BCRYPTSALT || 10);
+    const hashedPassword = await bcrypt.hash((Math.floor(1000000000 + Math.random() * 9000000000)).toString(), process.env.BCRYPTSALT || 10);
 
     const userData = {
       userName: upperCaseUserName,
