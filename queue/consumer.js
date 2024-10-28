@@ -84,7 +84,7 @@ SessionMatchBetQueue.process(async function (job, done) {
 
 const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
   // Parse partnerships from userRedisData
-  let partnershipObj = JSON.parse(userRedisData.partnerShips);
+  let partnershipObj = JSON.parse(userRedisData.partnerShips || "{}");
 
   // Extract relevant data from jobData
   const placedBetObject = jobData.betPlaceObject;
@@ -275,7 +275,7 @@ let calculateRateAmount = async (userRedisData, jobData, userId) => {
   let roleName = userRedisData.userRole;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
-  let partnershipObj = JSON.parse(userRedisData.partnerShips);
+  let partnershipObj = JSON.parse(userRedisData.partnerShips || "{}");
 
   let teamData = {
     teamA: jobData.newTeamRateData.teamA,
@@ -411,7 +411,7 @@ let calculateRacingRateAmount = async (userRedisData, jobData, userId) => {
   let roleName = userRedisData.userRole;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
-  let partnershipObj = JSON.parse(userRedisData.partnerShips);
+  let partnershipObj = JSON.parse(userRedisData.partnerShips || "{}");
 
   let teamData = {...jobData?.newTeamRateData};
 
@@ -548,7 +548,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
   let roleName = userRedisData.userRole;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
-  let partnershipObj = JSON.parse(userRedisData.partnerShips);
+  let partnershipObj = JSON.parse(userRedisData.partnerShips || "{}");
 
   let teamData = {...jobData?.newTeamRateData};
 
@@ -684,7 +684,7 @@ let calculateCardMatchRateAmount = async (userRedisData, jobData, userId) => {
   let roleName = userRedisData.userRole;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
-  let partnershipObj = JSON.parse(userRedisData.partnerShips);
+  let partnershipObj = JSON.parse(userRedisData.partnerShips || "{}");
 
   let teamData = jobData?.newTeamRateData;
 

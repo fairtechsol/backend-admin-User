@@ -158,6 +158,7 @@ module.exports.buttonType = {
 
 module.exports.walletDescription = {
   userCreate: "CREDIT REFRENCE as user create",
+  demoUserCreate: "User creation",
 };
 
 module.exports.betType = {

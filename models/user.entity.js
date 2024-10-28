@@ -172,6 +172,11 @@ const userSchema = new EntitySchema({
       type:"int",
       nullable: false,
       default:0,
+    },
+    isDemo:{
+      type:"boolean",
+      default: false,
+      nullable: false
     }
   },
   orderBy: {

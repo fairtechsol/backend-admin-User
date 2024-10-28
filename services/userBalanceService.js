@@ -75,3 +75,7 @@ exports.getAllChildCurrentBalanceSum = async (childUserIds) => {
   
    return childUserData;
  }
+
+exports.deleteUserBalance = async (where) => {
+  await UserBalance.delete(where);
+}

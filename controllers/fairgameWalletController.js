@@ -980,7 +980,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
       }
     );
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -990,48 +990,50 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
     }
 
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
+        let myProfitLoss = parseFloat(
+          ((profitLoss * upLinePartnership) / 100).toString()
+        );
+
+
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
+
       }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+      faAdminCal.userData[user.user.superParentId] = {
+        profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat(faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0) + parseFloat(parseFloat((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? (parseFloat(user.user.fwPartnership) / 100) : 1)).toFixed(2)),
+        role: user.user.superParentType
       }
-      let myProfitLoss = parseFloat(
-        ((profitLoss * upLinePartnership) / 100).toString()
-      );
-
-
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-      }
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
-
-    }
-    faAdminCal.userData[user.user.superParentId] = {
-      profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat(faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0) + parseFloat(parseFloat((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? (parseFloat(user.user.fwPartnership) / 100) : 1)).toFixed(2)),
-      role: user.user.superParentType
     }
 
   };
@@ -1208,7 +1210,7 @@ const calculateMaxLossSessionForUserNoResult = async (
 
     await updateUserExposure(user.user.id, -maxLoss);
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = { exposure: maxLoss };
     }
 
@@ -1220,24 +1222,26 @@ const calculateMaxLossSessionForUserNoResult = async (
       userBalanceData: user.user.userBalance
     });
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    for (const patentUser of parentUsers) {
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].exposure =
-          upperUserObj[patentUser.id].exposure + maxLoss;
-      } else {
-        upperUserObj[patentUser.id] = { exposure: maxLoss };
+      for (const patentUser of parentUsers) {
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].exposure =
+            upperUserObj[patentUser.id].exposure + maxLoss;
+        } else {
+          upperUserObj[patentUser.id] = { exposure: maxLoss };
+        }
+
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = upperUserObj[patentUser.id];
+        }
       }
-
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = upperUserObj[patentUser.id];
+      faAdminCal[user.user.superParentId] = {
+        exposure: maxLoss + (faAdminCal?.[user.user.superParentId]?.exposure || 0),
+        role: user.user.superParentType
       }
-    }
-    faAdminCal[user.user.superParentId] = {
-      exposure: maxLoss + (faAdminCal?.[user.user.superParentId]?.exposure || 0),
-      role: user.user.superParentType
     }
   }
   return { faAdminCal, superAdminData };
@@ -1442,7 +1446,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
     }
 
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -1509,32 +1513,33 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       }
     );
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
-      }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
-      let myProfitLoss = parseFloat(
-        ((profitLoss * upLinePartnership) / 100).toString()
-      );
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
+        let myProfitLoss = parseFloat(
+          ((profitLoss * upLinePartnership) / 100).toString()
+        );
 
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
-        for (const placedBets of betPlace) {
+          for (const placedBets of betPlace) {
             switch (placedBets?.marketType) {
               case sessionBettingType.session:
               case sessionBettingType.overByOver:
@@ -1596,7 +1601,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                     lossAmount: -placedBets?.lossAmount,
                     winAmount: -placedBets?.winAmount,
                   },
-                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                  user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
                 break;
               case sessionBettingType.cricketCasino:
                 upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSessionCasinoCricket(
@@ -1610,7 +1615,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                     lossAmount: -placedBets?.lossAmount,
                     winAmount: -placedBets?.winAmount,
                   },
-                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                  user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
                 break;
               case sessionBettingType.fancy1:
                 upperUserObj[patentUser.id].profitLossObj = await calculateProfitLossSessionFancy1(
@@ -1623,71 +1628,71 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                     lossAmount: -placedBets?.lossAmount,
                     winAmount: -placedBets?.winAmount,
                   },
-                 user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
+                  user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]);
                 break;
               default:
                 break;
             }
-            
-        }
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-        const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`], null, null, matchDetail);
 
-        upperUserObj[patentUser.id] = {
-          ...upperUserObj[patentUser.id], profitLossObj: {
-            upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
-            lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
-            betPlaced: betPlaceProfitLoss?.betData,
-            maxLoss: betPlaceProfitLoss?.maxLoss,
-            totalBet: betPlaceProfitLoss?.total_bet
           }
-        };
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+          const betPlaceProfitLoss = await calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, -user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`], null, null, matchDetail);
 
+          upperUserObj[patentUser.id] = {
+            ...upperUserObj[patentUser.id], profitLossObj: {
+              upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
+              lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
+              betPlaced: betPlaceProfitLoss?.betData,
+              maxLoss: betPlaceProfitLoss?.maxLoss,
+              totalBet: betPlaceProfitLoss?.total_bet
+            }
+          };
+
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
       }
 
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
+
+      if (!faAdminCal.walletData.profitLossObjWallet) {
+        const betPlaceProfitLoss = await calculatePLAllBet(
+          betPlace,
+          betPlace?.[0]?.marketType,
+          -user?.user[`fwPartnership`],
+          null, null, matchDetail
+        );
+        faAdminCal.walletData.profitLossObjWallet = {
+          upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
+          lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
+          betPlaced: betPlaceProfitLoss?.betData,
+          maxLoss: betPlaceProfitLoss?.maxLoss,
+          totalBet: betPlaceProfitLoss?.total_bet
         };
-      }
-    }
-
-
-    if (!faAdminCal.walletData.profitLossObjWallet) {
-      const betPlaceProfitLoss = await calculatePLAllBet(
-        betPlace,
-        betPlace?.[0]?.marketType,
-        -user?.user[`fwPartnership`],
-        null, null, matchDetail
-      );
-      faAdminCal.walletData.profitLossObjWallet = {
-        upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
-        lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
-        betPlaced: betPlaceProfitLoss?.betData,
-        maxLoss: betPlaceProfitLoss?.maxLoss,
-        totalBet: betPlaceProfitLoss?.total_bet
-      };
-    } else {
-      for (const placedBets of betPlace) {
-        switch (placedBets?.marketType) {
-          case sessionBettingType.session:
-          case sessionBettingType.overByOver:
-          case sessionBettingType.ballByBall:
-            faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSession(
-              faAdminCal.walletData.profitLossObjWallet,
-              {
-                betPlacedData: {
-                  betType: placedBets?.betType,
-                  odds: placedBets?.odds,
+      } else {
+        for (const placedBets of betPlace) {
+          switch (placedBets?.marketType) {
+            case sessionBettingType.session:
+            case sessionBettingType.overByOver:
+            case sessionBettingType.ballByBall:
+              faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSession(
+                faAdminCal.walletData.profitLossObjWallet,
+                {
+                  betPlacedData: {
+                    betType: placedBets?.betType,
+                    odds: placedBets?.odds,
+                  },
+                  lossAmount: placedBets?.lossAmount,
+                  winAmount: placedBets?.winAmount,
                 },
-                lossAmount: placedBets?.lossAmount,
-                winAmount: placedBets?.winAmount,
-              },
-              user?.user[`fwPartnership`]
-            );
-            break;
+                user?.user[`fwPartnership`]
+              );
+              break;
             case sessionBettingType.khado:
               faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossKhado(
                 faAdminCal.walletData.profitLossObjWallet,
@@ -1711,7 +1716,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                     betType: placedBets?.betType,
                     odds: placedBets?.odds,
                     rate: placedBets?.rate,
-                    stake:placedBets?.amount,
+                    stake: placedBets?.amount,
                     isTeamC: !!matchDetail?.teamC
                   },
                   lossAmount: placedBets?.lossAmount,
@@ -1720,122 +1725,9 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                 user?.user[`fwPartnership`]
               );
               break;
-          case sessionBettingType.oddEven:
-            faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionOddEven(
-              faAdminCal.walletData.profitLossObjWallet,
-              {
-                betPlacedData: {
-                  betType: placedBets?.betType,
-                  odds: placedBets?.odds,
-                  teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
-                },
-                lossAmount: -placedBets?.lossAmount,
-                winAmount: -placedBets?.winAmount,
-              },
-              user?.user[`fwPartnership`]);
-            break;
-          case sessionBettingType.cricketCasino:
-            faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionCasinoCricket(
-              faAdminCal.walletData.profitLossObjWallet,
-              {
-                betPlacedData: {
-                  betType: placedBets?.betType,
-                  odds: placedBets?.odds,
-                  teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
-                },
-                lossAmount: -placedBets?.lossAmount,
-                winAmount: -placedBets?.winAmount,
-              },
-              user?.user[`fwPartnership`]);
-            break;
-          case sessionBettingType.fancy1:
-            faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionFancy1(
-              faAdminCal.walletData.profitLossObjWallet,
-              {
-                betPlacedData: {
-                  betType: placedBets?.betType,
-                  odds: placedBets?.odds,
-                },
-                lossAmount: -placedBets?.lossAmount,
-                winAmount: -placedBets?.winAmount,
-              },
-              user?.user[`fwPartnership`]);
-            break;
-          default:
-            break;
-        }
-        
-      }
-    }
-    if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-      if (!faAdminCal.userData[user.user.superParentId]) {
-        faAdminCal.userData[user.user.superParentId] = {};
-        const betPlaceProfitLoss = await calculatePLAllBet(
-          betPlace,
-          betPlace?.[0]?.marketType,
-          -user?.user[`faPartnership`],
-          null, null, matchDetail
-        );
-        faAdminCal.userData[user.user.superParentId].profitLossData = {
-          upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
-          lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
-          betPlaced: betPlaceProfitLoss?.betData,
-          maxLoss: betPlaceProfitLoss?.maxLoss,
-          totalBet: betPlaceProfitLoss?.total_bet
-        };
-      } else {
-        for (const placedBets of betPlace) {
-          switch (placedBets?.marketType) {
-            case sessionBettingType.session:
-            case sessionBettingType.overByOver:
-            case sessionBettingType.ballByBall:
-              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSession(
-                faAdminCal.userData[user.user.superParentId].profitLossData,
-                {
-                  betPlacedData: {
-                    betType: placedBets?.betType,
-                    odds: placedBets?.odds,
-                  },
-                  lossAmount: placedBets?.lossAmount,
-                  winAmount: placedBets?.winAmount,
-                },
-                user?.user[`faPartnership`]
-              );
-              break;
-            case sessionBettingType.khado:
-              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossKhado(
-                faAdminCal.userData[user.user.superParentId].profitLossData,
-                {
-                  betPlacedData: {
-                    betType: placedBets?.betType,
-                    odds: placedBets?.odds,
-                    eventName: placedBets?.eventName
-                  },
-                  lossAmount: placedBets?.lossAmount,
-                  winAmount: placedBets?.winAmount,
-                },
-                user?.user[`faPartnership`]
-              );
-              break;
-            case sessionBettingType.meter:
-              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossMeter(
-                faAdminCal.userData[user.user.superParentId].profitLossData,
-                {
-                  betPlacedData: {
-                    betType: placedBets?.betType,
-                    odds: placedBets?.odds,
-                    stake: placedBets?.amount,
-                    rate: placedBets?.rate,
-                    isTeamC: !!matchDetail?.teamC
-                  },
-                  lossAmount: placedBets?.lossAmount,
-                  winAmount: placedBets?.winAmount,
-                },
-                user?.user[`faPartnership`]
-              );
-              break;
             case sessionBettingType.oddEven:
-              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionOddEven(faAdminCal.userData[user.user.superParentId].profitLossData,
+              faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionOddEven(
+                faAdminCal.walletData.profitLossObjWallet,
                 {
                   betPlacedData: {
                     betType: placedBets?.betType,
@@ -1845,10 +1737,11 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                   lossAmount: -placedBets?.lossAmount,
                   winAmount: -placedBets?.winAmount,
                 },
-                user?.user[`faPartnership`]);
+                user?.user[`fwPartnership`]);
               break;
             case sessionBettingType.cricketCasino:
-              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionCasinoCricket(faAdminCal.userData[user.user.superParentId].profitLossData,
+              faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionCasinoCricket(
+                faAdminCal.walletData.profitLossObjWallet,
                 {
                   betPlacedData: {
                     betType: placedBets?.betType,
@@ -1858,10 +1751,11 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                   lossAmount: -placedBets?.lossAmount,
                   winAmount: -placedBets?.winAmount,
                 },
-                user?.user[`faPartnership`]);
+                user?.user[`fwPartnership`]);
               break;
             case sessionBettingType.fancy1:
-              faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionFancy1(faAdminCal.userData[user.user.superParentId].profitLossData,
+              faAdminCal.walletData.profitLossObjWallet = await calculateProfitLossSessionFancy1(
+                faAdminCal.walletData.profitLossObjWallet,
                 {
                   betPlacedData: {
                     betType: placedBets?.betType,
@@ -1870,21 +1764,133 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
                   lossAmount: -placedBets?.lossAmount,
                   winAmount: -placedBets?.winAmount,
                 },
-                user?.user[`faPartnership`]);
+                user?.user[`fwPartnership`]);
               break;
             default:
               break;
           }
+
         }
       }
-    }
+      if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
+        if (!faAdminCal.userData[user.user.superParentId]) {
+          faAdminCal.userData[user.user.superParentId] = {};
+          const betPlaceProfitLoss = await calculatePLAllBet(
+            betPlace,
+            betPlace?.[0]?.marketType,
+            -user?.user[`faPartnership`],
+            null, null, matchDetail
+          );
+          faAdminCal.userData[user.user.superParentId].profitLossData = {
+            upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
+            lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
+            betPlaced: betPlaceProfitLoss?.betData,
+            maxLoss: betPlaceProfitLoss?.maxLoss,
+            totalBet: betPlaceProfitLoss?.total_bet
+          };
+        } else {
+          for (const placedBets of betPlace) {
+            switch (placedBets?.marketType) {
+              case sessionBettingType.session:
+              case sessionBettingType.overByOver:
+              case sessionBettingType.ballByBall:
+                faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSession(
+                  faAdminCal.userData[user.user.superParentId].profitLossData,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                    },
+                    lossAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                  user?.user[`faPartnership`]
+                );
+                break;
+              case sessionBettingType.khado:
+                faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossKhado(
+                  faAdminCal.userData[user.user.superParentId].profitLossData,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                      eventName: placedBets?.eventName
+                    },
+                    lossAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                  user?.user[`faPartnership`]
+                );
+                break;
+              case sessionBettingType.meter:
+                faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossMeter(
+                  faAdminCal.userData[user.user.superParentId].profitLossData,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                      stake: placedBets?.amount,
+                      rate: placedBets?.rate,
+                      isTeamC: !!matchDetail?.teamC
+                    },
+                    lossAmount: placedBets?.lossAmount,
+                    winAmount: placedBets?.winAmount,
+                  },
+                  user?.user[`faPartnership`]
+                );
+                break;
+              case sessionBettingType.oddEven:
+                faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionOddEven(faAdminCal.userData[user.user.superParentId].profitLossData,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                      teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
+                    },
+                    lossAmount: -placedBets?.lossAmount,
+                    winAmount: -placedBets?.winAmount,
+                  },
+                  user?.user[`faPartnership`]);
+                break;
+              case sessionBettingType.cricketCasino:
+                faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionCasinoCricket(faAdminCal.userData[user.user.superParentId].profitLossData,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                      teamName: placedBets?.teamName?.split("-")?.pop()?.trim()
+                    },
+                    lossAmount: -placedBets?.lossAmount,
+                    winAmount: -placedBets?.winAmount,
+                  },
+                  user?.user[`faPartnership`]);
+                break;
+              case sessionBettingType.fancy1:
+                faAdminCal.userData[user.user.superParentId].profitLossData = await calculateProfitLossSessionFancy1(faAdminCal.userData[user.user.superParentId].profitLossData,
+                  {
+                    betPlacedData: {
+                      betType: placedBets?.betType,
+                      odds: placedBets?.odds,
+                    },
+                    lossAmount: -placedBets?.lossAmount,
+                    winAmount: -placedBets?.winAmount,
+                  },
+                  user?.user[`faPartnership`]);
+                break;
+              default:
+                break;
+            }
+          }
+        }
+      }
 
-    faAdminCal.userData[user.user.superParentId] = {
-      ...faAdminCal.userData[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.userData[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userData[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.userData[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
-      role: user.user.superParentType
+      faAdminCal.userData[user.user.superParentId] = {
+        ...faAdminCal.userData[user.user.superParentId],
+        profitLoss: profitLoss + (faAdminCal.userData[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.userData[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((parseFloat(faAdminCal.userData[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+        role: user.user.superParentType
+      }
     }
 
   };
@@ -2425,7 +2431,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId, `${redisKeys.userSessionExposure}${matchId}`);
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -2435,122 +2441,124 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
       };
     }
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
-      }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
-
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
-      let parentCommission = parseFloat((parseFloat(((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 100).toFixed(2)) * parseFloat(upLinePartnership) / 100).toFixed(2));
-
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-        if (patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0) {
-          upperUserObj[patentUser.id].totalCommission += parentCommission;
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
         }
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss, ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) };
-      }
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
-
-      if (patentUser?.matchCommission) {
-        if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
-          bulkCommission[user?.user?.id]?.forEach((item) => {
-            commissionReport.push({
-              createBy: user.user.id,
-              matchId: item.matchId,
-              betId: item?.betId,
-              betPlaceId: item?.betPlaceId,
-              commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-              parentId: patentUser.id,
-            });
-          });
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
         }
-        else if (userOriginalProfitLoss < 0) {
-          commissionReport.push({
-            createBy: user.user.id,
-            matchId: matchId,
-            betId: currBetId,
-            commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-            parentId: patentUser.id,
-            stake: userOriginalProfitLoss
 
-          });
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
+        let parentCommission = parseFloat((parseFloat(((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 100).toFixed(2)) * parseFloat(upLinePartnership) / 100).toFixed(2));
+
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+          if (patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0) {
+            upperUserObj[patentUser.id].totalCommission += parentCommission;
+          }
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss, ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) };
         }
-        if (patentUser?.id == patentUser?.createBy) {
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
+
+        if (patentUser?.matchCommission) {
           if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
             bulkCommission[user?.user?.id]?.forEach((item) => {
-              faAdminCal.commission.push({
+              commissionReport.push({
                 createBy: user.user.id,
                 matchId: item.matchId,
                 betId: item?.betId,
                 betPlaceId: item?.betPlaceId,
-                parentId: patentUser.id,
-                teamName: item?.sessionName,
-                betPlaceDate: item?.betPlaceDate,
-                odds: item?.odds,
-                betType: item?.betType,
-                stake: item?.stake,
                 commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-                partnerShip: upLinePartnership,
-                matchName: matchData?.title,
-                matchStartDate: matchData?.startAt,
-                userName: user.user.userName
-
+                parentId: patentUser.id,
               });
             });
           }
           else if (userOriginalProfitLoss < 0) {
-            faAdminCal.commission.push({
+            commissionReport.push({
               createBy: user.user.id,
               matchId: matchId,
               betId: currBetId,
-              parentId: patentUser.id,
               commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-              partnerShip: upLinePartnership,
-              matchName: matchData?.title,
-              matchStartDate: matchData?.startAt,
-              userName: user.user.userName,
+              parentId: patentUser.id,
               stake: userOriginalProfitLoss
 
             });
           }
+          if (patentUser?.id == patentUser?.createBy) {
+            if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
+              bulkCommission[user?.user?.id]?.forEach((item) => {
+                faAdminCal.commission.push({
+                  createBy: user.user.id,
+                  matchId: item.matchId,
+                  betId: item?.betId,
+                  betPlaceId: item?.betPlaceId,
+                  parentId: patentUser.id,
+                  teamName: item?.sessionName,
+                  betPlaceDate: item?.betPlaceDate,
+                  odds: item?.odds,
+                  betType: item?.betType,
+                  stake: item?.stake,
+                  commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+                  partnerShip: upLinePartnership,
+                  matchName: matchData?.title,
+                  matchStartDate: matchData?.startAt,
+                  userName: user.user.userName
+
+                });
+              });
+            }
+            else if (userOriginalProfitLoss < 0) {
+              faAdminCal.commission.push({
+                createBy: user.user.id,
+                matchId: matchId,
+                betId: currBetId,
+                parentId: patentUser.id,
+                commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+                partnerShip: upLinePartnership,
+                matchName: matchData?.title,
+                matchStartDate: matchData?.startAt,
+                userName: user.user.userName,
+                stake: userOriginalProfitLoss
+
+              });
+            }
+          }
         }
       }
-    }
 
-    faAdminCal.userData[user.user.superParentId] = {
-      profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
-      userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
-      role: user.user.superParentType
-    }
+      faAdminCal.userData[user.user.superParentId] = {
+        profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
+        userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
+        role: user.user.superParentType
+      }
 
-    faAdminCal.fwWalletDeduction = 0;
+      faAdminCal.fwWalletDeduction = 0;
+    }
 
   };
   return { fwProfitLoss, faAdminCal, superAdminData, bulkCommission };
@@ -2817,7 +2825,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
       totalCommissionData += parseFloat(userCommission?.amount || 0);
     }
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -2914,103 +2922,104 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     });
 
 
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
+
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+
+          Object.keys(matchTeamRates)?.forEach((item) => {
+            if (matchTeamRates[item] && upperUserObj[patentUser.id][item]) {
+              upperUserObj[patentUser.id][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+            else {
+              upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+          });
+
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+
+          if (!parentCommissionIds.has(patentUser.id)) {
+            parentCommissionIds.add(patentUser.id);
+
+            let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
+            if (userCommission) {
+              upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(userCommission?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
+            }
+          }
+
+          Object.keys(matchTeamRates)?.forEach((item) => {
+            if (matchTeamRates[item]) {
+              upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+          });
+        }
+
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
       }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
 
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
-
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-
-        Object.keys(matchTeamRates)?.forEach((item) => {
-          if (matchTeamRates[item] && upperUserObj[patentUser.id][item]) {
-            upperUserObj[patentUser.id][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+      Object.keys(matchTeamRates)?.forEach((item) => {
+        if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
+          if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
+            faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
           }
           else {
-            upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
-          }
-        });
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-
-        if (!parentCommissionIds.has(patentUser.id)) {
-          parentCommissionIds.add(patentUser.id);
-
-          let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
-          if (userCommission) {
-            upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(userCommission?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
+            if (!faAdminCal.admin[user.user.superParentId]) {
+              faAdminCal.admin[user.user.superParentId] = {};
+            }
+            faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
           }
         }
-
-        Object.keys(matchTeamRates)?.forEach((item) => {
-          if (matchTeamRates[item]) {
-            upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
-          }
-        });
-      }
-
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
-    }
-
-
-    Object.keys(matchTeamRates)?.forEach((item) => {
-      if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-        if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
-          faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
+        if (faAdminCal.wallet[item]) {
+          faAdminCal.wallet[item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
         }
         else {
-          if (!faAdminCal.admin[user.user.superParentId]) {
-            faAdminCal.admin[user.user.superParentId] = {};
-          }
-          faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
+          faAdminCal.wallet[item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
         }
-      }
-      if (faAdminCal.wallet[item]) {
-        faAdminCal.wallet[item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
-      }
-      else {
-        faAdminCal.wallet[item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
-      }
-    });
+      });
 
 
-    faAdminCal.admin[user.user.superParentId] = {
-      ...faAdminCal.admin[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
-      role: user.user.superParentType
+      faAdminCal.admin[user.user.superParentId] = {
+        ...faAdminCal.admin[user.user.superParentId],
+        profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+        role: user.user.superParentType
+      }
+
+      faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
     }
-
-    faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
@@ -3291,7 +3300,7 @@ const calculateProfitLossMatchOtherMarketForUserDeclare = async (users, betId, m
 
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, ...redisKeysMarketWise[currMatchBettingDetailsType]?.map((item) => `${item}${currMatchBettingDetailsType == matchBettingType.other ? betId + "_" : ""}${matchId}`));
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -3299,56 +3308,57 @@ const calculateProfitLossMatchOtherMarketForUserDeclare = async (users, betId, m
         exposure: maxLoss,
       };
     }
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
-      }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss,
+        } else {
+          upperUserObj[patentUser.id] = {
+            profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss,
           };
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
       }
 
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
+      faAdminCal.userData[user.user.superParentId] = {
+        profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
+        userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
+        role: user.user.superParentType
       }
+
+      faAdminCal.fwWalletDeduction = 0;
     }
-
-    faAdminCal.userData[user.user.superParentId] = {
-      profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
-      userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
-      role: user.user.superParentType
-    }
-
-    faAdminCal.fwWalletDeduction = 0;
-
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
@@ -3564,7 +3574,7 @@ const calculateProfitLossMatchOtherMarketForUserUnDeclare = async (users, betId,
     }
 
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -3651,88 +3661,90 @@ const calculateProfitLossMatchOtherMarketForUserUnDeclare = async (users, betId,
       });
     });
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
+
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
+
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+          Object.keys(matchTeamRates)?.forEach((item) => {
+            if (matchTeamRates[item] && upperUserObj[patentUser.id][item]) {
+              upperUserObj[patentUser.id][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+            else {
+              upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+          });
+
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+
+          Object.keys(matchTeamRates)?.forEach((item) => {
+            if (matchTeamRates[item]) {
+              upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+          });
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
       }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
-
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-        Object.keys(matchTeamRates)?.forEach((item) => {
-          if (matchTeamRates[item] && upperUserObj[patentUser.id][item]) {
-            upperUserObj[patentUser.id][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+      Object.keys(matchTeamRates)?.forEach((item) => {
+        if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
+          if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
+            faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
           }
           else {
-            upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            if (!faAdminCal.admin[user.user.superParentId]) {
+              faAdminCal.admin[user.user.superParentId] = {};
+            }
+            faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
           }
-        });
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-
-        Object.keys(matchTeamRates)?.forEach((item) => {
-          if (matchTeamRates[item]) {
-            upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
-          }
-        });
-      }
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
-    }
-
-    Object.keys(matchTeamRates)?.forEach((item) => {
-      if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-        if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
-          faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
+        }
+        if (faAdminCal.wallet[item]) {
+          faAdminCal.wallet[item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
         }
         else {
-          if (!faAdminCal.admin[user.user.superParentId]) {
-            faAdminCal.admin[user.user.superParentId] = {};
-          }
-          faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
+          faAdminCal.wallet[item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
         }
-      }
-      if (faAdminCal.wallet[item]) {
-        faAdminCal.wallet[item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
-      }
-      else {
-        faAdminCal.wallet[item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
-      }
-    });
+      });
 
-    faAdminCal.admin[user.user.superParentId] = {
-      ...faAdminCal.admin[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
-      role: user.user.superParentType
+      faAdminCal.admin[user.user.superParentId] = {
+        ...faAdminCal.admin[user.user.superParentId],
+        profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+        role: user.user.superParentType
+      }
+
+      faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
     }
-
-    faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
@@ -4165,7 +4177,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
 
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, ...redisKeysMarketWise[currMatchBettingDetailsType]?.map((item) => item + matchId));
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -4174,130 +4186,132 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
         // totalCommission: (user.user.matchComissionType == matchComissionTypeConstant.entryWise ? (commission[user.user.id] || 0) : userOriginalProfitLoss < 0 ? parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)) : 0)
       };
     }
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
-      }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
+        // let parentCommission = parseFloat((((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
-      // let parentCommission = parseFloat((((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-        // if (patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0) {
-        //   upperUserObj[patentUser.id].totalCommission += parentCommission;
-        // }
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss,
-          //  ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) 
+          // if (patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0) {
+          //   upperUserObj[patentUser.id].totalCommission += parentCommission;
+          // }
+        } else {
+          upperUserObj[patentUser.id] = {
+            profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss,
+            //  ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) 
           };
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
+
+        // if (patentUser?.matchCommission) {
+        //   if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
+        //     bulkCommission[user?.user?.id]?.forEach((item) => {
+        //       commissionReport.push({
+        //         createBy: user.user.id,
+        //         matchId: item.matchId,
+        //         betId: item?.betId,
+        //         betPlaceId: item?.betPlaceId,
+        //         commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+        //         parentId: patentUser.id,
+        //       });
+        //     });
+        //   }
+        //   else if (userOriginalProfitLoss < 0) {
+        //     commissionReport.push({
+        //       createBy: user.user.id,
+        //       matchId: matchId,
+        //       betId: currBetId,
+        //       commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+        //       parentId: patentUser.id,
+        //       stake: userOriginalProfitLoss
+
+        //     });
+        //   }
+        //   if (patentUser?.id == patentUser?.createBy) {
+        //     if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
+        //       bulkCommission[user?.user?.id]?.forEach((item) => {
+        //         faAdminCal.commission.push({
+        //           createBy: user.user.id,
+        //           matchId: item.matchId,
+        //           betId: item?.betId,
+        //           betPlaceId: item?.betPlaceId,
+        //           parentId: patentUser.id,
+        //           teamName: item?.sessionName,
+        //           betPlaceDate: item?.betPlaceDate,
+        //           odds: item?.odds,
+        //           betType: item?.betType,
+        //           stake: item?.stake,
+        //           commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+        //           partnerShip: upLinePartnership,
+        //           matchName: matchData?.title,
+        //           matchStartDate: matchData?.startAt,
+        //           userName: user.user.userName
+
+        //         });
+        //       });
+        //     }
+        //     else if (userOriginalProfitLoss < 0) {
+        //       faAdminCal.commission.push({
+        //         createBy: user.user.id,
+        //         matchId: matchId,
+        //         betId: currBetId,
+        //         parentId: patentUser.id,
+        //         commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+        //         partnerShip: upLinePartnership,
+        //         matchName: matchData?.title,
+        //         matchStartDate: matchData?.startAt,
+        //         userName: user.user.userName,
+        //         stake: userOriginalProfitLoss
+
+        //       });
+        //     }
+        //   }
+        // }
       }
 
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
+      faAdminCal.userData[user.user.superParentId] = {
+        profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
+        userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
+        role: user.user.superParentType
       }
 
-      // if (patentUser?.matchCommission) {
-      //   if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
-      //     bulkCommission[user?.user?.id]?.forEach((item) => {
-      //       commissionReport.push({
-      //         createBy: user.user.id,
-      //         matchId: item.matchId,
-      //         betId: item?.betId,
-      //         betPlaceId: item?.betPlaceId,
-      //         commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-      //         parentId: patentUser.id,
-      //       });
-      //     });
-      //   }
-      //   else if (userOriginalProfitLoss < 0) {
-      //     commissionReport.push({
-      //       createBy: user.user.id,
-      //       matchId: matchId,
-      //       betId: currBetId,
-      //       commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-      //       parentId: patentUser.id,
-      //       stake: userOriginalProfitLoss
-
-      //     });
-      //   }
-      //   if (patentUser?.id == patentUser?.createBy) {
-      //     if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
-      //       bulkCommission[user?.user?.id]?.forEach((item) => {
-      //         faAdminCal.commission.push({
-      //           createBy: user.user.id,
-      //           matchId: item.matchId,
-      //           betId: item?.betId,
-      //           betPlaceId: item?.betPlaceId,
-      //           parentId: patentUser.id,
-      //           teamName: item?.sessionName,
-      //           betPlaceDate: item?.betPlaceDate,
-      //           odds: item?.odds,
-      //           betType: item?.betType,
-      //           stake: item?.stake,
-      //           commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-      //           partnerShip: upLinePartnership,
-      //           matchName: matchData?.title,
-      //           matchStartDate: matchData?.startAt,
-      //           userName: user.user.userName
-
-      //         });
-      //       });
-      //     }
-      //     else if (userOriginalProfitLoss < 0) {
-      //       faAdminCal.commission.push({
-      //         createBy: user.user.id,
-      //         matchId: matchId,
-      //         betId: currBetId,
-      //         parentId: patentUser.id,
-      //         commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-      //         partnerShip: upLinePartnership,
-      //         matchName: matchData?.title,
-      //         matchStartDate: matchData?.startAt,
-      //         userName: user.user.userName,
-      //         stake: userOriginalProfitLoss
-
-      //       });
-      //     }
-      //   }
-      // }
+      faAdminCal.fwWalletDeduction = 0;
     }
-
-    faAdminCal.userData[user.user.superParentId] = {
-      profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
-      userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
-      role: user.user.superParentType
-    }
-
-    faAdminCal.fwWalletDeduction = 0;
-
   };
-  return { fwProfitLoss, faAdminCal, superAdminData,
+  return {
+    fwProfitLoss, faAdminCal, superAdminData,
     //  bulkCommission
-     };
+  };
 }
 
 exports.unDeclareOtherMatchResult = async (req, res) => {
@@ -4572,7 +4586,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
     //   totalCommissionData += parseFloat(userCommission?.amount || 0);
     // }
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -4664,97 +4678,100 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
       });
     });
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+    if (!user.user.isDemo) {
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+      let parentUsers = await getParentsWithBalance(user.user.id);
+
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
+
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
+
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+          Object.keys(matchTeamRates)?.forEach((item) => {
+            if (matchTeamRates[item] && upperUserObj[patentUser.id][item]) {
+              upperUserObj[patentUser.id][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+            else {
+              upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+          });
+
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+
+          // if (!parentCommissionIds.has(patentUser.id)) {
+          //   parentCommissionIds.add(patentUser.id);
+
+          //   let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
+          //   if (userCommission) {
+          //     upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(userCommission?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
+          //   }
+          // }
+
+          Object.keys(matchTeamRates)?.forEach((item) => {
+            if (matchTeamRates[item]) {
+              upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            }
+          });
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
       }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
-
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-        Object.keys(matchTeamRates)?.forEach((item) => {
-          if (matchTeamRates[item] && upperUserObj[patentUser.id][item]) {
-            upperUserObj[patentUser.id][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+      Object.keys(matchTeamRates)?.forEach((item) => {
+        if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
+          if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
+            faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
           }
           else {
-            upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
+            if (!faAdminCal.admin[user.user.superParentId]) {
+              faAdminCal.admin[user.user.superParentId] = {};
+            }
+            faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
           }
-        });
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-
-        // if (!parentCommissionIds.has(patentUser.id)) {
-        //   parentCommissionIds.add(patentUser.id);
-
-        //   let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
-        //   if (userCommission) {
-        //     upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(userCommission?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
-        //   }
-        // }
-
-        Object.keys(matchTeamRates)?.forEach((item) => {
-          if (matchTeamRates[item]) {
-            upperUserObj[patentUser.id][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2))
-          }
-        });
-      }
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
-    }
-
-    Object.keys(matchTeamRates)?.forEach((item) => {
-      if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-        if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
-          faAdminCal.admin[user.user.superParentId][item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
+        }
+        if (faAdminCal.wallet[item]) {
+          faAdminCal.wallet[item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
         }
         else {
-          if (!faAdminCal.admin[user.user.superParentId]) {
-            faAdminCal.admin[user.user.superParentId] = {};
-          }
-          faAdminCal.admin[user.user.superParentId][item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2))
+          faAdminCal.wallet[item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
         }
-      }
-      if (faAdminCal.wallet[item]) {
-        faAdminCal.wallet[item] += -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
-      }
-      else {
-        faAdminCal.wallet[item] = -parseFloat((parseFloat(matchTeamRates[item]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2))
-      }
-    });
+      });
 
-    faAdminCal.admin[user.user.superParentId] = {
-      ...faAdminCal.admin[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
-      role: user.user.superParentType
+      faAdminCal.admin[user.user.superParentId] = {
+        ...faAdminCal.admin[user.user.superParentId],
+        profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+        role: user.user.superParentType
+      }
+
+      faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
     }
-
-    faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
@@ -5033,7 +5050,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
 
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, `${betId}${redisKeys.profitLoss}_${matchId}`);
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -5042,57 +5059,60 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
       };
     }
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+    if (!user.user.isDemo) {
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+      let parentUsers = await getParentsWithBalance(user.user.id);
+
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
+
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
+
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
+
       }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+
+      faAdminCal.userData[user.user.superParentId] = {
+        profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
+        userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
+        role: user.user.superParentType
       }
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
-
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-      }
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
-
-       }
-
-    faAdminCal.userData[user.user.superParentId] = {
-      profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
-      userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
-      role: user.user.superParentType
+      faAdminCal.fwWalletDeduction = 0;
     }
 
-    faAdminCal.fwWalletDeduction = 0;
-
   };
-  return { fwProfitLoss, faAdminCal, superAdminData};
+  return { fwProfitLoss, faAdminCal, superAdminData };
 }
 
 exports.unDeclareTournamentMatchResult = async (req, res) => {
@@ -5300,7 +5320,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
     }
 
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -5372,141 +5392,143 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
       });
     });
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
-      }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
 
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
-        Object.keys(redisData)?.forEach((item) => {
-          if (upperUserObj[patentUser.id][item]) {
+          Object.keys(redisData)?.forEach((item) => {
+            if (upperUserObj[patentUser.id][item]) {
+              Object.keys(redisData[item])?.forEach((plKeys) => {
+                if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
+                  upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                }
+                else {
+                  upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                }
+              });
+            }
+            else {
+              upperUserObj[patentUser.id][item] = {};
+              Object.keys(redisData[item])?.forEach((plKeys) => {
+                if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
+                  upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                }
+                else {
+                  upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                }
+              });
+            }
+          });
+
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+
+
+          Object.keys(redisData)?.forEach((item) => {
+            upperUserObj[patentUser.id][item] = {};
             Object.keys(redisData[item])?.forEach((plKeys) => {
               if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
                 upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
               }
               else {
                 upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+              }
+            });
+          });
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
+      }
+
+
+      Object.keys(redisData)?.forEach((item) => {
+        if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
+          if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
+            Object.keys(redisData[item])?.forEach((plKeys) => {
+              if (faAdminCal.admin[user.user.superParentId]?.[item]?.[plKeys]) {
+                faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+              }
+              else {
+                faAdminCal.admin[user.user.superParentId][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
               }
             });
           }
           else {
-            upperUserObj[patentUser.id][item] ={};
+            if (!faAdminCal.admin[user.user.superParentId]) {
+              faAdminCal.admin[user.user.superParentId] = {};
+            }
+            faAdminCal.admin[user.user.superParentId][item] = {};
             Object.keys(redisData[item])?.forEach((plKeys) => {
-              if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
-                upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+              if (faAdminCal.admin[user.user.superParentId][item]?.[plKeys]) {
+                faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
               }
               else {
-                upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                faAdminCal.admin[user.user.superParentId][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
               }
             });
           }
-        });
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-
-
-        Object.keys(redisData)?.forEach((item) => {
-          upperUserObj[patentUser.id][item] = {};
+        }
+        if (faAdminCal.wallet?.[item]) {
           Object.keys(redisData[item])?.forEach((plKeys) => {
-            if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
-              upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+            if (faAdminCal.wallet?.[item]?.[plKeys]) {
+              faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
             }
             else {
-              upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
-            }
-          });
-        });
-      }
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
-    }
-
-
-    Object.keys(redisData)?.forEach((item) => {
-      if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-        if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
-          Object.keys(redisData[item])?.forEach((plKeys) => {
-            if (faAdminCal.admin[user.user.superParentId]?.[item]?.[plKeys]) {
-              faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
-            }
-            else {
-              faAdminCal.admin[user.user.superParentId][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+              faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
             }
           });
         }
         else {
-          if (!faAdminCal.admin[user.user.superParentId]) {
-            faAdminCal.admin[user.user.superParentId] = {};
-          }
-          faAdminCal.admin[user.user.superParentId][item] ={};
+          faAdminCal.wallet[item] = {};
           Object.keys(redisData[item])?.forEach((plKeys) => {
-            if (faAdminCal.admin[user.user.superParentId][item]?.[plKeys]) {
-              faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+            if (faAdminCal.wallet[item]?.[plKeys]) {
+              faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
             }
             else {
-              faAdminCal.admin[user.user.superParentId][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+              faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
             }
           });
         }
-      }
-      if (faAdminCal.wallet?.[item]) {
-        Object.keys(redisData[item])?.forEach((plKeys) => {
-          if (faAdminCal.wallet?.[item]?.[plKeys]) {
-            faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
-          }
-          else {
-            faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
-          }
-        });
-      }
-      else {
-        faAdminCal.wallet[item] ={};
-        Object.keys(redisData[item])?.forEach((plKeys) => {
-          if (faAdminCal.wallet[item]?.[plKeys]) {
-            faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
-          }
-          else {
-            faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
-          }
-        });
-      }
-    });
+      });
 
-    faAdminCal.admin[user.user.superParentId] = {
-      ...faAdminCal.admin[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
-      role: user.user.superParentType
+      faAdminCal.admin[user.user.superParentId] = {
+        ...faAdminCal.admin[user.user.superParentId],
+        profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+        role: user.user.superParentType
+      }
+
+      faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
     }
-
-    faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
@@ -6667,7 +6689,7 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
 
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, `${matchId}${redisKeys.profitLoss}`);
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -6676,130 +6698,133 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
         // totalCommission: (user.user.matchComissionType == matchComissionTypeConstant.entryWise ? (commission[user.user.id] || 0) : userOriginalProfitLoss < 0 ? parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)) : 0)
       };
     }
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
-      }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
+        // let parentCommission = parseFloat((((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
-      // let parentCommission = parseFloat((((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
 
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-        // if (patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0) {
-        //   upperUserObj[patentUser.id].totalCommission += parentCommission;
-        // }
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss,
-          //  ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) 
+          // if (patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0) {
+          //   upperUserObj[patentUser.id].totalCommission += parentCommission;
+          // }
+        } else {
+          upperUserObj[patentUser.id] = {
+            profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss,
+            //  ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) 
           };
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
+
+        // if (patentUser?.matchCommission) {
+        //   if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
+        //     bulkCommission[user?.user?.id]?.forEach((item) => {
+        //       commissionReport.push({
+        //         createBy: user.user.id,
+        //         matchId: item.matchId,
+        //         betId: item?.betId,
+        //         betPlaceId: item?.betPlaceId,
+        //         commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+        //         parentId: patentUser.id,
+        //       });
+        //     });
+        //   }
+        //   else if (userOriginalProfitLoss < 0) {
+        //     commissionReport.push({
+        //       createBy: user.user.id,
+        //       matchId: matchId,
+        //       betId: currBetId,
+        //       commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+        //       parentId: patentUser.id,
+        //       stake: userOriginalProfitLoss
+
+        //     });
+        //   }
+        //   if (patentUser?.id == patentUser?.createBy) {
+        //     if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
+        //       bulkCommission[user?.user?.id]?.forEach((item) => {
+        //         faAdminCal.commission.push({
+        //           createBy: user.user.id,
+        //           matchId: item.matchId,
+        //           betId: item?.betId,
+        //           betPlaceId: item?.betPlaceId,
+        //           parentId: patentUser.id,
+        //           teamName: item?.sessionName,
+        //           betPlaceDate: item?.betPlaceDate,
+        //           odds: item?.odds,
+        //           betType: item?.betType,
+        //           stake: item?.stake,
+        //           commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+        //           partnerShip: upLinePartnership,
+        //           matchName: matchData?.title,
+        //           matchStartDate: matchData?.startAt,
+        //           userName: user.user.userName
+
+        //         });
+        //       });
+        //     }
+        //     else if (userOriginalProfitLoss < 0) {
+        //       faAdminCal.commission.push({
+        //         createBy: user.user.id,
+        //         matchId: matchId,
+        //         betId: currBetId,
+        //         parentId: patentUser.id,
+        //         commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+        //         partnerShip: upLinePartnership,
+        //         matchName: matchData?.title,
+        //         matchStartDate: matchData?.startAt,
+        //         userName: user.user.userName,
+        //         stake: userOriginalProfitLoss
+
+        //       });
+        //     }
+        //   }
+        // }
       }
 
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
+      faAdminCal.userData[user.user.superParentId] = {
+        profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
+        userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
+        role: user.user.superParentType
       }
 
-      // if (patentUser?.matchCommission) {
-      //   if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
-      //     bulkCommission[user?.user?.id]?.forEach((item) => {
-      //       commissionReport.push({
-      //         createBy: user.user.id,
-      //         matchId: item.matchId,
-      //         betId: item?.betId,
-      //         betPlaceId: item?.betPlaceId,
-      //         commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-      //         parentId: patentUser.id,
-      //       });
-      //     });
-      //   }
-      //   else if (userOriginalProfitLoss < 0) {
-      //     commissionReport.push({
-      //       createBy: user.user.id,
-      //       matchId: matchId,
-      //       betId: currBetId,
-      //       commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-      //       parentId: patentUser.id,
-      //       stake: userOriginalProfitLoss
-
-      //     });
-      //   }
-      //   if (patentUser?.id == patentUser?.createBy) {
-      //     if (patentUser.matchComissionType == matchComissionTypeConstant.entryWise) {
-      //       bulkCommission[user?.user?.id]?.forEach((item) => {
-      //         faAdminCal.commission.push({
-      //           createBy: user.user.id,
-      //           matchId: item.matchId,
-      //           betId: item?.betId,
-      //           betPlaceId: item?.betPlaceId,
-      //           parentId: patentUser.id,
-      //           teamName: item?.sessionName,
-      //           betPlaceDate: item?.betPlaceDate,
-      //           odds: item?.odds,
-      //           betType: item?.betType,
-      //           stake: item?.stake,
-      //           commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-      //           partnerShip: upLinePartnership,
-      //           matchName: matchData?.title,
-      //           matchStartDate: matchData?.startAt,
-      //           userName: user.user.userName
-
-      //         });
-      //       });
-      //     }
-      //     else if (userOriginalProfitLoss < 0) {
-      //       faAdminCal.commission.push({
-      //         createBy: user.user.id,
-      //         matchId: matchId,
-      //         betId: currBetId,
-      //         parentId: patentUser.id,
-      //         commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
-      //         partnerShip: upLinePartnership,
-      //         matchName: matchData?.title,
-      //         matchStartDate: matchData?.startAt,
-      //         userName: user.user.userName,
-      //         stake: userOriginalProfitLoss
-
-      //       });
-      //     }
-      //   }
-      // }
+      faAdminCal.fwWalletDeduction = 0;
     }
-
-    faAdminCal.userData[user.user.superParentId] = {
-      profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
-      userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
-      role: user.user.superParentType
-    }
-
-    faAdminCal.fwWalletDeduction = 0;
 
   };
-  return { fwProfitLoss, faAdminCal, superAdminData,
+  return {
+    fwProfitLoss, faAdminCal, superAdminData,
     //  bulkCommission
-     };
+  };
 }
 
 exports.unDeclareRaceMatchResult = async (req, res) => {
@@ -7052,7 +7077,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     //   totalCommissionData += parseFloat(userCommission?.amount || 0);
     // }
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -7130,149 +7155,152 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
       });
     });
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+    if (!user.user.isDemo) {
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
-      }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
-      }
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
 
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
 
-        Object.keys(redisData)?.forEach((item) => {
-          if (upperUserObj[patentUser.id][item]) {
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+          Object.keys(redisData)?.forEach((item) => {
+            if (upperUserObj[patentUser.id][item]) {
+              Object.keys(redisData[item])?.forEach((plKeys) => {
+                if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
+                  upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                }
+                else {
+                  upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                }
+              });
+            }
+            else {
+              upperUserObj[patentUser.id][item] = {};
+              Object.keys(redisData[item])?.forEach((plKeys) => {
+                if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
+                  upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                }
+                else {
+                  upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                }
+              });
+            }
+          });
+
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+
+          // if (!parentCommissionIds.has(patentUser.id)) {
+          //   parentCommissionIds.add(patentUser.id);
+
+          //   let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
+          //   if (userCommission) {
+          //     upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(userCommission?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
+          //   }
+          // }
+
+          Object.keys(redisData)?.forEach((item) => {
+            upperUserObj[patentUser.id][item] = {};
             Object.keys(redisData[item])?.forEach((plKeys) => {
               if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
                 upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
               }
               else {
                 upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+              }
+            });
+          });
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
+      }
+
+
+      Object.keys(redisData)?.forEach((item) => {
+        if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
+          if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
+            Object.keys(redisData[item])?.forEach((plKeys) => {
+              if (faAdminCal.admin[user.user.superParentId]?.[item]?.[plKeys]) {
+                faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+              }
+              else {
+                faAdminCal.admin[user.user.superParentId][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
               }
             });
           }
           else {
-            upperUserObj[patentUser.id][item] ={};
+            if (!faAdminCal.admin[user.user.superParentId]) {
+              faAdminCal.admin[user.user.superParentId] = {};
+            }
+            faAdminCal.admin[user.user.superParentId][item] = {};
             Object.keys(redisData[item])?.forEach((plKeys) => {
-              if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
-                upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+              if (faAdminCal.admin[user.user.superParentId][item]?.[plKeys]) {
+                faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
               }
               else {
-                upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+                faAdminCal.admin[user.user.superParentId][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
               }
             });
           }
-        });
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
-
-        // if (!parentCommissionIds.has(patentUser.id)) {
-        //   parentCommissionIds.add(patentUser.id);
-
-        //   let userCommission = commissionData?.find((item) => item?.userId == patentUser.id);
-        //   if (userCommission) {
-        //     upperUserObj[patentUser.id].totalCommission = parseFloat((parseFloat(userCommission?.amount || 0) * parseFloat(upLinePartnership) / 100).toFixed(2));
-        //   }
-        // }
-
-        Object.keys(redisData)?.forEach((item) => {
-          upperUserObj[patentUser.id][item] = {};
+        }
+        if (faAdminCal.wallet?.[item]) {
           Object.keys(redisData[item])?.forEach((plKeys) => {
-            if (upperUserObj[patentUser.id]?.[item]?.[plKeys]) {
-              upperUserObj[patentUser.id][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
+            if (faAdminCal.wallet?.[item]?.[plKeys]) {
+              faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
             }
             else {
-              upperUserObj[patentUser.id][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`${partnershipPrefixByRole[patentUser?.roleName]}Partnership`]) / 100).toFixed(2));
-            }
-          });
-        });
-      }
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
-    }
-
-
-    Object.keys(redisData)?.forEach((item) => {
-      if (user.user.superParentType == userRoleConstant.fairGameAdmin) {
-        if (faAdminCal.admin?.[user.user.superParentId]?.[item]) {
-          Object.keys(redisData[item])?.forEach((plKeys) => {
-            if (faAdminCal.admin[user.user.superParentId]?.[item]?.[plKeys]) {
-              faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
-            }
-            else {
-              faAdminCal.admin[user.user.superParentId][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+              faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
             }
           });
         }
         else {
-          if (!faAdminCal.admin[user.user.superParentId]) {
-            faAdminCal.admin[user.user.superParentId] = {};
-          }
-          faAdminCal.admin[user.user.superParentId][item] ={};
+          faAdminCal.wallet[item] = {};
           Object.keys(redisData[item])?.forEach((plKeys) => {
-            if (faAdminCal.admin[user.user.superParentId][item]?.[plKeys]) {
-              faAdminCal.admin[user.user.superParentId][item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+            if (faAdminCal.wallet[item]?.[plKeys]) {
+              faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
             }
             else {
-              faAdminCal.admin[user.user.superParentId][item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`faPartnership`]) / 100).toFixed(2));
+              faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
             }
           });
         }
-      }
-      if (faAdminCal.wallet?.[item]) {
-        Object.keys(redisData[item])?.forEach((plKeys) => {
-          if (faAdminCal.wallet?.[item]?.[plKeys]) {
-            faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
-          }
-          else {
-            faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
-          }
-        });
-      }
-      else {
-        faAdminCal.wallet[item] ={};
-        Object.keys(redisData[item])?.forEach((plKeys) => {
-          if (faAdminCal.wallet[item]?.[plKeys]) {
-            faAdminCal.wallet[item][plKeys] += -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
-          }
-          else {
-            faAdminCal.wallet[item][plKeys] = -parseFloat((parseFloat(redisData[item][plKeys]) * parseFloat(user?.user[`fwPartnership`]) / 100).toFixed(2));
-          }
-        });
-      }
-    });
+      });
 
-    faAdminCal.admin[user.user.superParentId] = {
-      ...faAdminCal.admin[user.user.superParentId],
-      profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
-      role: user.user.superParentType
+      faAdminCal.admin[user.user.superParentId] = {
+        ...faAdminCal.admin[user.user.superParentId],
+        profitLoss: profitLoss + (faAdminCal.admin[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.admin[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((parseFloat(faAdminCal.admin[user.user.superParentId]?.myProfitLoss || 0) + (parseFloat(profitLoss) * parseFloat(user.user.fwPartnership) / 100)).toFixed(2)),
+        role: user.user.superParentType
+      }
+
+      faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
     }
-
-    faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
@@ -7526,7 +7554,7 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
     await deleteHashKeysByPattern(user.user.id, result?.mid + "*");
     await deleteKeyFromUserRedis(user.user.id, `${redisKeys.userMatchExposure}${result?.mid}`);
 
-    if (user.user.createBy === user.user.id) {
+    if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
         profitLoss: profitLoss,
@@ -7534,55 +7562,55 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
         exposure: maxLoss,
       };
     }
+    if (!user.user.isDemo) {
+      let parentUsers = await getParentsWithBalance(user.user.id);
 
-    let parentUsers = await getParentsWithBalance(user.user.id);
+      for (const patentUser of parentUsers) {
+        let upLinePartnership = 100;
+        if (patentUser.roleName === userRoleConstant.superAdmin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
+        } else if (patentUser.roleName === userRoleConstant.admin) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
+        } else if (patentUser.roleName === userRoleConstant.superMaster) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
+        } else if (patentUser.roleName === userRoleConstant.master) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        }
+        else if (patentUser.roleName === userRoleConstant.agent) {
+          upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+        }
 
-    for (const patentUser of parentUsers) {
-      let upLinePartnership = 100;
-      if (patentUser.roleName === userRoleConstant.superAdmin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership;
-      } else if (patentUser.roleName === userRoleConstant.admin) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership;
-      } else if (patentUser.roleName === userRoleConstant.superMaster) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership;
-      } else if (patentUser.roleName === userRoleConstant.master) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership;
+        let myProfitLoss = parseFloat(
+          (((profitLoss) * upLinePartnership) / 100).toString()
+        );
+
+        if (upperUserObj[patentUser.id]) {
+          upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
+          upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
+          upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
+
+        } else {
+          upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+        }
+
+        if (patentUser.createBy === patentUser.id) {
+          superAdminData[patentUser.id] = {
+            ...upperUserObj[patentUser.id],
+            role: patentUser.roleName,
+          };
+        }
       }
-      else if (patentUser.roleName === userRoleConstant.agent) {
-        upLinePartnership = user.user.fwPartnership + user.user.faPartnership + user.user.saPartnership + user.user.aPartnership + user.user.smPartnership + user.user.mPartnership;
+
+      faAdminCal.userData[user.user.superParentId] = {
+        profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
+        exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
+        myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
+        userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
+        role: user.user.superParentType
       }
 
-      let myProfitLoss = parseFloat(
-        (((profitLoss) * upLinePartnership) / 100).toString()
-      );
-
-      if (upperUserObj[patentUser.id]) {
-        upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
-        upperUserObj[patentUser.id].myProfitLoss = upperUserObj[patentUser.id].myProfitLoss + myProfitLoss;
-        upperUserObj[patentUser.id].exposure = upperUserObj[patentUser.id].exposure + maxLoss;
-
-      } else {
-        upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss};
-      }
-
-      if (patentUser.createBy === patentUser.id) {
-        superAdminData[patentUser.id] = {
-          ...upperUserObj[patentUser.id],
-          role: patentUser.roleName,
-        };
-      }
+      faAdminCal.fwWalletDeduction = 0;
     }
-
-    faAdminCal.userData[user.user.superParentId] = {
-      profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
-      exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
-      myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
-      userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
-      role: user.user.superParentType
-    }
-
-    faAdminCal.fwWalletDeduction = 0;
-
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }

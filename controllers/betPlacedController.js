@@ -388,38 +388,38 @@ exports.matchBettingBetPlaced = async (req, res) => {
       betPlacedService.deleteBetByEntityOnError(newBet);
       throw error;
     });
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletMatchBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+      });
 
-    const walletJob = WalletMatchBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+      const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for expert ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+        throw error;
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
-
-    const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for expert ${reqUser.id}`,
-        matchId, walletJobData
-      });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -665,37 +665,38 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       throw error;
     });
 
-    const walletJob = WalletMatchTournamentBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match tournament betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletMatchTournamentBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match tournament betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match tournament betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match tournament betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
-    const expertJob = ExpertMatchTournamentBetQueue.createJob(walletJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add match tournament betting job save in the redis for expert ${reqUser.id}`,
-        matchId, walletJobData
+      const expertJob = ExpertMatchTournamentBetQueue.createJob(walletJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add match tournament betting job save in the redis for expert ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match tournament betting job save in the redis for expert ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+        throw error;
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match tournament betting job save in the redis for expert ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -1124,45 +1125,47 @@ exports.sessionBetPlace = async (req, res, next) => {
       betPlaceObject: betPlaceObject,
       domainUrl: domainUrl
     };
-    const walletJob = WalletSessionBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add session betting job save in the redis for wallet ${id}`,
-        matchId, walletJobData
-      });
-    }).catch(error => {
-      logger.error({
-        error: `Error at session betting job save in the redis for walllet ${id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
-    let expertJobData = {
-      userId: id,
-      partnership: userData?.partnerShips,
-      placedBet: placedBet,
-      newBalance: newBalance,
-      betPlaceObject: betPlaceObject,
-      domainUrl: domainUrl
-    };
-    const expertJob = ExpertSessionBetQueue.createJob(expertJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add session betting job save in the redis for expert ${id}`,
-        matchId, expertJobData
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletSessionBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add session betting job save in the redis for wallet ${id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at session betting job save in the redis for walllet ${id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at session betting job save in the redis for expert ${id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
+
+      let expertJobData = {
+        userId: id,
+        partnership: userData?.partnerShips,
+        placedBet: placedBet,
+        newBalance: newBalance,
+        betPlaceObject: betPlaceObject,
+        domainUrl: domainUrl
+      };
+      const expertJob = ExpertSessionBetQueue.createJob(expertJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add session betting job save in the redis for expert ${id}`,
+          matchId, expertJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at session betting job save in the redis for expert ${id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    });
 
-
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: placedBet }, req, res)
 
   } catch (error) {
@@ -2683,37 +2686,38 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       throw error;
     });
 
-    const walletJob = WalletMatchBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletMatchBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
-    const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for expert ${reqUser.id}`,
-        matchId, walletJobData
+      const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for expert ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+        throw error;
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -3248,37 +3252,38 @@ exports.racingBettingBetPlaced = async (req, res) => {
       throw error;
     });
 
-    const walletJob = WalletMatchRacingBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+    if (reqUser?.isDemo) {
+      const walletJob = WalletMatchRacingBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
-    const expertJob = ExpertMatchRacingBetQueue.createJob(walletJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for expert ${reqUser.id}`,
-        matchId, walletJobData
+      const expertJob = ExpertMatchRacingBetQueue.createJob(walletJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for expert ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+        throw error;
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -4061,39 +4066,41 @@ exports.cardBettingBetPlaced = async (req, res) => {
       throw error;
     });
 
-    const walletJob = WalletCardMatchBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletCardMatchBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
+
+      // const expertJob = ExpertCardMatchBetQueue.createJob(walletJobData);
+      // await expertJob.save().then(data => {
+      //   logger.info({
+      //     info: `add match betting job save in the redis for expert ${reqUser.id}`,
+      //     matchId, walletJobData
+      //   });
+      // }).catch(error => {
+      //   logger.error({
+      //     error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+      //     stack: error.stack,
+      //     message: error.message,
+      //     errorFile: error
+      //   });
+      //   betPlacedService.deleteBetByEntityOnError(newBet);
+      //   throw error;
+      // });
+    }
     await setCardBetPlaceRedis(betPlacedObj?.runnerId, domainUrl, 1);
-
-    // const expertJob = ExpertCardMatchBetQueue.createJob(walletJobData);
-    // await expertJob.save().then(data => {
-    //   logger.info({
-    //     info: `add match betting job save in the redis for expert ${reqUser.id}`,
-    //     matchId, walletJobData
-    //   });
-    // }).catch(error => {
-    //   logger.error({
-    //     error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
-    //     stack: error.stack,
-    //     message: error.message,
-    //     errorFile: error
-    //   });
-    //   betPlacedService.deleteBetByEntityOnError(newBet);
-    //   throw error;
-    // });
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 

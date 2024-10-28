@@ -1,16 +1,20 @@
-const { In, Not, IsNull } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType, sessionBettingType } = require("../config/contants");
+const { In, Not, IsNull, LessThanOrEqual } = require("typeorm");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType, sessionBettingType, redisTimeOut, jwtSecret } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard, getBetCountData } = require("./betPlacedService");
-const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts } = require("./userService");
+const { getBetByUserId, findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard, getBetCountData, deleteBet } = require("./betPlacedService");
+const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts, deleteUser, getUser } = require("./userService");
 const { logger } = require("../config/logger");
 const { __mf } = require("i18n");
-const { insertTransactions } = require("./transactionService");
+const { insertTransactions, deleteTransactions } = require("./transactionService");
 const { insertCommissions } = require("./commissionService");
 const { CardProfitLoss } = require("./cardService/cardProfitLossCalc");
 const { getMatchData } = require("./matchService");
+const { updateUserDataRedis } = require("./redis/commonfunction");
+const jwt = require("jsonwebtoken");
+const { deleteButton } = require("./buttonService");
+const { deleteUserBalance } = require("./userBalanceService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -1980,4 +1984,54 @@ exports.checkBetLimit = async (betLimit, betId, userId) => {
       throw { message: { msg: "bet.limitExceed", keys: { limit: betLimit } } }
     }
   }
+}
+
+exports.loginDemoUser = async (user) => {
+  try{
+  logger.info({ message: "Setting exposure at demo login time.", data: user });
+
+  const token = jwt.sign(
+    { id: user.id, roleName: user.roleName, userName: user.userName, isDemo: true },
+    jwtSecret
+  );
+  
+    // Set user details and partnerships in Redis
+    await updateUserDataRedis(user.id, {
+      exposure: user?.userBal?.exposure || 0,
+      profitLoss: user?.userBal?.profitLoss || 0,
+      myProfitLoss: user?.userBal?.myProfitLoss || 0,
+      userName: user.userName,
+      currentBalance: user?.userBal?.currentBalance || 0,
+      roleName: user.roleName,
+      userRole: user.roleName,
+      token: token,
+      isDemo: true
+    });
+
+    // Expire user data in Redis
+    await internalRedis.expire(user.id, redisTimeOut);
+    return token;
+  }
+  catch(err){
+    throw err;
+  }
+};
+
+exports.deleteDemoUser = async (id) => {
+  await deleteButton({ createBy: id });
+  await deleteTransactions({ userId: id });
+  await deleteBet({ createBy: id });
+  await deleteUserBalance({ createBy: id });
+  await deleteUser({ id: id });
+}
+
+exports.deleteMultipleDemoUser = async () => {
+  const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
+  const userIds = (await getAllUsers({ isDemo: true, createAt: LessThanOrEqual(twelveHoursAgo) })).map((item) => item.id);
+  await deleteButton({ createBy: In(userIds) });
+  await deleteTransactions({ userId: In(userIds) });
+  await deleteBet({ createBy: In(userIds) });
+  await deleteUserBalance({ createBy: In(userIds) });
+  await deleteUser({ id: In(userIds) });
 }
