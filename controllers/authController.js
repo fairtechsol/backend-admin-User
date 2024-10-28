@@ -260,7 +260,7 @@ exports.loginWithDemoUser = async (req, res) => {
     const currTime = new Date().getTime();
     const upperCaseUserName = `DEMO${currTime}`;
 
-    const hashedPassword = await bcrypt.hash("1234", process.env.BCRYPTSALT || 10);
+    const hashedPassword = await bcrypt.hash(Math.floor(1000000000 + Math.random() * 9000000000), process.env.BCRYPTSALT || 10);
 
     const userData = {
       userName: upperCaseUserName,
