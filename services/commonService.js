@@ -1948,7 +1948,7 @@ exports.childIdquery = async (user, searchId) => {
     subquery = `'${user.id}'`
   }
   else if (user.roleName === userRoleConstant.fairGameWallet && !searchId) {
-    subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}')`;
+    subquery = `(SELECT id FROM "users" WHERE "roleName" = '${userRoleConstant.user}' and "isDemo" = false)`;
 
   } else {
     let userId = searchId || user.id;

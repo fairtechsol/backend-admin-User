@@ -1126,7 +1126,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       domainUrl: domainUrl
     };
 
-    if (!reqUser?.isDemo) {
+    if (!req.user?.isDemo) {
       const walletJob = WalletSessionBetQueue.createJob(walletJobData);
       await walletJob.save().then(data => {
         logger.info({

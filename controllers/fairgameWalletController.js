@@ -1905,8 +1905,10 @@ exports.getBetWallet = async (req, res) => {
       "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt", "match.teamC", "betPlaced.runnerId"
     ];
 
+    const demoUsers = await getAllUsers({ isDemo: true });
+
     select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
-    result = await getBet("user.id is not null", queryData, roleName, select, userId, isTeamNameAllow == 'false' ? false : true);
+    result = await getBet(`user.id is not null and betPlaced.createBy not in ('${demoUsers?.map((item) => item?.id).join("','")}')`, queryData, roleName, select, userId, isTeamNameAllow == 'false' ? false : true);
 
 
     if (!result[1]) {
@@ -5963,6 +5965,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
         : (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
           await getUsersByWallet({
             superParentId: user.id,
+            isDemo: false
           })
           :
           await getAllUsers({
@@ -6045,7 +6048,8 @@ exports.getAllUserBalance = async (req, res) => {
     const { id } = req.params;
     let balanceSum = {};
     if (roleName == userRoleConstant.fairGameWallet) {
-      let childUsersBalances = await getAllUsersBalanceSum();
+      const demoUserId = await getAllUsers({ isDemo: true }, ["id"]);
+      let childUsersBalances = await getAllUsersBalanceSum({ userId: Not(In(demoUserId?.map((item) => item?.id))) });
       balanceSum[id] = parseFloat(parseFloat(childUsersBalances?.balance).toFixed(2));
     }
     else if (roleName == userRoleConstant.fairGameAdmin) {
@@ -6260,7 +6264,7 @@ exports.getAllChildSearchList = async (req, res) => {
       users = await getAllUsers({ superParentId: id, userName: ILike(`%${userName}%`) }, ["id", "userName"]);
     }
     else {
-      users = await getAllUsers({ userName: ILike(`%${userName}%`) }, ["id", "userName"]);
+      users = await getAllUsers({ userName: ILike(`%${userName}%`), isDemo: false }, ["id", "userName"]);
     }
 
     return SuccessResponse({ statusCode: 200, data: users }, req, res);
