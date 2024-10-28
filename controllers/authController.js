@@ -15,6 +15,7 @@ const { userLoginAtUpdate } = require("../services/authService");
 const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
+const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
 
 
 // Function to validate a user by username and password
@@ -180,7 +181,11 @@ exports.login = async (req, res) => {
     }
     // setting token in redis for checking if user already loggedin
     await internalRedis.hmset(user.id, { token: token });
+    let isBetExist;
+    if (user.roleName != userRoleConstant.user) {
+      isBetExist = await getChildUsersSinglePlaceBet(user.id);
 
+    }
     // Return token and user information
 
     return SuccessResponse(
@@ -193,7 +198,7 @@ exports.login = async (req, res) => {
           roleName: roleName,
           forceChangePassword,
           userId: user?.id,
-          exposure: user?.userBal?.exposure
+          isBetExist: isBetExist?.length > 0
         },
       },
       req,
