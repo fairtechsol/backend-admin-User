@@ -492,7 +492,7 @@ exports.marketAnalysis = async (req, res) => {
             currRedisData = {
               a: redisData[redisDataKey.teamArateRedisKey],
               b: redisData[redisDataKey.teamBrateRedisKey],
-              c: redisData[redisDataKey.teamCrateRedisKey],
+              c: isNaN(redisData[redisDataKey.teamCrateRedisKey]) ? 0 : redisData[redisDataKey.teamCrateRedisKey],
             };
           }
           else if (item?.marketType == matchBettingType.tournament) {
@@ -510,7 +510,7 @@ exports.marketAnalysis = async (req, res) => {
             currRedisData = {
               a: redisData[redisDataKey.teamArateRedisKey],
               b: redisData[redisDataKey.teamBrateRedisKey],
-              c: redisData[redisDataKey.teamCrateRedisKey],
+              c: isNaN(redisData[redisDataKey.teamCrateRedisKey]) ? 0 : redisData[redisDataKey.teamCrateRedisKey],
             };
           }
           else {
@@ -520,7 +520,7 @@ exports.marketAnalysis = async (req, res) => {
             currRedisData = {
               a: redisData[redisDataKey.teamArateRedisKey],
               b: redisData[redisDataKey.teamBrateRedisKey],
-              c: redisData[redisDataKey.teamCrateRedisKey],
+              c: isNaN(redisData[redisDataKey.teamCrateRedisKey]) ? 0 : redisData[redisDataKey.teamCrateRedisKey],
             };
           }
 
