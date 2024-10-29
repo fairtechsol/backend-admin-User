@@ -146,6 +146,27 @@ exports.raceDetails = async (req, res) => {
   }
 };
 
+exports.initialCardMatchDetails = async (req, res) => {
+  try {
+    const { type } = req.params;
+
+    let casinoDetails = await getCardMatch({ type: type });
+
+   
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: casinoDetails,
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
 exports.cardMatchDetails = async (req, res) => {
   try {
     const { type } = req.params;
