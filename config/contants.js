@@ -64,6 +64,7 @@ module.exports.fileType = {
 };
 
 module.exports.redisTimeOut = 10 * 60 * 60;
+module.exports.demoRedisTimeOut = 60 * 60;
 
 module.exports.matchComissionTypeConstant = {
   totalLoss: "totalLoss",
