@@ -1,5 +1,5 @@
 const { In, Not, IsNull, LessThanOrEqual } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType, sessionBettingType, redisTimeOut, jwtSecret } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType, sessionBettingType, redisTimeOut, jwtSecret, demoRedisTimeOut } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -2009,7 +2009,7 @@ exports.loginDemoUser = async (user) => {
     });
 
     // Expire user data in Redis
-    await internalRedis.expire(user.id, redisTimeOut);
+    await internalRedis.expire(user.id, demoRedisTimeOut);
     return token;
   }
   catch(err){
