@@ -662,3 +662,16 @@ exports.pendingCasinoResult = () => {
 
   return BetPlaced.query(`select distinct "runnerId" , "eventType" from "betPlaceds" where result = 'PENDING' and "marketBetType" = 'CARD';`);
 }
+
+exports.getChildUsersSinglePlaceBet = (id) => {
+
+  return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
+    SELECT id, "roleName", "createBy"
+    FROM public.users
+    WHERE id = $1
+    UNION
+    SELECT ur.id, ur."roleName", ur."createBy"
+    FROM public.users ur
+    JOIN RoleHierarchy rh ON ur."createBy" = rh.id
+  ) select id from "betPlaceds" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' limit 1`, [id]);
+}
