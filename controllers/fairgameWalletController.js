@@ -3745,7 +3745,7 @@ exports.declareOtherMatchResult = async (req, res) => {
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
     if (betPlaced?.length <= 0) {
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType, isMatchDeclare: matchBetType == matchBettingType.quickbookmaker1 });
     if (matchBetType == matchBettingType.quickbookmaker1) {
       await updateMatchData({ id: matchId }, { stopAt: new Date() });
     }
@@ -3915,7 +3915,7 @@ exports.declareOtherMatchResult = async (req, res) => {
       });
     }
     // insertBulkCommissions(commissionReport);
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType, isMatchDeclare: matchBetType == matchBettingType.quickbookmaker1 });
     if (matchBetType == matchBettingType.quickbookmaker1) {
       await updateMatchData({ id: matchId }, { stopAt: new Date() });
     }
@@ -4437,7 +4437,7 @@ exports.unDeclareOtherMatchResult = async (req, res) => {
       }
     );
 
-    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betIds, betType: matchBetType });
+    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betIds, betType: matchBetType, isMatchDeclare: matchBetType == matchBettingType.quickbookmaker1 });
     if (matchBetType == matchBettingType.quickbookmaker1) {
       await updateMatchData({ id: matchId }, { stopAt: null });
     }
