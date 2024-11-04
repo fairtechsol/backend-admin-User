@@ -71,10 +71,10 @@ class ApiFeature {
               } else {
                 if (index == 0) {
                   // Handle equality by default if no operator is specified
-                  this.query.where(`${orKey} = :value`, { value: orVal });
+                  qb.where(`${orKey} = :value`, { value: orVal });
                 }
                 else {
-                  this.query.orWhere(`${orKey} = :value`, { value: orVal });
+                  qb.orWhere(`${orKey} = :value`, { value: orVal });
 
                 }
               }
