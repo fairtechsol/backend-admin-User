@@ -2026,9 +2026,9 @@ exports.deleteDemoUser = async (id) => {
 }
 
 exports.deleteMultipleDemoUser = async () => {
-  const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+  const deleteTime = new Date(Date.now() - demoRedisTimeOut * 1000);
 
-  const userIds = (await getAllUsers({ isDemo: true, createAt: LessThanOrEqual(twelveHoursAgo) })).map((item) => item.id);
+  const userIds = (await getAllUsers({ isDemo: true, createAt: LessThanOrEqual(deleteTime) })).map((item) => item.id);
   await deleteButton({ createBy: In(userIds) });
   await deleteTransactions({ userId: In(userIds) });
   await deleteBet({ createBy: In(userIds) });

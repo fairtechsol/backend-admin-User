@@ -13,6 +13,8 @@ const i18n = require("./config/i18n");
 const setI18Language = require("./middleware/setI18Language.js");
 const { logger } = require("./config/logger.js");
 const helmet = require("helmet");
+const cron = require('node-cron');
+const { deleteMultipleDemoUser } = require("./services/commonService.js");
 
 // Create Express app
 const app = express();
@@ -97,4 +99,7 @@ socketManager(server);
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`HTTP/2 server is running on https://localhost:${PORT}`);
+  cron.schedule('0 */2 * * *', () => {
+    deleteMultipleDemoUser();
+  }).start();
 });
