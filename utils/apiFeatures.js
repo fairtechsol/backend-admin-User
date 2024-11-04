@@ -54,64 +54,44 @@ class ApiFeature {
     if (filterObject) {
       // Implement filter logic based on your requirements
       Object.entries(filterObject).forEach(([key, value]) => {
-        const [operator, filterValue] = this.parseFilterValue(value);
+        if (key == "orVal") {
+          let filterVals = value?.split("|or|");
+          this.query.andWhere(new Brackets((qb) => {
+            filterVals.forEach((filterVal, index) => {
+              let [orKey, orVal] = filterVal.split("=");
+              const [operator, filterValue] = this.parseFilterValue(orVal);
+              if (operator && filterValue !== undefined) {
+                if (index == 0) {
+                  // Use different operators for different conditions
+                  qb.where(this.filterKeyAccordingToOperator(operator, filterValue, orKey));
+                }
+                else {
+                  qb.orWhere(this.filterKeyAccordingToOperator(operator, filterValue, orKey));
+                }
+              } else {
+                if (index == 0) {
+                  // Handle equality by default if no operator is specified
+                  this.query.where(`${orKey} = :value`, { value: orVal });
+                }
+                else {
+                  this.query.orWhere(`${orKey} = :value`, { value: orVal });
 
-        if (operator && filterValue !== undefined) {
-          // Use different operators for different conditions
-          switch (operator) {
-            case "eq":
-              this.query.andWhere({ [key]: Equal(filterValue) });
-              break;
-            case "ne":
-              this.query.andWhere({ [key]: Not(filterValue) });
-              break;
-            case "like":
-              this.query.andWhere({ [key]: ILike(filterValue) });
-              break;
-            case "gt":
-              this.query.andWhere({ [key]: MoreThan(filterValue) });
-              break;
-            case "lt":
-              this.query.andWhere({ [key]: LessThan(filterValue) });
-              break;
-            case "gte":
-              this.query.andWhere({ [key]: MoreThanOrEqual(filterValue) });
-              break;
-            case "lte":
-              this.query.andWhere({ [key]: LessThanOrEqual(filterValue) });
-              break;
-            case "inArr":
-                this.query.andWhere({ [key]: In(filterValue) });
-                break;
-            case "isNull":
-                this.query.andWhere({ [key]: IsNull() });
-                break;
-            case "notNull":
-                this.query.andWhere({ [key]: Not(IsNull()) });
-                break;
-            case "between":
-              if (filterValue?.split("|")?.length === 2) {
-                let from = filterValue?.split("|")?.[0];
-                let to = filterValue?.split("|")?.[1];
-                if (new Date(from) !== "Invalid Date" && !isNaN(new Date(from))) {
-                  from = new Date(from);
                 }
-                if (new Date(to) !== "Invalid Date" && !isNaN(new Date(to))) {
-                  to = new Date(to);
-                }
-                this.query.andWhere({
-                  [key]: Between(
-                    from,
-                    to
-                  ),
-                });
               }
-              break;
-            // Add more cases for other conditions as needed
+            })
+          }))
+
+        }
+        else {
+          const [operator, filterValue] = this.parseFilterValue(value);
+
+          if (operator && filterValue !== undefined) {
+            // Use different operators for different conditions
+            this.query.andWhere(this.filterKeyAccordingToOperator(operator, filterValue, key));
+          } else {
+            // Handle equality by default if no operator is specified
+            this.query.andWhere(`${key} = :value`, { value });
           }
-        } else {
-          // Handle equality by default if no operator is specified
-          this.query.andWhere(`${key} = :value`, { value });
         }
       });
     }
@@ -168,14 +148,14 @@ class ApiFeature {
     }
   }
 
-   isJson=(str)=> {
+  isJson = (str) => {
     try {
-        JSON.parse(str);
+      JSON.parse(str);
     } catch (e) {
-        return false;
+      return false;
     }
     return true;
-}
+  }
 
   parseFilterValueByType(value) {
     // Parse the filter value based on its type (e.g., handle string, numeric, etc.)
@@ -190,11 +170,65 @@ class ApiFeature {
     ) {
       return value.toLowerCase() === "true"; // Assume it's a boolean
     }
-    else if(this.isJson(value)){
+    else if (this.isJson(value)) {
       return JSON.parse(value);
     }
     else {
       return value; // Assume it's a string
+    }
+  }
+
+  filterKeyAccordingToOperator(op, filterValue, key) {
+    switch (op) {
+      case "eq":
+        return { [key]: Equal(filterValue) }
+
+      case "ne":
+        return { [key]: Not(filterValue) }
+
+      case "like":
+        return { [key]: ILike(filterValue) }
+
+      case "gt":
+        return { [key]: MoreThan(filterValue) }
+
+      case "lt":
+        return { [key]: LessThan(filterValue) }
+
+      case "gte":
+        return { [key]: MoreThanOrEqual(filterValue) }
+
+      case "lte":
+        return { [key]: LessThanOrEqual(filterValue) }
+
+      case "inArr":
+        return { [key]: In(filterValue) }
+
+      case "isNull":
+        return { [key]: IsNull() }
+
+      case "notNull":
+        return { [key]: Not(IsNull()) }
+
+      case "between":
+        if (filterValue?.split("|")?.length === 2) {
+          let from = filterValue?.split("|")?.[0];
+          let to = filterValue?.split("|")?.[1];
+          if (new Date(from) !== "Invalid Date" && !isNaN(new Date(from))) {
+            from = new Date(from);
+          }
+          if (new Date(to) !== "Invalid Date" && !isNaN(new Date(to))) {
+            to = new Date(to);
+          }
+          return {
+            [key]: Between(
+              from,
+              to
+            ),
+          }
+        }
+
+      // Add more cases for other conditions as needed
     }
   }
 }
