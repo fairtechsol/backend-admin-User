@@ -1908,7 +1908,7 @@ exports.getBetWallet = async (req, res) => {
     const demoUsers = await getAllUsers({ isDemo: true });
 
     select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
-    result = await getBet(`user.id is not null and betPlaced.createBy not in ('${demoUsers?.map((item) => item?.id).join("','")}')`, queryData, roleName, select, userId, isTeamNameAllow == 'false' ? false : true);
+    result = await getBet(`user.id is not null ${demoUsers?.length?`and betPlaced.createBy not in ('${demoUsers?.map((item) => item?.id).join("','")}')`:""}`, queryData, roleName, select, userId, isTeamNameAllow == 'false' ? false : true);
 
 
     if (!result[1]) {
