@@ -1358,6 +1358,9 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
 
 const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) => {
   if (matchBettingDetail?.activeStatus != betStatusType.live) {
+    logger.info({
+      info: `match betting details are not live. ${matchBettingDetail?.activeStatus}`,
+    });
     throw {
       statusCode: 400,
       message: {
@@ -1386,6 +1389,9 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
 
   let isManuallBookmakerMarket = [matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3]?.includes(betObj.matchBetType);
   if (betObj.amount > matchBettingDetail?.maxBet || (isManuallBookmakerMarket && matchBettingDetail?.maxBet / (3 - teams.placeIndex) < betObj.amount)) {
+    logger.info({
+      info: `bookmaker max value for index.`,
+    });
     throw {
       statusCode: 400,
       message: {
