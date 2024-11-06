@@ -1345,6 +1345,12 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
       return false;
     }
   } catch (error) {
+    logger.info({
+      info: `error at get session from provider ${betDetail.mid}`,
+      error: error,
+      stack: error.stack,
+      message: error.message,
+    });
     return true;
   }
   // check the rates of third party api
@@ -1352,6 +1358,9 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
 
 const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) => {
   if (matchBettingDetail?.activeStatus != betStatusType.live) {
+    logger.info({
+      info: `match betting details are not live. ${matchBettingDetail?.activeStatus}`,
+    });
     throw {
       statusCode: 400,
       message: {
@@ -1380,6 +1389,9 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
 
   let isManuallBookmakerMarket = [matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3]?.includes(betObj.matchBetType);
   if (betObj.amount > matchBettingDetail?.maxBet || (isManuallBookmakerMarket && matchBettingDetail?.maxBet / (3 - teams.placeIndex) < betObj.amount)) {
+    logger.info({
+      info: `bookmaker max value for index.`,
+    });
     throw {
       statusCode: 400,
       message: {
@@ -1521,6 +1533,12 @@ let checkThirdPartyRacingRate = async (matchBettingDetail, betObj, placeIndex, s
     }
   }
   catch (error) {
+    logger.info({
+      info: `error at get racing rate from provider ${matchBettingDetail.marketId}`,
+      error: error,
+      stack: error.stack,
+      message: error.message,
+    });
     throw {
       message: {
         msg: "bet.notLive"
@@ -1593,6 +1611,12 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
 
   }
   catch (error) {
+    logger.info({
+      info: `error at get rate from provider ${betObj.eventType} ${matchBettingDetail.eventId}`,
+      error: error,
+      stack: error.stack,
+      message: error.message,
+    });
     throw {
       message: {
         msg: "bet.notLive"
@@ -4116,6 +4140,12 @@ const validateCardBettingDetails = async (match, betObj, selectionId, userId) =>
     roundData = data?.data;
   }
   catch (error) {
+    logger.info({
+      info: `error at get card rate from provider ${match?.type}`,
+      error: error,
+      stack: error.stack,
+      message: error.message,
+    });
     throw {
       message: {
         msg: "bet.notLive"
