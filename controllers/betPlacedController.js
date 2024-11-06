@@ -1617,11 +1617,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
       stack: error.stack,
       message: error.message,
     });
-    throw {
-      message: {
-        msg: "bet.notLive"
-      }
-    };
+    throw error;
   }
 }
 
