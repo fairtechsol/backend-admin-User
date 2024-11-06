@@ -1594,6 +1594,14 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
     let filterData = matchBettingData?.section?.find((item) => item?.sid?.toString() == betObj?.selectionId?.toString());
     if (isBookmakerMarket) {
       let oddLength = filterData.odds.length / 2;
+      logger.info({
+        info: `odds while check the place index value max amount`,
+        oddsArray: filterData.odds,
+        maxBet: matchBettingDetail?.maxBet,
+        betAmount: betObj.amount,
+        index: teams.placeIndex,
+        oddLength: oddLength
+      });
       if (matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
         throw {
           statusCode: 400,
