@@ -1334,7 +1334,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     else {
 
       if (
-        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.size)
+        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.size)
       ) {
         return true;
       } else if (
@@ -1598,7 +1598,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
         let oddLength = 0;
 
         matchBettingData.section.forEach((section) => {
-            const filteredOdds = section.odds.filter((odd) => odd.odds > 0 && odd?.otype == betObj?.betType?.toLowerCase());
+            const filteredOdds = section.odds.filter((odd) => odd.odds > 0 && odd.otype == betObj?.betType?.toLowerCase());
             if (filteredOdds.length > oddLength) {
               oddLength = filteredOdds.length;
             }
