@@ -1288,10 +1288,10 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     );
     let filterData;
     if (sessionDetail?.gtype == "cricketcasino") {
-      filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == (parseInt(betDetail?.teamName?.split(" ")?.[0]) + 1)?.toString());
+      filterData = sessionDetail?.section?.find((item) => item.sid?.toString() == (parseInt(betDetail?.teamName?.split(" ")?.[0]) + 1)?.toString());
     }
     else {
-      filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == apiBetData?.selectionId?.toString());
+      filterData = sessionDetail?.section?.find((item) => item.sid?.toString() == apiBetData?.selectionId?.toString());
     }
     if (filterData?.gstatus != "" && filterData?.gstatus != "OPEN") {
       return true;
@@ -1299,11 +1299,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
 
     if (sessionDetail?.mname == "oddeven") {
       if (
-        (betDetail.teamName == "even") && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds)
+        (betDetail.teamName == "even") && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.odds)
       ) {
         return true;
       } else if (
-        betDetail.teamName == "odd" && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+        betDetail.teamName == "odd" && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -1312,7 +1312,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     }
     else if (sessionDetail?.gtype == "cricketcasino") {
       if (
-        (betDetail.betType == betType.BACK) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+        (betDetail.betType == betType.BACK) && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -1320,11 +1320,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     }
     else if (sessionDetail?.mname == "fancy1") {
       if (
-        (betDetail.betType == betType.LAY) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds)
+        (betDetail.betType == betType.LAY) && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.odds)
       ) {
         return true;
       } else if (
-        betDetail.betType == betType.BACK && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+        betDetail.betType == betType.BACK && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -1334,11 +1334,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     else {
 
       if (
-        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.size)
+        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.size)
       ) {
         return true;
       } else if (
-        betDetail.betType == betType.YES && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.size)
+        betDetail.betType == betType.YES && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.size)
       ) {
         return true;
       }
@@ -1589,21 +1589,21 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
       (d) => d.mid?.toString() == betObj.mid?.toString()
     );
     let filterData = matchBettingData?.section?.find((item) => item?.sid?.toString() == betObj?.selectionId?.toString());
-    if (isBookmakerMarket) {
-      let oddLength = filterData.odds.length / 2;
-      if (matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
-        throw {
-          statusCode: 400,
-          message: {
-            msg: "bet.maxAmountViolate"
-          }
-        };
-      }
-    }
 
     if (filterData) {
-      if (filterData?.odds?.find((item) => item?.tno == teams?.placeIndex && item?.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
+      if (filterData?.odds?.find((item) => item.tno == teams?.placeIndex && item.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
         return true;
+      }
+      if (isBookmakerMarket) {
+        let oddLength = filterData?.odds?.filter((item) => item?.otype == betObj?.betType?.toLowerCase() && item.odds > 0).length;
+        if (!oddLength || matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
+          throw {
+            statusCode: 400,
+            message: {
+              msg: "bet.maxAmountViolate"
+            }
+          };
+        }
       }
       return false;
     }
