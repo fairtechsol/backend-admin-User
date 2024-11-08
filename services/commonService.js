@@ -983,7 +983,7 @@ exports.calculateProfitLossForRacingMatchToResult = async (betId, userId, matchD
   return redisData;
 }
 
-exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type, partnership, isPending) => {
+exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type, partnership, isPending, result) => {
   let betPlace = await getMatchBetPlaceWithUserCard({
     createBy: userId,
     runnerId: runnerId,
@@ -1030,7 +1030,7 @@ exports.calculateProfitLossForCardMatchToResult = async (userId, runnerId, type,
         break;
     }
 
-    const data = new CardProfitLoss(type, oldPl.profitLoss[`${runnerId}_${sid}${redisKeys.card}`], { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: bets?.user?.[partnership] || 100, sid: sid }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
+    const data = new CardProfitLoss(type, oldPl.profitLoss[`${runnerId}_${sid}${redisKeys.card}`], { bettingType: bets?.betType, winAmount: bets.winAmount, lossAmount: bets.lossAmount, playerName: bets?.teamName, partnership: bets?.user?.[partnership] || 100, sid: sid, result: result }, (oldPl?.exposure || 0)).getCardGameProfitLoss();
     oldPl.profitLoss[`${runnerId}_${sid}${redisKeys.card}`] = data.profitLoss;
     oldPl.exposure = data.exposure;
   }
