@@ -1155,7 +1155,7 @@ exports.findUserPartnerShipObj = async (user) => {
  */
 exports.settingBetsDataAtLogin = async (user) => {
   if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id, { eventType: "cricket", marketType: Not(matchBettingType.tournament) });
+    const bets = await getUserDistinctBets(user.id, { eventType: In([gameType.cricket, gameType.politics]), marketType: Not(matchBettingType.tournament) });
     let sessionResult = {};
     let sessionExp = {};
     let matchResult = {};
@@ -1224,7 +1224,7 @@ exports.settingBetsDataAtLogin = async (user) => {
     let matchResult = {};
     let matchExposure = {};
     const matchIdDetail = {};
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: "cricket", marketType: Not(matchBettingType.tournament) });
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: In([gameType.cricket, gameType.politics]), marketType: Not(matchBettingType.tournament) });
     for (let item of bets) {
 
       let itemData = {
