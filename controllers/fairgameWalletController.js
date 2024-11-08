@@ -25,6 +25,7 @@ const {
   racingBettingType,
   sessionBettingType,
   casinoButtonValue,
+  cardGameType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss } = require("../services/betPlacedService");
@@ -7481,8 +7482,14 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
       maxLoss = (Math.abs(parseFloat(userRedisData?.[`${redisKeys.userMatchExposure}${result?.mid}`]))) || 0;
     }
     else {
+      let resultData;
+      if ([cardGameType.lucky7, cardGameType.lucky7eu].includes(matchData?.type)) {
+        const { desc } = result;
+        const resultSplit = desc?.split("||")?.map((item) => (item.replace(/\s+/g, '')?.toLowerCase()));
+        resultData = resultSplit?.[0]?.replace(/\s+/g, '')?.toLowerCase() == "tie" ? 7 : 0;
+      }
       // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
-      let redisData = await calculateProfitLossForCardMatchToResult(user.user?.id, result?.mid, matchData?.type);
+      let redisData = await calculateProfitLossForCardMatchToResult(user.user?.id, result?.mid, matchData?.type, null, null, resultData);
       maxLoss = redisData?.exposure;
     }
 
