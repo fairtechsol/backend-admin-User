@@ -1595,7 +1595,16 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
         return true;
       }
       if (isBookmakerMarket) {
-        let oddLength = filterData?.odds?.filter((item) => item?.otype == betObj?.betType?.toLowerCase() && item.odds > 0).length;
+        let oddLength = 0;
+
+        matchBettingData.section.forEach((section) => {
+            const filteredOdds = section.odds.filter((odd) => odd.odds > 0 && odd?.otype == betObj?.betType?.toLowerCase());
+            if (filteredOdds.length > oddLength) {
+              oddLength = filteredOdds.length;
+            }
+        });
+
+        // let oddLength = filterData?.odds?.filter((item) => item?.otype == betObj?.betType?.toLowerCase() && item.odds > 0).length;
         if (!oddLength || matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
           throw {
             statusCode: 400,
