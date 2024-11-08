@@ -893,7 +893,7 @@ exports.sessionBetPlace = async (req, res, next) => {
         winAmount = parseFloat((stake * ratePercent)).toFixed(2);
         loseAmount = parseFloat(stake * odds).toFixed(2);
       }
-     else if (sessionBetType == betType.NO) {
+      else if (sessionBetType == betType.NO) {
         winAmount = parseFloat((stake * odds)).toFixed(2);
         loseAmount = parseFloat((stake * ratePercent)).toFixed(2);
       }
@@ -1190,8 +1190,8 @@ const validateSessionBet = async (apiBetData, betDetails) => {
     };
   }
 
-    
-  if(apiBetData?.minBet == apiBetData?.maxBet){
+
+  if (apiBetData?.minBet == apiBetData?.maxBet) {
     throw {
       statusCode: 400,
       message: {
@@ -1369,7 +1369,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
-  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
+  if (matchBettingDetail?.minBet == matchBettingDetail?.maxBet) {
     throw {
       statusCode: 400,
       message: {
@@ -1400,7 +1400,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
-  
+
   let isBookmakerMarket = [matchBettingType.bookmaker, matchBettingType.bookmaker2]?.includes(betObj.matchBetType);
 
   let isRateChange = false;
@@ -4301,7 +4301,7 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.cmeter:
       return ((betObj.betType == betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
-      return ((betObj.betType == betType.BACK && ( Math.round(((parseFloat(currData.b1) * 0.01) + 1) * 100) / 100) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ( Math.round(((parseFloat(currData.l1) * 0.01) + 1) * 100) / 100) != parseFloat(betObj.odds)))
+      return ((betObj.betType == betType.BACK && (Math.round(((parseFloat(currData.b1) * 0.01) + 1) * 100) / 100) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && (Math.round(((parseFloat(currData.l1) * 0.01) + 1) * 100) / 100) != parseFloat(betObj.odds)))
     case cardGameType.teen9:
       return ((betObj?.teamName[0]?.toLowerCase() == "t" && currData?.trate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "l" && currData?.lrate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "d" && currData?.drate != betObj?.odds))
     case cardGameType.ballbyball:
