@@ -82,8 +82,12 @@ class CardProfitLoss {
     }
 
     lucky7() {
-        const { lossAmount, partnership, result } = this.data;
-        return { profitLoss: -Math.abs(parseFloat((parseFloat((lossAmount * partnership) / 100 || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(result == 7 ? lossAmount * 2 : lossAmount || 0) };
+        const { lossAmount, partnership, result, playerName } = this.data;
+        
+        if (result == 7  && (this.removeSpacesAndToLowerCase(playerName) == "highcard" || this.removeSpacesAndToLowerCase(playerName) == "lowcard")) {
+            return { profitLoss: -Math.abs(parseFloat((parseFloat((lossAmount * partnership) / 100 || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat( lossAmount * 2 ) };
+        }
+        return { profitLoss: -Math.abs(parseFloat((parseFloat((lossAmount * partnership) / 100 || 0) - parseFloat(this.oldProfitLoss || 0)).toFixed(2))), exposure: parseFloat(this.oldExposure || 0) + parseFloat(lossAmount || 0) };
     }
 
     card32() {
