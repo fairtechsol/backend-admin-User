@@ -1500,19 +1500,21 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
 
     });
 
-    bulkWalletRecord.push(
-      {
-        matchId: matchId,
-        actionBy: userId,
-        searchId: user.user.id,
-        userId: user.user.id,
-        amount: -profitLoss,
-        transType: -profitLoss < 0 ? transType.loss : transType.win,
-        closingBalance: userCurrBalance,
-        description: `Revert ${user?.eventType}/${user?.eventName}/session`,
-        betId: [betId]
-      }
-    );
+    if (betPlace?.[0]?.result != resultType.tie) {
+      bulkWalletRecord.push(
+        {
+          matchId: matchId,
+          actionBy: userId,
+          searchId: user.user.id,
+          userId: user.user.id,
+          amount: -profitLoss,
+          transType: -profitLoss < 0 ? transType.loss : transType.win,
+          closingBalance: userCurrBalance,
+          description: `Revert ${user?.eventType}/${user?.eventName}/session`,
+          betId: [betId]
+        }
+      );
+    }
 
     if (!user.user.isDemo) {
       let parentUsers = await getParentsWithBalance(user.user.id);

@@ -648,6 +648,9 @@ class CardWinOrLose {
         if (["player", "banker", "tie"].includes(betOnTeamKey) && parseInt(selectionId) == parseInt(win)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
+        else if (betOnTeamKey == "banker" && parseInt(win) == 4) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount / 2, lossAmount: this.betPlaceData.lossAmount };
+        }
         else if (parseInt(win) == 3 && ["player", "banker"].includes(betOnTeamKey)) {
             return { result: betResultStatus.TIE, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
@@ -680,6 +683,9 @@ class CardWinOrLose {
 
         if (["player", "banker", "tie"].includes(betOnTeamKey) && parseInt(selectionId) == parseInt(win)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey == "banker" && parseInt(win) == 4) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount / 2, lossAmount: this.betPlaceData.lossAmount };
         }
         else if (parseInt(win) == 3 && ["player", "banker"].includes(betOnTeamKey)) {
             return { result: betResultStatus.TIE, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
