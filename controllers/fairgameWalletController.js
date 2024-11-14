@@ -7338,12 +7338,22 @@ exports.declarCardMatchResult = async (req, res) => {
     let updateRecords = [];
     const userData = new Set();
     for (let item of betPlaced) {
-      const calculatedBetPlaceData = new CardWinOrLose(type, item?.teamName, result, item?.betType, item).getCardGameProfitLoss()
-      item.result = calculatedBetPlaceData.result;
-      item.lossAmount = calculatedBetPlaceData.lossAmount;
-      item.winAmount = calculatedBetPlaceData.winAmount;
-      updateRecords.push(item);
-      userData.add(item?.user?.id);
+      if (result.result == "noresult") {
+        item.result = betResultStatus.TIE;
+        item.lossAmount = item.lossAmount;
+        item.winAmount = item.winAmount;
+        updateRecords.push(item);
+        userData.add(item?.user?.id);
+      }
+      else {
+        const calculatedBetPlaceData = new CardWinOrLose(type, item?.teamName, result, item?.betType, item).getCardGameProfitLoss()
+        item.result = calculatedBetPlaceData.result;
+        item.lossAmount = calculatedBetPlaceData.lossAmount;
+        item.winAmount = calculatedBetPlaceData.winAmount;
+        updateRecords.push(item);
+        userData.add(item?.user?.id);
+      }
+
     }
 
     await addNewBet(updateRecords);
@@ -7485,7 +7495,7 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
     }
     else {
       let resultData;
-      if ([cardGameType.lucky7, cardGameType.lucky7eu].includes(matchData?.type)) {
+      if ([cardGameType.lucky7, cardGameType.lucky7eu].includes(matchData?.type)&&result?.result!="noresult") {
         const { desc } = result;
         const resultSplit = desc?.split("||")?.map((item) => (item.replace(/\s+/g, '')?.toLowerCase()));
         resultData = resultSplit?.[0]?.replace(/\s+/g, '')?.toLowerCase() == "tie" ? 7 : 0;

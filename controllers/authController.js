@@ -179,7 +179,7 @@ exports.login = async (req, res) => {
     setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, roleName: user.roleName, userName: user.userName },
+      { id: user.id, roleName: user.roleName, userName: user.userName,isDemo:user.isDemo },
       jwtSecret
     );
 
