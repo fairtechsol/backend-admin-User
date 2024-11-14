@@ -16,6 +16,7 @@
   "settledCommission" : "Commission settled successfully.",
   "settleAccount": "Please settle {name} account first.",
   "deleted": "{name} deleted successfully.",
+  "refreshPage":"Something went wrong, please refresh your page",
   "auth": {
     "loginSuccess": "Login successfully.",
     "invalidPass": "Invalid {type} password.",
@@ -75,6 +76,7 @@
     "placeBetAfter5": "Place bet after {time} seconds",
     "alreadyPlacedOnDiff": "Bet not confirm bet already exists on {name} Card.",
     "limitExceed":"You cannot place a bet more than {limit} times.",
-    "equalMinMax":"Bet Not Confirm Reason Min And Max Bet Range Not Valid."
+    "equalMinMax":"Bet Not Confirm Reason Min And Max Bet Range Not Valid.",
+    
   }
 }
