@@ -209,7 +209,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     }
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
-    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType)) {
+    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType)) {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
 
