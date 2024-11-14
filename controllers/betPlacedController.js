@@ -213,7 +213,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
 
-    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType) && newCalculateOdd > 400) {
+    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType) && newCalculateOdd > 400) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
     }
    
