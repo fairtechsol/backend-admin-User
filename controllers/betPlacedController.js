@@ -159,6 +159,14 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let reqUser = req.user;
     let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, mid, selectionId } = req.body;
 
+    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
+    if (isTiedOrCompMatch) {
+      teamA = teamA.toUpperCase();
+      teamB = teamB.toUpperCase();
+      teamC = teamC ? teamC.toUpperCase() : teamC;
+      betOnTeam = betOnTeam?.toUpperCase();
+    }
+
     if(![teamA,teamB,teamC].includes(betOnTeam)){
       logger.info({
         info: `Team name different for bet ${reqUser.id}`,
@@ -208,13 +216,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType) && newCalculateOdd > 400) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
     }
-    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
-    if (isTiedOrCompMatch) {
-      teamA = teamA.toUpperCase();
-      teamB = teamB.toUpperCase();
-      teamC = teamC ? teamC.toUpperCase() : teamC;
-      betOnTeam = betOnTeam?.toUpperCase();
-    }
+   
 
     if (bettingType == betType.BACK) {
       winAmount = (stake * newCalculateOdd) / 100;
