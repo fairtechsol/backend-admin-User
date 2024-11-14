@@ -43,7 +43,7 @@ exports.getCardResultDetailByFGWallet = async (req, res) => {
       }
     }
 
-    let betPlaced = await getBetsCondition(req.user, { "betPlaced.runnerId": id });
+    let betPlaced = await getBetsCondition(req.user, { "betPlaced.runnerId": id, "sort": "betPlaced.createdAt:ASC" });
     if (betPlaced[1]) {
       result.data.bets = {
         count: betPlaced[1],
