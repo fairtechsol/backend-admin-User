@@ -159,7 +159,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let reqUser = req.user;
     let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, mid, selectionId } = req.body;
 
-    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
+    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeMatch1, matchBettingType.completeManual].includes(matchBetType);
     if (isTiedOrCompMatch) {
       teamA = teamA.toUpperCase();
       teamB = teamB.toUpperCase();
