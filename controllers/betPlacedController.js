@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType, profitLossKeys } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType, profitLossKeys, matchesTeamName } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -158,6 +158,15 @@ exports.matchBettingBetPlaced = async (req, res) => {
     });
     let reqUser = req.user;
     let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, mid, selectionId } = req.body;
+
+    if(![teamA,teamB,teamC].includes(betOnTeam)){
+      logger.info({
+        info: `Team name different for bet ${reqUser.id}`,
+        data: req.body
+      });
+      return ErrorResponse({ statusCode: 403, message: { msg: "refreshPage"} }, req, res);
+
+    }
 
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     let user = userBalanceData?.user;
