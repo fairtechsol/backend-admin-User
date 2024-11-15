@@ -2410,7 +2410,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
         type: "Complete Match",
         result: "YES",
-        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeManual || item?.type == matchBettingType.completeMatch || item.marketType === matchBettingType.completeMatch1)?.map((item) => item?.id)
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeManual || item?.type == matchBettingType.completeMatch || item.type === matchBettingType.completeMatch1)?.map((item) => item?.id)
         
       }]:[])
     ];
