@@ -1603,8 +1603,15 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
       (d) => d.mid?.toString() == betObj.mid?.toString()
     );
     let filterData = matchBettingData?.section?.find((item) => item?.sid?.toString() == betObj?.selectionId?.toString());
-
     if (filterData) {
+      if (!['ACTIVE', 'OPEN', ''].includes(filterData.gstatus)) {
+        throw {
+          statusCode: 400,
+          message: {
+            msg: "bet.notLive"
+          }
+        };
+      }
       if (filterData?.odds?.find((item) => item.tno == teams?.placeIndex && item.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
         return true;
       }
