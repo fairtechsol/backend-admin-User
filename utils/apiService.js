@@ -71,5 +71,8 @@ exports.allApiRoutes = {
       [gameType.football]:"/getAllRateFootBallTennis/",
       [gameType.tennis]: "/getAllRateFootBallTennis/"
     }
+  },
+  MAC88:{
+    login:"/operator/login"
   }
 }

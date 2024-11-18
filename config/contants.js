@@ -5,6 +5,10 @@ module.exports.casinoMicroServiceDomain = process.env.CASINOMICROSERVICEURL || "
 module.exports.oldBetFairDomain = process.env.OLD_BETFAIR_DOMAIN_URL || 'http://localhost:5001';
 module.exports.jwtSecret = process.env.JWT_SECRET || "secret";
 
+module.exports.mac88Domain = process.env.MAC_88_DOMAIN || "https://dev-api.dreamdelhi.com/api";
+module.exports.mac88CasinoPPK = process.env.MAC88_PRIVATE_KEY;
+module.exports.mac88CasinoOperatorId = process.env.MAC88_OPERATOR_ID;
+
 module.exports.resultType = {
   tie: "Tie",
   noResult: "No Result",
