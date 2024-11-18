@@ -23,10 +23,10 @@ exports.loginMac88Casino = async (req, res) => {
             "username": user.userName,
             "platformId": platformId,
             "lobby": false,
-            "clientIp": req.headers["x-forwarded-for"] || req.socket.remoteAddress,
+            "clientIp": "52.56.207.91",
             "currency": "INR",
-            "balance": userRedisData?.currentBalance,
-            "redirectUrl": "https://hypexone.com"
+            "balance": parseInt(userRedisData?.currentBalance || 0),
+            "redirectUrl": "https://devmaxbet9api.fairgame.club"
         }
         let result;
         if (userRedisData) {
