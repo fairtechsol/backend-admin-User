@@ -7,7 +7,7 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 
 exports.loginMac88Casino = async (req, res) => {
     try {
-        const { gameId, platformId } = req.body;
+        const { gameId, platformId, providerName } = req.body;
 
         const user = await getUserById(req.user.id, ["id", "userName", "isDemo"]);
         if (user.isDemo) {
@@ -17,7 +17,7 @@ exports.loginMac88Casino = async (req, res) => {
 
         let casinoData = {
             "operatorId": mac88CasinoOperatorId,
-            "providerName": "EZUGI",
+            "providerName": providerName,
             "gameId": gameId,
             "userId": user.id,
             "username": user.userName,
@@ -127,6 +127,36 @@ exports.rollBackRequestMac88 = async (req, res) => {
             "balance": 1000,
             "status": "OP_SUCCESS"
         })
+    }
+    catch (error) {
+        return ErrorResponse(
+            {
+                statusCode: 500,
+                message: error.message,
+            },
+            req,
+            res
+        );
+    }
+}
+
+exports.getMac88GameList = async (req, res) => {
+    try {
+
+        let casinoData = {
+            "operator_id": mac88CasinoOperatorId
+        }
+        let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
+
+
+        return SuccessResponse(
+            {
+                statusCode: 200,
+                data: result,
+            },
+            req,
+            res
+        );
     }
     catch (error) {
         return ErrorResponse(

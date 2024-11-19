@@ -73,6 +73,7 @@ exports.allApiRoutes = {
     }
   },
   MAC88:{
-    login:"/operator/login"
+    login:"/operator/login",
+    gameList:"/operator/get-games-list"
   }
 }

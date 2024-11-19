@@ -1,22 +1,7 @@
 const crypto = require("crypto");
-const { mac88CasinoPPK } = require("../config/contants");
-
+const fs = require("fs");
 exports.generateRSASignature = (data) => {
-    const privateKey = `-----BEGIN RSA PRIVATE KEY-----
-MIICWgIBAAKBgHhvBRpRX4qo61cMGpc/Iis5Pahw4+lHAw0hwIx8AJ4vvAFS/52t
-Rywy9CMg/saC12dclQP3PjgX+8H5a3cTxAeus0TRG4CfU+kuTAFBE2XiCJK+mU+F
-D5uGd6PwGdrL07ut8J0KIWdczqSv1MOU1bR7ytfCrcJBu1D04+QVuspnAgMBAAEC
-gYBG+L3cFYolL4iIorRk3yqmqDPiuKxGw7dTnMlYwJaood68NQo4BG5F6L0gmogp
-ud9wpQmX7bL34YJWfELNSJOjVzc90+CHc+TPIyqkRmgZ361L4u5qdvLBKqmKYBVo
-1xAMpaQHb5Mcl22Ch0HAU+5kdiwm0Ca9lpTI+DdpTHisIQJBAMN13B0vn/x/9WJP
-g5YTCHfJo5C3/db7aVqunQ1l+FZfotTRDuOLWbDnhXnZ9oOVRJLJCZhrDoF75KMM
-wh6ui/ECQQCdvEI3g9c4gusiLao5fE2WbH0FeH/rCjgj/EWPiTy6vfyxNxDtaVsw
-PZJDeunFXssMbrLfm0R7hwVOTgnKpnPXAkAsJWiLpwAJdZUkmTTtJmtZMs+glg3d
-CnenJZ0PM6K9T2hljLpCJm0hiYkaFmKZIZOVW5axOCzUjfj74pvNdjrhAkAvEBap
-vbqfb+B8SCe8EyyLLz92PGfeVyQ9CG4wz3/BMCKPNaDlVUQR9q0HWUsaypfG09in
-AwrB2J1qqboeLt/tAkBrWDzmsB0IEMaa5ujjObua8r7armrjuCrN2/fm5tiEqYGb
-fDzugdipWE8lQV0OR1RJEuCtw/zxqAvRfb9DDYRk
------END RSA PRIVATE KEY-----`;
+    const privateKey = fs.readFileSync("mac88casino.pem", "utf8");
     // Create the signer object using SHA256
     const sign = crypto.createSign("SHA256");
 
