@@ -60,7 +60,7 @@ exports.getBalanceMac88 = async (req, res) => {
     try {
         console.log(req.body);
 
-        return res.send(200).json({
+        return res.sendStatus(200).json({
             "balance": 1000,
             "status": "OP_SUCCESS"
         })
@@ -81,7 +81,7 @@ exports.getBetsMac88 = async (req, res) => {
     try {
         console.log(req.body);
 
-        return res.send(200).json({
+        return res.sendStatus(200).json({
             "balance": 1000,
             "status": "OP_SUCCESS"
         })
@@ -102,7 +102,7 @@ exports.resultRequestMac88 = async (req, res) => {
     try {
         console.log(req.body);
 
-        return res.send(200).json({
+        return res.sendStatus(200).json({
             "balance": 1000,
             "status": "OP_SUCCESS"
         })
@@ -123,7 +123,7 @@ exports.rollBackRequestMac88 = async (req, res) => {
     try {
         console.log(req.body);
 
-        return res.send(200).json({
+        return res.sendStatus(200).json({
             "balance": 1000,
             "status": "OP_SUCCESS"
         })
