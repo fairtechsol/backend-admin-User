@@ -1,8 +1,9 @@
-const { mac88Domain, mac88CasinoOperatorId } = require("../config/contants");
+const { mac88Domain, mac88CasinoOperatorId, socketData } = require("../config/contants");
 const { getUserRedisData, incrementValuesRedis } = require("../services/redis/commonfunction");
 const {  updateUserBalanceData } = require("../services/userBalanceService");
 const { getUserById } = require("../services/userService");
 const { addVirtualCasinoBetPlaced } = require("../services/virtualCasinoBetPlacedsService");
+const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { generateRSASignature } = require("../utils/generateCasinoSignature");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
@@ -113,6 +114,8 @@ exports.getBetsMac88 = async (req, res) => {
         await updateUserBalanceData(userId, { balance: -parseFloat(debitAmount) });
         await incrementValuesRedis(userId, { balance: -parseFloat(debitAmount) });
 
+        const updatedBalance = parseFloat(balance) - parseFloat(debitAmount);
+
         await addVirtualCasinoBetPlaced({
             betType: betType,
             amount: -debitAmount,
@@ -125,9 +128,14 @@ exports.getBetsMac88 = async (req, res) => {
             transactionId: transactionId,
             userId: userId
         });
-
+        
+        sendMessageToUser(
+            userId,
+            socketData.userBalanceUpdateEvent,
+            { currentBalance: updatedBalance }
+          );
         return res.status(200).json({
-            "balance": parseFloat(balance) - parseFloat(debitAmount),
+            "balance": updatedBalance,
             "status": "OP_SUCCESS"
         });
     }
