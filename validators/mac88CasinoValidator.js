@@ -7,5 +7,7 @@ module.exports.casinoLoginValidate = Joi.object({
     platformId: Joi.string().required().messages({
         "any.required": "Platform id is required",
     }),
-
+    providerName: Joi.string().required().messages({
+        "any.required": "Provider name is required",
+    }),
 });
