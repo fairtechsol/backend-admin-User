@@ -20,8 +20,8 @@ exports.addTransaction = async (body) => {
 };
 exports.updateTransactionData = async (id, data) => {
   await Transaction.query(`update "transactions" set "amount" = "amount" + $2, "closingBalance" = "closingBalance" + $2, "transType" = CASE 
-                          WHEN ("amount" + $2) < 0 THEN 'LOSS' 
-                          ELSE 'WIN' 
+                          WHEN ("amount" + $2) < 0 THEN 'loss'::transactions_transtype_enum 
+                    ELSE 'win'::transactions_transtype_enum  
                         END where "id" = $1`, [id, (data.amount || 0)]);
 }
 
