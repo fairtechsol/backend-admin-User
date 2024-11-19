@@ -52,7 +52,8 @@ exports.allApiRoutes = {
     updateBalance:"/superAdmin/update/balance/SA",
     autoLockUnlockUser:"/superAdmin/auto/lockUnlockUser",
     cardResultList:"/superadmin/cards/result/",
-    cardResultDetail:"/superadmin/cards/result/detail/"
+    cardResultDetail:"/superadmin/cards/result/detail/",
+    virtualCasinoResult:"/superadmin/virtual/casino/result"
   },
   EXPERT:{
     partnershipId:"/superAdmin/partnershipId/"

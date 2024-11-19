@@ -2,7 +2,7 @@ const { AppDataSource } = require("../config/postGresConnection");
 const virtualCasinoBetPlacedSchema = require("../models/virtualCasinoBetPlaceds.entity");
 const VirtualCasino = AppDataSource.getRepository(virtualCasinoBetPlacedSchema);
 
-exports.getVirtualCasinoBetPlaced = async (where, query) => {
+exports.getVirtualCasinoBetPlaceds = async (where, query) => {
     let pgQuery = VirtualCasino.createQueryBuilder().where(where);
 
     return await new ApiFeature(
@@ -28,4 +28,8 @@ exports.deleteVirtualCasinoBetPlaced = async (body) => {
 
 exports.updateVirtualCasinoBetPlaced = async (conditionObj, updateColumsObj) => {
     return await VirtualCasino.update(conditionObj, updateColumsObj);
+}
+
+exports.getVirtualCasinoBetPlaced = async (where, select) => {
+    return await VirtualCasino.findOne({ where:where, select: select });
 }

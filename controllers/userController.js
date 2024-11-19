@@ -102,7 +102,8 @@ exports.createUser = async (req, res) => {
       amount: 0,
       transType: transType.add,
       closingBalance: insertUser.creditRefrence,
-      description: walletDescription.userCreate
+      description: walletDescription.userCreate,
+      type: 0
     }];
     if (insertUser.createdBy != insertUser.id) {
       transactionArray.push({
@@ -112,7 +113,8 @@ exports.createUser = async (req, res) => {
         amount: 0,
         transType: transType.withDraw,
         closingBalance: insertUser.creditRefrence,
-        description: walletDescription.userCreate
+        description: walletDescription.userCreate,
+        type: 0
       });
     }
 
@@ -211,7 +213,8 @@ exports.loginWithDemoUser = async (req, res) => {
       amount: 1500,
       transType: transType.add,
       closingBalance: 1500,
-      description: walletDescription.demoUserCreate
+      description: walletDescription.demoUserCreate,
+      type: 0
     }];
 
 

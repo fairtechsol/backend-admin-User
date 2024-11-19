@@ -52,9 +52,14 @@ const transactionSchema = new EntitySchema({
             nullable: true,
             array: true,
         },
-        uniqueId:{
-            type:'int',
-            nullable:true
+        uniqueId: {
+            type: 'int',
+            nullable: true
+        },
+        //0 settlement,1 sports,2 casino, 3 third party
+        type: {
+            type: 'int',
+            nullable: true
         }
     },
     relations: {
@@ -84,6 +89,11 @@ const transactionSchema = new EntitySchema({
             name: 'transaction_searchId',   // index name should be start with the table name
             unique: false, // Optional: Set to true if you want a unique index
             columns: ['searchId'],
+        },
+        {
+            name: 'transaction_type',   // index name should be start with the table name
+            unique: false, // Optional: Set to true if you want a unique index
+            columns: ['type'],
         }
     ],
 });

@@ -10,10 +10,20 @@ exports.getTransactionById = async (id) => {
   return await Transaction.findOne({ id });
 };
 
+exports.getTransaction = async (where,select) => {
+  return await Transaction.findOne({ where: where, select: select });
+};
+
 exports.addTransaction = async (body) => {
   let insertUser = await Transaction.save(body);
   return insertUser;
 };
+exports.updateTransactionData = async (id, data) => {
+  await Transaction.query(`update "transactions" set "amount" = "amount" + $2, "closingBalance" = "closingBalance" + $2, "transType" = CASE 
+                          WHEN ("amount" + $2) < 0 THEN 'LOSS' 
+                          ELSE 'WIN' 
+                        END where "id" = $1`, [id, (data.amount || 0)]);
+}
 
 exports.insertTransactions = async (transactions) => {
   let insertUser = await Transaction.insert(transactions);
