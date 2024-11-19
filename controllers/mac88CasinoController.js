@@ -1,5 +1,6 @@
 const { mac88Domain, mac88CasinoOperatorId } = require("../config/contants");
 const { getUserRedisData } = require("../services/redis/commonfunction");
+const { getUserBalanceDataByUserId } = require("../services/userBalanceService");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { generateRSASignature } = require("../utils/generateCasinoSignature");
@@ -25,7 +26,7 @@ exports.loginMac88Casino = async (req, res) => {
             "lobby": false,
             "clientIp": "52.56.207.91",
             "currency": "INR",
-            "balance": parseInt(userRedisData?.currentBalance || 0),
+            "balance": parseInt(userRedisData?.currentBalance || 0) - parseInt(userRedisData?.exposure || 0),
             "redirectUrl": "https://devmaxbet9api.fairgame.club"
         }
         let result;
@@ -58,10 +59,18 @@ exports.loginMac88Casino = async (req, res) => {
 
 exports.getBalanceMac88 = async (req, res) => {
     try {
-        console.log(req.body);
+        const { userId } = req.body;
+        const userRedisData = await getUserRedisData(userId);
+        if (!userRedisData) {
+            return res.status(400).json({
+                "status": "OP_USER_NOT_FOUND"
+            })
+        }
+        let balance = parseInt(userRedisData?.currentBalance || 0) - parseInt(userRedisData?.exposure || 0)
+
 
         return res.status(200).json({
-            "balance": 1000,
+            "balance": balance,
             "status": "OP_SUCCESS"
         })
     }
@@ -148,7 +157,9 @@ exports.getMac88GameList = async (req, res) => {
         }
         let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
 
-
+        result = result?.data?.reduce((prev, curr) => {
+            return { ...prev, [curr.provider_name]: { ...(prev[curr.provider_name] || {}), [curr?.category]: [...(prev?.[curr.provider_name]?.[curr.category] || []), curr] } }
+        },{});
         return SuccessResponse(
             {
                 statusCode: 200,
