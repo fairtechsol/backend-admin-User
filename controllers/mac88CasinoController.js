@@ -1,7 +1,8 @@
 const { mac88Domain, mac88CasinoOperatorId } = require("../config/contants");
-const { getUserRedisData } = require("../services/redis/commonfunction");
-const { getUserBalanceDataByUserId } = require("../services/userBalanceService");
+const { getUserRedisData, incrementValuesRedis } = require("../services/redis/commonfunction");
+const {  updateUserBalanceData } = require("../services/userBalanceService");
 const { getUserById } = require("../services/userService");
+const { addVirtualCasinoBetPlaced } = require("../services/virtualCasinoBetPlacedsService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { generateRSASignature } = require("../utils/generateCasinoSignature");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
@@ -66,7 +67,7 @@ exports.getBalanceMac88 = async (req, res) => {
                 "status": "OP_USER_NOT_FOUND"
             })
         }
-        let balance = parseInt(userRedisData?.currentBalance || 0) - parseInt(userRedisData?.exposure || 0)
+        let balance = parseFloat(userRedisData?.currentBalance || 0) - parseFloat(userRedisData?.exposure || 0)
 
 
         return res.status(200).json({
@@ -88,12 +89,47 @@ exports.getBalanceMac88 = async (req, res) => {
 
 exports.getBetsMac88 = async (req, res) => {
     try {
-        console.log(req.body);
+        const { userId, betType, debitAmount, gameId, operatorId, reqId, roundId, runnerName, token, transactionId } = req.body;
+        const userRedisData = await getUserRedisData(userId);
+        if (!userRedisData) {
+            return res.status(400).json({
+                "status": "OP_USER_NOT_FOUND"
+            })
+        }
+
+        const userData = await getUserById(userId, ["userBlock", "id", "betBlock"]);
+        if (userData?.betBlock || userData?.userBlock) {
+            return res.status(400).json({
+                "status": "OP_USER_BLOCKED"
+            })
+        }
+        let balance = parseFloat(userRedisData?.currentBalance || 0) - parseFloat(userRedisData?.exposure || 0)
+        if (balance <= 0) {
+            return res.status(400).json({
+                "status": "OP_INSUFFICIENT_FUNDS"
+            })
+        }
+
+        await updateUserBalanceData(userId, { balance: -parseFloat(debitAmount) });
+        await incrementValuesRedis(userId, { balance: -parseFloat(debitAmount) });
+
+        await addVirtualCasinoBetPlaced({
+            betType: betType,
+            amount: -debitAmount,
+            gameId: gameId,
+            operatorId: operatorId,
+            reqId: reqId,
+            roundId: roundId,
+            runnerName: runnerName,
+            token: token,
+            transactionId: transactionId,
+            userId: userId
+        });
 
         return res.status(200).json({
-            "balance": 1000,
+            "balance": parseFloat(balance) - parseFloat(debitAmount),
             "status": "OP_SUCCESS"
-        })
+        });
     }
     catch (error) {
         return ErrorResponse(
@@ -159,7 +195,7 @@ exports.getMac88GameList = async (req, res) => {
 
         result = result?.data?.reduce((prev, curr) => {
             return { ...prev, [curr.provider_name]: { ...(prev[curr.provider_name] || {}), [curr?.category]: [...(prev?.[curr.provider_name]?.[curr.category] || []), curr] } }
-        },{});
+        }, {});
         return SuccessResponse(
             {
                 statusCode: 200,
