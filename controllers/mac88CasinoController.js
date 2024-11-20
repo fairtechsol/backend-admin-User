@@ -202,7 +202,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
     }
 
     const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId });
-    const userCurrProfitLoss = parseFloat(creditAmount) - parseFloat(userPrevBetPlaced.amount);
+    const userCurrProfitLoss = parseFloat(creditAmount) + parseFloat(userPrevBetPlaced.amount);
     const userCurrBalance = parseFloat(user?.userBal?.currentBalance) + parseFloat(creditAmount)
     //getting wallet profitloss
     const fwProfitLoss = parseFloat(((-userCurrProfitLoss * user.fwPartnership) / 100).toString());
