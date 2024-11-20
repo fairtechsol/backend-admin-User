@@ -11,8 +11,9 @@ const verifyRSA = async (req, res, next) => {
         const data = req.body;
         const publicKey = fs.readFileSync("mac88casinoPublic.pem", "utf8");
 
+	const verifier = crypto.createVerify('sha256'); // Use the same hash algorithm
         verifier.update(JSON.stringify(data));
-const verifier = crypto.createVerify('sha256'); // Use the same hash algorithm
+
         verifier.end();
 console.log(publicKey,signature,data)
         const isValid = verifier.verify(publicKey, signature, 'base64');
