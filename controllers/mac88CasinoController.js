@@ -160,16 +160,17 @@ exports.getBetsMac88 = async (req, res) => {
 
 exports.resultRequestMac88 = async (req, res) => {
     try {
-        const { userId, creditAmount, gameId, roundId, transactionId } = req.body;
+        const { userId, creditAmount, transactionId } = req.body;
+        console.log("Credit amount", creditAmount);
         const userRedisData = await getUserRedisData(userId);
         let currUserData;
         if (!userRedisData) {
-            currUserData = await getUserBalanceDataByUserId(userId, ["currentBalance","exposure"])
+            currUserData = await getUserBalanceDataByUserId(userId, ["currentBalance", "exposure"])
         }
-
+        console.log("CurrBalance", userRedisData?.currentBalance, currUserData?.currentBalance);
         const balance = parseFloat(userRedisData?.currentBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure) + parseFloat(creditAmount);
-
-        calculateMac88ResultDeclare(userId, creditAmount, gameId, roundId, transactionId, userRedisData);
+        console.log("userBalance", balance);
+        calculateMac88ResultDeclare(userId, creditAmount, transactionId, userRedisData);
 
         return res.status(200).json({
             "balance": balance,
@@ -188,7 +189,7 @@ exports.resultRequestMac88 = async (req, res) => {
     }
 }
 
-const calculateMac88ResultDeclare = async (userId, creditAmount, gameId, roundId, transactionId, userRedisData) => {
+const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, userRedisData) => {
     let superAdminData = {};
     const user = await getUserDataWithUserBalance({ id: userId });
     if (!user) {
@@ -202,7 +203,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, gameId, roundId
     const userCurrBalance = parseFloat(user?.userBal?.currentBalance) + parseFloat(creditAmount)
     //getting wallet profitloss
     const fwProfitLoss = parseFloat(((-userCurrProfitLoss * user.fwPartnership) / 100).toString());
-
+    console.log("user curr amount", userCurrProfitLoss, userPrevBetPlaced.amount)
     logger.info({
         message: `User balance and profit loss during declare of virtual casino for user ${userId}: `,
         data: {
@@ -219,7 +220,6 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, gameId, roundId
     });
 
     if (userRedisData) {
-
         await incrementValuesRedis(user.id, {
             profitLoss: userCurrProfitLoss,
             myProfitLoss: userCurrProfitLoss,
