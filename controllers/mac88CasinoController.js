@@ -163,12 +163,15 @@ exports.resultRequestMac88 = async (req, res) => {
         const { userId, creditAmount, transactionId } = req.body;
         console.log("Credit amount", creditAmount);
         const userRedisData = await getUserRedisData(userId);
+        
         let currUserData;
+        let userBalance;
         if (!userRedisData) {
+            userBalance = await incrementRedisBalance(userId, creditAmount);
             currUserData = await getUserBalanceDataByUserId(userId, ["currentBalance", "exposure"])
         }
-        console.log("CurrBalance", userRedisData?.currentBalance, currUserData?.currentBalance);
-        const balance = parseFloat(userRedisData?.currentBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure) + parseFloat(creditAmount);
+        console.log("CurrBalance", userBalance, currUserData?.currentBalance);
+        const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure) + parseFloat(creditAmount);
         console.log("userBalance", balance);
         calculateMac88ResultDeclare(userId, creditAmount, transactionId, userRedisData);
 
@@ -190,6 +193,7 @@ exports.resultRequestMac88 = async (req, res) => {
 }
 
 const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, userRedisData) => {
+    
     let superAdminData = {};
     const user = await getUserDataWithUserBalance({ id: userId });
     if (!user) {
@@ -223,7 +227,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
         await incrementValuesRedis(user.id, {
             profitLoss: userCurrProfitLoss,
             myProfitLoss: userCurrProfitLoss,
-            currentBalance: parseFloat(creditAmount)
+            // currentBalance: parseFloat(creditAmount)
         });
     }
 

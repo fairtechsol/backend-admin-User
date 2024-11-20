@@ -47,6 +47,10 @@ exports.incrementValuesRedis = async (userId, value, updateValues) => {
   await pipeline.exec();
 };
 
+// Assuming internalRedis is the Redis client instance
+exports.incrementRedisBalance = async (userId, value) => {
+ return await internalRedis.hincrbyfloat(userId, "currentBalance", value)
+};
 
 exports.hasUserInCache = async (userId) => {
   return await internalRedis.exists(userId);
