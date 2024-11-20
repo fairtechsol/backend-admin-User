@@ -1,9 +1,9 @@
-const { ILike, Between } = require("typeorm");
+const {  Between } = require("typeorm");
 const { mac88Domain, mac88CasinoOperatorId, socketData, transType, userRoleConstant, walletDomain } = require("../config/contants");
 const { getUserRedisData, incrementValuesRedis, incrementRedisBalance } = require("../services/redis/commonfunction");
-const { getTransactions, getTransaction, updateTransactionData, addTransaction } = require("../services/transactionService");
+const {  getTransaction, updateTransactionData, addTransaction } = require("../services/transactionService");
 const { updateUserBalanceData, getUserBalanceDataByUserId } = require("../services/userBalanceService");
-const { getUserById, getUserWithUserBalance, getUserDataWithUserBalance, getParentsWithBalance } = require("../services/userService");
+const { getUserById,  getUserDataWithUserBalance, getParentsWithBalance } = require("../services/userService");
 const { addVirtualCasinoBetPlaced, getVirtualCasinoBetPlaced, updateVirtualCasinoBetPlaced } = require("../services/virtualCasinoBetPlacedsService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -16,9 +16,7 @@ exports.loginMac88Casino = async (req, res) => {
         const { gameId, platformId, providerName } = req.body;
 
         const user = await getUserById(req.user.id, ["id", "userName", "isDemo"]);
-        if (user.isDemo) {
-            return ErrorResponse({ statusCode: 403, message: { msg: "user.demoNoAccess" } }, req, res);
-        }
+       
         const userRedisData = await getUserRedisData(user.id);
         const userCurrBalance = parseInt(userRedisData?.currentBalance || 0) - parseInt(userRedisData?.exposure || 0);
 
@@ -27,12 +25,12 @@ exports.loginMac88Casino = async (req, res) => {
             "providerName": providerName,
             "gameId": gameId,
             "userId": user.id,
-            "username": user.userName,
+            "username": user.isDemo ? "Demo" : user.userName,
             "platformId": platformId,
             "lobby": false,
             "clientIp": "52.56.207.91",
             "currency": "INR",
-            "balance": userCurrBalance,
+            "balance": user.isDemo ? 0 : userCurrBalance,
             "redirectUrl": "https://devmaxbet9api.fairgame.club"
         }
         let result;
@@ -79,7 +77,7 @@ exports.getBalanceMac88 = async (req, res) => {
 
 
         return res.status(200).json({
-            "balance": balance,
+            "balance": userRedisData?.isDemo ? 0 : balance,
             "status": "OP_SUCCESS"
         })
     }
@@ -102,6 +100,12 @@ exports.getBetsMac88 = async (req, res) => {
         if (!userRedisData) {
             return res.status(400).json({
                 "status": "OP_USER_NOT_FOUND"
+            })
+        }
+
+        if (userRedisData?.isDemo) {
+            return res.status(400).json({
+                "status": "OP_INSUFFICIENT_FUNDS"
             })
         }
 
