@@ -456,7 +456,7 @@
         "provider_name": "MAC88",
         "sub_provider_name": "Mac88 Gaming",
         "status": "ACTIVE",
-        "url_thumb": "no_thumb",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/10_10_cricket.webp",
         "game_code": "MAC88-YXC101"
       },
       {
@@ -676,7 +676,7 @@
         "provider_name": "MAC88",
         "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
-        "url_thumb": "https://cdn.dreamdelhi.com/mac88/lankesh.webp",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/lankesh.jpeg",
         "game_code": "MAC88-VTGLN101"
       },
       {

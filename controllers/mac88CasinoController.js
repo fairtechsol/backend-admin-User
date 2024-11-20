@@ -162,7 +162,7 @@ exports.resultRequestMac88 = async (req, res) => {
     try {
         const { userId, creditAmount, transactionId } = req.body;
         const userRedisData = await getUserRedisData(userId);
-
+console.log("credit",creditAmount);
         let currUserData;
         let userBalance;
         if (!userRedisData) {
@@ -326,6 +326,7 @@ exports.rollBackRequestMac88 = async (req, res) => {
     try {
         const { userId, rollbackAmount: creditAmount, transactionId } = req.body;
         const userRedisData = await getUserRedisData(userId);
+        console.log("rollbackAmount",rollbackAmount);
 
         let currUserData;
         let userBalance;
