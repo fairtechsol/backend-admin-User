@@ -225,7 +225,6 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
         await incrementValuesRedis(user.id, {
             profitLoss: userCurrProfitLoss,
             myProfitLoss: userCurrProfitLoss,
-            // currentBalance: parseFloat(creditAmount)
         });
     }
 
@@ -238,7 +237,6 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
     updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss });
     
     const userTransaction = await getTransaction({ type: 3, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
-    console.log(userTransaction,userCurrProfitLoss,parseFloat(creditAmount) , parseFloat(userPrevBetPlaced.amount))
     if (!userTransaction) {
         await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${new Date()}` });
     } else {
@@ -326,12 +324,24 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
 
 exports.rollBackRequestMac88 = async (req, res) => {
     try {
-        console.log(req.body);
+        const { userId, rollbackAmount: creditAmount, transactionId } = req.body;
+        const userRedisData = await getUserRedisData(userId);
+        
+        let currUserData;
+        let userBalance;
+        if (!userRedisData) {
+            currUserData = await getUserBalanceDataByUserId(userId, ["currentBalance", "exposure"])
+        }
+        else {
+            userBalance = await incrementRedisBalance(userId, parseFloat(creditAmount));
+        }
+        const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure) + parseFloat(creditAmount);
+        calculateMac88ResultUnDeclare(userId, creditAmount, transactionId);
 
         return res.status(200).json({
-            "balance": 1000,
+            "balance": balance,
             "status": "OP_SUCCESS"
-        })
+        });
     }
     catch (error) {
         return ErrorResponse(
@@ -343,6 +353,32 @@ exports.rollBackRequestMac88 = async (req, res) => {
             res
         );
     }
+}
+
+const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId) => {
+    
+    const user = await getUserDataWithUserBalance({ id: userId });
+    if (!user) {
+        return res.status(400).json({
+            "status": "OP_USER_NOT_FOUND"
+        });
+    }
+
+    const userCurrProfitLoss =  0;
+    const userCurrBalance = parseFloat(user?.userBal?.currentBalance) + parseFloat(creditAmount);
+
+
+    await updateUserBalanceData(user.id, {
+        balance: parseFloat(creditAmount)
+    });
+
+    sendMessageToUser(
+        userId,
+        socketData.userBalanceUpdateEvent,
+        { currentBalance: userCurrBalance }
+    );
+
+    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss }); 
 }
 
 exports.getMac88GameList = async (req, res) => {
