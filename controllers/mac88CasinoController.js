@@ -238,7 +238,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
     updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss });
     
     const userTransaction = await getTransaction({ type: 3, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
-    console.log(userTransaction)
+    console.log(userTransaction,userCurrProfitLoss,parseFloat(creditAmount) , parseFloat(userPrevBetPlaced.amount))
     if (!userTransaction) {
         await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${new Date()}` });
     } else {
