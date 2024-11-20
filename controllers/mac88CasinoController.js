@@ -119,7 +119,7 @@ exports.getBetsMac88 = async (req, res) => {
         }
 
         await updateUserBalanceData(userId, { balance: -parseFloat(debitAmount) });
-        await incrementValuesRedis(userId, { balance: -parseFloat(debitAmount) });
+        await incrementValuesRedis(userId, { currentBalance: -parseFloat(debitAmount) });
 
         const updatedBalance = parseFloat(balance) - parseFloat(debitAmount);
 
