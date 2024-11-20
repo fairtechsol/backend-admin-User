@@ -242,7 +242,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
     if (!userTransaction) {
         await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${new Date()}` });
     } else {
-        await updateTransactionData(userTransaction?.id, userCurrProfitLoss);
+        await updateTransactionData(userTransaction?.id, { amount: userCurrProfitLoss });
     }
 
     if (user.createBy === user.id) {
