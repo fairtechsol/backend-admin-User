@@ -10,7 +10,7 @@ const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { generateRSASignature } = require("../utils/generateCasinoSignature");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
-
+const mac88Games = require("../config/mac88.json");
 exports.loginMac88Casino = async (req, res) => {
     try {
         const { gameId, platformId, providerName } = req.body;
@@ -162,7 +162,7 @@ exports.resultRequestMac88 = async (req, res) => {
     try {
         const { userId, creditAmount, transactionId } = req.body;
         const userRedisData = await getUserRedisData(userId);
-        
+
         let currUserData;
         let userBalance;
         if (!userRedisData) {
@@ -192,7 +192,7 @@ exports.resultRequestMac88 = async (req, res) => {
 }
 
 const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, userRedisData) => {
-    
+
     let superAdminData = {};
     const user = await getUserDataWithUserBalance({ id: userId });
     if (!user) {
@@ -235,7 +235,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
     );
 
     updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss });
-    
+
     const userTransaction = await getTransaction({ type: 3, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
     if (!userTransaction) {
         await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${new Date()}` });
@@ -326,7 +326,7 @@ exports.rollBackRequestMac88 = async (req, res) => {
     try {
         const { userId, rollbackAmount: creditAmount, transactionId } = req.body;
         const userRedisData = await getUserRedisData(userId);
-        
+
         let currUserData;
         let userBalance;
         if (!userRedisData) {
@@ -356,7 +356,7 @@ exports.rollBackRequestMac88 = async (req, res) => {
 }
 
 const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId) => {
-    
+
     const user = await getUserDataWithUserBalance({ id: userId });
     if (!user) {
         return res.status(400).json({
@@ -364,7 +364,7 @@ const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId
         });
     }
 
-    const userCurrProfitLoss =  0;
+    const userCurrProfitLoss = 0;
     const userCurrBalance = parseFloat(user?.userBal?.currentBalance) + parseFloat(creditAmount);
 
 
@@ -378,7 +378,7 @@ const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId
         { currentBalance: userCurrBalance }
     );
 
-    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss }); 
+    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss });
 }
 
 exports.getMac88GameList = async (req, res) => {
@@ -387,8 +387,10 @@ exports.getMac88GameList = async (req, res) => {
         let casinoData = {
             "operator_id": mac88CasinoOperatorId
         }
-        let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
-
+        // let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
+        let result = {
+            data: mac88Games
+        }
         result = result?.data?.reduce((prev, curr) => {
             return { ...prev, [curr.provider_name]: { ...(prev[curr.provider_name] || {}), [curr?.category]: [...(prev?.[curr.provider_name]?.[curr.category] || []), curr] } }
         }, {});
