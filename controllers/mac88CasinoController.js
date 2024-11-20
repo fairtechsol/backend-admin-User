@@ -162,7 +162,6 @@ exports.resultRequestMac88 = async (req, res) => {
     try {
         const { userId, creditAmount, transactionId } = req.body;
         const userRedisData = await getUserRedisData(userId);
-console.log("credit",creditAmount);
         let currUserData;
         let userBalance;
         if (!userRedisData) {
@@ -171,9 +170,8 @@ console.log("credit",creditAmount);
         else {
             userBalance = await incrementRedisBalance(userId, parseFloat(creditAmount));
         }
-        const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure) + parseFloat(creditAmount);
+        const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure);
         calculateMac88ResultDeclare(userId, creditAmount, transactionId, userRedisData);
-
         return res.status(200).json({
             "balance": balance,
             "status": "OP_SUCCESS"
