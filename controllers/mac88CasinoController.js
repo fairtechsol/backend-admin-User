@@ -167,8 +167,10 @@ exports.resultRequestMac88 = async (req, res) => {
         let currUserData;
         let userBalance;
         if (!userRedisData) {
-            userBalance = await incrementRedisBalance(userId, creditAmount);
             currUserData = await getUserBalanceDataByUserId(userId, ["currentBalance", "exposure"])
+        }
+        else {
+            userBalance = await incrementRedisBalance(userId, parseFloat(creditAmount));
         }
         console.log("CurrBalance", userBalance, currUserData?.currentBalance);
         const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure) + parseFloat(creditAmount);
