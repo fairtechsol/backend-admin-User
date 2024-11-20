@@ -1,6 +1,6 @@
 const { ILike, Between } = require("typeorm");
 const { mac88Domain, mac88CasinoOperatorId, socketData, transType, userRoleConstant, walletDomain } = require("../config/contants");
-const { getUserRedisData, incrementValuesRedis } = require("../services/redis/commonfunction");
+const { getUserRedisData, incrementValuesRedis, incrementRedisBalance } = require("../services/redis/commonfunction");
 const { getTransactions, getTransaction, updateTransactionData, addTransaction } = require("../services/transactionService");
 const { updateUserBalanceData, getUserBalanceDataByUserId } = require("../services/userBalanceService");
 const { getUserById, getUserWithUserBalance, getUserDataWithUserBalance, getParentsWithBalance } = require("../services/userService");
