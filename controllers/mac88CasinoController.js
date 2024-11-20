@@ -161,7 +161,6 @@ exports.getBetsMac88 = async (req, res) => {
 exports.resultRequestMac88 = async (req, res) => {
     try {
         const { userId, creditAmount, transactionId } = req.body;
-        console.log("Credit amount", creditAmount);
         const userRedisData = await getUserRedisData(userId);
         
         let currUserData;
@@ -172,9 +171,7 @@ exports.resultRequestMac88 = async (req, res) => {
         else {
             userBalance = await incrementRedisBalance(userId, parseFloat(creditAmount));
         }
-        console.log("CurrBalance", userBalance, currUserData?.currentBalance);
         const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure) + parseFloat(creditAmount);
-        console.log("userBalance", balance);
         calculateMac88ResultDeclare(userId, creditAmount, transactionId, userRedisData);
 
         return res.status(200).json({
@@ -209,7 +206,6 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
     const userCurrBalance = parseFloat(user?.userBal?.currentBalance) + parseFloat(creditAmount)
     //getting wallet profitloss
     const fwProfitLoss = parseFloat(((-userCurrProfitLoss * user.fwPartnership) / 100).toString());
-    console.log("user curr amount", userCurrProfitLoss, userPrevBetPlaced.amount)
     logger.info({
         message: `User balance and profit loss during declare of virtual casino for user ${userId}: `,
         data: {
@@ -242,6 +238,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
     updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss });
     
     const userTransaction = await getTransaction({ type: 3, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
+    console.log(userTransaction)
     if (!userTransaction) {
         await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${new Date()}` });
     } else {
