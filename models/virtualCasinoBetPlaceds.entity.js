@@ -9,6 +9,14 @@ const virtualCasinoBetPlacedSchema = new EntitySchema({
       type: 'varchar',
       nullable: false,
     },
+    providerName:{
+      type: 'varchar',
+      nullable: false,
+    },
+    gameName:{
+      type: 'varchar',
+      nullable: false,
+    },
     amount: {
       type: "float",
       nullable: false

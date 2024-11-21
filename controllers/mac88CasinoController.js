@@ -126,7 +126,7 @@ exports.getBetsMac88 = async (req, res) => {
         await incrementValuesRedis(userId, { currentBalance: -parseFloat(debitAmount) });
 
         const updatedBalance = parseFloat(balance) - parseFloat(debitAmount);
-
+        const currGame = mac88Games.find((item) => item?.game_id == gameId);
         await addVirtualCasinoBetPlaced({
             betType: betType,
             amount: -debitAmount,
@@ -137,7 +137,9 @@ exports.getBetsMac88 = async (req, res) => {
             runnerName: runnerName,
             token: token,
             transactionId: transactionId,
-            userId: userId
+            userId: userId,
+            providerName: currGame.provider_name,
+            gameName: currGame.game_name
         });
 
         sendMessageToUser(
