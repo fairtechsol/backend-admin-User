@@ -238,7 +238,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
         { currentBalance: userCurrBalance }
     );
 
-    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss });
+    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true });
 
     const userTransaction = await getTransaction({ type: 3, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
     if (!userTransaction) {
@@ -383,7 +383,7 @@ const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId
         { currentBalance: userCurrBalance }
     );
 
-    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss });
+    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true });
 }
 
 exports.getMac88GameList = async (req, res) => {

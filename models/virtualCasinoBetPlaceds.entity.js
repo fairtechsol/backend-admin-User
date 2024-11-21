@@ -53,6 +53,11 @@ const virtualCasinoBetPlacedSchema = new EntitySchema({
       type: 'uuid',
       nullable: false,
     },
+    settled: {
+      type: "boolean",
+      nullable: false,
+      default: false
+    }
   },
   indices: [
     {

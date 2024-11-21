@@ -13,6 +13,6 @@ router.post('/balance', verifyRSA, getBalanceMac88);
 router.post('/betrequest', verifyRSA, getBetsMac88);
 router.post('/resultrequest', verifyRSA, resultRequestMac88);
 router.post('/rollbackrequest', verifyRSA, rollBackRequestMac88);
-router.get('/mac88/bets', getBetVirtualGames);
+router.get('/mac88/bets/:userId', getBetVirtualGames);
 
 module.exports = router;
