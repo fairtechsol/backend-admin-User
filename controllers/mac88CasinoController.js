@@ -1,10 +1,10 @@
-const {  Between } = require("typeorm");
+const { Between } = require("typeorm");
 const { mac88Domain, mac88CasinoOperatorId, socketData, transType, userRoleConstant, walletDomain } = require("../config/contants");
 const { getUserRedisData, incrementValuesRedis, incrementRedisBalance } = require("../services/redis/commonfunction");
-const {  getTransaction, updateTransactionData, addTransaction } = require("../services/transactionService");
+const { getTransaction, updateTransactionData, addTransaction } = require("../services/transactionService");
 const { updateUserBalanceData, getUserBalanceDataByUserId } = require("../services/userBalanceService");
-const { getUserById,  getUserDataWithUserBalance, getParentsWithBalance } = require("../services/userService");
-const { addVirtualCasinoBetPlaced, getVirtualCasinoBetPlaced, updateVirtualCasinoBetPlaced } = require("../services/virtualCasinoBetPlacedsService");
+const { getUserById, getUserDataWithUserBalance, getParentsWithBalance } = require("../services/userService");
+const { addVirtualCasinoBetPlaced, getVirtualCasinoBetPlaced, updateVirtualCasinoBetPlaced, getVirtualCasinoBetPlaceds } = require("../services/virtualCasinoBetPlacedsService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { generateRSASignature } = require("../utils/generateCasinoSignature");
@@ -16,7 +16,7 @@ exports.loginMac88Casino = async (req, res) => {
         const { gameId, platformId, providerName } = req.body;
 
         const user = await getUserById(req.user.id, ["id", "userName", "isDemo"]);
-       
+
         const userRedisData = await getUserRedisData(user.id);
         const userCurrBalance = parseInt(userRedisData?.currentBalance || 0) - parseInt(userRedisData?.exposure || 0);
 
@@ -330,7 +330,7 @@ exports.rollBackRequestMac88 = async (req, res) => {
     try {
         const { userId, rollbackAmount: creditAmount, transactionId } = req.body;
         const userRedisData = await getUserRedisData(userId);
-        console.log("rollbackAmount",rollbackAmount);
+        console.log("rollbackAmount", rollbackAmount);
 
         let currUserData;
         let userBalance;
@@ -403,6 +403,46 @@ exports.getMac88GameList = async (req, res) => {
             {
                 statusCode: 200,
                 data: result,
+            },
+            req,
+            res
+        );
+    }
+    catch (error) {
+        return ErrorResponse(
+            {
+                statusCode: 500,
+                message: error.message,
+            },
+            req,
+            res
+        );
+    }
+}
+
+exports.getBetVirtualGames = async (req, res) => {
+    try {
+        const userId = req?.params?.userId || req?.user?.id;
+        const query = req.query;
+
+        if (!userId) {
+            return ErrorResponse(
+                {
+                    statusCode: 403,
+                    message: {
+                        msg: "userNotSelect",
+                    },
+                },
+                req,
+                res
+            );
+        }
+
+        const bets = await getVirtualCasinoBetPlaceds({ userId: userId }, query);
+        SuccessResponse(
+            {
+                statusCode: 200,
+                data: bets,
             },
             req,
             res
