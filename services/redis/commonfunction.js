@@ -105,3 +105,7 @@ exports.getHashKeysByPattern = async (key, pattern) => {
   } while (cursor !== '0');
   return resultObj;
 }
+
+exports.checkAndUpdateTransaction = async (userId, transactionId) => {
+  return await internalRedis.hsetnx(userId, transactionId, 1);
+}
