@@ -16,9 +16,8 @@ exports.loginMac88Casino = async (req, res) => {
     try {
         const { gameId, platformId, providerName } = req.body;
 
-        const user = await getUserById(req.user.id, ["id", "userName", "isDemo"]);
+        const userRedisData = await getUserRedisData(req.user.id);
 
-        const userRedisData = await getUserRedisData(user.id);
         const userCurrBalance = parseInt(userRedisData?.currentBalance || 0) - parseInt(userRedisData?.exposure || 0);
         const domainUrl = `${req.protocol}://${req.get("host")}`;
 
@@ -26,23 +25,20 @@ exports.loginMac88Casino = async (req, res) => {
             "operatorId": mac88CasinoOperatorId,
             "providerName": providerName,
             "gameId": gameId,
-            "userId": user.id,
-            "username": user.isDemo ? "Demo" : user.userName,
+            "userId": userRedisData.id,
+            "username": userRedisData.isDemo ? "Demo" : userRedisData.userName,
             "platformId": platformId,
             "lobby": false,
             "clientIp": "52.56.207.91",
             "currency": "INR",
-            "balance": user.isDemo ? 0 : userCurrBalance,
+            "balance": userRedisData.isDemo ? 0 : userCurrBalance,
             "redirectUrl": domainUrl
         }
-        let result;
-        if (userRedisData) {
-            result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.login, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
-        }
+        let result =  await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.login, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) }); 
 
-        const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
+        const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: userRedisData.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
         if (!userTransaction) {
-            await addTransaction({ searchId: user.id, type: transactionType.virtualCasino, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
+            await addTransaction({ searchId: userRedisData.id, type: transactionType.virtualCasino, userId: userRedisData.id, actionBy: userRedisData.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
         }
 
         return SuccessResponse(
@@ -73,23 +69,18 @@ exports.getBalanceMac88 = async (req, res) => {
         if (!userRedisData) {
             return res.status(400).json({
                 "status": "OP_USER_NOT_FOUND"
-            })
+            });
         }
         let balance = parseFloat(userRedisData.currentBalance || 0) - parseFloat(userRedisData.exposure || 0)
         return res.status(200).json({
             "balance": userRedisData.isDemo ? 0 : balance,
             "status": "OP_SUCCESS"
-        })
+        });
     }
     catch (error) {
-        return ErrorResponse(
-            {
-                statusCode: 500,
-                message: error.message,
-            },
-            req,
-            res
-        );
+        return res.status(500).json({
+            "status": "OP_GENERAL_ERROR"
+        });
     }
 }
 
@@ -143,9 +134,8 @@ exports.getBetsMac88 = async (req, res) => {
         }
 
         await updateUserBalanceData(userId, { balance: -parseFloat(debitAmount) });
-        await incrementValuesRedis(userId, { currentBalance: -parseFloat(debitAmount) });
+        const updatedBalance = parseFloat(await incrementRedisBalance(userId, "currentBalance", -parseFloat(debitAmount)));
 
-        const updatedBalance = parseFloat(balance) - parseFloat(debitAmount);
         const currGame = mac88Games.find((item) => item.game_id == gameId);
         await addVirtualCasinoBetPlaced({
             betType: betType,
@@ -173,14 +163,9 @@ exports.getBetsMac88 = async (req, res) => {
         });
     }
     catch (error) {
-        return ErrorResponse(
-            {
-                statusCode: 500,
-                message: error.message,
-            },
-            req,
-            res
-        );
+        return res.status(500).json({
+            "status": "OP_GENERAL_ERROR"
+        });
     }
 }
 
@@ -213,7 +198,7 @@ exports.resultRequestMac88 = async (req, res) => {
             currUserData = await getUserBalanceDataByUserId(userId, ["currentBalance", "exposure"])
         }
         else {
-            userBalance = await incrementRedisBalance(userId, parseFloat(creditAmount));
+            userBalance = await incrementRedisBalance(userId, "currentBalance", parseFloat(creditAmount));
         }
         const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData.exposure ?? currUserData?.exposure);
         calculateMac88ResultDeclare(userId, creditAmount, transactionId, userRedisData);
@@ -223,14 +208,9 @@ exports.resultRequestMac88 = async (req, res) => {
         });
     }
     catch (error) {
-        return ErrorResponse(
-            {
-                statusCode: 500,
-                message: error.message,
-            },
-            req,
-            res
-        );
+        return res.status(500).json({
+            "status": "OP_GENERAL_ERROR"
+        });
     }
 }
 
@@ -394,7 +374,7 @@ exports.rollBackRequestMac88 = async (req, res) => {
             currUserData = await getUserBalanceDataByUserId(userId, ["currentBalance", "exposure"])
         }
         else {
-            userBalance = await incrementRedisBalance(userId, parseFloat(creditAmount));
+            userBalance = await incrementRedisBalance(userId, "currentBalance", parseFloat(creditAmount));
         }
         const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData.exposure ?? currUserData?.exposure) + parseFloat(creditAmount);
         calculateMac88ResultUnDeclare(userId, creditAmount, transactionId);
@@ -405,14 +385,9 @@ exports.rollBackRequestMac88 = async (req, res) => {
         });
     }
     catch (error) {
-        return ErrorResponse(
-            {
-                statusCode: 500,
-                message: error.message,
-            },
-            req,
-            res
-        );
+        return res.status(500).json({
+            "status": "OP_GENERAL_ERROR"
+        });
     }
 }
 
