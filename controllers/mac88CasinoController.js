@@ -183,11 +183,11 @@ exports.resultRequestMac88 = async (req, res) => {
         if(!userRedisData[transactionId]){
             const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId }, ["id", "settled"]);
             if(!userPrevBetPlaced){
-                return res.status(400).json({ status: "OP_TRANSACTION_DOES_NOT_EXIST" })
+                return res.status(400).json({ status: "OP_TRANSACTION_NOT_FOUND" })
             }
             if(userPrevBetPlaced.settled){
                 return res.status(400).json({
-                    "status": "OP_DUPLICATE_TRANSACTION"
+                    "status": "OP_ERROR_TRANSACTION_INVALID"
                 })
             }
         }
@@ -359,11 +359,11 @@ exports.rollBackRequestMac88 = async (req, res) => {
         if(!userRedisData[transactionId]){
             const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId},["id","settled"]);
             if(!userPrevBetPlaced){
-                return res.status(400).json({ status: "OP_TRANSACTION_DOES_NOT_EXIST" })
+                return res.status(400).json({ status: "OP_TRANSACTION_NOT_FOUND" })
             }
             if(userPrevBetPlaced?.settled){
                 return res.status(400).json({
-                    "status": "OP_DUPLICATE_TRANSACTION"
+                    "status": "OP_ERROR_TRANSACTION_INVALID"
                 })
             }
         }
