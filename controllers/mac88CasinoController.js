@@ -1,5 +1,5 @@
 const { Between } = require("typeorm");
-const { mac88Domain, mac88CasinoOperatorId, socketData, transType, userRoleConstant, walletDomain } = require("../config/contants");
+const { mac88Domain, mac88CasinoOperatorId, socketData, transType, userRoleConstant, walletDomain, casinoProvider } = require("../config/contants");
 const { getUserRedisData, incrementValuesRedis, incrementRedisBalance, updateUserDataRedis, deleteKeyFromUserRedis, checkAndUpdateTransaction } = require("../services/redis/commonfunction");
 const { getTransaction, updateTransactionData, addTransaction } = require("../services/transactionService");
 const { updateUserBalanceData, getUserBalanceDataByUserId } = require("../services/userBalanceService");
@@ -444,9 +444,9 @@ const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId
 exports.getMac88GameList = async (req, res) => {
     try {
 
-        let casinoData = {
-            "operator_id": mac88CasinoOperatorId
-        }
+        // let casinoData = {
+        //     "operator_id": mac88CasinoOperatorId
+        // }
         // let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
         let result = {
             data: mac88Games
@@ -498,6 +498,29 @@ exports.getBetVirtualGames = async (req, res) => {
             {
                 statusCode: 200,
                 data: bets,
+            },
+            req,
+            res
+        );
+    }
+    catch (error) {
+        return ErrorResponse(
+            {
+                statusCode: 500,
+                message: error.message,
+            },
+            req,
+            res
+        );
+    }
+}
+
+exports.getProviderList = async (req, res) => {
+    try {
+        SuccessResponse(
+            {
+                statusCode: 200,
+                data: casinoProvider,
             },
             req,
             res

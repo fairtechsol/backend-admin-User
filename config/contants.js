@@ -1,3 +1,6 @@
+const mac88Games = require("./mac88.json");
+
+
 module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
 module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
@@ -820,3 +823,5 @@ exports.teenPattiWinRatio = {
   "5": 35,
   "6": 45
 }
+
+exports.casinoProvider = Array.from(new Set(mac88Games.map((item) => item?.provider_name)));
