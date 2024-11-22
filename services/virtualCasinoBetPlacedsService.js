@@ -1,5 +1,6 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const virtualCasinoBetPlacedSchema = require("../models/virtualCasinoBetPlaceds.entity");
+const ApiFeature = require("../utils/apiFeatures");
 const VirtualCasino = AppDataSource.getRepository(virtualCasinoBetPlacedSchema);
 
 exports.getVirtualCasinoBetPlaceds = async (where, query) => {
