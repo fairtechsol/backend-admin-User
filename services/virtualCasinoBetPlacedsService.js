@@ -6,7 +6,7 @@ const VirtualCasino = AppDataSource.getRepository(virtualCasinoBetPlacedSchema);
 exports.getVirtualCasinoBetPlaceds = async (where, query) => {
     let pgQuery = VirtualCasino.createQueryBuilder().where(where);
 
-    return await new ApiFeature(
+    pgQuery = new ApiFeature(
         pgQuery,
         query
     )
@@ -15,6 +15,9 @@ exports.getVirtualCasinoBetPlaceds = async (where, query) => {
         .sort()
         .paginate()
         .getResult();
+
+    const [bets, count] = await pgQuery;
+    return { bets, count };
 }
 
 exports.addVirtualCasinoBetPlaced = async (body) => {
