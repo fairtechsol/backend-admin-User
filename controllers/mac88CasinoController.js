@@ -15,8 +15,8 @@ const moment = require("moment/moment");
 exports.loginMac88Casino = async (req, res) => {
     try {
         const { gameId, platformId, providerName } = req.body;
-
-        const userRedisData = await getUserRedisData(req.user.id);
+        const userId = req.user.id;
+        const userRedisData = await getUserRedisData(userId);
 
         const userCurrBalance = parseInt(userRedisData?.currentBalance || 0) - parseInt(userRedisData?.exposure || 0);
         const domainUrl = `${req.protocol}://${req.get("host")}`;
@@ -25,7 +25,7 @@ exports.loginMac88Casino = async (req, res) => {
             "operatorId": mac88CasinoOperatorId,
             "providerName": providerName,
             "gameId": gameId,
-            "userId": userRedisData.id,
+            "userId": userId,
             "username": userRedisData.isDemo ? "Demo" : userRedisData.userName,
             "platformId": platformId,
             "lobby": false,
@@ -36,9 +36,9 @@ exports.loginMac88Casino = async (req, res) => {
         }
         let result =  await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.login, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) }); 
 
-        const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: userRedisData.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
+        const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: userId, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
         if (!userTransaction) {
-            await addTransaction({ searchId: userRedisData.id, type: transactionType.virtualCasino, userId: userRedisData.id, actionBy: userRedisData.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
+            await addTransaction({ searchId: userId, type: transactionType.virtualCasino, userId: userId, actionBy: userId, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
         }
 
         return SuccessResponse(
