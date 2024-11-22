@@ -11,6 +11,7 @@ const { generateRSASignature } = require("../utils/generateCasinoSignature");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const mac88Games = require("../config/mac88.json");
+const moment = require("moment/moment");
 exports.loginMac88Casino = async (req, res) => {
     try {
         const { gameId, platformId, providerName } = req.body;
@@ -40,7 +41,7 @@ exports.loginMac88Casino = async (req, res) => {
 
         const userTransaction = await getTransaction({ type: 3, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
         if (!userTransaction) {
-            await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${new Date()}` });
+            await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
         }
 
         return SuccessResponse(
@@ -279,7 +280,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
 
     const userTransaction = await getTransaction({ type: 3, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
     if (!userTransaction) {
-        await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${new Date()}` });
+        await addTransaction({ searchId: user.id, type: 3, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
     } else {
         await updateTransactionData(userTransaction?.id, { amount: userCurrProfitLoss });
     }
