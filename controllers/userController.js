@@ -1,4 +1,4 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, redisKeys, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue } = require('../config/contants');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, redisKeys, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType } = require('../config/contants');
 const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
@@ -103,7 +103,7 @@ exports.createUser = async (req, res) => {
       transType: transType.add,
       closingBalance: insertUser.creditRefrence,
       description: walletDescription.userCreate,
-      type: 0
+      type: transactionType.withdraw
     }];
     if (insertUser.createdBy != insertUser.id) {
       transactionArray.push({
@@ -114,7 +114,7 @@ exports.createUser = async (req, res) => {
         transType: transType.withDraw,
         closingBalance: insertUser.creditRefrence,
         description: walletDescription.userCreate,
-        type: 0
+        type: transactionType.withdraw
       });
     }
 
@@ -214,7 +214,7 @@ exports.loginWithDemoUser = async (req, res) => {
       transType: transType.add,
       closingBalance: 1500,
       description: walletDescription.demoUserCreate,
-      type: 0
+      type: transactionType.withdraw
     }];
 
 

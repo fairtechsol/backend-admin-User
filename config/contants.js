@@ -48,6 +48,13 @@ module.exports.matchBettingsTeamName = {
   no: "NO"
 }
 
+module.exports.transactionType = {
+  withdraw: 0,
+  sports: 1,
+  casino: 2,
+  virtualCasino: 3
+}
+
 module.exports.userRoleConstant = {
   fairGameWallet: "fairGameWallet",
   fairGameAdmin: "fairGameAdmin",
