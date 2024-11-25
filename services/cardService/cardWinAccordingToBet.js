@@ -120,7 +120,7 @@ class CardWinOrLose {
         const currBetTeam = this.removeSpacesAndToLowerCase(betOnTeamData?.[0]);
 
         const gameResult = this.removeSpacesAndToLowerCase(resultData?.[0]?.split("|")?.[0]);
-        const isPairResult = resultData?.[0]?.split("|")?.[1] == "Is Pair";
+        const isPairResult = resultData?.[0]?.split("|")?.[1].startsWith("Is Pair");
         const betTypeIsBack = this.betType == betType.BACK;
         const betTypeIsLay = this.betType == betType.LAY;
 

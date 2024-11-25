@@ -1102,9 +1102,7 @@ exports.lockUnlockUser = async (req, res, next) => {
   try {
     // Extract relevant data from the request body and user object
     const { userId, betBlock, userBlock } = req.body;
-    const { id: loginId } = req.user;
-
-
+    const { id: loginId,roleName } = req.user;
 
     // Fetch user details of the current user, including block information
     const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);
@@ -1128,7 +1126,7 @@ exports.lockUnlockUser = async (req, res, next) => {
     }
 
     // Check if the user performing the block/unblock operation has the right access
-    if (blockingUserDetail?.createBy != loginId) {
+    if (blockingUserDetail?.createBy != loginId && roleName != userRoleConstant.superAdmin) {
       return ErrorResponse(
         {
           statusCode: 403,
