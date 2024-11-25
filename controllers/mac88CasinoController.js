@@ -187,7 +187,7 @@ exports.resultRequestMac88 = async (req, res) => {
             }
             if(userPrevBetPlaced.settled){
                 return res.status(400).json({
-                    "status": "OP_ERROR_TRANSACTION_INVALID"
+                    "status": "OP_DUPLICATE_TRANSACTION"
                 })
             }
         }
@@ -363,7 +363,7 @@ exports.rollBackRequestMac88 = async (req, res) => {
             }
             if(userPrevBetPlaced?.settled){
                 return res.status(400).json({
-                    "status": "OP_ERROR_TRANSACTION_INVALID"
+                    "status": "OP_DUPLICATE_TRANSACTION"
                 })
             }
         }
