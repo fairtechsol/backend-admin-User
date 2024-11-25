@@ -934,7 +934,7 @@ exports.userSearchList = async (req, res, next) => {
     if (isUser) {
       where.roleName = userRoleConstant.user;
     }
-    let users = await getUsers(where, ["id", "userName"])
+    let users = await getUsers(where, ["id", "userName","userBlock","betBlock"])
     let response = {
       users: users[0],
       count: users[1]
