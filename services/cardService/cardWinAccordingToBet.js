@@ -648,6 +648,9 @@ class CardWinOrLose {
         if (["player", "banker", "tie"].includes(betOnTeamKey) && parseInt(selectionId) == parseInt(win)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
+        else if (betOnTeamKey == "banker" && parseInt(win) == 4) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount / 2, lossAmount: this.betPlaceData.lossAmount };
+        }
         else if (parseInt(win) == 3 && ["player", "banker"].includes(betOnTeamKey)) {
             return { result: betResultStatus.TIE, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
@@ -680,6 +683,9 @@ class CardWinOrLose {
 
         if (["player", "banker", "tie"].includes(betOnTeamKey) && parseInt(selectionId) == parseInt(win)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
+        }
+        else if (betOnTeamKey == "banker" && parseInt(win) == 4) {
+            return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount / 2, lossAmount: this.betPlaceData.lossAmount };
         }
         else if (parseInt(win) == 3 && ["player", "banker"].includes(betOnTeamKey)) {
             return { result: betResultStatus.TIE, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
@@ -725,7 +731,7 @@ class CardWinOrLose {
         const { win } = this.result;
         const selectionId = this.betPlaceData?.browserDetail?.split("|")[this.betPlaceData?.browserDetail?.split("|")?.length - 1];
 
-        if (selectionId?.toString() == win?.toString()) {
+        if ((selectionId?.toString() == win?.toString() && this.betType == betType.BACK) || (selectionId?.toString() != win?.toString() && this.betType == betType.LAY)) {
             return { result: betResultStatus.WIN, winAmount: this.betPlaceData.winAmount, lossAmount: this.betPlaceData.lossAmount };
         }
 

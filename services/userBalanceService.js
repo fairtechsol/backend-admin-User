@@ -65,13 +65,18 @@ exports.getAllChildCurrentBalanceSum = async (childUserIds) => {
   }
 
 
-  exports.getAllUsersBalanceSum = async () => {
+  exports.getAllUsersBalanceSum = async (where) => {
     const queryColumns = 'SUM(userBalance.currentBalance) as balance';
  
     let childUserData = await UserBalance
      .createQueryBuilder('userBalance')
+     .where(where)
      .select([queryColumns])
      .getRawOne();
   
    return childUserData;
  }
+
+exports.deleteUserBalance = async (where) => {
+  await UserBalance.delete(where);
+}

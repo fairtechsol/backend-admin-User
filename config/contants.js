@@ -64,6 +64,7 @@ module.exports.fileType = {
 };
 
 module.exports.redisTimeOut = 10 * 60 * 60;
+module.exports.demoRedisTimeOut = 60 * 60;
 
 module.exports.matchComissionTypeConstant = {
   totalLoss: "totalLoss",
@@ -140,15 +141,15 @@ module.exports.differLoginTypeByRoles = {
 };
 module.exports.defaultButtonValue = {
   buttons:
-    '{"25000":"25000","50000":"50000","100000":"100000","200000":"200000","300000":"300000","500000":"500000","1000000":"1000000","2500000":"2500000"}',
+    '{"25k":"25000","50k":"50000","1L":"100000","2L":"200000","3L":"300000","5L":"500000","10L":"1000000","25L":"2500000"}',
 };
 module.exports.sessiontButtonValue = {
   buttons:
-    '{"5000":"5000","10000":"10000","15000":"15000","25000":"25000","50000":"50000","100000":"100000","200000":"200000","500000":"500000"}',
+    '{"5k":"5000","10k":"10000","15k":"15000","25k":"25000","50k":"50000","1L":"100000","2L":"200000","5L":"500000"}',
 };
 module.exports.casinoButtonValue = {
   buttons:
-    '{"25":"25","50":"50","100":"100","500":"500","1000":"1000","2000":"2000","5000":"5000","10000":"10000"}',
+    '{"25":"25","50":"50","100":"100","500":"500","1k":"1000","2k":"2000","5k":"5000","10k":"10000"}',
 };
 module.exports.buttonType = {
   MATCH: "Match",
@@ -158,6 +159,7 @@ module.exports.buttonType = {
 
 module.exports.walletDescription = {
   userCreate: "CREDIT REFRENCE as user create",
+  demoUserCreate: "User creation",
 };
 
 module.exports.betType = {

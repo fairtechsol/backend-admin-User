@@ -16,6 +16,7 @@
   "settledCommission" : "Commission settled successfully.",
   "settleAccount": "Please settle {name} account first.",
   "deleted": "{name} deleted successfully.",
+  "refreshPage":"Something went wrong, please refresh your page",
   "auth": {
     "loginSuccess": "Login successfully.",
     "invalidPass": "Invalid {type} password.",

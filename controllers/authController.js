@@ -3,6 +3,12 @@ const {
   redisTimeOut,
   differLoginTypeByRoles,
   jwtSecret,
+  transType,
+  walletDescription,
+  defaultButtonValue,
+  buttonType,
+  sessiontButtonValue,
+  casinoButtonValue,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -10,11 +16,17 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const {
   getUserWithUserBalance,
+  addUser,
 } = require("../services/userService");
 const { userLoginAtUpdate } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin } = require("../services/commonService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, loginDemoUser, deleteDemoUser } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis } = require("../services/redis/commonfunction");
+const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
+const { insertTransactions } = require("../services/transactionService");
+const { addInitialUserBalance } = require("../services/userBalanceService");
+const { insertButton } = require("../services/buttonService");
+const lodash = require('lodash');
 
 
 // Function to validate a user by username and password
@@ -180,7 +192,11 @@ exports.login = async (req, res) => {
     }
     // setting token in redis for checking if user already loggedin
     await internalRedis.hmset(user.id, { token: token });
+    let isBetExist;
+    if (user.roleName != userRoleConstant.user) {
+      isBetExist = await getChildUsersSinglePlaceBet(user.id);
 
+    }
     // Return token and user information
 
     return SuccessResponse(
@@ -193,7 +209,7 @@ exports.login = async (req, res) => {
           roleName: roleName,
           forceChangePassword,
           userId: user?.id,
-          exposure: user?.userBal?.exposure
+          isBetExist: isBetExist?.length > 0
         },
       },
       req,
@@ -220,6 +236,10 @@ exports.logout = async (req, res) => {
     // Remove the user's token from Redis using their ID as the key
     await internalRedis.del(user.id);
 
+    if(user.isDemo){
+      deleteDemoUser(user.id);
+    }
+
     return SuccessResponse(
       {
         statusCode: 200,
@@ -238,5 +258,90 @@ exports.logout = async (req, res) => {
       req,
       res
     );
+  }
+};
+
+
+exports.loginWithDemoUser = async (req, res) => {
+  try {
+    const currTime = new Date().getTime();
+    const upperCaseUserName = `DEMO${currTime}`;
+
+    const hashedPassword = await bcrypt.hash((Math.floor(1000000000 + Math.random() * 9000000000)).toString(), process.env.BCRYPTSALT || 10);
+
+    const userData = {
+      userName: upperCaseUserName,
+      fullName: "DEMO",
+      password: hashedPassword,
+      roleName: userRoleConstant.user,
+      userBlock: false,
+      betBlock: false,
+      creditRefrence: 1500,
+      exposureLimit: 1500 * 1000,
+      maxBetLimit: 1500 * 1000,
+      minBetLimit: 1,
+      superParentType: null,
+      superParentId: null,
+      delayTime: 5,
+      loginAt: new Date(),
+      isDemo: true
+    };
+
+    const insertUser = await addUser(userData);
+
+    const transactionArray = [{
+      actionBy: insertUser.id,
+      searchId: insertUser.id,
+      userId: insertUser.id,
+      amount: 1500,
+      transType: transType.add,
+      closingBalance: 1500,
+      description: walletDescription.demoUserCreate
+    }];
+
+
+    await insertTransactions(transactionArray);
+
+    const insertUserBalanceData = {
+      currentBalance: 1500,
+      userId: insertUser.id,
+      profitLoss: 0,
+      myProfitLoss: 0,
+      downLevelBalance: 0,
+      exposure: 0
+    };
+
+    const balance = await addInitialUserBalance(insertUserBalanceData);
+
+    const buttonValue = [{
+      type: buttonType.MATCH,
+      value: defaultButtonValue.buttons,
+      createBy: insertUser.id
+    }, {
+      type: buttonType.SESSION,
+      value: sessiontButtonValue.buttons,
+      createBy: insertUser.id
+    },
+    {
+      type: buttonType.CASINO,
+      value: casinoButtonValue.buttons,
+      createBy: insertUser.id
+    }];
+    await insertButton(buttonValue);
+
+    const response = lodash.omit(insertUser, ["password", "transPassword"]);
+
+
+    const token = await loginDemoUser({ ...response, userBal: balance });
+
+    return SuccessResponse({
+      statusCode: 200, data: {
+        token,
+        roleName: userRoleConstant.user,
+        userId: insertUser?.id,
+      }
+    }, req, res);
+  } catch (err) {
+    return ErrorResponse(err, req, res);
   }
 };

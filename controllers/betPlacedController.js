@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType, profitLossKeys } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType, profitLossKeys, matchesTeamName } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -159,6 +159,23 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let reqUser = req.user;
     let { teamA, teamB, teamC, stake, odd, betId, bettingType, matchBetType, matchId, betOnTeam, ipAddress, browserDetail, placeIndex, bettingName, mid, selectionId } = req.body;
 
+    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeMatch1, matchBettingType.completeManual].includes(matchBetType);
+    if (isTiedOrCompMatch) {
+      teamA = teamA.toUpperCase();
+      teamB = teamB.toUpperCase();
+      teamC = teamC ? teamC.toUpperCase() : teamC;
+      betOnTeam = betOnTeam?.toUpperCase();
+    }
+
+    if(![teamA,teamB,teamC].includes(betOnTeam)){
+      logger.info({
+        info: `Team name different for bet ${reqUser.id}`,
+        data: req.body
+      });
+      return ErrorResponse({ statusCode: 403, message: { msg: "refreshPage"} }, req, res);
+
+    }
+
     let userBalanceData = await userService.getUserWithUserBalanceData({ userId: reqUser.id });
     let user = userBalanceData?.user;
     if (!user) {
@@ -192,20 +209,14 @@ exports.matchBettingBetPlaced = async (req, res) => {
     }
     let newCalculateOdd = odd;
     let winAmount = 0, lossAmount = 0;
-    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType)) {
+    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType)) {
       newCalculateOdd = (newCalculateOdd - 1) * 100;
     }
 
-    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.completeMatch, matchBettingType.completeMatch1]?.includes(matchBetType) && newCalculateOdd > 400) {
+    if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType) && newCalculateOdd > 400) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
     }
-    let isTiedOrCompMatch = [matchBettingType.tiedMatch1, matchBettingType.tiedMatch3, matchBettingType.tiedMatch2, matchBettingType.completeMatch, matchBettingType.completeManual].includes(matchBetType);
-    if (isTiedOrCompMatch) {
-      teamA = teamA.toUpperCase();
-      teamB = teamB.toUpperCase();
-      teamC = teamC ? teamC.toUpperCase() : teamC;
-      betOnTeam = betOnTeam?.toUpperCase();
-    }
+   
 
     if (bettingType == betType.BACK) {
       winAmount = (stake * newCalculateOdd) / 100;
@@ -388,38 +399,38 @@ exports.matchBettingBetPlaced = async (req, res) => {
       betPlacedService.deleteBetByEntityOnError(newBet);
       throw error;
     });
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletMatchBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+      });
 
-    const walletJob = WalletMatchBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+      const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for expert ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+        throw error;
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
-
-    const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for expert ${reqUser.id}`,
-        matchId, walletJobData
-      });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -665,37 +676,38 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       throw error;
     });
 
-    const walletJob = WalletMatchTournamentBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match tournament betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletMatchTournamentBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match tournament betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match tournament betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match tournament betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
-    const expertJob = ExpertMatchTournamentBetQueue.createJob(walletJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add match tournament betting job save in the redis for expert ${reqUser.id}`,
-        matchId, walletJobData
+      const expertJob = ExpertMatchTournamentBetQueue.createJob(walletJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add match tournament betting job save in the redis for expert ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match tournament betting job save in the redis for expert ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+        throw error;
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match tournament betting job save in the redis for expert ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -893,7 +905,7 @@ exports.sessionBetPlace = async (req, res, next) => {
         winAmount = parseFloat((stake * ratePercent)).toFixed(2);
         loseAmount = parseFloat(stake * odds).toFixed(2);
       }
-     else if (sessionBetType == betType.NO) {
+      else if (sessionBetType == betType.NO) {
         winAmount = parseFloat((stake * odds)).toFixed(2);
         loseAmount = parseFloat((stake * ratePercent)).toFixed(2);
       }
@@ -1124,45 +1136,47 @@ exports.sessionBetPlace = async (req, res, next) => {
       betPlaceObject: betPlaceObject,
       domainUrl: domainUrl
     };
-    const walletJob = WalletSessionBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add session betting job save in the redis for wallet ${id}`,
-        matchId, walletJobData
-      });
-    }).catch(error => {
-      logger.error({
-        error: `Error at session betting job save in the redis for walllet ${id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
-    let expertJobData = {
-      userId: id,
-      partnership: userData?.partnerShips,
-      placedBet: placedBet,
-      newBalance: newBalance,
-      betPlaceObject: betPlaceObject,
-      domainUrl: domainUrl
-    };
-    const expertJob = ExpertSessionBetQueue.createJob(expertJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add session betting job save in the redis for expert ${id}`,
-        matchId, expertJobData
+    if (!req.user?.isDemo) {
+      const walletJob = WalletSessionBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add session betting job save in the redis for wallet ${id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at session betting job save in the redis for walllet ${id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at session betting job save in the redis for expert ${id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
+
+      let expertJobData = {
+        userId: id,
+        partnership: userData?.partnerShips,
+        placedBet: placedBet,
+        newBalance: newBalance,
+        betPlaceObject: betPlaceObject,
+        domainUrl: domainUrl
+      };
+      const expertJob = ExpertSessionBetQueue.createJob(expertJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add session betting job save in the redis for expert ${id}`,
+          matchId, expertJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at session betting job save in the redis for expert ${id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    });
 
-
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: placedBet }, req, res)
 
   } catch (error) {
@@ -1190,8 +1204,8 @@ const validateSessionBet = async (apiBetData, betDetails) => {
     };
   }
 
-    
-  if(apiBetData?.minBet == apiBetData?.maxBet){
+
+  if (apiBetData?.minBet == apiBetData?.maxBet) {
     throw {
       statusCode: 400,
       message: {
@@ -1288,10 +1302,10 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     );
     let filterData;
     if (sessionDetail?.gtype == "cricketcasino") {
-      filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == (parseInt(betDetail?.teamName?.split(" ")?.[0]) + 1)?.toString());
+      filterData = sessionDetail?.section?.find((item) => item.sid?.toString() == (parseInt(betDetail?.teamName?.split(" ")?.[0]) + 1)?.toString());
     }
     else {
-      filterData = sessionDetail?.section?.find((item) => item?.sid?.toString() == apiBetData?.selectionId?.toString());
+      filterData = sessionDetail?.section?.find((item) => item.sid?.toString() == apiBetData?.selectionId?.toString());
     }
     if (filterData?.gstatus != "" && filterData?.gstatus != "OPEN") {
       return true;
@@ -1299,11 +1313,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
 
     if (sessionDetail?.mname == "oddeven") {
       if (
-        (betDetail.teamName == "even") && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds)
+        (betDetail.teamName == "even") && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.odds)
       ) {
         return true;
       } else if (
-        betDetail.teamName == "odd" && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+        betDetail.teamName == "odd" && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -1312,7 +1326,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     }
     else if (sessionDetail?.gtype == "cricketcasino") {
       if (
-        (betDetail.betType == betType.BACK) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+        (betDetail.betType == betType.BACK) && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -1320,11 +1334,11 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     }
     else if (sessionDetail?.mname == "fancy1") {
       if (
-        (betDetail.betType == betType.LAY) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds)
+        (betDetail.betType == betType.LAY) && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.odds)
       ) {
         return true;
       } else if (
-        betDetail.betType == betType.BACK && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds)
+        betDetail.betType == betType.BACK && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.odds)
       ) {
         return true;
       }
@@ -1334,17 +1348,23 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
     else {
 
       if (
-        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "lay")?.size)
+        (betDetail.betType == betType.NO) && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "lay")?.size)
       ) {
         return true;
       } else if (
-        betDetail.betType == betType.YES && (betDetail.odds != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item?.tno == betDetail?.betPlaceIndex && item?.otype == "back")?.size)
+        betDetail.betType == betType.YES && (betDetail.odds != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.odds || betDetail.ratePercent != filterData?.odds?.find((item) => item.tno == betDetail?.betPlaceIndex && item.otype == "back")?.size)
       ) {
         return true;
       }
       return false;
     }
   } catch (error) {
+    logger.info({
+      info: `error at get session from provider ${betDetail.mid}`,
+      error: error,
+      stack: error.stack,
+      message: error.message,
+    });
     return true;
   }
   // check the rates of third party api
@@ -1352,6 +1372,9 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
 
 const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) => {
   if (matchBettingDetail?.activeStatus != betStatusType.live) {
+    logger.info({
+      info: `match betting details are not live. ${matchBettingDetail?.activeStatus}`,
+    });
     throw {
       statusCode: 400,
       message: {
@@ -1360,7 +1383,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
-  if(matchBettingDetail?.minBet == matchBettingDetail?.maxBet){
+  if (matchBettingDetail?.minBet == matchBettingDetail?.maxBet) {
     throw {
       statusCode: 400,
       message: {
@@ -1380,6 +1403,9 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
 
   let isManuallBookmakerMarket = [matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3]?.includes(betObj.matchBetType);
   if (betObj.amount > matchBettingDetail?.maxBet || (isManuallBookmakerMarket && matchBettingDetail?.maxBet / (3 - teams.placeIndex) < betObj.amount)) {
+    logger.info({
+      info: `bookmaker max value for index.`,
+    });
     throw {
       statusCode: 400,
       message: {
@@ -1388,7 +1414,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
-  
+
   let isBookmakerMarket = [matchBettingType.bookmaker, matchBettingType.bookmaker2]?.includes(betObj.matchBetType);
 
   let isRateChange = false;
@@ -1521,6 +1547,12 @@ let checkThirdPartyRacingRate = async (matchBettingDetail, betObj, placeIndex, s
     }
   }
   catch (error) {
+    logger.info({
+      info: `error at get racing rate from provider ${matchBettingDetail.marketId}`,
+      error: error,
+      stack: error.stack,
+      message: error.message,
+    });
     throw {
       message: {
         msg: "bet.notLive"
@@ -1571,21 +1603,30 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
       (d) => d.mid?.toString() == betObj.mid?.toString()
     );
     let filterData = matchBettingData?.section?.find((item) => item?.sid?.toString() == betObj?.selectionId?.toString());
-    if (isBookmakerMarket) {
-      let oddLength = filterData.odds.length / 2;
-      if (matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
-        throw {
-          statusCode: 400,
-          message: {
-            msg: "bet.maxAmountViolate"
-          }
-        };
-      }
-    }
 
     if (filterData) {
-      if (filterData?.odds?.find((item) => item?.tno == teams?.placeIndex && item?.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
+      if (filterData?.odds?.find((item) => item.tno == teams?.placeIndex && item.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
         return true;
+      }
+      if (isBookmakerMarket) {
+        let oddLength = 0;
+
+        matchBettingData.section.forEach((section) => {
+            const filteredOdds = section.odds.filter((odd) => odd.odds > 0 && odd.otype == betObj?.betType?.toLowerCase());
+            if (filteredOdds.length > oddLength) {
+              oddLength = filteredOdds.length;
+            }
+        });
+
+        // let oddLength = filterData?.odds?.filter((item) => item?.otype == betObj?.betType?.toLowerCase() && item.odds > 0).length;
+        if (!oddLength || matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
+          throw {
+            statusCode: 400,
+            message: {
+              msg: "bet.maxAmountViolate"
+            }
+          };
+        }
       }
       return false;
     }
@@ -1593,11 +1634,13 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
 
   }
   catch (error) {
-    throw {
-      message: {
-        msg: "bet.notLive"
-      }
-    };
+    logger.info({
+      info: `error at get rate from provider ${betObj.eventType} ${matchBettingDetail.eventId}`,
+      error: error,
+      stack: error.stack,
+      message: error.message,
+    });
+    throw error;
   }
 }
 
@@ -2683,37 +2726,38 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       throw error;
     });
 
-    const walletJob = WalletMatchBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletMatchBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
-    const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for expert ${reqUser.id}`,
-        matchId, walletJobData
+      const expertJob = ExpertMatchBetQueue.createJob(walletJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for expert ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+        throw error;
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -3248,37 +3292,38 @@ exports.racingBettingBetPlaced = async (req, res) => {
       throw error;
     });
 
-    const walletJob = WalletMatchRacingBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+    if (reqUser?.isDemo) {
+      const walletJob = WalletMatchRacingBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
-    const expertJob = ExpertMatchRacingBetQueue.createJob(walletJobData);
-    await expertJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for expert ${reqUser.id}`,
-        matchId, walletJobData
+      const expertJob = ExpertMatchRacingBetQueue.createJob(walletJobData);
+      await expertJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for expert ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
+        throw error;
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-      betPlacedService.deleteBetByEntityOnError(newBet);
-      throw error;
-    });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -4061,39 +4106,41 @@ exports.cardBettingBetPlaced = async (req, res) => {
       throw error;
     });
 
-    const walletJob = WalletCardMatchBetQueue.createJob(walletJobData);
-    await walletJob.save().then(data => {
-      logger.info({
-        info: `add match betting job save in the redis for wallet ${reqUser.id}`,
-        matchId, walletJobData
+    if (!reqUser?.isDemo) {
+      const walletJob = WalletCardMatchBetQueue.createJob(walletJobData);
+      await walletJob.save().then(data => {
+        logger.info({
+          info: `add match betting job save in the redis for wallet ${reqUser.id}`,
+          matchId, walletJobData
+        });
+      }).catch(error => {
+        logger.error({
+          error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
+          stack: error.stack,
+          message: error.message,
+          errorFile: error
+        });
       });
-    }).catch(error => {
-      logger.error({
-        error: `Error at match betting job save in the redis for wallet ${reqUser.id}.`,
-        stack: error.stack,
-        message: error.message,
-        errorFile: error
-      });
-    });
 
+
+      // const expertJob = ExpertCardMatchBetQueue.createJob(walletJobData);
+      // await expertJob.save().then(data => {
+      //   logger.info({
+      //     info: `add match betting job save in the redis for expert ${reqUser.id}`,
+      //     matchId, walletJobData
+      //   });
+      // }).catch(error => {
+      //   logger.error({
+      //     error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
+      //     stack: error.stack,
+      //     message: error.message,
+      //     errorFile: error
+      //   });
+      //   betPlacedService.deleteBetByEntityOnError(newBet);
+      //   throw error;
+      // });
+    }
     await setCardBetPlaceRedis(betPlacedObj?.runnerId, domainUrl, 1);
-
-    // const expertJob = ExpertCardMatchBetQueue.createJob(walletJobData);
-    // await expertJob.save().then(data => {
-    //   logger.info({
-    //     info: `add match betting job save in the redis for expert ${reqUser.id}`,
-    //     matchId, walletJobData
-    //   });
-    // }).catch(error => {
-    //   logger.error({
-    //     error: `Error at match betting job save in the redis for expert ${reqUser.id}.`,
-    //     stack: error.stack,
-    //     message: error.message,
-    //     errorFile: error
-    //   });
-    //   betPlacedService.deleteBetByEntityOnError(newBet);
-    //   throw error;
-    // });
     return SuccessResponse({ statusCode: 200, message: { msg: "betPlaced" }, data: newBet }, req, res)
 
 
@@ -4116,6 +4163,12 @@ const validateCardBettingDetails = async (match, betObj, selectionId, userId) =>
     roundData = data?.data;
   }
   catch (error) {
+    logger.info({
+      info: `error at get card rate from provider ${match?.type}`,
+      error: error,
+      stack: error.stack,
+      message: error.message,
+    });
     throw {
       message: {
         msg: "bet.notLive"
@@ -4275,7 +4328,7 @@ const processBetPlaceCondition = (betObj, currData, match) => {
     case cardGameType.cmeter:
       return ((betObj.betType == betType.BACK && parseFloat(currData.b1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && parseFloat(currData.l1) != parseFloat(betObj.odds)))
     case cardGameType.teen:
-      return ((betObj.betType == betType.BACK && ((parseFloat(currData.b1) * 0.01) + 1) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && ((parseFloat(currData.l1) * 0.01) + 1) != parseFloat(betObj.odds)))
+      return ((betObj.betType == betType.BACK && (Math.round(((parseFloat(currData.b1) * 0.01) + 1) * 100) / 100) != parseFloat(betObj.odds)) || (betObj.betType === betType.LAY && (Math.round(((parseFloat(currData.l1) * 0.01) + 1) * 100) / 100) != parseFloat(betObj.odds)))
     case cardGameType.teen9:
       return ((betObj?.teamName[0]?.toLowerCase() == "t" && currData?.trate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "l" && currData?.lrate != betObj?.odds) || (betObj?.teamName[0]?.toLowerCase() == "d" && currData?.drate != betObj?.odds))
     case cardGameType.ballbyball:

@@ -479,3 +479,7 @@ exports.getUserDataWithUserBalanceDeclare = async (where) => {
     )
     .getMany();
 }
+
+exports.deleteUser = async (where) => {
+  await user.delete(where);
+}

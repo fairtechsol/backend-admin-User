@@ -146,6 +146,27 @@ exports.raceDetails = async (req, res) => {
   }
 };
 
+exports.initialCardMatchDetails = async (req, res) => {
+  try {
+    const { type } = req.params;
+
+    let casinoDetails = await getCardMatch({ type: type });
+
+   
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: casinoDetails,
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
 exports.cardMatchDetails = async (req, res) => {
   try {
     const { type } = req.params;
@@ -492,7 +513,7 @@ exports.marketAnalysis = async (req, res) => {
             currRedisData = {
               a: redisData[redisDataKey.teamArateRedisKey],
               b: redisData[redisDataKey.teamBrateRedisKey],
-              c: redisData[redisDataKey.teamCrateRedisKey],
+              c: isNaN(redisData[redisDataKey.teamCrateRedisKey]) ? 0 : redisData[redisDataKey.teamCrateRedisKey],
             };
           }
           else if (item?.marketType == matchBettingType.tournament) {
@@ -510,7 +531,7 @@ exports.marketAnalysis = async (req, res) => {
             currRedisData = {
               a: redisData[redisDataKey.teamArateRedisKey],
               b: redisData[redisDataKey.teamBrateRedisKey],
-              c: redisData[redisDataKey.teamCrateRedisKey],
+              c: isNaN(redisData[redisDataKey.teamCrateRedisKey]) ? 0 : redisData[redisDataKey.teamCrateRedisKey],
             };
           }
           else {
@@ -520,7 +541,7 @@ exports.marketAnalysis = async (req, res) => {
             currRedisData = {
               a: redisData[redisDataKey.teamArateRedisKey],
               b: redisData[redisDataKey.teamBrateRedisKey],
-              c: redisData[redisDataKey.teamCrateRedisKey],
+              c: isNaN(redisData[redisDataKey.teamCrateRedisKey]) ? 0 : redisData[redisDataKey.teamCrateRedisKey],
             };
           }
 
