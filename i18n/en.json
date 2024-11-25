@@ -33,7 +33,7 @@
     "passwordMatch": "Password must contain at least four letters, including at least one uppercase letter, and four digits.",
     "confirmPasswordNotMatch":"Password and confirm password did not match.",
     "partnershipNotValid" : "Given partnership not valid.",
-    "InvalidExposureLimit" : "Given exposure limit is invalid.",
+    "InvalidExposureLimit" : "Exposure limit can not be greater than {amount}.",
     "betBlockError": "Your bet are block by admin, Please contact to the administrator.",
     "userBlockError": "Your block by admin, Please contact to the administrator.",
     "lock/unlockSuccessfully" : "User lock and unlock operation successful.",
