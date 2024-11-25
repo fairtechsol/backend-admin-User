@@ -6279,14 +6279,14 @@ exports.deleteWalletUsers = async (req, res) => {
 
 exports.getAllChildSearchList = async (req, res) => {
   try {
-    const { roleName, userName, id } = req.query;
+    const { roleName, userName, id, isUser } = req.query;
 
     let users = [];
     if (roleName == userRoleConstant.fairGameAdmin) {
-      users = await getAllUsers({ superParentId: id, userName: ILike(`%${userName}%`) }, ["id", "userName"]);
+      users = await getAllUsers({ superParentId: id, userName: ILike(`%${userName}%`), ...(isUser ? { roleName: userRoleConstant.user } : {}) }, ["id", "userName", "betBlock", "userBlock"]);
     }
     else {
-      users = await getAllUsers({ userName: ILike(`%${userName}%`), isDemo: false }, ["id", "userName"]);
+      users = await getAllUsers({ userName: ILike(`%${userName}%`), isDemo: false, ...(isUser ? { roleName: userRoleConstant.user } : {}) }, ["id", "userName", "betBlock", "userBlock"]);
     }
 
     return SuccessResponse({ statusCode: 200, data: users }, req, res);
