@@ -185,6 +185,11 @@ exports.resultRequestMac88 = async (req, res) => {
             if(!userPrevBetPlaced){
                 return res.status(400).json({ status: "OP_TRANSACTION_NOT_FOUND" })
             }
+            if (userPrevBetPlaced.settled && userPrevBetPlaced.isRollback) {
+                return res.status(400).json({
+                    "status": "OP_ERROR_TRANSACTION_INVALID"
+                })
+            }
             if(userPrevBetPlaced.settled){
                 return res.status(400).json({
                     "status": "OP_DUPLICATE_TRANSACTION"
@@ -414,7 +419,7 @@ const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId
         { currentBalance: userCurrBalance }
     );
 
-    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true });
+    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true, isRollback: true });
 }
 
 exports.getMac88GameList = async (req, res) => {

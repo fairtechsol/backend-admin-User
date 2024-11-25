@@ -57,6 +57,11 @@ const virtualCasinoBetPlacedSchema = new EntitySchema({
       type: "boolean",
       nullable: false,
       default: false
+    },
+    isRollback: {
+      type: "boolean",
+      nullable: false,
+      default: false
     }
   },
   indices: [
