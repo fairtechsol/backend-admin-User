@@ -181,7 +181,7 @@ exports.resultRequestMac88 = async (req, res) => {
 
         const userRedisData = await getUserRedisData(userId);
         if(!userRedisData[transactionId]){
-            const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId }, ["id", "settled"]);
+            const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId }, ["id", "settled", "isRollback"]);
             if(!userPrevBetPlaced){
                 return res.status(400).json({ status: "OP_TRANSACTION_NOT_FOUND" })
             }
