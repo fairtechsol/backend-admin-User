@@ -595,12 +595,12 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
       );
     }
 
-    if (blockingUserDetail?.userBlock && loginId != blockingUserDetail?.userBlockedBy) {
+    if (blockingUserDetail?.userBlock && loginId != blockingUserDetail?.userBlockedBy && !userBlock) {
       return ErrorResponse(
         {
           statusCode: 400,
           message: {
-            msg: "blockedBySomeOneElse",
+            msg: "user.blockedBySomeOneElse",
             keys: { name: "user" }
           },
         },
@@ -608,12 +608,12 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
         res
       );
     }
-    if (blockingUserDetail?.betBlock && loginId != blockingUserDetail?.betBlockedBy) {
+    if (blockingUserDetail?.betBlock && loginId != blockingUserDetail?.betBlockedBy && !betBlock) {
       return ErrorResponse(
         {
           statusCode: 400,
           message: {
-            msg: "blockedBySomeOneElse",
+            msg: "user.blockedBySomeOneElse",
             keys: { name: "user's bet" }
           },
         },
