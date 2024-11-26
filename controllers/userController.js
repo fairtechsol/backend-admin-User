@@ -996,7 +996,7 @@ exports.getTotalUserListBalance = async (req, res, next) => {
 
 exports.userSearchList = async (req, res, next) => {
   try {
-    let { userName, createdBy } = req.query
+    let { userName, createdBy, isUser } = req.query
     if (!userName) {
       return SuccessResponse(
         {
@@ -1018,8 +1018,10 @@ exports.userSearchList = async (req, res, next) => {
       const childIds = await getChildUser(req.user.id);
       where.id = In(childIds?.map((item) => item.id));
     }
-
-    let users = await getUsers(where, ["id", "userName"])
+    if (isUser) {
+      where.roleName = userRoleConstant.user;
+    }
+    let users = await getUsers(where, ["id", "userName","userBlock","betBlock"])
     let response = {
       users: users[0],
       count: users[1]
