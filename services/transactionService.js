@@ -20,6 +20,10 @@ exports.insertTransactions = async (transactions) => {
   return insertUser;
 };
 
+exports.deleteTransactions = async (where) => {
+   await Transaction.delete(where);
+};
+
 /**
  * Retrieves transactions based on specified filters and options.
  * @param {Object} filters - Query filters for WHERE clause.

@@ -232,7 +232,7 @@ exports.cardMatchDetails = async (req, res) => {
           redisData = await calculateProfitLossForCardMatchToResult(In(adminUsers?.map((item) => item?.id)), roundData?.t1?.[0]?.mid, type, `${partnershipPrefixByRole[req.user.roleName]}Partnership`, true);
           let maxLoss = redisData?.exposure;
           redisData = redisData?.profitLoss;
-          casinoDetails.profitLoss = redisData?.profitLoss;
+          casinoDetails.profitLoss = redisData;
           await updateUserDataRedis(req.user.id, {
             ...redisData, [`${redisKeys.userMatchExposure}${roundData?.t1?.[0]?.mid}`]: maxLoss
           });

@@ -30,3 +30,8 @@ exports.insertButton = async (buttons) => {
 exports.updateButton = async (buttons) => {
   await Button.update(buttons?.id, buttons);
 };
+
+
+exports.deleteButton = async (where) => {
+  await Button.delete(where);
+};

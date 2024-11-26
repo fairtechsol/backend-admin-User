@@ -675,3 +675,7 @@ exports.getChildUsersSinglePlaceBet = (id) => {
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
   ) select id from "betPlaceds" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' limit 1`, [id]);
 }
+
+exports.deleteBet = async (where) => {
+  await BetPlaced.delete(where);
+}

@@ -3,12 +3,12 @@ const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUs
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
-const { getTotalProfitLoss, findAllPlacedBet, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
+const { getTotalProfitLoss,  getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
-const { forceLogoutUser, profitLossPercentCol, settingBetsDataAtLogin, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery } = require("../services/commonService");
-const { getUserBalanceDataByUserId, getAllChildCurrentBalanceSum, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
+const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery } = require("../services/commonService");
+const { getUserBalanceDataByUserId,  getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
@@ -58,7 +58,7 @@ exports.createUser = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
 
     if (creator.roleName !== userRoleConstant.fairGameWallet && exposureLimit > creator.exposureLimit)
-      return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" } }, req, res);
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit", keys: { amount: creator.exposureLimit } } }, req, res);
 
     const hashedPassword = await bcrypt.hash(password, process.env.BCRYPTSALT || 10);
 
@@ -577,6 +577,10 @@ exports.setExposureLimit = async (req, res, next) => {
     let loginUser = await getUserById(reqUser.id, ["id", "exposureLimit", "roleName"]);
     if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
 
+    if ( parseFloat(amount) > loginUser.exposureLimit)
+      return ErrorResponse({ statusCode: 400, message: { msg: "user.InvalidExposureLimit" , keys: { amount: loginUser.exposureLimit }} }, req, res);
+
+
     let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "exposureLimit", "roleName"]);
     if (!user) return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "User" } } }, req, res);
 
@@ -589,11 +593,10 @@ exports.setExposureLimit = async (req, res, next) => {
     childUsers.map(async childObj => {
       let childUser = await getUserById(childObj.id);
       if (childUser.exposureLimit > amount || childUser.exposureLimit == 0) {
-        childUser.exposureLimit = amount;
-        await addUser(childUser);
+        await updateUser(childUser.id,{exposureLimit : amount});
       }
     });
-    await addUser(user)
+    await updateUser(user.id,{exposureLimit : amount});
     return SuccessResponse(
       {
         statusCode: 200,
@@ -906,7 +909,7 @@ exports.getTotalUserListBalance = async (req, res, next) => {
 
 exports.userSearchList = async (req, res, next) => {
   try {
-    let { userName, createdBy } = req.query
+    let { userName, createdBy, isUser } = req.query
     if (!userName) {
       return SuccessResponse(
         {
@@ -928,8 +931,10 @@ exports.userSearchList = async (req, res, next) => {
       const childIds = await getChildUser(req.user.id);
       where.id = In(childIds?.map((item) => item.id));
     }
-
-    let users = await getUsers(where, ["id", "userName"])
+    if (isUser) {
+      where.roleName = userRoleConstant.user;
+    }
+    let users = await getUsers(where, ["id", "userName","userBlock","betBlock"])
     let response = {
       users: users[0],
       count: users[1]
@@ -1099,9 +1104,7 @@ exports.lockUnlockUser = async (req, res, next) => {
   try {
     // Extract relevant data from the request body and user object
     const { userId, betBlock, userBlock } = req.body;
-    const { id: loginId } = req.user;
-
-
+    const { id: loginId,roleName } = req.user;
 
     // Fetch user details of the current user, including block information
     const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);
@@ -1112,6 +1115,8 @@ exports.lockUnlockUser = async (req, res, next) => {
       "createBy",
       "userBlock",
       "betBlock",
+      "userBlockedBy",
+      "betBlockedBy"
     ]);
 
     // Check if the current user is already blocked
@@ -1124,12 +1129,42 @@ exports.lockUnlockUser = async (req, res, next) => {
       throw { message: { msg: "user.betBlockError" } };
     }
 
+   
+
+
     // Check if the user performing the block/unblock operation has the right access
-    if (blockingUserDetail?.createBy != loginId) {
+    if (blockingUserDetail?.createBy != loginId && roleName != userRoleConstant.superAdmin) {
       return ErrorResponse(
         {
           statusCode: 403,
           message: { msg: "user.blockCantAccess" },
+        },
+        req,
+        res
+      );
+    }
+
+    if (blockingUserDetail?.userBlock && loginId != blockingUserDetail?.userBlockedBy && !userBlock) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "user.blockedBySomeOneElse",
+            keys: { name: "user" }
+          },
+        },
+        req,
+        res
+      );
+    }
+    if (blockingUserDetail?.betBlock && loginId != blockingUserDetail?.betBlockedBy && !betBlock) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "user.blockedBySomeOneElse",
+            keys: { name: "user's bet" }
+          },
         },
         req,
         res
