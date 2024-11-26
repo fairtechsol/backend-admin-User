@@ -582,6 +582,8 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
       "createBy",
       "userBlock",
       "betBlock",
+      "userBlockedBy",
+      "betBlockedBy"
     ]);
 
     if (!blockingUserDetail) {
@@ -591,6 +593,33 @@ exports.lockUnlockSuperAdmin = async (req, res, next) => {
           message: {
             msg: "notFound",
             keys: { name: "User" },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    if (blockingUserDetail?.userBlock && loginId != blockingUserDetail?.userBlockedBy) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "blockedBySomeOneElse",
+            keys: { name: "user" }
+          },
+        },
+        req,
+        res
+      );
+    }
+    if (blockingUserDetail?.betBlock && loginId != blockingUserDetail?.betBlockedBy) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "blockedBySomeOneElse",
+            keys: { name: "user's bet" }
           },
         },
         req,
