@@ -1216,6 +1216,21 @@ exports.lockUnlockUser = async (req, res, next) => {
       throw { message: { msg: "user.betBlockError" } };
     }
 
+   
+
+
+    // Check if the user performing the block/unblock operation has the right access
+    if (blockingUserDetail?.createBy != loginId && roleName != userRoleConstant.superAdmin) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "user.blockCantAccess" },
+        },
+        req,
+        res
+      );
+    }
+
     if (blockingUserDetail?.userBlock && loginId != blockingUserDetail?.userBlockedBy && !userBlock) {
       return ErrorResponse(
         {
@@ -1236,32 +1251,6 @@ exports.lockUnlockUser = async (req, res, next) => {
           message: {
             msg: "user.blockedBySomeOneElse",
             keys: { name: "user's bet" }
-          },
-        },
-        req,
-        res
-      );
-    }
-
-
-    // Check if the user performing the block/unblock operation has the right access
-    if (blockingUserDetail?.createBy != loginId && roleName != userRoleConstant.superAdmin) {
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: { msg: "user.blockCantAccess" },
-        },
-        req,
-        res
-      );
-    }
-
-    if (blockingUserDetail?.userBlock && loginId != blockingUserDetail?.userBlockedBy) {
-      return ErrorResponse(
-        {
-          statusCode: 400,
-          message: {
-            msg: "blockedBySomeOneElse"
           },
         },
         req,
