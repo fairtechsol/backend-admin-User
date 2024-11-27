@@ -1,9 +1,16 @@
+const mac88Games = require("./mac88.json");
+
+
 module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "http://localhost:6060";
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "http://localhost:5050";
 module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 module.exports.casinoMicroServiceDomain = process.env.CASINOMICROSERVICEURL || "http://localhost:3201";
 module.exports.oldBetFairDomain = process.env.OLD_BETFAIR_DOMAIN_URL || 'http://localhost:5001';
 module.exports.jwtSecret = process.env.JWT_SECRET || "secret";
+
+module.exports.mac88Domain = process.env.MAC_88_DOMAIN || "https://dev-api.dreamdelhi.com/api";
+module.exports.mac88CasinoPPK = process.env.MAC88_PRIVATE_KEY;
+module.exports.mac88CasinoOperatorId = process.env.MAC88_OPERATOR_ID;
 
 module.exports.resultType = {
   tie: "Tie",
@@ -39,6 +46,13 @@ module.exports.matchBettingsTeamName = {
   under: "UNDER",
   yes: "YES",
   no: "NO"
+}
+
+module.exports.transactionType = {
+  withdraw: 0,
+  sports: 1,
+  casino: 2,
+  virtualCasino: 3
 }
 
 module.exports.userRoleConstant = {
@@ -141,15 +155,15 @@ module.exports.differLoginTypeByRoles = {
 };
 module.exports.defaultButtonValue = {
   buttons:
-    '{"25k":"25000","50k":"50000","1L":"100000","2L":"200000","3L":"300000","5L":"500000","10L":"1000000","25L":"2500000"}',
+    '{"1k":"1000","2k":"2000","5k":"5000","10k":"10000","20k":"20000", "25k":"25000","50k":"50000","75k":"75000","90k":"90000","95k":"95000"}',
 };
 module.exports.sessiontButtonValue = {
   buttons:
-    '{"5k":"5000","10k":"10000","15k":"15000","25k":"25000","50k":"50000","1L":"100000","2L":"200000","5L":"500000"}',
+    '{"1k":"1000","2k":"2000","5k":"5000","10k":"10000","20k":"20000", "25k":"25000","50k":"50000","75k":"75000","90k":"90000","95k":"95000"}',
 };
 module.exports.casinoButtonValue = {
   buttons:
-    '{"25":"25","50":"50","100":"100","500":"500","1k":"1000","2k":"2000","5k":"5000","10k":"10000"}',
+    '{"25":"25","50":"50","100":"100","200":"200","500":"500","1k":"1000","2k":"2000","5k":"5000"}',
 };
 module.exports.buttonType = {
   MATCH: "Match",
@@ -816,3 +830,5 @@ exports.teenPattiWinRatio = {
   "5": 35,
   "6": 45
 }
+
+exports.casinoProvider = Array.from(new Set(mac88Games.map((item) => item?.provider_name)));

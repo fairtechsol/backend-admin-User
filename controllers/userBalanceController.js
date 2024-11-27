@@ -16,7 +16,7 @@ const {
 const { logger } = require("../config/logger");
 const { settleCommission, insertCommissions } = require("../services/commissionService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-
+const { transactionType: transactionTypeConstant } = require("../config/contants");
 exports.updateUserBalance = async (req, res) => {
   try {
     let { userId, transactionType, amount, transactionPassword, remark } =
@@ -177,6 +177,7 @@ exports.updateUserBalance = async (req, res) => {
         transType: transactionType,
         closingBalance: updatedUpdateUserBalanceData.currentBalance,
         description: remark,
+        type: transactionTypeConstant.withdraw
       },
       {
         actionBy: reqUser.id,
@@ -187,6 +188,7 @@ exports.updateUserBalance = async (req, res) => {
           transactionType == transType.add ? transType.withDraw : transType.add,
         closingBalance: updatedLoginUserBalanceData.currentBalance,
         description: remark,
+        type: transactionTypeConstant.withdraw
       },
     ];
 

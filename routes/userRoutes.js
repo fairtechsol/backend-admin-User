@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
 const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, updateUserValid, setExposureLimitValid, setCreditRefValidate, userMatchLockValidate, CheckOldPassword, oldUserMatchLockValidate } = require('../validators/userValidator');
-const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch, deleteUser, checkOldPasswordData, checkMatchLock } = require('../controllers/userController');
+const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, totalProfitLoss, isUserExist, userMatchLock, getMatchLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch, deleteUser, checkOldPasswordData, checkMatchLock, loginWithDemoUser } = require('../controllers/userController');
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 const { totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getUserWiseTotalProfitLoss } = require('../controllers/fairgameWalletController');
 
@@ -44,6 +44,7 @@ router.get("/profitLossData/:matchId", isAuthenticate, getUserProfitLossForMatch
 
 router.delete("/delete/:id", isAuthenticate, deleteUser);
 router.post("/check/oldPassword", isAuthenticate, validator(CheckOldPassword), checkOldPasswordData);
+router.post('/loginWithDemo', loginWithDemoUser);
 
 
 module.exports = router;

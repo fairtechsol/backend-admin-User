@@ -1,4 +1,4 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, redisKeys, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue } = require('../config/contants');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, redisKeys, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType } = require('../config/contants');
 const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
@@ -7,7 +7,7 @@ const { getTotalProfitLoss,  getPlacedBetTotalLossAmount } = require('../service
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
-const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery } = require("../services/commonService");
+const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
 const { getUserBalanceDataByUserId,  getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
@@ -102,7 +102,8 @@ exports.createUser = async (req, res) => {
       amount: 0,
       transType: transType.add,
       closingBalance: insertUser.creditRefrence,
-      description: walletDescription.userCreate
+      description: walletDescription.userCreate,
+      type: transactionType.withdraw
     }];
     if (insertUser.createdBy != insertUser.id) {
       transactionArray.push({
@@ -112,7 +113,8 @@ exports.createUser = async (req, res) => {
         amount: 0,
         transType: transType.withDraw,
         closingBalance: insertUser.creditRefrence,
-        description: walletDescription.userCreate
+        description: walletDescription.userCreate,
+        type: transactionType.withdraw
       });
     }
 
@@ -172,6 +174,91 @@ exports.updateUser = async (req, res) => {
 
     let response = lodash.pick(updateUser, ["fullName", "phoneNumber", "city", "matchComissionType", "matchCommission"])
     return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "User" } }, data: response }, req, res)
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.loginWithDemoUser = async (req, res) => {
+  try {
+    const currTime = new Date().getTime();
+    const upperCaseUserName = `DEMO${currTime}`;
+
+    const hashedPassword = await bcrypt.hash((Math.floor(1000000000 + Math.random() * 9000000000)).toString(), process.env.BCRYPTSALT || 10);
+
+    const userData = {
+      userName: upperCaseUserName,
+      fullName: "DEMO",
+      password: hashedPassword,
+      roleName: userRoleConstant.user,
+      userBlock: false,
+      betBlock: false,
+      creditRefrence: 1500,
+      exposureLimit: 1500 * 1000,
+      maxBetLimit: 1500 * 1000,
+      minBetLimit: 1,
+      superParentType: null,
+      superParentId: null,
+      delayTime: 5,
+      loginAt: new Date(),
+      isDemo: true
+    };
+
+    const insertUser = await addUser(userData);
+
+    const transactionArray = [{
+      actionBy: insertUser.id,
+      searchId: insertUser.id,
+      userId: insertUser.id,
+      amount: 1500,
+      transType: transType.add,
+      closingBalance: 1500,
+      description: walletDescription.demoUserCreate,
+      type: transactionType.withdraw
+    }];
+
+
+    await insertTransactions(transactionArray);
+
+    const insertUserBalanceData = {
+      currentBalance: 1500,
+      userId: insertUser.id,
+      profitLoss: 0,
+      myProfitLoss: 0,
+      downLevelBalance: 0,
+      exposure: 0
+    };
+
+    const balance = await addInitialUserBalance(insertUserBalanceData);
+
+    const buttonValue = [{
+      type: buttonType.MATCH,
+      value: defaultButtonValue.buttons,
+      createBy: insertUser.id
+    }, {
+      type: buttonType.SESSION,
+      value: sessiontButtonValue.buttons,
+      createBy: insertUser.id
+    },
+    {
+      type: buttonType.CASINO,
+      value: casinoButtonValue.buttons,
+      createBy: insertUser.id
+    }];
+    await insertButton(buttonValue);
+
+    const response = lodash.omit(insertUser, ["password", "transPassword"]);
+
+
+    const token = await loginDemoUser({ ...response, userBal: balance });
+
+    return SuccessResponse({
+      statusCode: 200, data: {
+        token,
+        roleName: userRoleConstant.user,
+        userId: insertUser?.id,
+      }
+    }, req, res);
   } catch (err) {
     return ErrorResponse(err, req, res);
   }
@@ -1128,9 +1215,6 @@ exports.lockUnlockUser = async (req, res, next) => {
     if (!betBlock && userDetails?.betBlock) {
       throw { message: { msg: "user.betBlockError" } };
     }
-
-   
-
 
     // Check if the user performing the block/unblock operation has the right access
     if (blockingUserDetail?.createBy != loginId && roleName != userRoleConstant.superAdmin) {

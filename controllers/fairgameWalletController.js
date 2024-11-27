@@ -26,6 +26,7 @@ const {
   sessionBettingType,
   casinoButtonValue,
   cardGameType,
+  transactionType,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss } = require("../services/betPlacedService");
@@ -234,6 +235,7 @@ exports.createSuperAdmin = async (req, res) => {
         transType: transType.add,
         closingBalance: creditRefrence,
         description: walletDescription.userCreate,
+        type: transactionType.withdraw
       },
     ];
 
@@ -245,6 +247,7 @@ exports.createSuperAdmin = async (req, res) => {
       myProfitLoss: 0,
       downLevelBalance: 0,
       exposure: 0,
+      type: transactionType.withdraw
     };
     insertUserBalanceData = await addInitialUserBalance(insertUserBalanceData);
     if (insertUser.roleName == userRoleConstant.user) {
@@ -407,6 +410,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
         transType: transactionType,
         closingBalance: updateData.currentBalance,
         description: remark,
+        type: transactionType.withdraw
       },
     ];
 
@@ -547,6 +551,7 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
         transType: transType.creditRefer,
         closingBalance: updateData.creditRefrence,
         description: "CREDIT REFRENCE " + remark,
+        type: transactionType.withdraw
       },
     ];
 
@@ -1006,7 +1011,8 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
         transType: transTypes,
         closingBalance: userCurrBalance,
         description: description,
-        betId: [betId]
+        betId: [betId],
+        type: transactionType.sports
       }
     );
 
@@ -1540,7 +1546,8 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
           transType: -profitLoss < 0 ? transType.loss : transType.win,
           closingBalance: userCurrBalance,
           description: `Revert ${user?.eventType}/${user?.eventName}/session`,
-          betId: [betId]
+          betId: [betId],
+          type: transactionType.sports
         }
       );
     }
@@ -2287,6 +2294,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     matchOddWinBets?.filter((item) => item.user.id == user.user.id)?.forEach((matchOddData, uniqueId) => {
       userCurrentBalance -= parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -2439,7 +2447,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         lossAmount: parseFloat(getMultipleAmount.lossAmountComplete),
         type: "Complete Match",
         result: "YES",
-        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeManual || item?.type == matchBettingType.completeMatch || item.marketType === matchBettingType.completeMatch1)?.map((item) => item?.id)
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeManual || item?.type == matchBettingType.completeMatch || item.type === matchBettingType.completeMatch1)?.map((item) => item?.id)
         
       }]:[])
     ];
@@ -2458,7 +2466,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         description: `${user?.eventType}/${user?.eventName}/${item.type}-${item.result}`,
         createdAt: new Date(),
         uniqueId: uniqueId,
-        betId: item?.betId
+        betId: item?.betId,
+        type: transactionType.sports
       });
     });
 
@@ -2831,7 +2840,8 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         createdAt: new Date(),
         description: `Revert deducted 1% for bet on match odds ${matchOddData?.eventType}/${matchOddData.eventName}-${matchOddData.teamName} on odds ${matchOddData.odds}/${matchOddData.betType} of stake ${matchOddData.amount} `,
         uniqueId: uniqueId,
-        betId: [matchDetailsBetIds?.find((item) => item?.type == matchBettingType.matchOdd)?.id]
+        betId: [matchDetailsBetIds?.find((item) => item?.type == matchBettingType.matchOdd)?.id],
+        type: transactionType.sports,
       });
     });
 
@@ -2933,7 +2943,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmountComplete).toFixed(2)),
         type: "Complete Match",
         result: "YES",
-        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeMatch || item?.type == matchBettingType.completeManual || item.marketType === matchBettingType.completeMatch1)?.map((item) => item?.id)
+        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.completeMatch || item?.type == matchBettingType.completeManual || item.type == matchBettingType.completeMatch1)?.map((item) => item?.id)
       }] : [])
     ];
 
@@ -2941,6 +2951,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
     transactions?.forEach((item, uniqueId) => {
       currBal = currBal - item.winAmount + item.lossAmount;
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -3318,6 +3329,7 @@ const calculateProfitLossMatchOtherMarketForUserDeclare = async (users, betId, m
       currBal = currBal + item.winAmount - item.lossAmount;
 
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -3681,6 +3693,7 @@ const calculateProfitLossMatchOtherMarketForUserUnDeclare = async (users, betId,
     transactions?.forEach((item, uniqueId) => {
       currBal = currBal - item.winAmount + item.lossAmount;
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -4049,6 +4062,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
     matchOddWinBets?.filter((item) => item.user.id == user.user.id)?.forEach((matchOddData, uniqueId) => {
       userCurrentBalance -= parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -4195,6 +4209,7 @@ const calculateProfitLossOtherMatchForUserDeclare = async (users, betId, matchId
       currBal = currBal + item.winAmount - item.lossAmount;
 
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -4582,6 +4597,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
       matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData, uniqueId) => {
         userCurrentBalance += parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
         bulkWalletRecord.push({
+          type: transactionType.sports,
           matchId: matchId,
           actionBy: userId,
           searchId: user.user.id,
@@ -4698,6 +4714,7 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
     transactions?.forEach((item, uniqueId) => {
       currBal = currBal - item.winAmount + item.lossAmount;
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -5068,6 +5085,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
       currBal = currBal + item.winAmount - item.lossAmount;
 
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -5412,6 +5430,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
     transactions?.forEach((item, uniqueId) => {
       currBal = currBal - item.winAmount + item.lossAmount;
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -6563,6 +6582,7 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
     matchOddWinBets?.filter((item) => item.user.id == user.user.id)?.forEach((matchOddData, uniqueId) => {
       userCurrentBalance -= parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -6709,6 +6729,7 @@ const calculateProfitLossRaceMatchForUserDeclare = async (users, betId, matchId,
       currBal = currBal + item.winAmount - item.lossAmount;
 
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -7076,6 +7097,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData, uniqueId) => {
       userCurrentBalance += parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -7177,6 +7199,7 @@ const calculateProfitLossRaceMatchForUserUnDeclare = async (users, betId, matchI
     transactions?.forEach((item, uniqueId) => {
       currBal = currBal - item.winAmount + item.lossAmount;
       bulkWalletRecord.push({
+        type: transactionType.sports,
         matchId: matchId,
         actionBy: userId,
         searchId: user.user.id,
@@ -7590,6 +7613,7 @@ const calculateProfitLossCardMatchForUserDeclare = async (users, matchId, fwProf
       currBal = currBal + item.winAmount - item.lossAmount;
 
       bulkWalletRecord.push({
+        type: transactionType.casino,
         matchId: matchId,
         actionBy: user.user.id,
         searchId: user.user.id,

@@ -47,6 +47,10 @@ exports.incrementValuesRedis = async (userId, value, updateValues) => {
   await pipeline.exec();
 };
 
+// Assuming internalRedis is the Redis client instance
+exports.incrementRedisBalance = async (userId, key, value) => {
+  return await internalRedis.hincrbyfloat(userId, key, value)
+};
 
 exports.hasUserInCache = async (userId) => {
   return await internalRedis.exists(userId);
@@ -100,4 +104,8 @@ exports.getHashKeysByPattern = async (key, pattern) => {
     }
   } while (cursor !== '0');
   return resultObj;
+}
+
+exports.checkAndUpdateTransaction = async (userId, transactionId) => {
+  return await internalRedis.hsetnx(userId, transactionId, 1);
 }

@@ -52,7 +52,8 @@ exports.allApiRoutes = {
     updateBalance:"/superAdmin/update/balance/SA",
     autoLockUnlockUser:"/superAdmin/auto/lockUnlockUser",
     cardResultList:"/superadmin/cards/result/",
-    cardResultDetail:"/superadmin/cards/result/detail/"
+    cardResultDetail:"/superadmin/cards/result/detail/",
+    virtualCasinoResult:"/superadmin/virtual/casino/result"
   },
   EXPERT:{
     partnershipId:"/superAdmin/partnershipId/"
@@ -71,5 +72,9 @@ exports.allApiRoutes = {
       [gameType.football]:"/getAllRateFootBallTennis/",
       [gameType.tennis]: "/getAllRateFootBallTennis/"
     }
+  },
+  MAC88:{
+    login:"/operator/login",
+    gameList:"/operator/get-games-list"
   }
 }
