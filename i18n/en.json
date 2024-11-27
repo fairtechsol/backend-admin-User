@@ -41,7 +41,7 @@
     "InvalidHierarchy" : "Invalid user role you given for creation.",
     "userExist" : "User already exist on given user name." ,
     "blockCantAccess":"You can not block this user.",
-    "blockedBySomeOneElse":"You can not block this {name} as its already blocked by the upper user.",
+    "blockedBySomeOneElse":"You can not un block this {name} as its already blocked by the upper user.",
     "alreadyBlocked":"{name} is already {type}.",
     "ExposurelimitSet" : "Exposure limit set successfully.",
     "UserBalanceFetchSuccessfully" : "User balance fetch successfully.",
