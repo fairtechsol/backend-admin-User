@@ -1216,9 +1216,6 @@ exports.lockUnlockUser = async (req, res, next) => {
       throw { message: { msg: "user.betBlockError" } };
     }
 
-   
-
-
     // Check if the user performing the block/unblock operation has the right access
     if (blockingUserDetail?.createBy != loginId && roleName != userRoleConstant.superAdmin) {
       return ErrorResponse(
