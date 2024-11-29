@@ -1,5 +1,5 @@
 const Joi = require('joi')
-const { userRoleConstant, matchComissionTypeConstant, matchWiseBlockType, passwordRegex } = require('../config/contants')
+const { userRoleConstant, matchComissionTypeConstant, matchWiseBlockType, passwordRegex, sessionBettingType } = require('../config/contants')
 
 
 module.exports.CreateUser = Joi.object({
@@ -114,6 +114,21 @@ module.exports.userMatchLockValidate = Joi.object({
   type: Joi.string().valid(...Object.values(matchWiseBlockType)).required(),
   block: Joi.boolean().required(),
   operationToAll: Joi.boolean()
+});
+
+module.exports.userMarketLockValidate = Joi.object({
+  userId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  matchId: Joi.string().guid({ version: 'uuidv4' }).required(),
+  betId: Joi.string().guid({ version: "uuidv4" }),
+  blockType: Joi.number()
+    .valid(0, 1)
+    .required()
+    .messages({
+      'any.only': 'blockType must be either 0 or 1',
+      'any.required': 'blockType is required',
+    }),
+  sessionType: Joi.string().valid(...Object.values(sessionBettingType)),
+  isLock: Joi.boolean()
 });
 
 module.exports.oldUserMatchLockValidate = Joi.object({

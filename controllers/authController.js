@@ -96,6 +96,7 @@ const setUserDetailsRedis = async (user) => {
 };
 
 exports.login = async (req, res) => {
+  console.log("dsadasdsadsad")
   try {
     const { password, loginType } = req.body;
     const userName = req.body.userName;

@@ -3,10 +3,12 @@ const { AppDataSource } = require("../config/postGresConnection");
 const userSchema = require("../models/user.entity");
 const userBalanceSchema = require("../models/userBalance.entity");
 const userMatchLockSchema = require("../models/userMatchLock.entity");
+const userMarketLockSchema = require("../models/userMarketLock.entity");
 const user = AppDataSource.getRepository(userSchema);
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
 const userMatchLock = AppDataSource.getRepository(userMatchLockSchema);
-const { ILike, In, Not, MoreThan } = require("typeorm");
+const userMarketLock = AppDataSource.getRepository(userMarketLockSchema);
+const { ILike, In, Not, IsNull, MoreThan } = require("typeorm");
 const ApiFeature = require("../utils/apiFeatures");
 
 // id is required and select is optional parameter is an type or array
@@ -355,7 +357,6 @@ exports.deleteUserMatchLock = async (where) => {
   let deleted = await userMatchLock.delete(where);
   return deleted;
 };
-
 exports.getMatchLockAllChild = (id, matchId) => {
   const query = `
     SELECT p."id", p."userName", um."blockBy", um."matchId", um."matchLock", um."sessionLock"
@@ -369,6 +370,35 @@ exports.getMatchLockAllChild = (id, matchId) => {
     throw error;
   }
 }
+exports.getUserMarketLock = (where, select) => {
+  return userMarketLock.findOne({ where: where, select: select });
+}
+
+exports.addUserMarketLock = async (body) => {
+  let inserted = await userMarketLock.save(body);
+  return inserted;
+};
+
+exports.deleteUserMarketLock = async (where) => {
+  let deleted = await userMarketLock.delete(where);
+  return deleted;
+};
+exports.getMarketLockAllChild = async (where, select) => {
+  let { matchId, betId, ...whereData } = where; 
+  const usersWithLockStatus = await user.createQueryBuilder('user')
+    .leftJoin(
+      'userMarketLock',
+      'userMarketLock',
+      'userMarketLock.userId = user.id AND userMarketLock.matchId = :matchId AND userMarketLock.betId = :betId',
+      { matchId, betId }
+    )
+    .where(whereData) 
+    .select(select)
+    .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS isLock`)
+    .getRawMany();
+
+  return usersWithLockStatus;
+};
 
 exports.getGameLockForDetails = (where, select) => {
   try {

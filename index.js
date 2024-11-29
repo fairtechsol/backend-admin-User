@@ -96,7 +96,7 @@ if (process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev") {
 socketManager(server);
 
 // Start the server on the specified port
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 server.listen(PORT, () => {
   console.log(`HTTP/2 server is running on https://localhost:${PORT}`);
   cron.schedule('0 */2 * * *', () => {

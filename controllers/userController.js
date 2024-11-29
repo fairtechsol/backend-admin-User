@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, redisKeys, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock,getMatchLockAllChild, getUserMarketLock, addUserMarketLock, deleteUserMarketLock, getMarketLockAllChild,  getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -1501,6 +1501,87 @@ exports.userMatchLock = async (req, res) => {
     return userAlreadyBlockExit;
   }
 
+}
+
+// userMarketLock
+exports.getMarketLockAllChild = async (req, res) => {
+  let reqUser = req.user;
+  let matchId = req.query.matchId;
+  let betId = req.query.betId;
+//   let childUsers = await getMarketLockAllChild({id: reqUser.id, matchId, betId},['user.id','user.userName','user.fullName',"user.autoBlock"
+// ]);
+let childUsers = await getMarketLockAllChild({createBy:reqUser.id, id: Not(reqUser.id), matchId, betId},['user.id AS id',
+'user.userName AS userName',
+'user.fullName AS fullName'
+]);
+  return SuccessResponse({
+    statusCode: 200,
+    data: childUsers,
+  }, req, res);
+}
+
+exports.userMarketLock = async (req, res) => {
+  try {
+    const { userId, matchId, blockType = "", betId = "", sessionType } = req.body;
+    let reqUser = req.user || {};
+    let roleName = reqUser.roleName;
+    let isLock = true; 
+    let checkMarket = await getUserMarketLock({ userId, matchId, betId, blockType, blockBy: reqUser.id })
+
+    if (isLock && checkMarket) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "alreadyLocked" } },
+        req,
+        res
+      );
+    }
+    if (!isLock && !checkMarket) {
+      return ErrorResponse(
+        { statusCode: 400, message: { msg: "notLocked" } },
+        req,
+        res
+      );
+    }
+
+    const childUsers = roleName == userRoleConstant.fairGameWallet ? await getAllUsers({}, ["id", "userName"]) : await getChildsWithOnlyUserRole(userId);
+    const allChildUserIds = Array.from(
+      new Set([...childUsers.map((obj) => obj.id), userId])
+    );
+
+    let returnData;
+    for (const blockUserId of allChildUserIds) {
+      returnData = await userBlockUnlockMarket(blockUserId, matchId, reqUser, betId, sessionType, blockType);
+    }
+
+
+    return SuccessResponse({
+      statusCode: 200,
+      message: { msg: "updated", keys: { name: "User" } },
+      data: { returnData },
+    }, req, res);
+  } catch (error) {
+    return ErrorResponse(error, req, res);
+  }
+
+  async function userBlockUnlockMarket(userId, matchId, reqUser, betId, sessionType, blockType) {
+    let userAlreadyLockExit = await getUserMarketLock({ userId, matchId, blockType, blockBy: reqUser.id });
+
+    if (!userAlreadyLockExit) {
+      const object = {
+        userId,
+        matchId,
+        blockBy: reqUser.id,
+        betId,
+        sessionType,
+        blockType
+      };
+      addUserMarketLock(object);
+      return object;
+    }else{
+      deleteUserMarketLock({ id: userAlreadyLockExit.id });
+      return userAlreadyLockExit;
+    }
+  }
 }
 
 exports.checkChildDeactivate = async (req, res) => {
