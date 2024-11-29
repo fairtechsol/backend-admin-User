@@ -1508,12 +1508,10 @@ exports.getMarketLockAllChild = async (req, res) => {
   let reqUser = req.user;
   let matchId = req.query.matchId;
   let betId = req.query.betId;
-//   let childUsers = await getMarketLockAllChild({id: reqUser.id, matchId, betId},['user.id','user.userName','user.fullName',"user.autoBlock"
-// ]);
-let childUsers = await getMarketLockAllChild({createBy:reqUser.id, id: Not(reqUser.id), matchId, betId},['user.id AS id',
-'user.userName AS userName',
-'user.fullName AS fullName'
-]);
+  let childUsers = await getMarketLockAllChild({createBy:reqUser.id, id: Not(reqUser.id), matchId, betId},['user.id AS id',
+  'user.userName AS userName',
+  'user.fullName AS fullName'
+  ]);
   return SuccessResponse({
     statusCode: 200,
     data: childUsers,
@@ -1522,10 +1520,9 @@ let childUsers = await getMarketLockAllChild({createBy:reqUser.id, id: Not(reqUs
 
 exports.userMarketLock = async (req, res) => {
   try {
-    const { userId, matchId, blockType = "", betId = "", sessionType } = req.body;
+    const { userId, matchId, blockType = "", betId = "", sessionType, isLock } = req.body;
     let reqUser = req.user || {};
     let roleName = reqUser.roleName;
-    let isLock = true; 
     let checkMarket = await getUserMarketLock({ userId, matchId, betId, blockType, blockBy: reqUser.id })
 
     if (isLock && checkMarket) {
