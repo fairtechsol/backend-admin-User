@@ -1509,8 +1509,7 @@ exports.getMarketLockAllChild = async (req, res) => {
   let matchId = req.query.matchId;
   let betId = req.query.betId;
   let childUsers = await getMarketLockAllChild({createBy:reqUser.id, id: Not(reqUser.id), matchId, betId},['user.id AS id',
-  'user.userName AS userName',
-  'user.fullName AS fullName'
+  'user.userName AS "userName"',
   ]);
   return SuccessResponse({
     statusCode: 200,

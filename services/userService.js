@@ -389,12 +389,10 @@ exports.getMarketLockAllChild = async (where, select) => {
     .leftJoin(
       'userMarketLock',
       'userMarketLock',
-      'userMarketLock.userId = user.id AND userMarketLock.matchId = :matchId AND userMarketLock.betId = :betId',
-      { matchId, betId }
-    )
+      'userMarketLock.userId = user.id AND userMarketLock.matchId = :matchId AND userMarketLock.betId = :betId',{ matchId, betId })
     .where(whereData) 
     .select(select)
-    .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS isLock`)
+    .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS "isLock"`)
     .getRawMany();
 
   return usersWithLockStatus;
