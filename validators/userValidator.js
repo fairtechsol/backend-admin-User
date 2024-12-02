@@ -119,7 +119,7 @@ module.exports.userMatchLockValidate = Joi.object({
 module.exports.userMarketLockValidate = Joi.object({
   userId: Joi.string().guid({ version: 'uuidv4' }).required(),
   matchId: Joi.string().guid({ version: 'uuidv4' }).required(),
-  betId: Joi.string().guid({ version: "uuidv4" }),
+  betId: Joi.string().guid({ version: "uuidv4" }).allow(null, undefined),
   blockType: Joi.number()
     .valid(0, 1, 2)
     .required()
@@ -127,9 +127,11 @@ module.exports.userMarketLockValidate = Joi.object({
       'any.only': 'blockType must be either 0 , 1 or 2',
       'any.required': 'blockType is required',
     }),
-  sessionType: Joi.string().valid(...Object.values(sessionBettingType)),
+  sessionType: Joi.string().valid(...Object.values(sessionBettingType)).allow(null, undefined),
   isLock: Joi.boolean().required(),
-  operationToAll: Joi.boolean()
+  operationToAll: Joi.boolean().required().messages({
+    'any.required': 'Operation to all is required',
+  }),
 });
 
 module.exports.oldUserMatchLockValidate = Joi.object({

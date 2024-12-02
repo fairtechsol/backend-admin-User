@@ -272,7 +272,7 @@ exports.getChildsWithMergedUser = async (id, ids) => {
     )
     SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND ("roleName" = $2 or "createBy" = $1) AND "id" != $1 ${ids?.length?"AND id != ANY($3)":""};
   `;
-  const results = await user.query(query, [id, userRoleConstant.user,...(ids?.length?ids:[])]);
+  const results = await user.query(query, [id, userRoleConstant.user, ids]);
   return results;
 }
 exports.getFirstLevelChildUserWithPartnership = async (id, partnership) => {
@@ -386,6 +386,14 @@ exports.getUserMarketLock = (where, select) => {
   return userMarketLock.findOne({ where: where, select: select });
 }
 
+exports.getAllUsersMarket = async (where, select) => {
+  return await userMarketLock.find({
+    where: where,
+    select: select
+  });
+
+};
+
 exports.addUserMarketLock = async (body) => {
   let inserted = await userMarketLock.save(body);
   return inserted;
@@ -414,16 +422,6 @@ exports.getMarketLockAllChild = async (where, select) => {
 
   return usersWithLockStatus;
 };
-exports.getCheckMarketLock = async ({ matchId, betId, blockBy }) => {
-  const query = `
-    SELECT "userId"
-    FROM "userMarketLocks"
-    WHERE "matchId" = $1 AND "betId" = $2 AND "blockBy" = $3;
-  `;
-  const result = await user.query(query, [matchId, betId, blockBy]);
-
-  return result.map(lock => lock.userId);
-}
 exports.getGameLockForDetails = (where, select) => {
   try {
     let userData = userMatchLock.createQueryBuilder('userMatchLock')

@@ -1524,7 +1524,7 @@ exports.userMarketLock = async (req, res) => {
     let roleName = reqUser.roleName;
 
     if(!operationToAll){
-      let checkMarket = await getUserMarketLock({ userId, matchId, betId, blockBy: reqUser.id, sessionType})
+      let checkMarket = await getUserMarketLock({ userId, matchId, betId, createBy: reqUser.id, sessionType}, ['id'])
 
       if (isLock && checkMarket) {
         return ErrorResponse(
@@ -1544,7 +1544,7 @@ exports.userMarketLock = async (req, res) => {
 
     let checkAlreadyLock;
     if(operationToAll){
-      checkAlreadyLock = await getCheckMarketLock({ matchId, betId, blockBy: reqUser.id,sessionType });
+      checkAlreadyLock = await getAllUsersMarket({ matchId, betId, createBy: reqUser.id,sessionType },['userId']);
     }
     const childUsers = roleName == userRoleConstant.fairGameWallet ? await getAllUsers({}, ["id", "userName"]) : operationToAll ? await getChildsWithMergedUser(reqUser.id, checkAlreadyLock)
     : await getChildsWithOnlyUserRole(userId);
@@ -1561,7 +1561,7 @@ exports.userMarketLock = async (req, res) => {
       return {
         userId: obj,
         matchId,
-        blockBy: reqUser.id,
+        createBy: reqUser.id,
         betId,
         sessionType,
         blockType
@@ -1570,7 +1570,7 @@ exports.userMarketLock = async (req, res) => {
     });
       await insertUserMarketLock(userMarketLockData);
     } else{
-      await deleteUserMarketLock({userId: In(allChildUserIds),matchId, blockBy: reqUser.id, betId, sessionType});
+      await deleteUserMarketLock({userId: In(allChildUserIds),matchId, createBy: reqUser.id, betId, sessionType});
     }
 
     return SuccessResponse({

@@ -12,10 +12,6 @@ const userMarketLockSchema = new EntitySchema({
             type: 'uuid',
             nullable: false,
         },
-        blockBy: {
-            type: 'uuid',
-            nullable: false
-        },
         betId: {
             type: 'uuid',
             nullable: true
