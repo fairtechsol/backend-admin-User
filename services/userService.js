@@ -272,7 +272,7 @@ exports.getChildsWithMergedUser = async (id, ids) => {
     )
     SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND ("roleName" = $2 or "createBy" = $1) AND "id" != $1 ${ids?.length?"AND id != ANY($3)":""};
   `;
-  const results = await user.query(query, [id, userRoleConstant.user, ids]);
+  const results = await user.query(query, [id, userRoleConstant.user, ...(ids?.length?[ids]:[])]);
   return results;
 }
 exports.getFirstLevelChildUserWithPartnership = async (id, partnership) => {
