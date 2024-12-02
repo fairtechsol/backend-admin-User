@@ -1516,7 +1516,6 @@ exports.getMarketLockAllChild = async (req, res) => {
     data: childUsers,
   }, req, res);
 }
-
 exports.userMarketLock = async (req, res) => {
   try {
     const { userId, matchId, blockType, betId, sessionType, isLock, operationToAll } = req.body;
