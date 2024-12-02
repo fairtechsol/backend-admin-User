@@ -51,7 +51,9 @@
     "credit/refrence" : "Credit reference fetch successfully.",
     "balance":"User balance fetch successfully.",
     "matchLock": "You are block for this match action. Please contact your administrator.",
-    "demoNoAccess": "Demo user do not have any access for this game."
+    "demoNoAccess": "Demo user do not have any access for this game.",
+    "alreadyLocked": "Market is already locked.",
+    "notLocked": "Market is not locked yet."
   },
   "button" : {
     "InvalidUser" : "User is invalid."
