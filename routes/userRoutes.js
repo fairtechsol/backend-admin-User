@@ -25,7 +25,7 @@ router.post("/generateTransactionPassword", isAuthenticate, validator(generateTr
 router.get("/generalReport", isAuthenticate, generalReport);
 router.post("/totalProfitLoss", isAuthenticate, totalProfitLossWallet);
 router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), userMatchLock);
-router.post("/userMarketLock", isAuthenticate, checkTransactionPassword, validator(userMarketLockValidate), userMarketLock);
+router.post("/userMarketLock", isAuthenticate, validator(userMarketLockValidate), userMarketLock);
 router.get("/getMarketLockAllChild", isAuthenticate, getMarketLockAllChild);
 router.post("/oldUserMatchLock", isAuthenticate, checkTransactionPassword, validator(oldUserMatchLockValidate), userMatchLock);
 router.get("/check/match/lock", isAuthenticate, checkMatchLock);

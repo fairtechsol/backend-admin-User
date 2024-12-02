@@ -248,7 +248,6 @@ exports.getChildsWithOnlyUserRole = async (userId) => {
   const results = await user.query(query, [userId, userRoleConstant.user]);
   return results;
 }
-
 exports.getParentsWithBalance = async (userId) => {
   const query = `WITH RECURSIVE p AS (
       SELECT * FROM "users" WHERE "users"."id" = $1
@@ -262,6 +261,19 @@ exports.getParentsWithBalance = async (userId) => {
 
 exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, userName: true, roleName: true } });
+}
+
+exports.getChildsWithMergedUser = async (id, ids) => {
+  const query = `
+    WITH RECURSIVE p AS (
+      SELECT * FROM "users" WHERE "users"."id" = $1
+      UNION
+      SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+    )
+    SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND ("roleName" = $2 or "createBy" = $1) AND "id" != $1 ${ids?.length?"AND id != ANY($3)":""};
+  `;
+  const results = await user.query(query, [id, userRoleConstant.user,...(ids?.length?ids:[])]);
+  return results;
 }
 exports.getFirstLevelChildUserWithPartnership = async (id, partnership) => {
   return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, roleName: true, userName: true, [partnership]: true } })
@@ -397,7 +409,16 @@ exports.getMarketLockAllChild = async (where, select) => {
 
   return usersWithLockStatus;
 };
+exports.getCheckMarketLock = async ({ matchId, betId, blockBy }) => {
+  const query = `
+    SELECT "userId"
+    FROM "userMarketLocks"
+    WHERE "matchId" = $1 AND "betId" = $2 AND "blockBy" = $3;
+  `;
+  const result = await user.query(query, [matchId, betId, blockBy]);
 
+  return result.map(lock => lock.userId);
+}
 exports.getGameLockForDetails = (where, select) => {
   try {
     let userData = userMatchLock.createQueryBuilder('userMatchLock')

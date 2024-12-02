@@ -128,7 +128,8 @@ module.exports.userMarketLockValidate = Joi.object({
       'any.required': 'blockType is required',
     }),
   sessionType: Joi.string().valid(...Object.values(sessionBettingType)),
-  isLock: Joi.boolean()
+  isLock: Joi.boolean(),
+  operationToAll: Joi.boolean()
 });
 
 module.exports.oldUserMatchLockValidate = Joi.object({
