@@ -1557,7 +1557,7 @@ exports.userMarketLock = async (req, res) => {
     );
 
     if(isLock) {
-    let returnData = allChildUserIds.map((obj) =>{
+    let userMarketLockData = allChildUserIds.map((obj) =>{
       return {
         userId: obj,
         matchId,
@@ -1568,7 +1568,7 @@ exports.userMarketLock = async (req, res) => {
       }
 
     });
-      await insertUserMarketLock(returnData);
+      await insertUserMarketLock(userMarketLockData);
     } else{
       await deleteUserMarketLock({userId: In(allChildUserIds),matchId, blockBy: reqUser.id, betId, sessionType});
     }
@@ -1578,6 +1578,11 @@ exports.userMarketLock = async (req, res) => {
       message: { msg: "updated", keys: { name: "User" } },
     }, req, res);
   } catch (error) {
+    logger.error({
+      error: `Error while locking the user for specific market.`,
+      stack: error.stack,
+      message: error.message,
+    });
     return ErrorResponse(error, req, res);
   }
 }
