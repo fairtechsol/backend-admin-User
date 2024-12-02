@@ -132,6 +132,7 @@ module.exports.userMarketLockValidate = Joi.object({
   operationToAll: Joi.boolean().required().messages({
     'any.required': 'Operation to all is required',
   }),
+  transactionPassword: Joi.string().required(),
 });
 
 module.exports.oldUserMatchLockValidate = Joi.object({
