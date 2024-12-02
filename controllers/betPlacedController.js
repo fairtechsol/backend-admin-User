@@ -210,7 +210,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     let checkMarketLock = await userService.getUserMarketLock({ matchId, userId: reqUser.id, betId });
     if (checkMarketLock) {
       logger.info({
-        info: `user is blocked for the market ${id}, matchId ${matchId}, betId ${betId}`,
+        info: `user is blocked for the market ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
       });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.marketLock" } }, req, res);
@@ -495,7 +495,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
     let checkMarketLock = await userService.getUserMarketLock({ matchId, userId: reqUser.id, betId });
     if (checkMarketLock) {
       logger.info({
-        info: `user is blocked for the market ${id}, matchId ${matchId}, betId ${betId}`,
+        info: `user is blocked for the market ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
       });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.marketLock" } }, req, res);
@@ -2569,7 +2569,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
     let checkMarketLock = await userService.getUserMarketLock({ matchId, userId: reqUser.id, betId });
     if (checkMarketLock) {
       logger.info({
-        info: `user is blocked for the market ${id}, matchId ${matchId}, betId ${betId}`,
+        info: `user is blocked for the market ${reqUser.id}, matchId ${matchId}, betId ${betId}`,
         data: req.body
       });
       return ErrorResponse({ statusCode: 403, message: { msg: "user.marketLock" } }, req, res);
