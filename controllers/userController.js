@@ -1523,7 +1523,6 @@ exports.userMarketLock = async (req, res) => {
 
     if(!operationToAll){
       let checkMarket = await getUserMarketLock({ userId, matchId, betId, createBy: reqUser.id, sessionType}, ['id'])
-
       if (isLock && checkMarket) {
         return ErrorResponse(
           { statusCode: 400, message: { msg: "user.alreadyLocked" } },
@@ -1554,7 +1553,7 @@ exports.userMarketLock = async (req, res) => {
         ...(operationToAll ? [] : [userId]),
       ])
     );
-
+    
     if(isLock) {
     let userMarketLockData = allChildUserIds.map((obj) =>{
       return {
@@ -1569,7 +1568,7 @@ exports.userMarketLock = async (req, res) => {
     });
       await insertUserMarketLock(userMarketLockData);
     } else{
-      await deleteUserMarketLock({userId: In(allChildUserIds),matchId, createBy: reqUser.id, betId, sessionType});
+      await deleteUserMarketLock({userId: In(allChildUserIds),matchId, createBy: reqUser.id, ...(betId ? {betId} : {}), ...(sessionType ? {sessionType} : {})});
     }
 
     return SuccessResponse({
