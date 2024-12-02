@@ -1506,9 +1506,7 @@ exports.userMatchLock = async (req, res) => {
 // userMarketLock
 exports.getMarketLockAllChild = async (req, res) => {
   let reqUser = req.user;
-  let matchId = req.query.matchId;
-  let betId = req.query.betId;
-  let sessionType = req.query.sessionType;
+  let { matchId, betId, sessionType } = req.query; 
   let childUsers = await getMarketLockAllChild({createBy: reqUser.id, id: Not(reqUser.id), matchId, betId, sessionType},['user.id AS id',
   'user.userName AS "userName"',
   ]);
@@ -1542,11 +1540,12 @@ exports.userMarketLock = async (req, res) => {
       }
     }
 
-    let checkAlreadyLock;
+    let userIds;
     if(operationToAll){
-      checkAlreadyLock = await getAllUsersMarket({ matchId, betId, createBy: reqUser.id,sessionType },['userId']);
+      let checkAlreadyLock = await getAllUsersMarket({ matchId, betId, createBy: reqUser.id,sessionType },['userId']);
+      userIds = checkAlreadyLock.map(item => item.userId);
     }
-    const childUsers = roleName == userRoleConstant.fairGameWallet ? await getAllUsers({}, ["id", "userName"]) : operationToAll ? await getChildsWithMergedUser(reqUser.id, checkAlreadyLock)
+    const childUsers = roleName == userRoleConstant.fairGameWallet ? await getAllUsers({}, ["id", "userName"]) : operationToAll ? await getChildsWithMergedUser(reqUser.id, userIds)
     : await getChildsWithOnlyUserRole(userId);
 
     const allChildUserIds = Array.from(

@@ -409,12 +409,12 @@ exports.deleteUserMarketLock = async (where) => {
   return deleted;
 };
 exports.getMarketLockAllChild = async (where, select) => {
-  let { matchId, betId, ...whereData } = where; 
+  let { matchId, betId, sessionType, ...whereData } = where; 
   const usersWithLockStatus = await user.createQueryBuilder('user')
     .leftJoin(
       'userMarketLock',
       'userMarketLock',
-      'userMarketLock.userId = user.id AND userMarketLock.matchId = :matchId AND userMarketLock.betId = :betId',{ matchId, betId })
+      'userMarketLock.userId = user.id AND userMarketLock.matchId = :matchId AND userMarketLock.betId = :betId',{ matchId, betId, sessionType })
     .where(whereData) 
     .select(select)
     .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS "isLock"`)
