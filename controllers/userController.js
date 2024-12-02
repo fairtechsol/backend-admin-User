@@ -1508,7 +1508,8 @@ exports.getMarketLockAllChild = async (req, res) => {
   let reqUser = req.user;
   let matchId = req.query.matchId;
   let betId = req.query.betId;
-  let childUsers = await getMarketLockAllChild({createBy:reqUser.id, id: Not(reqUser.id), matchId, betId},['user.id AS id',
+  let sessionType = req.query.sessionType;
+  let childUsers = await getMarketLockAllChild({createBy: reqUser.id, id: Not(reqUser.id), matchId, betId, sessionType},['user.id AS id',
   'user.userName AS "userName"',
   ]);
   return SuccessResponse({
