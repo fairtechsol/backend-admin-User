@@ -121,14 +121,14 @@ module.exports.userMarketLockValidate = Joi.object({
   matchId: Joi.string().guid({ version: 'uuidv4' }).required(),
   betId: Joi.string().guid({ version: "uuidv4" }),
   blockType: Joi.number()
-    .valid(0, 1)
+    .valid(0, 1, 2)
     .required()
     .messages({
-      'any.only': 'blockType must be either 0 or 1',
+      'any.only': 'blockType must be either 0 , 1 or 2',
       'any.required': 'blockType is required',
     }),
   sessionType: Joi.string().valid(...Object.values(sessionBettingType)),
-  isLock: Joi.boolean(),
+  isLock: Joi.boolean().required(),
   operationToAll: Joi.boolean()
 });
 

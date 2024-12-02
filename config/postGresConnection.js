@@ -28,7 +28,6 @@ const dataSourceOption = {
   migrations: [__dirname + "/../**/migrations/*{.js,.ts}"],
   migrationsTableName: "migrations",
   namingStrategy: new PluralNamingStrategy(),
-  // logging:true
 };
 
 if (process.env.NODE_ENV == 'production') {
