@@ -391,6 +391,11 @@ exports.addUserMarketLock = async (body) => {
   return inserted;
 };
 
+exports.insertUserMarketLock = async (body) => {
+  let inserted = await userMarketLock.insert(body);
+  return inserted;
+};
+
 exports.deleteUserMarketLock = async (where) => {
   let deleted = await userMarketLock.delete(where);
   return deleted;
