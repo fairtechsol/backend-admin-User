@@ -411,7 +411,7 @@ exports.deleteUserMarketLock = async (where) => {
 exports.getMarketLockAllChild = async (where, select) => {
   let { matchId, betId, sessionType, createBy, ...whereData } = where; 
   whereData.createBy = createBy;
-  let joinParameter = {matchId};
+  let joinParameter = { matchId, createBy };
   let joinCondition = `
     userMarketLock.userId = user.id 
     AND userMarketLock.matchId = :matchId AND userMarketLock.createBy = :createBy`;
