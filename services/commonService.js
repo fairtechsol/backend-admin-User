@@ -1175,6 +1175,7 @@ exports.settingBetsDataAtLogin = async (user) => {
           sessionResult[`${currBets.betId}${redisKeys.profitLoss}`].lowerLimitOdds = result.lowerLimitOdds;
         }
         sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] = parseFloat((parseFloat(sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] || 0) + result.maxLoss).toFixed(2));
+        sessionExp[`${currBets.marketType}_${currBets.matchId}`] = parseFloat((parseFloat(sessionExp[`${currBets.marketType}_${currBets.matchId}`] || 0) + result.maxLoss).toFixed(2));
       }
       else {
         let apiResponse;

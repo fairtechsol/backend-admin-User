@@ -107,7 +107,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
     //update db
     await updateUserExposure(userId, partnerSessionExposure);
     // updating redis
-    await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: partnerSessionExposure }, redisObj);
+    await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: partnerSessionExposure, [`${jobData?.placedBet?.marketType}_${jobData?.placedBet?.matchId}`]: partnerSessionExposure }, redisObj);
   
     logger.info({
       message: "User exposure for session",
