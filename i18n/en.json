@@ -53,7 +53,8 @@
     "matchLock": "You are block for this match action. Please contact your administrator.",
     "demoNoAccess": "Demo user do not have any access for this game.",
     "alreadyLocked": "Market is already locked.",
-    "notLocked": "Market is not locked yet."
+    "notLocked": "Market is not locked yet.",
+    "marketLock": "You are block for this market action. Please contact your administrator."
   },
   "button" : {
     "InvalidUser" : "User is invalid."
