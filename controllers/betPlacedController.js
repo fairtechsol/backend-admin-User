@@ -1211,7 +1211,11 @@ exports.sessionBetPlace = async (req, res, next) => {
 
 const validateSessionBet = async (apiBetData, betDetails, userId) => {
   if (apiBetData?.stopAt) {
-    return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
+    throw {
+      message: {
+        msg: "bet.matchNotLive"
+      }
+    };
   }
   if (apiBetData.activeStatus != betStatusType.live) {
     throw {
@@ -1253,10 +1257,14 @@ const validateSessionBet = async (apiBetData, betDetails, userId) => {
   let checkMarketLock = await userService.getUserMarketLock({ matchId: apiBetData.matchId, userId, sessionType: apiBetData.type });
   if (checkMarketLock) {
     logger.info({
-      info: `user is blocked for the session market ${userId}, matchId ${matchId}, betId ${betId}`,
-      data: req.body
+      info: `user is blocked for the session market ${userId}, matchId ${apiBetData.matchId}, betId ${apiBetData.id}`,
+      data: betDetails
     });
-    return ErrorResponse({ statusCode: 403, message: { msg: "user.marketLock" } }, req, res);
+    throw {
+      message: {
+        msg: "user.marketLock"
+      }
+    };
   }
 
   if (apiBetData?.selectionId && apiBetData?.selectionId != "") {
