@@ -1250,7 +1250,7 @@ const validateSessionBet = async (apiBetData, betDetails, userId) => {
     };
   }
 
-  let checkMarketLock = await userService.getUserMarketLock({ matchId: apiBetData.matchId, userId, sessiontype: apiBetData.type });
+  let checkMarketLock = await userService.getUserMarketLock({ matchId: apiBetData.matchId, userId, sessionType: apiBetData.type });
   if (checkMarketLock) {
     logger.info({
       info: `user is blocked for the session market ${userId}, matchId ${matchId}, betId ${betId}`,
