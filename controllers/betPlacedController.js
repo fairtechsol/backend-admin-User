@@ -342,11 +342,11 @@ exports.matchBettingBetPlaced = async (req, res) => {
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
     }
-    if (matchBetting?.exposureLimit && newUserExposure > parseFloat(matchBetting?.exposureLimit)) {
+    if (matchBetting?.exposureLimit && Math.abs(maximumLoss) > parseFloat(matchBetting?.exposureLimit)) {
       logger.info({
         info: `User exceeded the limit of total exposure for this market`,
         userId: reqUser.id,
-        newUserExposure,
+        marketExposure: maximumLoss,
         marketExposureLimit: matchBetting?.exposureLimit
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
@@ -630,11 +630,11 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
     }
 
-    if (matchBetting?.exposureLimit && newUserExposure > parseFloat(matchBetting?.exposureLimit)) {
+    if (matchBetting?.exposureLimit && Math.abs(maximumLoss) > parseFloat(matchBetting?.exposureLimit)) {
       logger.info({
         info: `User exceeded the limit of total exposure for this market`,
         userId: reqUser.id,
-        newUserExposure,
+        marketExposure: maximumLoss,
         marketExposureLimit: matchBetting?.exposureLimit
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
@@ -2743,11 +2743,11 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
     }
 
-    if (matchBetting?.exposureLimit && newUserExposure > parseFloat(matchBetting?.exposureLimit)) {
+    if (matchBetting?.exposureLimit && Math.abs(maximumLoss) > parseFloat(matchBetting?.exposureLimit)) {
       logger.info({
         info: `User exceeded the limit of total exposure for this market`,
         userId: reqUser.id,
-        newUserExposure,
+        marketExposure: maximumLoss,
         marketExposureLimit: matchBetting?.exposureLimit
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
@@ -3313,11 +3313,11 @@ exports.racingBettingBetPlaced = async (req, res) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
     }
 
-    if (matchBetting?.exposureLimit && newUserExposure > parseFloat(matchBetting?.exposureLimit)) {
+    if (matchBetting?.exposureLimit && Math.abs(maximumLoss) > parseFloat(matchBetting?.exposureLimit)) {
       logger.info({
         info: `User exceeded the limit of total exposure for this market`,
         userId: reqUser.id,
-        newUserExposure,
+        marketExposure: maximumLoss,
         marketExposureLimit: matchBetting?.exposureLimit
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
