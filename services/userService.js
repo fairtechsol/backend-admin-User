@@ -410,23 +410,22 @@ exports.deleteUserMarketLock = async (where) => {
 };
 exports.getMarketLockAllChild = async (where, select) => {
   let { matchId, betId, sessionType, ...whereData } = where; 
+  let joinParameter = {matchId};
   let joinCondition = `
     userMarketLock.userId = user.id 
     AND userMarketLock.matchId = :matchId`;
 
   if (betId) {
     joinCondition += ` AND userMarketLock.betId = :betId`;
+    joinParameter.betId = betId;
   }
   if (sessionType) {
     joinCondition += ` AND userMarketLock.sessionType = :sessionType`;
+    joinParameter.sessionType = sessionType;
   }
 
   const usersWithLockStatus = await user.createQueryBuilder('user')
-  .leftJoin('userMarketLock', 'userMarketLock', joinCondition, {
-    matchId,
-    ...(betId && { betId }),
-    ...(sessionType && { sessionType }),
-  })
+  .leftJoin('userMarketLock', 'userMarketLock', joinCondition, joinParameter)
   .where(whereData) 
   .select(select)
   .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS "isLock"`)
