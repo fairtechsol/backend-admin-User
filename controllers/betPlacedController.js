@@ -1086,12 +1086,11 @@ exports.sessionBetPlace = async (req, res, next) => {
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
     }
 
-    if (sessionDetails?.sessionMaxBets?.[`${sessionDetails?.type}_exposureLimit`] && parseFloat(userData[`${sessionDetails?.type}_${matchId}`]) + (redisData.maxLoss - maxSessionLoss) > parseFloat(sessionDetails?.sessionMaxBets?.[`${sessionDetails?.type}_exposureLimit`])){
+    if (sessionDetails?.exposureLimit != null && totalExposure > parseFloat(sessionDetails?.exposureLimit)) {
       logger.info({
-        info: `User exceeded the limit of total exposure for a particular block`,
-        currTypeExp: parseFloat(userData[`${sessionDetails?.type}_${matchId}`]) + (redisData.maxLoss - maxSessionLoss),
-        newTypeExp: parseFloat(userData[`${sessionDetails?.type}_${matchId}`]) + (redisData.maxLoss - maxSessionLoss),
-        marketExposureLimit:sessionDetails?.sessionMaxBets?.[`${sessionDetails?.type}_exposureLimit`]
+        info: `User exceeded the limit of total exposure for a particular session`,
+        currUserExpSession: totalExposure,
+        marketExposureLimit: sessionDetails?.exposureLimit
       })
       return ErrorResponse({ statusCode: 400, message: { msg: "user.ExposureLimitExceed" } }, req, res);
     }

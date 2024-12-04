@@ -987,7 +987,6 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
         ...userBalance,
         currentBalance: profitLoss,
         [redisSesionExposureName]: -maxLoss,
-        [`${resultDeclare?.type}_${matchId}`]: -maxLoss
       });
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
     }
@@ -1241,7 +1240,6 @@ const calculateMaxLossSessionForUserNoResult = async (
       await incrementValuesRedis(user.user.id, {
         [redisSesionExposureName]: -maxLoss,
         exposure: -maxLoss,
-        [`${user?.marketType}_${matchId}`]: -maxLoss
 
       });
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
@@ -1504,7 +1502,6 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
         ...userBalance,
         currentBalance: -profitLoss,
         [redisSesionExposureName]: maxLoss,
-        [`${resultDeclare?.type}_${matchId}`]: maxLoss
       }, {
         [betId + redisKeys.profitLoss]: JSON.stringify({
           upperLimitOdds: redisData?.betData?.[redisData?.betData?.length - 1]?.odds,
@@ -2477,7 +2474,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
 
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId, `${redisKeys.userSessionExposure}${matchId}`);
-    await deleteHashKeysByPattern(user.user.id, `*_${matchId}`);
     if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
@@ -5104,9 +5100,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
     });
 
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, `${betId}${redisKeys.profitLoss}_${matchId}`);
-    if (isMatchDeclare) {
-      await deleteHashKeysByPattern(user.user.id, `*_${matchId}`);
-    }
+
     if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
