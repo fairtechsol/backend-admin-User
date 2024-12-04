@@ -1996,7 +1996,7 @@ exports.declareMatchResult = async (req, res) => {
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
     if (betPlaced?.length <= 0) {
-      broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betType: matchBettingType.quickbookmaker1, betId: betIds });
+      broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betType: matchBettingType.quickbookmaker1, betId: betIds, isMatchDeclare: true });
       await updateMatchData({ id: matchId }, { stopAt: new Date() });
       return SuccessResponse(
         {
@@ -2187,7 +2187,7 @@ exports.declareMatchResult = async (req, res) => {
       });
     }
     insertBulkCommissions(commissionReport);
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betType: matchBettingType.quickbookmaker1, betId: betIds });
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betType: matchBettingType.quickbookmaker1, betId: betIds, isMatchDeclare: true });
     await updateMatchData({ id: matchId }, { stopAt: new Date() });
     return SuccessResponse(
       {
@@ -2733,7 +2733,7 @@ exports.unDeclareMatchResult = async (req, res) => {
       }
     );
 
-    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betType: matchBettingType.quickbookmaker1, betId: betIds });
+    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: match?.matchType, betType: matchBettingType.quickbookmaker1, betId: betIds, isMatchDeclare: true });
     await updateMatchData({ id: matchId }, { stopAt: null });
 
     return SuccessResponse(
@@ -3077,7 +3077,7 @@ exports.declareMatchOtherMarketResult = async (req, res) => {
     const betPlaced = await getMatchBetPlaceWithUser(betIds);
 
     if (betPlaced?.length <= 0) {
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
+      broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: betId, betType: matchBetType });
     return SuccessResponse(
         {
           statusCode: 200,

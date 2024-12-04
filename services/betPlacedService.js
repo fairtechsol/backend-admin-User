@@ -679,3 +679,16 @@ exports.getChildUsersSinglePlaceBet = (id) => {
 exports.deleteBet = async (where) => {
   await BetPlaced.delete(where);
 }
+
+exports.getChildUsersPlaceBetsByBetId = (id, betIds) => {
+
+  return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
+    SELECT id, "roleName", "createBy"
+    FROM public.users
+    WHERE id = $1
+    UNION
+    SELECT ur.id, ur."roleName", ur."createBy"
+    FROM public.users ur
+    JOIN RoleHierarchy rh ON ur."createBy" = rh.id
+  ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' and "betPlaceds"."betId" In ('${betIds.join("','")}')`, [id]);
+}

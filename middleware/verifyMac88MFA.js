@@ -17,7 +17,7 @@ const verifyRSA = async (req, res, next) => {
         verifier.end();
         const isValid = verifier.verify(publicKey, signature, 'base64');
         if (!isValid) {
-            return res.status(400).json({ status: "OP_INVALID_SIGNATURE" })
+            return res.status(400).json({ status: "OP_INVALID_SIGNATURE" });
         }
         next(); // Proceed to the next middleware
     } catch (error) {
