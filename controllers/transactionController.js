@@ -53,6 +53,7 @@ exports.getAccountStatement = async (req, res) => {
       "transaction.description",
       "transaction.uniqueId",
       "transaction.betId",
+      "transaction.type",
       "user.id",
       "user.userName",
       "user.phoneNumber",

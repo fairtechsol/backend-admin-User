@@ -4,7 +4,7 @@ const { getNotification, getMatchCompetitionsByType, getMatchDatesByCompetitionI
 
 const { isAuthenticate } = require("../middleware/auth");
 
-router.get("/notification", isAuthenticate, getNotification);
+router.get("/notification", getNotification);
 router.get("/blinkingTabs", isAuthenticate, getBlinkingTabs);
 
 router.get('/match/competitionList/:type',isAuthenticate,getMatchCompetitionsByType);

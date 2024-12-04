@@ -12,6 +12,7 @@ const expertRoutes = require('./expertRoutes.js');
 const matchRoutes = require("./matchRoutes");
 const betRoutes = require("./betRoutes.js");
 const cardRoutes = require("./cardRoutes.js");
+const mac88CasinoRoutes = require("./mac88CasinoRoutes.js");
 const { pendingCardResult } = require('../controllers/matchController.js');
 
 
@@ -46,6 +47,9 @@ router.use("/bet", betRoutes
 router.use("/card", cardRoutes
 // #swagger.tags = ['card']
 );
+router.use("/", mac88CasinoRoutes
+    // #swagger.tags = ['Mac 88 casino']
+    );
 
 router.get("/pendingCardResult", pendingCardResult)
 

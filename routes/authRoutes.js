@@ -10,7 +10,6 @@ const { isAuthenticate } = require('../middleware/auth');
 
 router.post('/login',validator(Login), authController.login);
 router.post('/logout',isAuthenticate, authController.logout);
-router.post('/loginWithDemo', authController.loginWithDemoUser);
 
 
 
