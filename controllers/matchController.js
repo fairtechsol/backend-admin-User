@@ -688,7 +688,7 @@ exports.marketWiseUserBook = async (req, res) => {
               let redisData = await calculateRatesOtherMatch(usersWithBetPlace.filter((items) => items.createBy == item.createBy), 100, apiResponse?.data?.match, apiResponse?.data?.matchBetting);
         result.push({
           user: { userName: item.userName },
-          profitLoss: redisData?.matchPL?.rates
+          profitLoss: Object.values(redisData || {})?.[0]?.rates
         });
             }
             break;
