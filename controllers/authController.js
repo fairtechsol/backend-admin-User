@@ -3,12 +3,9 @@ const {
   redisTimeOut,
   differLoginTypeByRoles,
   jwtSecret,
-  transType,
-  walletDescription,
-  defaultButtonValue,
-  buttonType,
-  sessiontButtonValue,
-  casinoButtonValue,
+  redisKeys,
+  authenticatorType,
+  authenticatorExpiryTime,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -17,16 +14,15 @@ const jwt = require("jsonwebtoken");
 const {
   getUserWithUserBalance,
   addUser,
+  updateUser,
 } = require("../services/userService");
-const { userLoginAtUpdate } = require("../services/authService");
+const { userLoginAtUpdate, addAuthenticator, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
 const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, loginDemoUser, deleteDemoUser } = require("../services/commonService");
 const { logger } = require("../config/logger");
-const { updateUserDataRedis } = require("../services/redis/commonfunction");
+const { updateUserDataRedis, getUserRedisSingleKey, getRedisKey, setRedisKey } = require("../services/redis/commonfunction");
 const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
-const { insertTransactions } = require("../services/transactionService");
-const { addInitialUserBalance } = require("../services/userBalanceService");
-const { insertButton } = require("../services/buttonService");
-const lodash = require('lodash');
+const { generateAuthToken, verifyAuthToken } = require("../utils/generateAuthToken");
+
 
 
 // Function to validate a user by username and password
@@ -209,7 +205,8 @@ exports.login = async (req, res) => {
           roleName: roleName,
           forceChangePassword,
           userId: user?.id,
-          isBetExist: isBetExist?.length > 0
+          isBetExist: isBetExist?.length > 0,
+          iaAuthenticator: user.isAuthenticatorEnable
         },
       },
       req,
@@ -260,3 +257,322 @@ exports.logout = async (req, res) => {
     );
   }
 };
+
+exports.generateUserAuthToken = async (req, res) => {
+  try {
+    const user = req.user;
+    if (user.isDemo) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.unauthorizeRole",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    const isDeviceExist = await getAuthenticator({ userId: user.id }, ["id"]);
+
+    if(isDeviceExist){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.deviceTokenExist",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    const authId = await generateAuthToken();
+    await updateUserDataRedis(user.id, { [redisKeys.authenticatorToken]: authId.hashedId });
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: authId.randomId,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+};
+
+exports.connectUserAuthToken = async (req, res) => {
+  try {
+    const { userName, password, authToken, deviceId } = req.body;
+    const user = await validateUser(userName, password);
+
+    const isDeviceExist = await getAuthenticator({ userId: user.id }, ["id"]);
+
+    if(isDeviceExist){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.deviceTokenExist",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    if (user?.error) {
+      return ErrorResponse(
+        {
+          statusCode: 404,
+          message: user.message,
+        },
+        req,
+        res
+      );
+    }
+
+    if (!user) {
+      return ErrorResponse(
+        {
+          statusCode: 404,
+          message: {
+            msg: "notFound",
+            keys: { name: "User" },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    if (user.isDemo) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.unauthorizeRole",
+          },
+        },
+        req,
+        res
+      );
+    }   
+
+    const userAuthToken = await getUserRedisSingleKey(user.id, redisKeys.authenticatorToken);
+    const isTokenMatch = await verifyAuthToken(authToken, userAuthToken);
+
+    if (!isTokenMatch) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.authenticatorCodeNotMatch",
+          },
+        },
+        req,
+        res
+      );
+    }
+    await addAuthenticator({ userId: user.id, deviceId: deviceId, type: authenticatorType.app });
+    await updateUser(user.id, { isAuthenticatorEnable: true });
+    await forceLogoutIfLogin(user.id);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "created", keys: { type: "Authenticator" } },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+};
+
+exports.getAuthenticatorRefreshToken=async (req,res)=>{
+  try {
+    const { deviceId } = req.params;
+
+    const authId = await generateAuthToken();
+
+    await setRedisKey(`${deviceId}_${redisKeys.authenticatorToken}`, authId.hashedId, authenticatorExpiryTime);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: authId.randomId
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.verifyAuthenticatorRefreshToken = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { authToken } = req.body;
+
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id"]);
+    if (!authDevice) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "auth.authNotExist",
+          },
+        },
+        req,
+        res
+      );
+    }
+    const redisAuthToken = await getRedisKey(`${authDevice.deviceId}_${redisKeys.authenticatorToken}`);
+
+    const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
+
+    if(!isTokenMatch){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.authenticatorCodeNotMatch",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        success: true
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.removeAuthenticator = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { authToken } = req.body;
+
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id"]);
+    if (!authDevice) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "auth.authNotExist",
+          },
+        },
+        req,
+        res
+      );
+    }
+    const redisAuthToken = await getRedisKey(`${authDevice.deviceId}_${redisKeys.authenticatorToken}`);
+
+    const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
+
+    if(!isTokenMatch){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.authenticatorCodeNotMatch",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    await deleteAuthenticator({ userId: id });
+    await updateUser(id, { isAuthenticatorEnable: false });
+    await forceLogoutIfLogin(id);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        success: true
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getAuthenticatorUsersList = async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    
+    const users = await getAuthenticators({ deviceId: deviceId, type: authenticatorType.app }, ["user.userName"])
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: users
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}

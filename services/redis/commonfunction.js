@@ -109,3 +109,20 @@ exports.getHashKeysByPattern = async (key, pattern) => {
 exports.checkAndUpdateTransaction = async (userId, transactionId) => {
   return await internalRedis.hsetnx(userId, transactionId, 1);
 }
+
+exports.getRedisKey = async (key) => {
+  return await internalRedis.get(key);
+}
+
+exports.setRedisKey = async (key, value, expire) => {
+  // Start pipelining
+  const pipeline = internalRedis.pipeline();
+
+  pipeline.set(key, value);
+  if (expire) {
+    pipeline.expire(key, expire);
+  }
+
+  // Execute the pipeline
+  await pipeline.exec();
+}

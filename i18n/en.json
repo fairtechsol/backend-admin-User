@@ -27,7 +27,10 @@
     "unauthorize":"Unauthorized user.",
     "unauthorizeRole" : "You are not authorize to take this action",
     "TransactionPasswordNotExist" : "Your transaction password not generated. Please contact your administrator.",
-    "forceLogout":"Some other user login this account on other device."
+    "forceLogout":"Some other user login this account on other device.",
+    "deviceTokenExist": "Some other device is already associated with this account.",
+    "authenticatorCodeNotMatch": "Authenticator code for device didn't match.",
+    "authNotExist": "Authenticator not applied yet."
   },
   "user" : {
     "blocked": "Please contact your admin for assistance.",

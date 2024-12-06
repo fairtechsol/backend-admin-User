@@ -4,12 +4,18 @@ const authController = require('../controllers/authController');
 
 const validator = require('../middleware/joi.validator')
 
-const {Login} = require('../validators/authValidator');
+const { Login, connectUserAuthValidator, verifyAuthTokenValidator } = require('../validators/authValidator');
 const { isAuthenticate } = require('../middleware/auth');
 
 
-router.post('/login',validator(Login), authController.login);
-router.post('/logout',isAuthenticate, authController.logout);
+router.post('/login', validator(Login), authController.login);
+router.post('/logout', isAuthenticate, authController.logout);
+router.get('/generateAuthToken', isAuthenticate, validator(connectUserAuthValidator), authController.generateUserAuthToken);
+router.post('/connectAuthApp', authController.connectUserAuthToken);
+router.get('/authRefreshToken/:deviceId', authController.getAuthenticatorRefreshToken);
+router.post('/verifyAuthToken', isAuthenticate, validator(verifyAuthTokenValidator), authController.verifyAuthenticatorRefreshToken);
+router.post('/removeAuthenticator', isAuthenticate, validator(verifyAuthTokenValidator), authController.removeAuthenticator);
+router.post('/getAuthUsers', authController.getAuthenticatorUsersList);
 
 
 

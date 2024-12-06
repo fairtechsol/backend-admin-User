@@ -177,6 +177,11 @@ const userSchema = new EntitySchema({
       type:"boolean",
       default: false,
       nullable: false
+    },
+    isAuthenticatorEnable: {
+      type:"boolean",
+      default: false,
+      nullable: false
     }
   },
   orderBy: {
