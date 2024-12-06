@@ -218,7 +218,7 @@ exports.login = async (req, res) => {
           forceChangePassword,
           userId: user?.id,
           isBetExist: isBetExist?.length > 0,
-          iaAuthenticator: user.isAuthenticatorEnable
+          isAuthenticator: user.isAuthenticatorEnable
         },
       },
       req,
