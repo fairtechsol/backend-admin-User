@@ -197,8 +197,10 @@ exports.login = async (req, res) => {
       isBetExist = await getChildUsersSinglePlaceBet(user.id);
 
     }
+    let userAuthType;
     if (user.isAuthenticatorEnable) {
       const deviceAuth = await getAuthenticator({ userId: user.id });
+      userAuthType = deviceAuth.type;
       if (deviceAuth.type == authenticatorType.telegram) {
         const authId = await generateAuthToken();
         await updateUserDataRedis(user.id, { [redisKeys.telegramToken]: authId.hashedId });
@@ -218,7 +220,8 @@ exports.login = async (req, res) => {
           forceChangePassword,
           userId: user?.id,
           isBetExist: isBetExist?.length > 0,
-          isAuthenticator: user.isAuthenticatorEnable
+          isAuthenticator: user.isAuthenticatorEnable,
+          authenticatorType: userAuthType
         },
       },
       req,
