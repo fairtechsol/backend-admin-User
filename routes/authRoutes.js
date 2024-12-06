@@ -17,7 +17,7 @@ router.post('/verifyAuthToken', isAuthenticate, validator(verifyAuthTokenValidat
 router.post('/removeAuthenticator', isAuthenticate, validator(verifyAuthTokenValidator), authController.removeAuthenticator);
 router.get('/getAuthUsers', authController.getAuthenticatorUsersList);
 router.post('/resend/token',isAuthenticate, authController.resendTelegramAuthToken);
-router.post('/getAuthenticator',isAuthenticate, authController.getAuthenticatorUser);
+router.get('/getAuthenticator',isAuthenticate, authController.getAuthenticatorUser);
 
 
 
