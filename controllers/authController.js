@@ -455,27 +455,49 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
         res
       );
     }
-    if(authDevice.type==authenticatorType.app){
-    const redisAuthToken = await getRedisKey(`${authDevice.deviceId}_${redisKeys.authenticatorToken}`);
-
-    const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
-
-    if(!isTokenMatch){
-      return ErrorResponse(
-        {
-          statusCode: 403,
-          message: {
-            msg: "auth.authenticatorCodeNotMatch",
+    if (authDevice.type == authenticatorType.app) {
+      const redisAuthToken = await getRedisKey(`${authDevice.deviceId}_${redisKeys.authenticatorToken}`);
+      if (!redisAuthToken) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authTokenExpired",
+            },
           },
-        },
-        req,
-        res
-      );
+          req,
+          res
+        );
+      }
+      const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
+
+      if (!isTokenMatch) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authenticatorCodeNotMatch",
+            },
+          },
+          req,
+          res
+        );
       }
     }
     else {
       const redisAuthToken = await getUserRedisSingleKey(id, redisKeys.telegramToken);
-
+      if (!redisAuthToken) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authTokenExpired",
+            },
+          },
+          req,
+          res
+        );
+      }
       const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
 
       if (!isTokenMatch) {
@@ -497,7 +519,6 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
     return SuccessResponse(
       {
         statusCode: 200,
-        success: true
       },
       req,
       res

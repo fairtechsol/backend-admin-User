@@ -32,7 +32,8 @@
     "authenticatorCodeNotMatch": "Authenticator code for device didn't match.",
     "authNotExist": "Authenticator not applied yet.",
     "authConnected": "Authenticator connected successfully.",
-    "authCodeResend": "Authentication code resend successfully."
+    "authCodeResend": "Authentication code resend successfully.",
+    "authTokenExpired": "Authentication code expired."
   },
   "user" : {
     "blocked": "Please contact your admin for assistance.",
