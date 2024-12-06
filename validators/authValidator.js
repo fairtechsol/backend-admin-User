@@ -1,4 +1,5 @@
-const Joi = require('joi')
+const Joi = require('joi');
+const { authenticatorType } = require('../config/contants');
 
 module.exports.signUp = Joi.object({
     name : Joi.string().required(),
@@ -25,5 +26,5 @@ module.exports.verifyAuthTokenValidator = Joi.object({
 
 module.exports.generateAuthTokenValidator = Joi.object({ 
     password : Joi.string().allow(null),
-    type : Joi.string().required(),
+    type : Joi.valid(...Object.values(authenticatorType)).required(),
 });
