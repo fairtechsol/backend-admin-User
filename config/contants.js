@@ -86,6 +86,7 @@ module.exports.fileType = {
 module.exports.redisTimeOut = 10 * 60 * 60;
 module.exports.demoRedisTimeOut = 60 * 60;
 module.exports.authenticatorExpiryTime = 30;
+module.exports.teleAuthenticatorExpiryTime = 60*5;
 
 module.exports.matchComissionTypeConstant = {
   totalLoss: "totalLoss",
@@ -393,6 +394,7 @@ module.exports.redisKeys = {
   yesRateComplete: "yesRateComplete_",
   noRateComplete: "noRateComplete_",
   authenticatorToken: "authenticatorToken",
+  telegramToken: "telegramToken",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`yesRateUnderOver${curr}.5`] = `yesRateUnderOver${curr}.5_`;
     prev[`noRateUnderOver${curr}.5`] = `noRateUnderOver${curr}.5_`;

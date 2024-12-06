@@ -22,3 +22,8 @@ module.exports.connectUserAuthValidator = Joi.object({
 module.exports.verifyAuthTokenValidator = Joi.object({ 
     authToken : Joi.string().length(6).required()
 });
+
+module.exports.generateAuthTokenValidator = Joi.object({ 
+    password : Joi.string().allow(null),
+    type : Joi.string().required(),
+});

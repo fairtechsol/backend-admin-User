@@ -1,0 +1,28 @@
+
+const TelegramBot = require('node-telegram-bot-api');
+const { connectAppWithToken } = require('../services/commonService');
+const { getRedisKey } = require('../services/redis/commonfunction');
+const { __mf } = require('i18n');
+
+const bot = new TelegramBot(process.env.TELEGRAM_BOT);
+
+bot.onText("/start", (msg) => {
+    bot.sendMessage(msg.chat.id, __mf("telegramBot.start"));
+});
+
+bot.onText(/\/connect/, async (msg) => {
+    try {
+        let authToken = msg.text.split(" ")?.[1];
+        const userId = await getRedisKey(authToken?.trim());
+        if (!userId) {
+            bot.sendMessage(msg.chat.id, __mf("auth.authenticatorCodeNotMatch"));
+        }
+        
+        await connectAppWithToken(authToken, msg.chat.id, { id: userId });
+        bot.sendMessage(msg.chat.id, __mf("auth.authConnected"));
+    }
+    catch (e) {
+        bot.sendMessage(msg.chat.id, __mf(e?.message?.msg || "internalServerError", e?.message?.keys));
+    }
+});
+module.exports = bot;

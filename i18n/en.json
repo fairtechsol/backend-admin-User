@@ -30,7 +30,9 @@
     "forceLogout":"Some other user login this account on other device.",
     "deviceTokenExist": "Some other device is already associated with this account.",
     "authenticatorCodeNotMatch": "Authenticator code for device didn't match.",
-    "authNotExist": "Authenticator not applied yet."
+    "authNotExist": "Authenticator not applied yet.",
+    "authConnected": "Authenticator connected successfully.",
+    "authCodeResend": "Authentication code resend successfully."
   },
   "user" : {
     "blocked": "Please contact your admin for assistance.",
@@ -85,5 +87,9 @@
     "alreadyPlacedOnDiff": "Bet not confirm bet already exists on {name} Card.",
     "limitExceed":"You cannot place a bet more than {limit} times.",
     "equalMinMax":"Bet Not Confirm Reason Min And Max Bet Range Not Valid."
+  },
+  "telegramBot":{
+    "start":"Welcome to maxbet bot!",
+    "sendAuth":"Authentication code for maxbet is: {code}"
   }
 }
