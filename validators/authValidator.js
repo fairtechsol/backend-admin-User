@@ -26,5 +26,5 @@ module.exports.verifyAuthTokenValidator = Joi.object({
 
 module.exports.generateAuthTokenValidator = Joi.object({ 
     password : Joi.string().allow(null),
-    type : Joi.valid(...Object.values(authenticatorType)).required(),
+    type : Joi.number().valid(...Object.values(authenticatorType)).required(),
 });
