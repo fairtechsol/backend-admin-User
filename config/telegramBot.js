@@ -1,9 +1,11 @@
 
 const TelegramBot = require('node-telegram-bot-api');
-const { connectAppWithToken } = require('../services/commonService');
+const { connectAppWithToken, forceLogoutIfLogin } = require('../services/commonService');
 const { getRedisKey } = require('../services/redis/commonfunction');
 const { __mf } = require('i18n');
 const { authenticatorType } = require('./contants');
+const { addAuthenticator } = require('../services/authService');
+const { updateUser } = require('../services/userService');
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT);
 
@@ -23,7 +25,7 @@ bot.onText(/\/connect/, async (msg) => {
 
             await addAuthenticator({ userId: userId, deviceId: msg.chat.id, type: authenticatorType.telegram });
             await updateUser(userId, { isAuthenticatorEnable: true });
-            await this.forceLogoutIfLogin(userId);
+            await forceLogoutIfLogin(userId);
             bot.sendMessage(msg.chat.id, __mf("auth.authConnected"));
         }
     }
