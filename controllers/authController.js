@@ -445,7 +445,7 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
     const { id } = req.user;
     const { authToken } = req.body;
 
-    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id"]);
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id","type"]);
     if (!authDevice) {
       return ErrorResponse(
         {
