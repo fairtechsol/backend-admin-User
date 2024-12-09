@@ -29,7 +29,7 @@ exports.getAuthenticator = async (where, select) => {
 
 exports.getAuthenticators = async (where, select) => {
   return await authenticatorRepo.createQueryBuilder()
-  .leftJoinAndMapOne("userAuthenticator.user", "users", "user", "user.id = userAuthenticator.userId")
+  .leftJoinAndMapOne("userAuthenticator.user", "user", "user", "user.id = userAuthenticator.userId")
   .select(select)
   .where(where)
   .getMany();
