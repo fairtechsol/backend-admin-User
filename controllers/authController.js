@@ -623,7 +623,7 @@ exports.getAuthenticatorUsersList = async (req, res) => {
   try {
     const { deviceId } = req.params;
     
-    const users = await getAuthenticators({ deviceId: deviceId, type: authenticatorType.app }, ["user.userName","userAuthenticator.id"])
+    const users = await getAuthenticators({ deviceId: deviceId, type: authenticatorType.app }, ["user.userName","userAuthenticator.id","user.id"])
 
     return SuccessResponse(
       {
