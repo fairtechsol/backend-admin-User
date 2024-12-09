@@ -591,6 +591,8 @@ exports.removeAuthenticator = async (req, res) => {
           res
         );
       }
+    bot.sendMessage(authDevice.deviceId, __mf("telegramBot.disabled"))
+
     }
 
     await deleteAuthenticator({ userId: id });
@@ -675,7 +677,7 @@ exports.resendTelegramAuthToken = async (req, res) => {
 
     const deviceAuth = await getAuthenticator({ userId: id });
     const authId = await generateAuthToken();
-    await setRedisKey(`${redisKeys.telegramToken}_${user.id}`, authId.hashedId, authenticatorExpiryTime);
+    await setRedisKey(`${redisKeys.telegramToken}_${id}`, authId.hashedId, authenticatorExpiryTime);
     bot.sendMessage(deviceAuth.deviceId, __mf("telegramBot.sendAuth", { code: authId.randomId, name: req.user.userName }))
 
     return SuccessResponse(
