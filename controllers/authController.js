@@ -416,6 +416,19 @@ exports.getAuthenticatorRefreshToken=async (req,res)=>{
   try {
     const { deviceId } = req.params;
 
+    const authDevice = await getAuthenticator({ deviceId: deviceId }, [ "id","type"]);
+    if (!authDevice) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "auth.authNotExist",
+          },
+        },
+        req,
+        res
+      );
+    }
     const authId = await generateAuthToken();
 
     await setRedisKey(`${deviceId}_${redisKeys.authenticatorToken}`, authId.hashedId, authenticatorExpiryTime);
