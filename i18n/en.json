@@ -31,7 +31,7 @@
     "deviceTokenExist": "Some other device is already associated with this account.",
     "authenticatorCodeNotMatch": "Authenticator code for device didn't match.",
     "authNotExist": "Authenticator not applied yet.",
-    "authConnected": "Authenticator connected successfully.",
+    "authConnected": "2-Step Verification is enabled, Now you can use this bot to login into your account.",
     "authCodeResend": "Authentication code resend successfully.",
     "authTokenExpired": "Authentication code expired."
   },
@@ -90,7 +90,7 @@
     "equalMinMax":"Bet Not Confirm Reason Min And Max Bet Range Not Valid."
   },
   "telegramBot":{
-    "start":"Welcome to maxbet bot!",
-    "sendAuth":"Authentication code for maxbet is: {code}"
+    "start":"Hey! You are 1 step away from 2-Step Verification, Now please proceed for further step: /connect your_id to enable it for your account.",
+    "sendAuth":"Login Code: {code} {name} . Do not give this code to anyone, even if they say they are from Telegram! Its valid for 30 sec."
   }
 }

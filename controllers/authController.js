@@ -203,8 +203,8 @@ exports.login = async (req, res) => {
       userAuthType = deviceAuth.type;
       if (deviceAuth.type == authenticatorType.telegram) {
         const authId = await generateAuthToken();
-        await updateUserDataRedis(user.id, { [redisKeys.telegramToken]: authId.hashedId });
-        bot.sendMessage(deviceAuth.deviceId, __mf("telegramBot.sendAuth", { code: authId.randomId }))
+        await setRedisKey(`${redisKeys.telegramToken}_${user.id}`, authId.hashedId, authenticatorExpiryTime);
+        bot.sendMessage(deviceAuth.deviceId, __mf("telegramBot.sendAuth", { code: authId.randomId, name: user.userName }))
       }
     }
     // Return token and user information
@@ -488,7 +488,7 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
       }
     }
     else {
-      const redisAuthToken = await getUserRedisSingleKey(id, redisKeys.telegramToken);
+      const redisAuthToken = await getRedisKey(`${redisKeys.telegramToken}_${id}`);
       if (!redisAuthToken) {
         return ErrorResponse(
           {
@@ -515,7 +515,6 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
           res
         );
       }
-      await deleteKeyFromUserRedis(id,redisKeys.telegramToken);
     }
 
 
@@ -576,7 +575,7 @@ exports.removeAuthenticator = async (req, res) => {
       }
     }
     else{
-      const redisAuthToken = await getUserRedisSingleKey(id, redisKeys.telegramToken);
+      const redisAuthToken = await getRedisKey(`${redisKeys.telegramToken}_${id}`);
 
       const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
 
@@ -676,8 +675,8 @@ exports.resendTelegramAuthToken = async (req, res) => {
 
     const deviceAuth = await getAuthenticator({ userId: id });
     const authId = await generateAuthToken();
-    await updateUserDataRedis(id, { [redisKeys.telegramToken]: authId.hashedId });
-    bot.sendMessage(deviceAuth.deviceId, __mf("telegramBot.sendAuth", { code: authId.randomId }))
+    await setRedisKey(`${redisKeys.telegramToken}_${user.id}`, authId.hashedId, authenticatorExpiryTime);
+    bot.sendMessage(deviceAuth.deviceId, __mf("telegramBot.sendAuth", { code: authId.randomId, name: req.user.userName }))
 
     return SuccessResponse(
       {

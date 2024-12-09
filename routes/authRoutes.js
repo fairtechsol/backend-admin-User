@@ -15,7 +15,7 @@ router.post('/connectAuthApp', validator(connectUserAuthValidator), authControll
 router.get('/authRefreshToken/:deviceId', authController.getAuthenticatorRefreshToken);
 router.post('/verifyAuthToken', isAuthenticate, validator(verifyAuthTokenValidator), authController.verifyAuthenticatorRefreshToken);
 router.post('/removeAuthenticator', isAuthenticate, validator(verifyAuthTokenValidator), authController.removeAuthenticator);
-router.get('/getAuthUsers', authController.getAuthenticatorUsersList);
+router.get('/getAuthUsers/:deviceId', authController.getAuthenticatorUsersList);
 router.post('/resend/token',isAuthenticate, authController.resendTelegramAuthToken);
 router.get('/getAuthenticator',isAuthenticate, authController.getAuthenticatorUser);
 

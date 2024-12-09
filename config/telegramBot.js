@@ -1,6 +1,6 @@
 
 const TelegramBot = require('node-telegram-bot-api');
-const { connectAppWithToken, forceLogoutIfLogin } = require('../services/commonService');
+const { forceLogoutIfLogin } = require('../services/commonService');
 const { getRedisKey } = require('../services/redis/commonfunction');
 const { __mf } = require('i18n');
 const { authenticatorType } = require('./contants');
