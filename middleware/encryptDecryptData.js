@@ -1,4 +1,4 @@
-const { decryptAESKeyWithRSA, decryptWithAES, encryptWithAES, encryptAESKeyWithRSA } = require("../utils/encryptDecrypt");
+const { decryptAESKeyWithRSA, decryptWithAES } = require("../utils/encryptDecrypt");
 
 module.exports = (req, res, next) => {
     // Decrypt `req.query`

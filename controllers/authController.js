@@ -403,7 +403,7 @@ exports.connectUserAuthToken = async (req, res) => {
   } catch (error) {
     return ErrorResponse(
       {
-        statusCode: 500,
+        statusCode: error.statusCode || 500,
         message: error.message,
       },
       req,
