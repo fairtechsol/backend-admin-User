@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { gameType } = require('../config/contants');
-
+const { encryptWithAES, encryptAESKeyWithRSA, decryptAESKeyWithRSA, decryptWithAES } = require('./encryptDecrypt');
+const crypto = require("crypto");
 // create common api call function using axios to call external server http call for whole project GET <POST< PUT< DELETE
 exports.apiMethod = {
   get: "get",
@@ -18,13 +19,21 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
         .join('&');
       url = url + '?' + query
     }
+    const aesKey = crypto.randomBytes(32); // Generate AES key
+    const encryptedData = encryptWithAES(data, aesKey);
+    const encryptedKey = encryptAESKeyWithRSA(aesKey, true);
     let response = await axios({
       method: method,
       url: url,
-      data: data,
+      data: { encryptedData, encryptedKey },
       headers: headers
     });
-    return response.data;
+    let resData = response.data;
+    if (resData?.encryptedData && resData?.encryptedKey) {
+      const aesKey = decryptAESKeyWithRSA(resData.encryptedKey, true);
+      resData = decryptWithAES(resData.encryptedData, aesKey);
+    }
+    return resData;
   } catch (error) {
     throw error;
   }
