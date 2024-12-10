@@ -12,21 +12,24 @@ exports.apiMethod = {
 
 exports.apiCall = async (method, url, data, headers, ReqQuery) => {
   try {
-    let query = ''
-    if (ReqQuery && Object.keys(ReqQuery).length) {
-      query = Object.keys(ReqQuery)
-        .map(key => `${key}=${ReqQuery[key]}`)
-        .join('&');
-      url = url + '?' + query
+    if (ReqQuery) {
+      const aesKey = crypto.randomBytes(32); // Generate AES key
+      const encryptedData = encryptWithAES(ReqQuery, aesKey);
+      const encryptedKey = encryptAESKeyWithRSA(aesKey, true);
+      ReqQuery = { encryptedData, encryptedKey }
     }
-    const aesKey = crypto.randomBytes(32); // Generate AES key
-    const encryptedData = encryptWithAES(data, aesKey);
-    const encryptedKey = encryptAESKeyWithRSA(aesKey, true);
+    if (data) {
+      const aesKey = crypto.randomBytes(32); // Generate AES key
+      const encryptedData = encryptWithAES(data, aesKey);
+      const encryptedKey = encryptAESKeyWithRSA(aesKey, true);
+      data = { encryptedData, encryptedKey }
+    }
     let response = await axios({
       method: method,
       url: url,
       data: { encryptedData, encryptedKey },
-      headers: headers
+      headers: headers,
+      params: ReqQuery
     });
     let resData = response.data;
     if (resData?.encryptedData && resData?.encryptedKey) {
