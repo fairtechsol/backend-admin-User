@@ -27,7 +27,7 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
     let response = await axios({
       method: method,
       url: url,
-      data: { encryptedData, encryptedKey },
+      data: data,
       headers: headers,
       params: ReqQuery
     });
