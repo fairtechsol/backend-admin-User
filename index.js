@@ -48,7 +48,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Configure i18n for message control
 app.use(i18n.init);
 app.use(setI18Language);
-app.use(encryptDecryptData);
+// app.use(encryptDecryptData);
 
 // Middleware for logging requests
 app.use((req, res, next) => {

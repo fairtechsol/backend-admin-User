@@ -27,6 +27,7 @@ module.exports.CreateUser = Joi.object({
     'any.only': 'Confirm Password must match Password',
   }),
   delayTime: Joi.string().allow(""),
+  sessionCommission: Joi.number(),
   matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
   matchCommission: Joi.number(),
 });
@@ -78,6 +79,7 @@ module.exports.updateUserValid = Joi.object({
     'any.required': '"Transaction Password" is required',
     'string.empty': '"Transaction Password" can not be empty.'
   }),
+  sessionCommission: Joi.number(),
   matchComissionType: Joi.string().valid(...Object.values(matchComissionTypeConstant)).allow(null),
   matchCommission: Joi.number(),
 });

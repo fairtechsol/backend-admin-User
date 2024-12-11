@@ -144,6 +144,12 @@ const userSchema = new EntitySchema({
       default: 0,
       transformer: new ColumnNumericTransformer()
     },
+    sessionCommission: {
+      type: 'float',
+      nullable: false,
+      default: 0,
+      transformer: new ColumnNumericTransformer()
+    },
     superParentId: {
       type: "uuid",
       nullable: true
