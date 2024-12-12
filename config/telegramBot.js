@@ -28,6 +28,9 @@ bot.onText(/\/connect/, async (msg) => {
             await forceLogoutIfLogin(userId);
             bot.sendMessage(msg.chat.id, __mf("auth.authConnected"));
         }
+        else{
+            bot.sendMessage(msg.chat.id, __mf("telegramBot.codeInvalid"));
+        }
     }
     catch (e) {
         bot.sendMessage(msg.chat.id, __mf(e?.message?.msg || "internalServerError", e?.message?.keys));
