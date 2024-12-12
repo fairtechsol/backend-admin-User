@@ -15,6 +15,7 @@ const { logger } = require("./config/logger.js");
 const helmet = require("helmet");
 const cron = require('node-cron');
 const { deleteMultipleDemoUser } = require("./services/commonService.js");
+const path = require("path");
 require('./config/telegramBot.js');
 // const encryptDecryptData = require("./middleware/encryptDecryptData.js");
 
@@ -62,6 +63,9 @@ app.use((req, res, next) => {
 
 // Define routes
 app.use("/", route);
+
+__dirname = path.resolve();
+app.use(express.static(path.join(__dirname, "public")));
 
 // Serve Swagger documentation in non-production environments
 if (process.env.NODE_ENV !== "production") {
