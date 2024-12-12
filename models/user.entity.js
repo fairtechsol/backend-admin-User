@@ -188,7 +188,13 @@ const userSchema = new EntitySchema({
       type:"boolean",
       default: false,
       nullable: false
-    }
+    },
+    sessionCommission: {
+      type: 'float',
+      nullable: false,
+      default: 0,
+      transformer: new ColumnNumericTransformer()
+    },
   },
   orderBy: {
     "betBlock": "ASC",

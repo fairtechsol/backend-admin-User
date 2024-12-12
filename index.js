@@ -15,8 +15,8 @@ const { logger } = require("./config/logger.js");
 const helmet = require("helmet");
 const cron = require('node-cron');
 const { deleteMultipleDemoUser } = require("./services/commonService.js");
-const telegramBot = require('./config/telegramBot.js');
-const encryptDecryptData = require("./middleware/encryptDecryptData.js");
+require('./config/telegramBot.js');
+// const encryptDecryptData = require("./middleware/encryptDecryptData.js");
 
 // Create Express app
 const app = express();

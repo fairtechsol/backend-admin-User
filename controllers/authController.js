@@ -179,7 +179,7 @@ exports.login = async (req, res) => {
     setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, roleName: user.roleName, userName: user.userName },
+      { id: user.id, roleName: user.roleName, userName: user.userName, isAuthenticatorEnable: user.isAuthenticatorEnable },
       jwtSecret
     );
 
@@ -457,6 +457,7 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
   try {
     const { id } = req.user;
     const { authToken } = req.body;
+    const user = req.user;
 
     const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id","type"]);
     if (!authDevice) {
@@ -530,10 +531,18 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
       }
     }
 
+    const token = jwt.sign(
+      { id: user.id, roleName: user.roleName, userName: user.userName },
+      jwtSecret
+    );
+
+    // setting token in redis for checking if user already loggedin
+    await internalRedis.hmset(user.id, { token: token });
 
     return SuccessResponse(
       {
         statusCode: 200,
+        data: token
       },
       req,
       res

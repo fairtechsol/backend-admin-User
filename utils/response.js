@@ -66,7 +66,6 @@ module.exports.SuccessResponse = (resData, req, res) => {
   //   meta: resData?.meta,
   // }, aesKey);
   // const encryptedKey = encryptAESKeyWithRSA(aesKey);
-
   // return res.status(resData.statusCode).json({
   //   encryptedData, encryptedKey
   // });
