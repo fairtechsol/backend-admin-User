@@ -5,10 +5,11 @@ const crypto = require("crypto");
 module.exports.ErrorResponse = (errorData, req, res) => {
   try {
     if (!errorData) {
-      const aesKey = crypto.randomBytes(32); // Generate AES key
-      const encryptedData = encryptWithAES({ message: "Internal server error"}, aesKey);
-      const encryptedKey = encryptAESKeyWithRSA(aesKey);
-      res.status(500).json({ encryptedData, encryptedKey});
+      // const aesKey = crypto.randomBytes(32); // Generate AES key
+      // const encryptedData = encryptWithAES({ message: "Internal server error"}, aesKey);
+      // const encryptedKey = encryptAESKeyWithRSA(aesKey);
+      // res.status(500).json({ encryptedData, encryptedKey});
+      res.status(500).json({ message: "Internal server error"});
       return
     }
     errorData.statusCode = errorData.statusCode || 500;
@@ -30,21 +31,23 @@ module.exports.ErrorResponse = (errorData, req, res) => {
 
     logger.error(errorObj);
 
-    const aesKey = crypto.randomBytes(32); // Generate AES key
-    const encryptedData = encryptWithAES(errorObj, aesKey);
-    const encryptedKey = encryptAESKeyWithRSA(aesKey);
+      // const aesKey = crypto.randomBytes(32); // Generate AES key
+    // const encryptedData = encryptWithAES(errorObj, aesKey);
+    // const encryptedKey = encryptAESKeyWithRSA(aesKey);
 
-    res.status(errorData.statusCode).json({ encryptedData, encryptedKey });
+    // res.status(errorData.statusCode).json({ encryptedData, encryptedKey });
+    res.status(errorData.statusCode).json(errorObj);
   } catch (err) {
     logger.error({
       message: "Error at error response.",
       stack: err?.stack,
       context: err?.message,
     });
-    const aesKey = crypto.randomBytes(32); // Generate AES key
-    const encryptedData = encryptWithAES({ message: "Internal server error"}, aesKey);
-    const encryptedKey = encryptAESKeyWithRSA(aesKey);
-    res.status(500).json({ encryptedData, encryptedKey});
+   // const aesKey = crypto.randomBytes(32); // Generate AES key
+    // const encryptedData = encryptWithAES({ message: "Internal server error"}, aesKey);
+    // const encryptedKey = encryptAESKeyWithRSA(aesKey);
+    // res.status(500).json({ encryptedData, encryptedKey});
+    res.status(500).json({ message: "Internal server error"});
   }
 
 };
@@ -54,17 +57,23 @@ module.exports.SuccessResponse = (resData, req, res) => {
   resData.status = "success";
   resData.meta = resData.meta || "PROJECT NAME";
 
-  const aesKey = crypto.randomBytes(32); // Generate AES key
-  const encryptedData = encryptWithAES({
+    // const aesKey = crypto.randomBytes(32); // Generate AES key
+  // const encryptedData = encryptWithAES({
+  //   status: resData?.status,
+  //   statusCode: resData.statusCode,
+  //   message: resData?.message ? __mf(resData?.message?.msg, resData?.message?.keys) : null,
+  //   data: resData?.data,
+  //   meta: resData?.meta,
+  // }, aesKey);
+  // const encryptedKey = encryptAESKeyWithRSA(aesKey);
+  // return res.status(resData.statusCode).json({
+  //   encryptedData, encryptedKey
+  // });
+  return res.status(resData.statusCode).json({
     status: resData?.status,
     statusCode: resData.statusCode,
     message: resData?.message ? __mf(resData?.message?.msg, resData?.message?.keys) : null,
     data: resData?.data,
     meta: resData?.meta,
-  }, aesKey);
-  const encryptedKey = encryptAESKeyWithRSA(aesKey);
-
-  return res.status(resData.statusCode).json({
-    encryptedData, encryptedKey
   });
 };

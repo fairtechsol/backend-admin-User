@@ -15,8 +15,8 @@ const { logger } = require("./config/logger.js");
 const helmet = require("helmet");
 const cron = require('node-cron');
 const { deleteMultipleDemoUser } = require("./services/commonService.js");
-const telegramBot = require('./config/telegramBot.js');
-const encryptDecryptData = require("./middleware/encryptDecryptData.js");
+require('./config/telegramBot.js');
+// const encryptDecryptData = require("./middleware/encryptDecryptData.js");
 
 // Create Express app
 const app = express();
@@ -48,7 +48,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Configure i18n for message control
 app.use(i18n.init);
 app.use(setI18Language);
-app.use(encryptDecryptData);
+// app.use(encryptDecryptData);
 
 // Middleware for logging requests
 app.use((req, res, next) => {

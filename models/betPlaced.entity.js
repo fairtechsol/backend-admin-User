@@ -105,6 +105,10 @@ const betPlacedSchema = new EntitySchema({
             type: 'varchar',
             nullable: true
         },
+        isCommissionActive:{
+            type: "boolean",
+            default: false
+        }
     },
     relations: {
         user: {
