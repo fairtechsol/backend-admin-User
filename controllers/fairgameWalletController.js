@@ -986,7 +986,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
       await incrementValuesRedis(user.user.id, {
         ...userBalance,
         currentBalance: profitLoss,
-        [redisSesionExposureName]: -maxLoss
+        [redisSesionExposureName]: -maxLoss,
       });
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
     }
@@ -1239,7 +1239,8 @@ const calculateMaxLossSessionForUserNoResult = async (
     if (userRedisData?.exposure) {
       await incrementValuesRedis(user.user.id, {
         [redisSesionExposureName]: -maxLoss,
-        exposure: -maxLoss
+        exposure: -maxLoss,
+
       });
       await deleteKeyFromUserRedis(user.user.id, betId + "_profitLoss");
     }
@@ -1500,7 +1501,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
       await incrementValuesRedis(user.user.id, {
         ...userBalance,
         currentBalance: -profitLoss,
-        [redisSesionExposureName]: maxLoss
+        [redisSesionExposureName]: maxLoss,
       }, {
         [betId + redisKeys.profitLoss]: JSON.stringify({
           upperLimitOdds: redisData?.betData?.[redisData?.betData?.length - 1]?.odds,
@@ -2433,7 +2434,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         lossAmount: parseFloat(getMultipleAmount.lossAmount),
         type: "MATCH ODDS",
         result: result,
-        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.matchOdd || item?.type == matchBettingType.quickbookmaker1 || item?.type == matchBettingType.quickbookmaker2 || item?.type == matchBettingType.quickbookmaker3 || item?.type == matchBettingType.bookmaker)?.map((item) => item?.id)
+        betId: matchDetailsBetIds?.filter((item) => [matchBettingType.matchOdd, matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3].includes(item?.type))?.map((item) => item?.id)
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(getMultipleAmount.winAmountTied),
@@ -2473,7 +2474,6 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
 
     await deleteKeyFromUserRedis(user.user.id, redisKeys.userMatchExposure + matchId, redisKeys.userTeamARate + matchId, redisKeys.userTeamBRate + matchId, redisKeys.userTeamCRate + matchId, redisKeys.yesRateTie + matchId, redisKeys.noRateTie + matchId, redisKeys.yesRateComplete + matchId, redisKeys.noRateComplete + matchId, `${redisKeys.userSessionExposure}${matchId}`);
-
     if (user.user.createBy === user.user.id && !user.user.isDemo) {
       superAdminData[user.user.id] = {
         role: user.user.roleName,
@@ -2928,7 +2928,7 @@ const calculateProfitLossMatchForUserUnDeclare = async (users, betId, matchId, f
         lossAmount: parseFloat(parseFloat(getMultipleAmount.lossAmount).toFixed(2)),
         type: "MATCH ODDS",
         result: result,
-        betId: matchDetailsBetIds?.filter((item) => item?.type == matchBettingType.matchOdd || item?.type == matchBettingType.quickbookmaker1 || item?.type == matchBettingType.quickbookmaker2 || item?.type == matchBettingType.quickbookmaker3 || item?.type == matchBettingType.bookmaker)?.map((item) => item?.id)
+        betId: matchDetailsBetIds?.filter((item) => [matchBettingType.matchOdd, matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3].includes(item?.type))?.map((item) => item?.id)
       }] : []),
       ...(result != resultType.noResult && parseFloat(getMultipleAmount.tiedBetsCount || 0) > 0 ? [{
         winAmount: parseFloat(parseFloat(getMultipleAmount.winAmountTied).toFixed(2)),
@@ -5067,7 +5067,6 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
 
  
     sendMessageToUser(user.user.id, redisEventName, { ...user.user, betId: currBetId, matchId, userBalanceData, isMatchDeclare: isMatchDeclare });
-
 
     let currBal = user.user.userBalance.currentBalance;
 

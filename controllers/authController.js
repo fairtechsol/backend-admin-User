@@ -3,12 +3,10 @@ const {
   redisTimeOut,
   differLoginTypeByRoles,
   jwtSecret,
-  transType,
-  walletDescription,
-  defaultButtonValue,
-  buttonType,
-  sessiontButtonValue,
-  casinoButtonValue,
+  redisKeys,
+  authenticatorType,
+  authenticatorExpiryTime,
+  teleAuthenticatorExpiryTime,
 } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -17,16 +15,18 @@ const jwt = require("jsonwebtoken");
 const {
   getUserWithUserBalance,
   addUser,
+  updateUser,
+  getUserById,
 } = require("../services/userService");
-const { userLoginAtUpdate } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, loginDemoUser, deleteDemoUser } = require("../services/commonService");
+const { userLoginAtUpdate, addAuthenticator, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, loginDemoUser, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
 const { logger } = require("../config/logger");
-const { updateUserDataRedis } = require("../services/redis/commonfunction");
+const { updateUserDataRedis, getUserRedisSingleKey, getRedisKey, setRedisKey, deleteKeyFromUserRedis } = require("../services/redis/commonfunction");
 const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
-const { insertTransactions } = require("../services/transactionService");
-const { addInitialUserBalance } = require("../services/userBalanceService");
-const { insertButton } = require("../services/buttonService");
-const lodash = require('lodash');
+const { generateAuthToken, verifyAuthToken } = require("../utils/generateAuthToken");
+const bot = require("../config/telegramBot");
+const { __mf } = require("i18n");
+
 
 
 // Function to validate a user by username and password
@@ -179,7 +179,7 @@ exports.login = async (req, res) => {
     setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, roleName: user.roleName, userName: user.userName },
+      { id: user.id, roleName: user.roleName, userName: user.userName, isAuthenticatorEnable: user.isAuthenticatorEnable },
       jwtSecret
     );
 
@@ -197,6 +197,16 @@ exports.login = async (req, res) => {
       isBetExist = await getChildUsersSinglePlaceBet(user.id);
 
     }
+    let userAuthType;
+    if (user.isAuthenticatorEnable) {
+      const deviceAuth = await getAuthenticator({ userId: user.id });
+      userAuthType = deviceAuth.type;
+      if (deviceAuth.type == authenticatorType.telegram) {
+        const authId = await generateAuthToken();
+        await setRedisKey(`${redisKeys.telegramToken}_${user.id}`, authId.hashedId, authenticatorExpiryTime);
+        bot.sendMessage(deviceAuth.deviceId, __mf("telegramBot.sendAuth", { code: authId.randomId, name: user.userName }))
+      }
+    }
     // Return token and user information
 
     return SuccessResponse(
@@ -209,7 +219,9 @@ exports.login = async (req, res) => {
           roleName: roleName,
           forceChangePassword,
           userId: user?.id,
-          isBetExist: isBetExist?.length > 0
+          isBetExist: isBetExist?.length > 0,
+          isAuthenticator: user.isAuthenticatorEnable,
+          authenticatorType: userAuthType
         },
       },
       req,
@@ -260,3 +272,454 @@ exports.logout = async (req, res) => {
     );
   }
 };
+
+exports.generateUserAuthToken = async (req, res) => {
+  try {
+    const user = req.user;
+    const { type, password } = req.body;
+    if (user.isDemo) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.unauthorizeRole",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    const isDeviceExist = await getAuthenticator({ userId: user.id }, ["id"]);
+
+    if(isDeviceExist){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.deviceTokenExist",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    let returnId;
+
+    if (type == authenticatorType.app) {
+      const authId = await generateAuthToken();
+      await updateUserDataRedis(user.id, { [redisKeys.authenticatorToken]: authId.hashedId });
+      returnId = authId.randomId;
+    }
+
+    else {
+      const userData = await getUserById(user.id, ["id", "password"]);
+      if (!bcrypt.compareSync(password, userData?.password)) {
+        throw {
+          message: { msg: "auth.invalidPass", keys: { type: "user" } },
+          statusCode: 403,
+        }
+      }
+
+      const authId = new Date().getTime();
+      await setRedisKey(authId, user.id, teleAuthenticatorExpiryTime);
+      returnId = authId;
+    }
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: returnId,
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+};
+
+exports.connectUserAuthToken = async (req, res) => {
+  try {
+    const { userName, password, authToken, deviceId } = req.body;
+    const user = await validateUser(userName, password);
+
+    if (user?.error) {
+      return ErrorResponse(
+        {
+          statusCode: 404,
+          message: user.message,
+        },
+        req,
+        res
+      );
+    }
+
+    if (!user) {
+      return ErrorResponse(
+        {
+          statusCode: 404,
+          message: {
+            msg: "notFound",
+            keys: { name: "User" },
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    if (user.isDemo) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: {
+            msg: "auth.unauthorizeRole",
+          },
+        },
+        req,
+        res
+      );
+    }  
+
+    await connectAppWithToken(authToken, deviceId, user);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "created", keys: { type: "Authenticator" } },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: error.statusCode || 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+};
+
+exports.getAuthenticatorRefreshToken=async (req,res)=>{
+  try {
+    const { deviceId } = req.params;
+
+    const authDevice = await getAuthenticator({ deviceId: deviceId }, [ "id","type"]);
+    if (!authDevice) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "auth.authNotExist",
+          },
+        },
+        req,
+        res
+      );
+    }
+    const authId = await generateAuthToken();
+
+    await setRedisKey(`${deviceId}_${redisKeys.authenticatorToken}`, authId.hashedId, authenticatorExpiryTime);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: authId.randomId
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.verifyAuthenticatorRefreshToken = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { authToken } = req.body;
+    const user = req.user;
+
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id","type"]);
+    if (!authDevice) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "auth.authNotExist",
+          },
+        },
+        req,
+        res
+      );
+    }
+    if (authDevice.type == authenticatorType.app) {
+      const redisAuthToken = await getRedisKey(`${authDevice.deviceId}_${redisKeys.authenticatorToken}`);
+      if (!redisAuthToken) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authTokenExpired",
+            },
+          },
+          req,
+          res
+        );
+      }
+      const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
+
+      if (!isTokenMatch) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authenticatorCodeNotMatch",
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
+    else {
+      const redisAuthToken = await getRedisKey(`${redisKeys.telegramToken}_${id}`);
+      if (!redisAuthToken) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authTokenExpired",
+            },
+          },
+          req,
+          res
+        );
+      }
+      const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
+
+      if (!isTokenMatch) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authenticatorCodeNotMatch",
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
+
+    const token = jwt.sign(
+      { id: user.id, roleName: user.roleName, userName: user.userName },
+      jwtSecret
+    );
+
+    // setting token in redis for checking if user already loggedin
+    await internalRedis.hmset(user.id, { token: token });
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: token
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.removeAuthenticator = async (req, res) => {
+  try {
+    const { id } = req.user;
+    const { authToken } = req.body;
+
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id","type"]);
+    if (!authDevice) {
+      return ErrorResponse(
+        {
+          statusCode: 400,
+          message: {
+            msg: "auth.authNotExist",
+          },
+        },
+        req,
+        res
+      );
+    }
+
+    if (authDevice.type == authenticatorType.app) {
+      const redisAuthToken = await getRedisKey(`${authDevice.deviceId}_${redisKeys.authenticatorToken}`);
+
+      const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
+
+      if (!isTokenMatch) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authenticatorCodeNotMatch",
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
+    else{
+      const redisAuthToken = await getRedisKey(`${redisKeys.telegramToken}_${id}`);
+
+      const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
+
+      if (!isTokenMatch) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authenticatorCodeNotMatch",
+            },
+          },
+          req,
+          res
+        );
+      }
+    bot.sendMessage(authDevice.deviceId, __mf("telegramBot.disabled"))
+
+    }
+
+    await deleteAuthenticator({ userId: id });
+    await updateUser(id, { isAuthenticatorEnable: false });
+    await forceLogoutIfLogin(id);
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        success: true
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getAuthenticatorUsersList = async (req, res) => {
+  try {
+    const { deviceId } = req.params;
+    
+    const users = await getAuthenticators({ deviceId: deviceId, type: authenticatorType.app }, ["user.userName","userAuthenticator.id","user.id"])
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: users
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.getAuthenticatorUser = async (req, res) => {
+  try {
+    const { id } = req.user;
+    
+    const userAuth = await getAuthenticator({ userId:id })
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: userAuth
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
+
+exports.resendTelegramAuthToken = async (req, res) => {
+  try {
+    const { id } = req.user;
+
+    const deviceAuth = await getAuthenticator({ userId: id });
+    const authId = await generateAuthToken();
+    await setRedisKey(`${redisKeys.telegramToken}_${id}`, authId.hashedId, authenticatorExpiryTime);
+    bot.sendMessage(deviceAuth.deviceId, __mf("telegramBot.sendAuth", { code: authId.randomId, name: req.user.userName }))
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: {
+          msg: "auth.authCodeResend"
+        }
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
+  }
+}
