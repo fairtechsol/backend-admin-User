@@ -3,10 +3,12 @@ const { AppDataSource } = require("../config/postGresConnection");
 const userSchema = require("../models/user.entity");
 const userBalanceSchema = require("../models/userBalance.entity");
 const userMatchLockSchema = require("../models/userMatchLock.entity");
+const userMarketLockSchema = require("../models/userMarketLock.entity");
 const user = AppDataSource.getRepository(userSchema);
 const UserBalance = AppDataSource.getRepository(userBalanceSchema);
 const userMatchLock = AppDataSource.getRepository(userMatchLockSchema);
-const { ILike, In, Not, MoreThan } = require("typeorm");
+const userMarketLock = AppDataSource.getRepository(userMarketLockSchema);
+const { ILike, In, Not, IsNull, MoreThan } = require("typeorm");
 const ApiFeature = require("../utils/apiFeatures");
 
 // id is required and select is optional parameter is an type or array
@@ -246,7 +248,6 @@ exports.getChildsWithOnlyUserRole = async (userId) => {
   const results = await user.query(query, [userId, userRoleConstant.user]);
   return results;
 }
-
 exports.getParentsWithBalance = async (userId) => {
   const query = `WITH RECURSIVE p AS (
       SELECT * FROM "users" WHERE "users"."id" = $1
@@ -260,6 +261,19 @@ exports.getParentsWithBalance = async (userId) => {
 
 exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, userName: true, roleName: true } });
+}
+
+exports.getChildsWithMergedUser = async (id, ids) => {
+  const query = `
+    WITH RECURSIVE p AS (
+      SELECT * FROM "users" WHERE "users"."id" = $1
+      UNION
+      SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+    )
+    SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND ("roleName" = $2 or "createBy" = $1) AND "id" != $1 ${ids?.length?"AND id != ANY($3)":""};
+  `;
+  const results = await user.query(query, [id, userRoleConstant.user, ...(ids?.length?[ids]:[])]); // Avoid passing a blank array; include `ids` only if it has elements.
+  return results;
 }
 exports.getFirstLevelChildUserWithPartnership = async (id, partnership) => {
   return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, roleName: true, userName: true, [partnership]: true } })
@@ -355,7 +369,6 @@ exports.deleteUserMatchLock = async (where) => {
   let deleted = await userMatchLock.delete(where);
   return deleted;
 };
-
 exports.getMatchLockAllChild = (id, matchId) => {
   const query = `
     SELECT p."id", p."userName", um."blockBy", um."matchId", um."matchLock", um."sessionLock"
@@ -369,7 +382,58 @@ exports.getMatchLockAllChild = (id, matchId) => {
     throw error;
   }
 }
+exports.getUserMarketLock = (where, select) => {
+  return userMarketLock.findOne({ where: where, select: select });
+}
 
+exports.getAllUsersMarket = async (where, select) => {
+  return await userMarketLock.find({
+    where: where,
+    select: select
+  });
+
+};
+
+exports.addUserMarketLock = async (body) => {
+  let inserted = await userMarketLock.save(body);
+  return inserted;
+};
+
+exports.insertUserMarketLock = async (body) => {
+  let inserted = await userMarketLock.insert(body);
+  return inserted;
+};
+
+exports.deleteUserMarketLock = async (where) => {
+  let deleted = await userMarketLock.delete(where);
+  return deleted;
+};
+exports.getMarketLockAllChild = async (where, select) => {
+  let { matchId, betId, sessionType, createBy, ...whereData } = where; 
+  whereData.createBy = createBy;
+  let joinParameter = { matchId, createBy };
+  let joinCondition = `
+    userMarketLock.userId = user.id 
+    AND userMarketLock.matchId = :matchId AND userMarketLock.createBy = :createBy`;
+
+  if (betId) {
+    joinCondition += ` AND userMarketLock.betId = :betId`;
+    joinParameter.betId = betId;
+  }
+  if (sessionType) {
+    joinCondition += ` AND userMarketLock.sessionType = :sessionType`;
+    joinParameter.sessionType = sessionType;
+  }
+
+  const usersWithLockStatus = await user.createQueryBuilder('user')
+  .leftJoin('userMarketLock', 'userMarketLock', joinCondition, joinParameter)
+  .where(whereData) 
+  .select(select)
+  .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS "isLock"`)
+  .getRawMany();
+
+  return usersWithLockStatus;
+};
 exports.getGameLockForDetails = (where, select) => {
   try {
     let userData = userMatchLock.createQueryBuilder('userMatchLock')
