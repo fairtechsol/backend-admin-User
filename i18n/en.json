@@ -27,7 +27,13 @@
     "unauthorize":"Unauthorized user.",
     "unauthorizeRole" : "You are not authorize to take this action",
     "TransactionPasswordNotExist" : "Your transaction password not generated. Please contact your administrator.",
-    "forceLogout":"Some other user login this account on other device."
+    "forceLogout":"Some other user login this account on other device.",
+    "deviceTokenExist": "Some other device is already associated with this account.",
+    "authenticatorCodeNotMatch": "Authenticator code for device didn't match.",
+    "authNotExist": "Authenticator not applied yet.",
+    "authConnected": "2-Step Verification is enabled, Now you can use this bot to login into your account.",
+    "authCodeResend": "Authentication code resend successfully.",
+    "authTokenExpired": "Authentication code expired."
   },
   "user" : {
     "blocked": "Please contact your admin for assistance.",
@@ -82,5 +88,11 @@
     "alreadyPlacedOnDiff": "Bet not confirm bet already exists on {name} Card.",
     "limitExceed":"You cannot place a bet more than {limit} times.",
     "equalMinMax":"Bet Not Confirm Reason Min And Max Bet Range Not Valid."
+  },
+  "telegramBot":{
+    "start":"Hey! You are 1 step away from 2-Step Verification, Now please proceed for further step: /connect your_id to enable it for your account.",
+    "sendAuth":"Login Code: {code} {name} . Do not give this code to anyone, even if they say they are from Telegram! Its valid for 30 sec.",
+    "disabled": "2-Step Verification is disabled for your account.",
+    "codeInvalid": "You have to enter valid connection id."
   }
 }

@@ -38,7 +38,7 @@ exports.isAuthenticate = async (req, res, next) => {
         );
       }
       const userTokenRedis = await getUserTokenFromRedis(decodedUser.id);
-      if (userTokenRedis != token) {
+      if (userTokenRedis != token || (decodedUser?.isAuthenticatorEnable && req.baseUrl != "/auth")) {
         return ErrorResponse(
           {
             statusCode: 401,

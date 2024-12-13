@@ -12,6 +12,7 @@ module.exports.mac88Domain = process.env.MAC_88_DOMAIN || "https://dev-api.dream
 module.exports.mac88CasinoPPK = process.env.MAC88_PRIVATE_KEY;
 module.exports.mac88CasinoOperatorId = process.env.MAC88_OPERATOR_ID;
 
+
 module.exports.resultType = {
   tie: "Tie",
   noResult: "No Result",
@@ -23,6 +24,11 @@ module.exports.gameType = {
   horseRacing: "horseRacing",
   greyHound: "greyHound",
   politics: "politics",
+}
+
+module.exports.authenticatorType = {
+  telegram: 1,
+  app: 2,
 }
 
 module.exports.sessionBettingType = {
@@ -79,6 +85,8 @@ module.exports.fileType = {
 
 module.exports.redisTimeOut = 10 * 60 * 60;
 module.exports.demoRedisTimeOut = 60 * 60;
+module.exports.authenticatorExpiryTime = 30;
+module.exports.teleAuthenticatorExpiryTime = 60*5;
 
 module.exports.matchComissionTypeConstant = {
   totalLoss: "totalLoss",
@@ -385,7 +393,8 @@ module.exports.redisKeys = {
   noRateTie: "noRateTie_",
   yesRateComplete: "yesRateComplete_",
   noRateComplete: "noRateComplete_",
-
+  authenticatorToken: "authenticatorToken",
+  telegramToken: "telegramToken",
   ...(Array.from({ length: 20 }, (_, index) => index).reduce((prev, curr) => {
     prev[`yesRateUnderOver${curr}.5`] = `yesRateUnderOver${curr}.5_`;
     prev[`noRateUnderOver${curr}.5`] = `noRateUnderOver${curr}.5_`;

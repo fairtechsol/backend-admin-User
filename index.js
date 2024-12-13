@@ -15,10 +15,12 @@ const { logger } = require("./config/logger.js");
 const helmet = require("helmet");
 const cron = require('node-cron');
 const { deleteMultipleDemoUser } = require("./services/commonService.js");
+const path = require("path");
+require('./config/telegramBot.js');
+// const encryptDecryptData = require("./middleware/encryptDecryptData.js");
 
 // Create Express app
 const app = express();
-
 // Function to allow requests from specific domains
 const allowSubdomainsAndLocalhost = (origin, callback) => {
   if (!origin || origin.includes("fairgame7.com") || origin.includes("maxbet07.com")) {
@@ -47,6 +49,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 // Configure i18n for message control
 app.use(i18n.init);
 app.use(setI18Language);
+// app.use(encryptDecryptData);
 
 // Middleware for logging requests
 app.use((req, res, next) => {
@@ -60,6 +63,9 @@ app.use((req, res, next) => {
 
 // Define routes
 app.use("/", route);
+
+__dirname = path.resolve();
+app.use(express.static(path.join(__dirname, "public")));
 
 // Serve Swagger documentation in non-production environments
 if (process.env.NODE_ENV !== "production") {

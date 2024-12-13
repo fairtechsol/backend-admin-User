@@ -1,5 +1,5 @@
 const { In, Not, IsNull, LessThanOrEqual } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType, sessionBettingType, redisTimeOut, jwtSecret, demoRedisTimeOut } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType, sessionBettingType, redisTimeOut, jwtSecret, demoRedisTimeOut, authenticatorType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -11,10 +11,12 @@ const { insertTransactions, deleteTransactions } = require("./transactionService
 const { insertCommissions } = require("./commissionService");
 const { CardProfitLoss } = require("./cardService/cardProfitLossCalc");
 const { getMatchData } = require("./matchService");
-const { updateUserDataRedis } = require("./redis/commonfunction");
+const { updateUserDataRedis, getUserRedisSingleKey } = require("./redis/commonfunction");
 const jwt = require("jsonwebtoken");
 const { deleteButton } = require("./buttonService");
 const { deleteUserBalance } = require("./userBalanceService");
+const { getAuthenticator, addAuthenticator } = require("./authService");
+const { verifyAuthToken } = require("../utils/generateAuthToken");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -2034,4 +2036,39 @@ exports.deleteMultipleDemoUser = async () => {
   await deleteBet({ createBy: In(userIds) });
   await deleteUserBalance({ userId: In(userIds) });
   await deleteUser({ id: In(userIds) });
+}
+
+
+exports.connectAppWithToken = async (authToken, deviceId, user) => {
+  try {
+    const isDeviceExist = await getAuthenticator({ userId: user.id }, ["id"]);
+
+    if (isDeviceExist) {
+      throw {
+          statusCode: 403,
+          message: {
+            msg: "auth.deviceTokenExist",
+          },
+        }
+    }
+
+
+    const userAuthToken = await getUserRedisSingleKey(user.id, redisKeys.authenticatorToken);
+    const isTokenMatch = await verifyAuthToken(authToken, userAuthToken);
+
+    if (!isTokenMatch) {
+     throw {
+          statusCode: 403,
+          message: {
+            msg: "auth.authenticatorCodeNotMatch",
+          },
+        };
+    }
+    await addAuthenticator({ userId: user.id, deviceId: deviceId, type: authenticatorType.app });
+    await updateUser(user.id, { isAuthenticatorEnable: true });
+    await this.forceLogoutIfLogin(user.id);
+  } catch (error) {
+    throw error;
+  }
+
 }
