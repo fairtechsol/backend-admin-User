@@ -34,7 +34,7 @@ exports.commissionMatchReport = (userId, matchId,queryColumns) => {
   .leftJoinAndMapOne("commission.betPlaced", "betPlaced", 'betPlaced', 'commission.betPlaceId = betPlaced.id')
   .leftJoinAndMapOne("commission.user", "user", 'user', 'commission.createBy = user.id')
   .leftJoinAndMapOne("commission.parentuser", "user", 'parentuser', 'commission.createBy = parentuser.id')
-    .select(['user.userName as "userName"', 'betPlaced.marketBetType as "commissionType"', 'betPlaced.eventName as "name"', 'betPlaced.createdAt as "date"', 'betPlaced.teamName as "teamName"', 'betPlaced.odds as "odds"', 'betPlaced.betType as "betType"', 'betPlaced.amount as "stake"', 'commission.commissionAmount as "commissionAmount"', 'commission.commissionType as "commissionType"', 'commission.settled as "settled"', ...(queryColumns != '' && queryColumns ? [`${queryColumns} as "partnerShip"`] : [])]);
+    .select(['user.userName as "userName"', 'commission.matchType as "matchType"', 'betPlaced.marketBetType as "commissionType"', 'betPlaced.eventName as "name"', 'betPlaced.createdAt as "date"', 'betPlaced.teamName as "teamName"', 'betPlaced.odds as "odds"', 'betPlaced.betType as "betType"', 'betPlaced.amount as "stake"', 'commission.commissionAmount as "commissionAmount"', 'commission.commissionType as "commissionType"', 'commission.settled as "settled"', ...(queryColumns != '' && queryColumns ? [`${queryColumns} as "partnerShip"`] : [])]);
   return commissionMatches.getRawMany();
 }
 
