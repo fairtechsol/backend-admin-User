@@ -836,7 +836,7 @@ exports.userList = async (req, res, next) => {
         { excelHeader: "Available Balance", dbKey: "availableBalance" },
         { excelHeader: "UL", dbKey: "userBlock" },
         { excelHeader: "BL", dbKey: "betBlock" },
-        ...(domainUrl == oldBetFairDomain ? { excelHeader: "S Com %", dbKey: "sessionCommission" } : {}),
+        ...(domainUrl == oldBetFairDomain ? [{ excelHeader: "S Com %", dbKey: "sessionCommission" }] : []),
         { excelHeader: "Match Com Type", dbKey: "matchComissionType" },
         { excelHeader: "M Com %", dbKey: "matchCommission" },
         { excelHeader: "Exposure Limit", dbKey: "exposureLimit" },
