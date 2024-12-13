@@ -818,7 +818,8 @@ exports.declareSessionResult = async (req, res) => {
           betType: item?.betType,
           stake: item?.amount,
           superParent: item?.user?.superParentId,
-          userName: item?.user.userName
+          userName: item?.user.userName,
+          commissionType: marketBetType.SESSION
         }
         ];
 
@@ -1043,6 +1044,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
           betPlaceId: item?.betPlaceId,
           commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(user?.user?.sessionCommission) / 100).toFixed(2)),
           parentId: user.user.id,
+          commissionType: marketBetType.SESSION
         });
       });
 
@@ -1063,8 +1065,9 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
             partnerShip: 100,
             matchName: match?.title,
             matchStartDate: new Date(match?.startAt),
-            userName: user.user.userName
-          });
+            userName: user.user.userName,
+          commissionType: marketBetType.SESSION
+        });
         });
       }
     }
@@ -1156,7 +1159,8 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
               betPlaceId: item?.betPlaceId,
               commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(patentUser?.sessionCommission) / 100).toFixed(2)),
               parentId: patentUser.id,
-            });
+          commissionType: marketBetType.SESSION
+        });
           });
   
           if (patentUser?.id == patentUser?.createBy) {
@@ -1176,8 +1180,9 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
                 partnerShip: upLinePartnership,
                 matchName: match?.title,
                 matchStartDate: new Date(match?.startAt),
-                userName: user.user.userName
-              });
+                userName: user.user.userName,
+                commissionType: marketBetType.SESSION
+        });
             });
           }
         }
@@ -2211,7 +2216,8 @@ exports.declareMatchResult = async (req, res) => {
           betType: item?.betType,
           stake: item?.amount,
           lossAmount: item?.lossAmount,
-          superParent: item?.user?.superParentId, userName: item.user?.userName
+          superParent: item?.user?.superParentId, userName: item.user?.userName,
+          commissionType: marketBetType.MATCHBETTING
         }
         ];
       }
@@ -2501,7 +2507,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             betPlaceId: item?.betPlaceId,
             commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
             parentId: user.user.id,
-          });
+          commissionType: marketBetType.MATCHBETTING
+        });
         });
       }
       else if (userOriginalProfitLoss < 0) {
@@ -2532,7 +2539,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
               partnerShip: 100,
               matchName: matchData?.title,
               matchStartDate: new Date(matchData?.startAt),
-              userName: user.user.userName
+              userName: user.user.userName,
+              commissionType: marketBetType.MATCHBETTING
 
             });
           });
@@ -2548,7 +2556,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             matchName: matchData?.title,
             matchStartDate: new Date(matchData?.startAt),
             userName: user.user.userName,
-            stake: userOriginalProfitLoss
+            stake: userOriginalProfitLoss,
+            commissionType: marketBetType.MATCHBETTING
           });
         }
       }
@@ -2671,7 +2680,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
                 betPlaceId: item?.betPlaceId,
                 commissionAmount: parseFloat((parseFloat(item?.lossAmount) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
                 parentId: patentUser.id,
-              });
+              commissionType: marketBetType.MATCHBETTING
+            });
             });
           }
           else if (userOriginalProfitLoss < 0) {
@@ -2703,7 +2713,8 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
                   partnerShip: upLinePartnership,
                   matchName: matchData?.title,
                   matchStartDate: matchData?.startAt,
-                  userName: user.user.userName
+                  userName: user.user.userName,
+                  commissionType: marketBetType.MATCHBETTING
 
                 });
               });

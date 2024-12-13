@@ -1,5 +1,5 @@
 const { EntitySchema } = require('typeorm');
-const { baseColumnsSchemaPart, matchComissionTypeConstant } = require("../config/contants");
+const { baseColumnsSchemaPart, matchComissionTypeConstant, marketBetType } = require("../config/contants");
 const { ColumnNumericTransformer } = require('../services/dbService');
 
 const commissionSchema = new EntitySchema({
@@ -38,6 +38,11 @@ const commissionSchema = new EntitySchema({
     settled:{
       type:Boolean,
       default:false
+    },
+    matchType:{
+      type: 'enum',
+      enum: Object.values(marketBetType),
+      nullable: true
     }
   }
 });
