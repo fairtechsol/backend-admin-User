@@ -45,7 +45,7 @@ exports.getBet = async (req, res) => {
 exports.getBetsCondition = async (reqUser, query, isCurrentBets) => {
   let where = {};
   let select = [
-    "betPlaced.id", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.ipAddress", "betPlaced.browserDetail", "betPlaced.bettingName", "match.id", "betPlaced.runnerId"
+    "betPlaced.id", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.ipAddress", "betPlaced.browserDetail", "betPlaced.bettingName", "match.id", "betPlaced.runnerId", "betPlaced.isCommissionActive"
   ];
 
   if (isCurrentBets) {
@@ -287,7 +287,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
       browserDetail: browserDetail || req.headers['user-agent'],
       eventName: match.title,
       eventType: match.matchType,
-      bettingName: bettingName
+      bettingName: bettingName,
+      isCommissionActive: matchBetting.isCommissionActive
     }
     await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId, matchBetType }, { teamA, teamB, teamC, placeIndex });
 
