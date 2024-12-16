@@ -287,7 +287,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
       browserDetail: browserDetail || req.headers['user-agent'],
       eventName: match.title,
       eventType: match.matchType,
-      bettingName: bettingName
+      bettingName: bettingName,
+      isCommissionActive: matchBetting.isCommissionActive
     }
     await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId, matchBetType }, { teamA, teamB, teamC, placeIndex });
 
