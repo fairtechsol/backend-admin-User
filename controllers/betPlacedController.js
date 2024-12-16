@@ -1144,6 +1144,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       eventType: eventType,
       userId: id,
       createBy: id,
+      isCommissionActive: sessionDetails?.isCommissionActive
     });
 
     let jobData = {

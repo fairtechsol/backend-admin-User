@@ -12,7 +12,7 @@ exports.apiMethod = {
 
 exports.apiCall = async (method, url, data, headers, ReqQuery) => {
   try {
-      // if (ReqQuery) {
+    // if (ReqQuery) {
     //   const aesKey = crypto.randomBytes(32); // Generate AES key
     //   const encryptedData = encryptWithAES(ReqQuery, aesKey);
     //   const encryptedKey = encryptAESKeyWithRSA(aesKey, true);

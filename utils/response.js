@@ -31,7 +31,7 @@ module.exports.ErrorResponse = (errorData, req, res) => {
 
     logger.error(errorObj);
 
-      // const aesKey = crypto.randomBytes(32); // Generate AES key
+    // const aesKey = crypto.randomBytes(32); // Generate AES key
     // const encryptedData = encryptWithAES(errorObj, aesKey);
     // const encryptedKey = encryptAESKeyWithRSA(aesKey);
 
@@ -43,7 +43,7 @@ module.exports.ErrorResponse = (errorData, req, res) => {
       stack: err?.stack,
       context: err?.message,
     });
-   // const aesKey = crypto.randomBytes(32); // Generate AES key
+    // const aesKey = crypto.randomBytes(32); // Generate AES key
     // const encryptedData = encryptWithAES({ message: "Internal server error"}, aesKey);
     // const encryptedKey = encryptAESKeyWithRSA(aesKey);
     // res.status(500).json({ encryptedData, encryptedKey});
@@ -57,7 +57,7 @@ module.exports.SuccessResponse = (resData, req, res) => {
   resData.status = "success";
   resData.meta = resData.meta || "PROJECT NAME";
 
-    // const aesKey = crypto.randomBytes(32); // Generate AES key
+  // const aesKey = crypto.randomBytes(32); // Generate AES key
   // const encryptedData = encryptWithAES({
   //   status: resData?.status,
   //   statusCode: resData.statusCode,

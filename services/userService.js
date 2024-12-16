@@ -254,7 +254,7 @@ exports.getParentsWithBalance = async (userId) => {
       UNION
       SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."id" = p."createBy"
     )
-    SELECT p."id", p."userName", p."roleName", p."matchCommission", p."matchComissionType", p."createBy", p."userBlock", p."betBlock" FROM p WHERE p."id" != $1;`;
+    SELECT p."id", p."userName", p."roleName",p."sessionCommission", p."matchCommission", p."matchComissionType", p."createBy", p."userBlock", p."betBlock" FROM p WHERE p."id" != $1;`;
   const results = await user.query(query, [userId]);
   return results;
 };
