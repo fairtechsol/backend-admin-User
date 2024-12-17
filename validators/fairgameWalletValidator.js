@@ -37,6 +37,8 @@ module.exports.CreateSuperAdmin = Joi.object({
   superParentType: Joi.string().valid(userRoleConstant.fairGameAdmin, userRoleConstant.fairGameWallet),
   superParentId: Joi.string().guid({ version: "uuidv4" }),
   delayTime: Joi.string().allow(""),
+  betBlockedBy: Joi.string().allow(null),
+  userBlockedBy: Joi.string().allow(null),
 });
 
 module.exports.UpdateSuperAdmin = Joi.object({
