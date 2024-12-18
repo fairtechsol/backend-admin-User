@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const validator = require('../middleware/joi.validator')
 const { isAuthenticate } = require('../middleware/auth');
-const { matchDetails, listMatch, matchDetailsForFootball, listRacingCountryCode, listRacingMatch, raceDetails, listSearchMatch, cardMatchDetails, marketAnalysis, initialCardMatchDetails, marketWiseUserBook } = require('../controllers/matchController');
+const { matchDetails, listMatch, matchDetailsForFootball, listRacingCountryCode, listRacingMatch, raceDetails, listSearchMatch, cardMatchDetails, marketAnalysis, initialCardMatchDetails, marketWiseUserBook, userEventWiseExposure } = require('../controllers/matchController');
 const { addMatch, raceAdd } = require('../controllers/expertController');
 const { addMatchValidate, addRaceValidate } = require('../validators/matchValidator');
 
@@ -24,6 +24,7 @@ router.post('/add', validator(addMatchValidate), addMatch);
 router.post('/raceAdd', validator(addRaceValidate), raceAdd);
 
 router.get('/marketWise/userBook/:matchId', isAuthenticate, marketWiseUserBook);
+router.get('/eventWise/exposure/:userId', isAuthenticate, userEventWiseExposure);
 
 
 module.exports = router;

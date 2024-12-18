@@ -281,7 +281,7 @@ exports.getDistinctUserBetPlaced = async (betId) => {
 exports.getUserDistinctBets = async (userId,where) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
     .where({ createBy: userId, result: In([betResultStatus.PENDING]), deleteReason: IsNull(), ...(where || {}) })
-    .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType","betPlaced.marketType"])
+    .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType","betPlaced.marketType","betPlaced.eventType"])
     .distinctOn(['betPlaced.betId'])
     .getMany()
   return betPlaced;
@@ -697,4 +697,17 @@ exports.getChildUsersPlaceBetsByBetId = (id, betIds) => {
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
   ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' and "betPlaceds"."betId" In ('${betIds.join("','")}')`, [id]);
+}
+
+exports.getChildUsersAllPlaceBets = (id) => {
+
+  return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
+    SELECT id, "roleName", "createBy"
+    FROM public.users
+    WHERE id = $1
+    UNION
+    SELECT ur.id, ur."roleName", ur."createBy"
+    FROM public.users ur
+    JOIN RoleHierarchy rh ON ur."createBy" = rh.id
+  ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING'`, [id]);
 }

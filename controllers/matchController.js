@@ -1,14 +1,14 @@
 const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, tieCompleteBetType, matchBettingType, redisKeysMarketWise } = require("../config/contants");
-const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId } = require("../services/betPlacedService");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, tieCompleteBetType, matchBettingType, redisKeysMarketWise, gameType } = require("../config/contants");
+const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId, getChildUsersAllPlaceBets } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache } = require("../services/redis/commonfunction");
-const { getChildsWithOnlyUserRole, getUsers, getChildUser } = require("../services/userService");
+const { getChildsWithOnlyUserRole, getUsers, getChildUser, getUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
-const { listMatch } = require("../services/matchService");
+const { listMatch, getMatchList } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
-const { calculateProfitLossForCardMatchToResult, getRedisKeys, calculateProfitLossForOtherMatchToResult, calculateRatesOtherMatch, calculateRatesRacingMatch } = require("../services/commonService");
+const { calculateProfitLossForCardMatchToResult, getRedisKeys, calculateProfitLossForOtherMatchToResult, calculateRatesOtherMatch, calculateRatesRacingMatch, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure } = require("../services/commonService");
 
 exports.matchDetails = async (req, res) => {
   try {
@@ -696,6 +696,46 @@ exports.marketWiseUserBook = async (req, res) => {
       }
 
     }  
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        data: result
+      },
+      req,
+      res
+    );
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
+
+exports.userEventWiseExposure = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await getUser({ id: userId });
+
+    const eventNameByMatchId = {};
+    const matchList = await getMatchList({ stopAt: null }, ["id", "matchType"]);
+
+    for(let item of matchList){
+      eventNameByMatchId[item.id] = item.matchType;
+    }
+
+    const result={};
+    let gamesExposure = await getUserExposuresGameWise(user);
+    let tournamentExposure = await getUserExposuresTournament(user);
+    
+    const allMatchBetData = { ...(gamesExposure || {}), ...(tournamentExposure || {})};
+
+    if (Object.keys(allMatchBetData || {}).length) {
+      for (let item of Object.keys(allMatchBetData)) {
+          result[eventNameByMatchId[item]] = (result[eventNameByMatchId[item]] || 0) + allMatchBetData[item];
+      }
+    }
+
+    result.card = await getCasinoMatchDetailsExposure(user);
 
     return SuccessResponse(
       {
