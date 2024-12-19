@@ -1721,7 +1721,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
 exports.deleteMultipleBet = async (req, res) => {
   try {
     const {
-      matchId, data, deleteReason
+      matchId, data, deleteReason,isPermanentDelete
     } = req.body;
     // const { id } = req.user;
     if (data?.length == 0) {
@@ -1817,6 +1817,9 @@ exports.deleteMultipleBet = async (req, res) => {
         };
       }
     }
+    if(isPermanentDelete){
+      await betPlacedService.deleteBet({ id: In(placedBetIdArray) });
+    }
     return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
   } catch (error) {
     logger.error({
@@ -1831,7 +1834,7 @@ exports.deleteMultipleBet = async (req, res) => {
 exports.deleteMultipleBetForOther = async (req, res) => {
   try {
     const {
-      matchId, data, deleteReason
+      matchId, data, deleteReason, isPermanentDelete
     } = req.body;
     // const { id } = req.user;
     if (data.length == 0) {
@@ -1912,6 +1915,9 @@ exports.deleteMultipleBetForOther = async (req, res) => {
           }
         };
       }
+    }
+    if(isPermanentDelete){
+      await betPlacedService.deleteBet({ id: In(placedBetIdArray) });
     }
     return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
   } catch (error) {
@@ -3444,7 +3450,7 @@ exports.racingBettingBetPlaced = async (req, res) => {
 exports.deleteRaceMultipleBet = async (req, res) => {
   try {
     const {
-      matchId, data, deleteReason
+      matchId, data, deleteReason, isPermanentDelete
     } = req.body;
 
     if (data?.length == 0) {
@@ -3502,6 +3508,9 @@ exports.deleteRaceMultipleBet = async (req, res) => {
           await updateUserAtMatchOddsRacing(userId, betId, matchId, bet.array, deleteReason, domainUrl, runners);
         };
       }
+    }
+    if(isPermanentDelete){
+      await betPlacedService.deleteBet({ id: In(placedBetIdArray) });
     }
     return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
   } catch (error) {
