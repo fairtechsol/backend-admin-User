@@ -1,4 +1,4 @@
-const { transType, socketData, matchComissionTypeConstant, walletDomain } = require("../config/contants");
+const { transType, socketData, matchComissionTypeConstant, walletDomain, userRoleConstant } = require("../config/contants");
 const { getUser, getUserDataWithUserBalance } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
@@ -28,7 +28,7 @@ exports.updateUserBalance = async (req, res) => {
     amount = parseFloat(amount);
     // let loginUser = await getUserById(reqUser.id || createBy)
     // if (!loginUser) return ErrorResponse({ statusCode: 400, message: { msg: "invalidData" } }, req, res);
-    let user = await getUser({ id: userId, createBy: reqUser.id }, ["id"]);
+    let user = await getUser({ id: userId, createBy: reqUser.id }, ["id", "roleName"]);
     if (!user)
       return ErrorResponse(
         {
@@ -95,7 +95,7 @@ exports.updateUserBalance = async (req, res) => {
      
     } else if (transactionType == transType.withDraw) {
       insertUserBalanceData = usersBalanceData[1];
-      if (amount > insertUserBalanceData.currentBalance)
+      if (amount > insertUserBalanceData.currentBalance - (user.roleName == userRoleConstant.user ? insertUserBalanceData.exposure : 0))
         return ErrorResponse(
           {
             statusCode: 400,
