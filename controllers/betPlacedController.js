@@ -1806,13 +1806,13 @@ exports.deleteMultipleBet = async (req, res) => {
           let betId = value;
           let bet = userDataDelete[value];
           if (bet.isSessionBet) {
-            await updateUserAtSession(userId, betId, matchId, bet.array, deleteReason, domainUrl);
+            await updateUserAtSession(userId, betId, matchId, bet.array, deleteReason, domainUrl, isPermanentDelete);
           }
           else if (bet.isTournamentBet) {
-            await updateUserAtMatchOddsTournament(userId, betId, matchId, bet.array, deleteReason, domainUrl, tournamentBettingDetail?.find((item) => item?.id == betId)?.runners);
+            await updateUserAtMatchOddsTournament(userId, betId, matchId, bet.array, deleteReason, domainUrl, tournamentBettingDetail?.find((item) => item?.id == betId)?.runners, isPermanentDelete);
           }
           else {
-            await updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason, domainUrl, matchDetails, matchBettingData);
+            await updateUserAtMatchOdds(userId, betId, matchId, bet.array, deleteReason, domainUrl, matchDetails, matchBettingData, isPermanentDelete);
           }
         };
       }
@@ -1930,7 +1930,7 @@ exports.deleteMultipleBetForOther = async (req, res) => {
   }
 }
 
-const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, domainUrl) => {
+const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, domainUrl, isPermanentDelete) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = userRedisData ? true : false;
   let userOldExposure = 0;
@@ -2086,7 +2086,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       betId: betId,
       deleteReason: deleteReason,
       matchId: matchId,
-      betPlacedId: betPlacedId
+      betPlacedId: betPlacedId,
+      isPermanentDelete: isPermanentDelete
     });
   }
 
@@ -2172,7 +2173,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
               betId: betId,
               deleteReason: deleteReason,
               matchId: matchId,
-              betPlacedId: betPlacedId
+              betPlacedId: betPlacedId,
+              isPermanentDelete: isPermanentDelete
             });
 
           }
@@ -2198,7 +2200,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     deleteReason: deleteReason,
     domainUrl: domainUrl,
     betPlacedId: betPlacedId,
-    sessionType: bets?.[0]?.marketType
+    sessionType: bets?.[0]?.marketType,
+    isPermanentDelete: isPermanentDelete
   }
   const walletJob = walletSessionBetDeleteQueue.createJob(queueObject);
   await walletJob.save();
@@ -2208,7 +2211,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
 }
 
-const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails, matchBetting) => {
+const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails, matchBetting, isPermanentDelete) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = !!userRedisData;
   let userOldExposure = 0;
@@ -2388,7 +2391,8 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
       teamArateRedisKey: teamArateRedisKey,
       teamBrateRedisKey: teamBrateRedisKey,
       teamCrateRedisKey: teamCrateRedisKey,
-      redisObject
+      redisObject,
+      isPermanentDelete: isPermanentDelete
     });
   }
   await betPlacedService.updatePlaceBet({ matchId: matchId, id: In(betPlacedId) }, { deleteReason: deleteReason, result: betResultStatus.UNDECLARE });
@@ -2453,7 +2457,8 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
               teamArateRedisKey: teamArateRedisKey,
               teamBrateRedisKey: teamBrateRedisKey,
               teamCrateRedisKey: teamCrateRedisKey,
-              redisObject: redisObj
+              redisObject: redisObj,
+              isPermanentDelete: isPermanentDelete
             });
 
 
@@ -2482,7 +2487,8 @@ const updateUserAtMatchOdds = async (userId, betId, matchId, bets, deleteReason,
     matchBetType, newTeamRate,
     teamArateRedisKey: teamArateRedisKey,
     teamBrateRedisKey: teamBrateRedisKey,
-    teamCrateRedisKey: teamCrateRedisKey
+    teamCrateRedisKey: teamCrateRedisKey,
+    isPermanentDelete: isPermanentDelete
   }
 
   const walletJob = walletMatchBetDeleteQueue.createJob(queueObject);
@@ -2871,7 +2877,7 @@ exports.otherMatchBettingBetPlaced = async (req, res) => {
   }
 }
 
-const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails) => {
+const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, deleteReason, domainUrl, matchDetails, isPermanentDelete) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = userRedisData ? true : false;
   let userOldExposure = 0;
@@ -3048,7 +3054,8 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
       teamArateRedisKey: teamArateRedisKey,
       teamBrateRedisKey: teamBrateRedisKey,
       teamCrateRedisKey: teamCrateRedisKey,
-      redisObject
+      redisObject,
+      isPermanentDelete: isPermanentDelete
     });
   }
   await betPlacedService.updatePlaceBet({ matchId: matchId, id: In(betPlacedId) }, { deleteReason: deleteReason, result: betResultStatus.UNDECLARE });
@@ -3115,7 +3122,8 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
               teamArateRedisKey: teamArateRedisKey,
               teamBrateRedisKey: teamBrateRedisKey,
               teamCrateRedisKey: teamCrateRedisKey,
-              redisObject: redisObj
+              redisObject: redisObj,
+              isPermanentDelete: isPermanentDelete
             });
 
           }
@@ -3143,7 +3151,8 @@ const updateUserAtMatchOddsForOther = async (userId, betId, matchId, bets, delet
     matchBetType, newTeamRate,
     teamArateRedisKey: teamArateRedisKey,
     teamBrateRedisKey: teamBrateRedisKey,
-    teamCrateRedisKey: teamCrateRedisKey
+    teamCrateRedisKey: teamCrateRedisKey,
+    isPermanentDelete: isPermanentDelete
   }
 
   const walletJob = walletMatchBetDeleteQueue.createJob(queueObject);
@@ -3523,7 +3532,7 @@ exports.deleteRaceMultipleBet = async (req, res) => {
   }
 }
 
-const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteReason, domainUrl, runners) => {
+const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteReason, domainUrl, runners, isPermanentDelete) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = !!userRedisData;
   let userOldExposure = 0;
@@ -3656,7 +3665,8 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
       matchId: matchId,
       betPlacedId: betPlacedId,
       matchBetType,
-      teamRate: teamRates
+      teamRate: teamRates,
+      isPermanentDelete: isPermanentDelete
     });
   }
   await betPlacedService.updatePlaceBet({ matchId: matchId, id: In(betPlacedId) }, { deleteReason: deleteReason, result: betResultStatus.UNDECLARE });
@@ -3709,7 +3719,8 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
               matchId: matchId,
               betPlacedId: betPlacedId,
               matchBetType,
-              teamRate: masterTeamRates
+              teamRate: masterTeamRates,
+              isPermanentDelete: isPermanentDelete
             });
 
           }
@@ -3734,7 +3745,8 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
     deleteReason: deleteReason,
     domainUrl: domainUrl,
     betPlacedId: betPlacedId,
-    matchBetType, newTeamRate
+    matchBetType, newTeamRate,
+    isPermanentDelete: isPermanentDelete
   }
 
   const walletJob = walletRaceMatchBetDeleteQueue.createJob(queueObject);
@@ -3744,7 +3756,7 @@ const updateUserAtMatchOddsRacing = async (userId, betId, matchId, bets, deleteR
   await expertJob.save();
 }
 
-const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, deleteReason, domainUrl, runners) => {
+const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, deleteReason, domainUrl, runners, isPermanentDelete) => {
   let userRedisData = await getUserRedisData(userId);
   let isUserLogin = !!userRedisData;
   let userOldExposure = 0;
@@ -3877,7 +3889,8 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
       matchId: matchId,
       betPlacedId: betPlacedId,
       matchBetType,
-      teamRate: teamRates
+      teamRate: teamRates,
+      isPermanentDelete: isPermanentDelete
     });
   }
   await betPlacedService.updatePlaceBet({ matchId: matchId, id: In(betPlacedId) }, { deleteReason: deleteReason, result: betResultStatus.UNDECLARE });
@@ -3930,7 +3943,8 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
               matchId: matchId,
               betPlacedId: betPlacedId,
               matchBetType,
-              teamRate: masterTeamRates
+              teamRate: masterTeamRates,
+              isPermanentDelete: isPermanentDelete
             });
 
           }
@@ -3955,7 +3969,7 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
     deleteReason: deleteReason,
     domainUrl: domainUrl,
     betPlacedId: betPlacedId,
-    matchBetType, newTeamRate
+    matchBetType, newTeamRate, isPermanentDelete
   }
 
   const walletJob = walletTournamentMatchBetDeleteQueue.createJob(queueObject);
