@@ -648,7 +648,7 @@ exports.marketWiseUserBook = async (req, res) => {
     }
 
     const uniqueUser = new Set();
-    const result = [];
+    let result = [];
     for (let item of usersWithBetPlace) {
       if (!uniqueUser.has(item.createBy)) {
         const isRedisExist = await hasUserInCache(item?.createBy);
