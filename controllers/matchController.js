@@ -696,7 +696,7 @@ exports.marketWiseUserBook = async (req, res) => {
       }
 
     }  
-
+    result = result.sort((a, b) => a.user.userName.localeCompare(b.user.userName));
     return SuccessResponse(
       {
         statusCode: 200,
