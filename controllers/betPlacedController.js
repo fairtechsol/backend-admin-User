@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType, profitLossKeys, matchesTeamName } = require("../config/contants");
+const { betStatusType, teamStatus, matchBettingType, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, manualMatchBettingType, expertDomain, partnershipPrefixByRole, microServiceDomain, tiedManualTeamName, socketData, rateCuttingBetType, otherEventMatchBettingRedisKey, walletDomain, gameType, matchBettingsTeamName, matchWithTeamName, racingBettingType, casinoMicroServiceDomain, cardGameType, sessionBettingType, marketBettingTypeByBettingType, profitLossKeys, matchesTeamName, oldBetFairDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, updateMatchExposure, getUserRedisKey, incrementValuesRedis, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -45,7 +45,7 @@ exports.getBet = async (req, res) => {
 exports.getBetsCondition = async (reqUser, query, isCurrentBets) => {
   let where = {};
   let select = [
-    "betPlaced.id", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.ipAddress", "betPlaced.browserDetail", "betPlaced.bettingName", "match.id", "betPlaced.runnerId"
+    "betPlaced.id", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.ipAddress", "betPlaced.browserDetail", "betPlaced.bettingName", "match.id", "betPlaced.runnerId", "betPlaced.isCommissionActive"
   ];
 
   if (isCurrentBets) {
@@ -241,6 +241,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
       });
       return ErrorResponse({ statusCode: 400, message: { msg: "invalid", keys: { name: "Bet type" } } }, req, res);
     }
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
 
     winAmount = Number(winAmount.toFixed(2));
     lossAmount = Number(lossAmount.toFixed(2));
@@ -287,7 +288,8 @@ exports.matchBettingBetPlaced = async (req, res) => {
       browserDetail: browserDetail || req.headers['user-agent'],
       eventName: match.title,
       eventType: match.matchType,
-      bettingName: bettingName
+      bettingName: bettingName,
+      isCommissionActive: matchBetting.isCommissionActive && domainUrl == oldBetFairDomain
     }
     await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId, matchBetType }, { teamA, teamB, teamC, placeIndex });
 
@@ -386,7 +388,6 @@ exports.matchBettingBetPlaced = async (req, res) => {
       matchExposure: matchExposure
     }
 
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
 
     let walletJobData = {
       domainUrl: domainUrl,
@@ -1124,6 +1125,7 @@ exports.sessionBetPlace = async (req, res, next) => {
         res
       );
     }
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
 
     const placedBet = await betPlacedService.addNewBet({
       result: betResultStatus.PENDING,
@@ -1144,7 +1146,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       eventType: eventType,
       userId: id,
       createBy: id,
-      isCommissionActive: sessionDetails?.isCommissionActive
+      isCommissionActive: sessionDetails?.isCommissionActive && domainUrl == oldBetFairDomain
     });
 
     let jobData = {
@@ -1173,7 +1175,6 @@ exports.sessionBetPlace = async (req, res, next) => {
     });
 
 
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
 
     let walletJobData = {
       userId: id,

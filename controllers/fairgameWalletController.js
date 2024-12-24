@@ -2082,7 +2082,7 @@ exports.getBetWallet = async (req, res) => {
     let { roleName, userId, isTeamNameAllow, ...queryData } = req.query;
     let result;
     let select = [
-      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt", "match.teamC", "betPlaced.runnerId"
+      "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt", "match.teamC", "betPlaced.runnerId", "betPlaced.isCommissionActive"
     ];
 
     const demoUsers = await getAllUsers({ isDemo: true });
@@ -2193,7 +2193,7 @@ exports.declareMatchResult = async (req, res) => {
         const isCompleteMatchCondition = (item.marketType === matchBettingType.completeMatch || item.marketType === matchBettingType.completeMatch1 || item.marketType === matchBettingType.completeManual) && ((item.betType === betType.BACK && item.teamName?.toUpperCase() === tiedManualTeamName.yes) || (item.betType === betType.LAY && item.teamName?.toUpperCase() == tiedManualTeamName.no));
         item.result = isWinCondition || isTiedMatchCondition || isCompleteMatchCondition ? betResultStatus.WIN : betResultStatus.LOSS;
       }
-      if (item.user.matchCommission && item.result == betResultStatus.LOSS && item.user.matchComissionType == matchComissionTypeConstant.entryWise) {
+      if (item.user.matchCommission && item.isCommissionActive && item.result == betResultStatus.LOSS && item.user.matchComissionType == matchComissionTypeConstant.entryWise) {
         let commissionAmount = Number((parseFloat(item.lossAmount) * (parseFloat(item.user['matchCommission']) / 100)).toFixed(2));
         commissionAmount = Math.abs(commissionAmount);
         if (commissions[item?.user?.id]) {
@@ -2203,7 +2203,7 @@ exports.declareMatchResult = async (req, res) => {
           commissions[item?.user?.id] = commissionAmount;
         }
       }
-      if (item.result == betResultStatus.LOSS) {
+      if (item.result == betResultStatus.LOSS && item.isCommissionActive) {
         bulkCommission[item?.user?.id] = [...(bulkCommission[item?.user?.id] || []),
         {
           matchId: matchId,
@@ -2362,7 +2362,10 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
   for (const user of users) {
     let getWinAmount = 0;
     let getLossAmount = 0;
+    let getCommissionLossAmount = 0;
+    let getCommissionWinAmount = 0;
     let profitLoss = 0;
+    let commissionProfitLoss = 0;
     let userRedisData = await getUserRedisData(user.user.id);
     let getMultipleAmount = await getMultipleAccountMatchProfitLoss(betId, user.user.id);
 
@@ -2418,17 +2421,24 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
     if (result == resultType.tie) {
       getWinAmount = getMultipleAmount.winAmountTied + getMultipleAmount.winAmountComplete;
       getLossAmount = getMultipleAmount.lossAmountTied + getMultipleAmount.lossAmountComplete;
+      getCommissionLossAmount = getMultipleAmount.lossAmountTiedCommission + getMultipleAmount.lossAmountCompleteCommission;
+      getCommissionWinAmount = getMultipleAmount.winAmountTiedCommission + getMultipleAmount.winAmountCompleteCommission;
     }
     else if (result == resultType.noResult) {
       getWinAmount = getMultipleAmount.winAmountComplete;
       getLossAmount = getMultipleAmount.lossAmountComplete;
+      getCommissionLossAmount = getMultipleAmount.lossAmountCompleteCommission;
+      getCommissionWinAmount = getMultipleAmount.winAmountCompleteCommission;
     }
     else {
       getWinAmount = getMultipleAmount.winAmount + getMultipleAmount.winAmountTied + getMultipleAmount.winAmountComplete;
       getLossAmount = getMultipleAmount.lossAmount + getMultipleAmount.lossAmountTied + getMultipleAmount.lossAmountComplete;
+      getCommissionLossAmount = getMultipleAmount.lossAmountCommission + getMultipleAmount.lossAmountTiedCommission + getMultipleAmount.lossAmountCompleteCommission;
+      getCommissionWinAmount = getMultipleAmount.winAmountCommission + getMultipleAmount.winAmountTiedCommission + getMultipleAmount.winAmountCompleteCommission;
     }
 
     profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
+    commissionProfitLoss = parseFloat(getCommissionWinAmount.toString()) - parseFloat(getCommissionLossAmount.toString());
 
     fwProfitLoss = parseFloat(fwProfitLoss.toString()) + parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString());
 
@@ -2470,12 +2480,12 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
 
     if (user.user.matchCommission) {
       if (user.user.matchComissionType == matchComissionTypeConstant.entryWise) {
-        userBalanceData.totalCommission = parseFloat((parseFloat(user.user.userBalance.totalCommission) + parseFloat(getLossAmount) * parseFloat(user.user.matchCommission) / 100).toFixed(2));
-        totalCommissionData += parseFloat((parseFloat(getLossAmount) * parseFloat(user.user.matchCommission) / 100).toFixed(2))
+        userBalanceData.totalCommission = parseFloat((parseFloat(user.user.userBalance.totalCommission) + parseFloat(getCommissionLossAmount) * parseFloat(user.user.matchCommission) / 100).toFixed(2));
+        totalCommissionData += parseFloat((parseFloat(getCommissionLossAmount) * parseFloat(user.user.matchCommission) / 100).toFixed(2))
       }
-      else if (userOriginalProfitLoss < 0) {
-        userBalanceData.totalCommission = parseFloat((parseFloat(user.user.userBalance.totalCommission) + Math.abs(parseFloat(userOriginalProfitLoss)) * parseFloat(user.user.matchCommission) / 100).toFixed(2));
-        totalCommissionData += parseFloat((Math.abs(parseFloat(userOriginalProfitLoss)) * parseFloat(user.user.matchCommission) / 100).toFixed(2))
+      else if (commissionProfitLoss < 0) {
+        userBalanceData.totalCommission = parseFloat((parseFloat(user.user.userBalance.totalCommission) + Math.abs(parseFloat(commissionProfitLoss)) * parseFloat(user.user.matchCommission) / 100).toFixed(2));
+        totalCommissionData += parseFloat((Math.abs(parseFloat(commissionProfitLoss)) * parseFloat(user.user.matchCommission) / 100).toFixed(2))
       }
     }
 
@@ -2511,14 +2521,14 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         });
         });
       }
-      else if (userOriginalProfitLoss < 0) {
+      else if (commissionProfitLoss < 0) {
         commissionReport.push({
           createBy: user.user.id,
           matchId: matchId,
           betId: currBetId,
-          commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
+          commissionAmount: parseFloat((parseFloat(Math.abs(commissionProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
           parentId: user.user.id,
-          stake: userOriginalProfitLoss
+          stake: commissionProfitLoss
         });
       }
       if (user?.user?.id == user?.user?.createBy) {
@@ -2545,18 +2555,18 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             });
           });
         }
-        else if (userOriginalProfitLoss < 0) {
+        else if (commissionProfitLoss < 0) {
           faAdminCal.commission.push({
             createBy: user.user.id,
             matchId: matchId,
             betId: currBetId,
             parentId: user.user.id,
-            commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
+            commissionAmount: parseFloat((parseFloat(Math.abs(commissionProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)),
             partnerShip: 100,
             matchName: matchData?.title,
             matchStartDate: new Date(matchData?.startAt),
             userName: user.user.userName,
-            stake: userOriginalProfitLoss,
+            stake: commissionProfitLoss,
             matchType: marketBetType.MATCHBETTING
           });
         }
@@ -2624,7 +2634,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         profitLoss: profitLoss,
         myProfitLoss: profitLoss,
         exposure: maxLoss,
-        totalCommission: (user.user.matchComissionType == matchComissionTypeConstant.entryWise ? (commission[user.user.id] || 0) : userOriginalProfitLoss < 0 ? parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)) : 0)
+        totalCommission: (user.user.matchComissionType == matchComissionTypeConstant.entryWise ? (commission[user.user.id] || 0) : commissionProfitLoss < 0 ? parseFloat((parseFloat(Math.abs(commissionProfitLoss)) * parseFloat(user?.user?.matchCommission) / 100).toFixed(2)) : 0)
       };
     }
 
@@ -2649,7 +2659,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         let myProfitLoss = parseFloat(
           (((profitLoss) * upLinePartnership) / 100).toString()
         );
-        let parentCommission = parseFloat((parseFloat(((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getLossAmount : userOriginalProfitLoss < 0 ? Math.abs(userOriginalProfitLoss) : 0))) / 100).toFixed(2)) * parseFloat(upLinePartnership) / 100).toFixed(2));
+        let parentCommission = parseFloat((parseFloat(((parseFloat(patentUser?.matchCommission) * ((patentUser.matchComissionType == matchComissionTypeConstant.entryWise ? getCommissionLossAmount : commissionProfitLoss < 0 ? Math.abs(commissionProfitLoss) : 0))) / 100).toFixed(2)) * parseFloat(upLinePartnership) / 100).toFixed(2));
 
         if (upperUserObj[patentUser.id]) {
           upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;
@@ -2684,14 +2694,14 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
             });
             });
           }
-          else if (userOriginalProfitLoss < 0) {
+          else if (commissionProfitLoss < 0) {
             commissionReport.push({
               createBy: user.user.id,
               matchId: matchId,
               betId: currBetId,
-              commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+              commissionAmount: parseFloat((parseFloat(Math.abs(commissionProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
               parentId: patentUser.id,
-              stake: userOriginalProfitLoss
+              stake: commissionProfitLoss
 
             });
           }
@@ -2719,18 +2729,18 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
                 });
               });
             }
-            else if (userOriginalProfitLoss < 0) {
+            else if (commissionProfitLoss < 0) {
               faAdminCal.commission.push({
                 createBy: user.user.id,
                 matchId: matchId,
                 betId: currBetId,
                 parentId: patentUser.id,
-                commissionAmount: parseFloat((parseFloat(Math.abs(userOriginalProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
+                commissionAmount: parseFloat((parseFloat(Math.abs(commissionProfitLoss)) * parseFloat(patentUser?.matchCommission) / 100).toFixed(2)),
                 partnerShip: upLinePartnership,
                 matchName: matchData?.title,
                 matchStartDate: matchData?.startAt,
                 userName: user.user.userName,
-                stake: userOriginalProfitLoss
+                stake: commissionProfitLoss
 
               });
             }
@@ -2742,7 +2752,7 @@ const calculateProfitLossMatchForUserDeclare = async (users, betId, matchId, fwP
         profitLoss: profitLoss + (faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0),
         exposure: maxLoss + (faAdminCal.userData?.[user.user.superParentId]?.exposure || 0),
         myProfitLoss: parseFloat((((faAdminCal.userData?.[user.user.superParentId]?.profitLoss || 0)) + ((profitLoss) * (user.user.superParentType == userRoleConstant.fairGameAdmin ? parseFloat(user.user.fwPartnership) : 1) / 100)).toFixed(2)),
-        userOriginalProfitLoss: userOriginalProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
+        userOriginalProfitLoss: commissionProfitLoss + (faAdminCal.userData?.[user.user.superParentId]?.userOriginalProfitLoss || 0),
         role: user.user.superParentType
       }
 

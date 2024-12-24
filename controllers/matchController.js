@@ -659,7 +659,7 @@ exports.marketWiseUserBook = async (req, res) => {
               const redisData = await getUserRedisKeys(item?.createBy, `${betId}${redisKeys.profitLoss}_${matchId}`);
               result.push({
                 user: { userName: item.userName },
-                profitLoss: redisData?.[0]
+                profitLoss: JSON.parse(redisData?.[0] || "{}")
               });
             }
             else{
