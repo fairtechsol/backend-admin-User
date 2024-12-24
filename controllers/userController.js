@@ -971,8 +971,8 @@ exports.getTotalUserListBalance = async (req, res, next) => {
     if (apiQuery.userBlock) {
       childUserBalanceWhere = `AND "p"."userBlock" = ${apiQuery?.userBlock?.slice(2)}`
     }
-    if (apiQuery.betBlock) {
-      childUserBalanceWhere = `AND "p"."betBlock" = ${apiQuery?.betBlock?.slice(2)}`
+    if (apiQuery.orVal) {
+      childUserBalanceWhere = `AND ("p"."betBlock" = true or  "p"."userBlock" = true)`
     }
 
     const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
