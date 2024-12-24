@@ -71,6 +71,8 @@ exports.createUser = async (req, res) => {
       roleName,
       userBlock: creator.userBlock,
       betBlock: creator.betBlock,
+      betBlockedBy: creator.betBlockedBy,
+      userBlockedBy: creator.userBlockedBy,
       createBy: creator.id,
       creditRefrence: creditRefrence ? parseFloat(creditRefrence) : 0,
       exposureLimit: exposureLimit || creator.exposureLimit,

@@ -137,7 +137,9 @@ exports.createSuperAdmin = async (req, res) => {
       superParentId,
       remark,
       delayTime,
-      sessionCommission
+      sessionCommission,
+      betBlockedBy,
+      userBlockedBy
     } = req.body;
 
     const isUserPresent = await getUserByUserName(userName, ["id"]);
@@ -202,6 +204,8 @@ exports.createSuperAdmin = async (req, res) => {
       city,
       betBlock,
       userBlock,
+      betBlockedBy,
+      userBlockedBy,
       roleName,
       fwPartnership,
       faPartnership,

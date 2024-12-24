@@ -6,6 +6,7 @@ const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposur
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
 const { settleCommissions } = require("../controllers/userBalanceController");
 const { settleCommission } = require("../validators/userBalanceValidator");
+const { userEventWiseExposure } = require("../controllers/matchController");
 
 router.post("/add/user", validator(CreateSuperAdmin), createSuperAdmin);
 router.post("/update/user", validator(UpdateSuperAdmin), updateSuperAdmin);
@@ -66,5 +67,6 @@ router.delete("/user/delete/:id", deleteWalletUsers);
 router.get("/user/searchList", getAllChildSearchList);
 
 router.post("/bet/change/deleteReason", validator(changeBetsDeleteReasonValidator), changeBetsDeleteReason);
+router.get('/eventWise/exposure/:userId', userEventWiseExposure);
 
 module.exports = router;
