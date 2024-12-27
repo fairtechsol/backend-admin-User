@@ -448,7 +448,7 @@ exports.listSearchMatch = async (req, res) => {
 
 exports.marketAnalysis = async (req, res) => {
   try {
-    const userId=req.user.id;
+    const userId = req.user.id;
     const matchesBetsByUsers = await getChildUsersPlaceBets(userId);
     let matchIds=new Set();
 
@@ -717,10 +717,10 @@ exports.userEventWiseExposure = async (req, res) => {
     const user = await getUser({ id: userId });
 
     const eventNameByMatchId = {};
-    const matchList = await getMatchList({ stopAt: null }, ["id", "matchType"]);
+    const matchList = await getMatchList({ stopAt: null }, ["id", "matchType", "title"]);
 
     for(let item of matchList){
-      eventNameByMatchId[item.id] = item.matchType;
+      eventNameByMatchId[item.id] = {type:item.matchType,name:item.title};
     }
 
     const result={};
@@ -731,7 +731,16 @@ exports.userEventWiseExposure = async (req, res) => {
 
     if (Object.keys(allMatchBetData || {}).length) {
       for (let item of Object.keys(allMatchBetData)) {
-          result[eventNameByMatchId[item]] = (result[eventNameByMatchId[item]] || 0) + allMatchBetData[item];
+        if (!result[eventNameByMatchId[item].type]) {
+          result[eventNameByMatchId[item].type] = { exposure: 0, match: {} };
+        }
+        result[eventNameByMatchId[item].type].exposure = (result[eventNameByMatchId[item].type].exposure || 0) + allMatchBetData[item];
+        if (!result[eventNameByMatchId[item].type].match[item]) {
+          result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: allMatchBetData[item] };
+        }
+        else {
+          result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: (result[eventNameByMatchId[item].type].match[item]?.exposure || 0) + allMatchBetData[item] };
+        }
       }
     }
 
