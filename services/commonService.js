@@ -2101,18 +2101,15 @@ exports.getUserExposuresGameWise = async (user) => {
         Object.keys(matchResult[currBets.matchId][Object.keys(redisData)[0]]).forEach((key) => {
           matchResult[currBets.matchId][Object.keys(redisData)[0]][key] += redisData[Object.keys(redisData)[0]].rates[key] || 0;
         });
-      }
-
-      for(let item of Object.keys(matchResult)){
-        let maxLoss = Object.values(matchResult[item]).reduce((prev, curr) => {
-          prev += Math.abs(Math.min(...Object.values(curr), 0));
-          return prev;
-        }, 0);
-        exposures[item] = parseFloat((parseFloat(exposures[item] || 0) + maxLoss).toFixed(2));
-      }
-      
+      }   
     }
-
+    for(let item of Object.keys(matchResult)){
+      let maxLoss = Object.values(matchResult[item]).reduce((prev, curr) => {
+        prev += Math.abs(Math.min(...Object.values(curr), 0));
+        return prev;
+      }, 0);
+      exposures[item] = parseFloat((parseFloat(exposures[item] || 0) + maxLoss).toFixed(2));
+    }
     return exposures;
   }
   else {
