@@ -599,9 +599,9 @@ exports.marketAnalysis = async (req, res) => {
 
       result.push({
         title: matchDetails?.data?.title,
-        matchId: matchDetails?.data?.matchId,
+        matchId: matchDetails?.data?.id,
         startAt: matchDetails?.data?.startAt,
-        eventType: matchDetails?.data?.eventType,
+        eventType: matchDetails?.data?.matchType,
         betType: {}
       });
       for (let item of Object.values(matchData.session)) {
