@@ -851,7 +851,7 @@ exports.userEventWiseExposure = async (req, res) => {
     result.card = {
       exposure: cardData.totalExposure,
       match: Object.keys(cardData.cardWiseExposure || {}).map((item) => {
-        return { name: cardGames.find((items) => items.type == item)?.name, exposure: cardData.cardWiseExposure[item] }
+        return { name: cardGames.find((items) => items.type == item)?.name, type: item, exposure: cardData.cardWiseExposure[item] }
       })
     };
 
