@@ -2284,7 +2284,7 @@ exports.getCasinoMatchDetailsExposure = async (user) => {
   for (let item of bets) {
     betsData[`${item.runnerId}_${item.createBy}_${item.eventType}`] = [...(betsData[`${item.runnerId}_${item.createBy}_${item.eventType}`] || []), item];
   }
-
+let cardWiseExposure = {};
   if (bets.length) {
     for (let items of Object.keys(betsData)) {
       const type = items.split("_")?.[2];
@@ -2336,9 +2336,220 @@ exports.getCasinoMatchDetailsExposure = async (user) => {
         oldPl.exposure = data.exposure;
       }
       resultExposure += oldPl.exposure;
+      cardWiseExposure[`${type}`] = (cardWiseExposure[`${type}`]||0)+ oldPl.exposure;
     }
 
   }
-  return resultExposure;
+  return { totalExposure: resultExposure, cardWiseExposure: cardWiseExposure };
 }
 
+exports.getUserProfitLossMatch = async (user,matchId) => {
+  let matchResult = {};
+  let sessionResult = {};
+  if (user.roleName == userRoleConstant.user) {
+    const bets = await getUserDistinctBets(user.id, { matchId: matchId, marketType: Not(matchBettingType.tournament) });
+    for (let currBets of bets) {
+      if (currBets.marketBetType == marketBetType.SESSION) {
+        let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id);
+
+        sessionResult[`${currBets.betId}`] = {
+          maxLoss: result.maxLoss,
+          betPlaced: result.betData,
+          totalBet: result.total_bet,
+          betDetails: currBets
+        };
+        if (result.upperLimitOdds) {
+          sessionResult[`${currBets.betId}`].upperLimitOdds = result.upperLimitOdds;
+        }
+        if (result.lowerLimitOdds) {
+          sessionResult[`${currBets.betId}`].lowerLimitOdds = result.lowerLimitOdds;
+        }
+        else {
+          let apiResponse;
+          try {
+            let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + currBets.matchId + ([gameType.cricket, gameType.politics].includes(currBets.eventType) ? `?type=${currBets?.marketType}&id=${currBets?.betId}` : `?type=${matchBettingType.quickbookmaker1}`);
+            apiResponse = await apiCall(apiMethod.get, url);
+          } catch (error) {
+            logger.info({
+              info: `Error at get match details in login.`
+            });
+            return;
+          }
+          let redisData = await this.calculateProfitLossForOtherMatchToResult([currBets.betId], user.id, apiResponse?.data?.match, [gameType.cricket, gameType.politics].includes(currBets.eventType) ? apiResponse?.data?.matchBetting : null);
+          Object.values(redisData)?.forEach((plData) => {
+            const currType=[matchBettingType.matchOdd,matchBettingType.bookmaker,matchBettingType.bookmaker2,matchBettingType.quickbookmaker1,matchBettingType.quickbookmaker2,matchBettingType.quickbookmaker3].includes(plData.type)?matchBettingType.matchOdd:[matchBettingType.tiedMatch1,matchBettingType.tiedMatch2,matchBettingType.tiedMatch3].includes(plData.type)?matchBettingType.tiedMatch1:[matchBettingType.completeManual,matchBettingType.completeMatch1,matchBettingType.completeMatch].includes(plData.type)?matchBettingType.completeMatch:plData.type;
+            matchResult[currType] = {
+              data: {
+                [`${otherEventMatchBettingRedisKey[plData?.type].a}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.a + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].a}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0),
+                [`${otherEventMatchBettingRedisKey[plData?.type].b}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.b + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].b}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0),
+                ...(plData?.rates?.c ? { [`${otherEventMatchBettingRedisKey[plData?.type].c}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.c + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].c}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0) } : {}),
+              },
+              betDetails: currBets
+            }
+          });
+        }
+      }
+
+      return { match: matchResult, session: sessionResult };
+    }
+  }
+  else {
+    const users = await getChildsWithOnlyUserRole(user.id);
+    let betResult = {
+      session: {},
+      match: {}
+    };
+
+    const matchIdDetail = {};
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, marketType: Not(matchBettingType.tournament) });
+    for (let item of bets) {
+      let itemData = {
+        ...item,
+        winAmount: parseFloat((parseFloat(item.winAmount)).toFixed(2)),
+        lossAmount: parseFloat((parseFloat(item.lossAmount)).toFixed(2))
+      };
+      if (betResult.session[item.betId + '_' + item?.user?.id] || betResult.match[item.betId + '_' + item?.user?.id]) {
+        if (item.marketBetType == marketBetType.SESSION) {
+          if (!matchIdDetail[item?.matchId]) {
+            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
+          }
+          betResult.session[item.betId + '_' + item?.user?.id].push(itemData);
+        }
+        else {
+          betResult.match[item.betId + '_' + item?.user?.id].push(itemData);
+
+        }
+      }
+      else {
+
+        if (item.marketBetType == marketBetType.SESSION) {
+          if (!matchIdDetail[item?.matchId]) {
+            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
+          }
+          betResult.session[item.betId + '_' + item?.user?.id] = [itemData];
+        }
+        else {
+          betResult.match[item.betId + '_' + item?.user?.id] = [itemData];
+
+        }
+      }
+    }
+    for (const placedBet of Object.keys(betResult.session)) {
+
+      const betPlaceProfitLoss = await this.calculatePLAllBet(betResult.session[placedBet], betResult?.session?.[placedBet]?.[0]?.marketType, 100, null, null, matchIdDetail[betResult?.session?.[placedBet]?.[0]?.matchId]);
+  
+      sessionResult[`${placedBet}`] = {
+        upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
+        lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
+        betPlaced: betPlaceProfitLoss?.betData,
+        maxLoss: betPlaceProfitLoss?.maxLoss,
+        totalBet: betPlaceProfitLoss?.total_bet,
+        betDetails: betResult?.session?.[placedBet]?.[0]
+      };
+    }
+
+    for (const placedBet of Object.keys(betResult.match)) {
+      const matchId = betResult.match[placedBet]?.[0]?.matchId;
+
+      let apiResponse;
+      try {
+        let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + ([gameType.cricket, gameType.politics].includes(betResult.match[placedBet]?.[0]?.eventType) ? `?type=${betResult?.match[placedBet]?.[0]?.marketType}&id=${placedBet?.split("_")?.[0]}` : `?type=${matchBettingType.quickbookmaker1}`);
+        apiResponse = await apiCall(apiMethod.get, url);
+      } catch (error) {
+        logger.info({
+          info: `Error at get match details in login.`
+        });
+        return;
+      }
+      let redisData = await this.calculateRatesOtherMatch(betResult.match[placedBet], 100, apiResponse?.data?.match, [gameType.cricket, gameType.politics].includes(betResult.match[placedBet]?.[0]?.eventType) ? apiResponse?.data?.matchBetting : null);
+      Object.values(redisData)?.forEach((plData) => {
+        const currType = [matchBettingType.matchOdd, matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3].includes(plData.type) ? matchBettingType.matchOdd : [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.tiedMatch3].includes(plData.type) ? matchBettingType.tiedMatch1 : [matchBettingType.completeManual, matchBettingType.completeMatch1, matchBettingType.completeMatch].includes(plData.type) ? matchBettingType.completeMatch : plData.type;
+        matchResult[currType] = {
+          data: {
+            [`${otherEventMatchBettingRedisKey[plData?.type].a}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${matchId}`]: plData?.rates?.a + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].a}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${matchId}`] || 0),
+            [`${otherEventMatchBettingRedisKey[plData?.type].b}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${matchId}`]: plData?.rates?.b + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].b}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${matchId}`] || 0),
+            ...(plData?.rates?.c ? { [`${otherEventMatchBettingRedisKey[plData?.type].c}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${matchId}`]: plData?.rates?.c + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].c}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${matchId}`] || 0) } : {}),
+          },
+          betDetails: betResult?.match?.[placedBet]?.[0]
+        }
+      });
+    }
+
+    return { match: matchResult, session: sessionResult };
+  }
+}
+
+exports.getUserProfitLossTournament = async (user,matchId) => {
+  let matchResult = {};
+
+  if (user.roleName == userRoleConstant.user) {
+    const bets = await getUserDistinctBets(user.id, { marketType: matchBettingType.tournament, matchId: matchId });
+    for (let currBets of bets) {
+
+      let apiResponse;
+      try {
+        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + currBets.matchId + "?type=" + matchBettingType.tournament + "&id=" + currBets?.betId;
+        apiResponse = await apiCall(apiMethod.get, url);
+      } catch (error) {
+        logger.info({
+          info: `Error at get match details in login.`
+        });
+        return;
+      }
+
+      let redisData = await this.calculateProfitLossForRacingMatchToResult([currBets.betId], user.id, apiResponse?.data);
+      matchResult[currBets.betId] = { data: redisData, betDetails: currBets };
+
+    }
+    return matchResult
+  }
+  else {
+    const users = await getChildsWithOnlyUserRole(user.id);
+
+    let betResult = { match: {} };
+    let tempData = {};
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), {  marketType: matchBettingType.tournament,matchId: matchId });
+    for(let item of bets){
+      let itemData = {
+        ...item,
+        winAmount: parseFloat((parseFloat(item.winAmount)).toFixed(2)),
+        lossAmount: parseFloat((parseFloat(item.lossAmount)).toFixed(2))
+      };
+      if (betResult.match[item.betId + '_' + item?.user?.id]) {
+        betResult.match[item.betId + '_' + item?.user?.id].push(itemData);
+      }
+      else {
+        betResult.match[item.betId + '_' + item?.user?.id] = [itemData];
+      }
+    }
+
+    for (const placedBet of Object.keys(betResult.match)) {
+      const matchId = betResult.match[placedBet]?.[0]?.matchId;
+
+      let apiResponse;
+      try {
+        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + placedBet.split("_")?.[0];
+        apiResponse = await apiCall(apiMethod.get, url);
+      } catch (error) {
+        logger.info({
+          info: `Error at get match details in login.`
+        });
+        return;
+      }
+      let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
+      Object.keys(redisData)?.forEach((items) => {
+        if (tempData[items]) {
+          Object.keys(redisData[items])?.forEach((matchResultData) => {
+            tempData[items][matchResultData] += parseFloat(parseFloat(redisData[items]?.[matchResultData]).toFixed(2));
+          });
+        }
+        else {
+          tempData[items] = redisData[items];
+        }
+      });
+
+      matchResult[placedBet] = { data: tempData, betDetails: betResult?.match?.[placedBet]?.[0] };
+    }
+    return matchResult;
+  }
+}
