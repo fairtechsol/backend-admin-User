@@ -457,6 +457,7 @@ exports.marketAnalysis = async (req, res) => {
 
     if (redisData) {
       const matchesBetsByUsers = await getChildUsersPlaceBets(userId, matchId);
+      
       let matchIds = new Set();
 
       for (let item of matchesBetsByUsers) {
@@ -610,7 +611,7 @@ exports.marketAnalysis = async (req, res) => {
           result[0].betType[betDetails?.marketType] = [];
         }
         result[0].betType = {
-          [item.betDetails?.marketType]: [{
+          [betDetails?.marketType]: [...result[0].betType[betDetails?.marketType],{
             betId: betDetails?.betId,
             eventName: betDetails?.eventName,
             profitLoss: profitLoss

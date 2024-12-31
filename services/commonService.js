@@ -2155,16 +2155,12 @@ exports.getUserExposuresGameWise = async (user) => {
       }
     }
     for (const placedBet of Object.keys(betResult.session)) {
-
       const betPlaceProfitLoss = await this.calculatePLAllBet(betResult.session[placedBet], betResult?.session?.[placedBet]?.[0]?.marketType, 100, null, null, matchIdDetail[betResult?.session?.[placedBet]?.[0]?.matchId]);
-  
       exposures[betResult.session[placedBet]?.[0]?.matchId] = parseFloat((parseFloat(exposures[betResult.session[placedBet]?.[0]?.matchId] || 0) + betPlaceProfitLoss.maxLoss).toFixed(2));
-
     }
 
     for (const placedBet of Object.keys(betResult.match)) {
       const matchId = betResult.match[placedBet]?.[0]?.matchId;
-
       let apiResponse;
       try {
         let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + ([gameType.cricket, gameType.politics].includes(betResult.match[placedBet]?.[0]?.eventType) ? `?type=${betResult?.match[placedBet]?.[0]?.marketType}&id=${placedBet?.split("_")?.[0]}` : `?type=${matchBettingType.quickbookmaker1}`);
