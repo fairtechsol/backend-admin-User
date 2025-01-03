@@ -488,8 +488,9 @@ exports.marketAnalysis = async (req, res) => {
                 startAt: item?.startAt,
                 eventType: item?.eventType,
                 betType: {
-                  [item?.marketType]: [{
+                  session: [{
                     betId: item?.betId,
+                    type: item?.marketType,
                     eventName: item?.eventName,
                     profitLoss: currRedisData
                   }]
@@ -497,13 +498,14 @@ exports.marketAnalysis = async (req, res) => {
               })
             }
             else {
-              if (!result[currMatchDetail].betType[item?.marketType]) {
-                result[currMatchDetail].betType[item?.marketType] = [];
+              if (!result[currMatchDetail].betType["session"]) {
+                result[currMatchDetail].betType["session"] = [];
               }
-              result[currMatchDetail].betType[item?.marketType].push({
+              result[currMatchDetail].betType["session"].push({
                 betId: item?.betId,
                 eventName: item?.eventName,
-                profitLoss: currRedisData
+                profitLoss: currRedisData,
+                type: item?.marketType,
               });
             }
           }
@@ -607,12 +609,13 @@ exports.marketAnalysis = async (req, res) => {
       });
       for (let item of Object.values(matchData.session)) {
         let { betDetails, ...profitLoss } = item;
-        if (!result[0].betType[betDetails?.marketType]) {
-          result[0].betType[betDetails?.marketType] = [];
+        if (!result[0].betType["session"]) {
+          result[0].betType["session"] = [];
         }
         result[0].betType = {
-          [betDetails?.marketType]: [...result[0].betType[betDetails?.marketType],{
+          session: [...result[0].betType["session"],{
             betId: betDetails?.betId,
+            type: betDetails?.marketType,
             eventName: betDetails?.eventName,
             profitLoss: profitLoss
           }]
