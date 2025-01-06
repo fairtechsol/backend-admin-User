@@ -651,7 +651,7 @@ exports.getBetsWithMatchId = (where, betCondition = {}) => {
 }
 
 
-exports.getChildUsersPlaceBets = (id) => {
+exports.getChildUsersPlaceBets = (id, matchId) => {
 
   return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
     SELECT id, "roleName", "createBy"
@@ -661,7 +661,7 @@ exports.getChildUsersPlaceBets = (id) => {
     SELECT ur.id, ur."roleName", ur."createBy"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId"  where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD'`, [id]);
+  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId"  where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' ${matchId ? 'and "matchId"=$2' : ""}`, [id, ...(matchId ? [matchId] : [])]);
 }
 
 exports.pendingCasinoResult = () => {
@@ -709,5 +709,5 @@ exports.getChildUsersAllPlaceBets = (id) => {
     SELECT ur.id, ur."roleName", ur."createBy"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING'`, [id]);
+  ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' ${matchId ? 'and "matchId"=$2' : ""}`, [id, matchId]);
 }
