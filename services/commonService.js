@@ -2172,10 +2172,10 @@ exports.getUserExposuresGameWise = async (user) => {
         return;
       }
       let redisData = await this.calculateRatesOtherMatch(betResult.match[placedBet], 100, apiResponse?.data?.match, [gameType.cricket, gameType.politics].includes(betResult.match[placedBet]?.[0]?.eventType) ? apiResponse?.data?.matchBetting : null);
-      matchResult[matchId] = matchResult[matchId] || {};
-      matchResult[matchId][Object.keys(redisData)[0]] = matchResult[matchId][Object.keys(redisData)[0]] || { a: 0, b: 0, c: 0 };
-      Object.keys(matchResult[matchId][Object.keys(redisData)[0]]).forEach((key) => {
-        matchResult[matchId][Object.keys(redisData)[0]][key] += redisData[Object.keys(redisData)[0]].rates[key] || 0;
+      matchResult[`${matchId}_${placedBet.split("_")?.[1]}`] = matchResult[`${matchId}_${placedBet.split("_")?.[1]}`] || {};
+      matchResult[`${matchId}_${placedBet.split("_")?.[1]}`][Object.keys(redisData)[0]] = matchResult[`${matchId}_${placedBet.split("_")?.[1]}`][Object.keys(redisData)[0]] || { a: 0, b: 0, c: 0 };
+      Object.keys(matchResult[`${matchId}_${placedBet.split("_")?.[1]}`][Object.keys(redisData)[0]]).forEach((key) => {
+        matchResult[`${matchId}_${placedBet.split("_")?.[1]}`][Object.keys(redisData)[0]][key] += redisData[Object.keys(redisData)[0]].rates[key] || 0;
       });
     }
 
@@ -2184,7 +2184,7 @@ exports.getUserExposuresGameWise = async (user) => {
         prev += Math.abs(Math.min(...Object.values(curr), 0));
         return prev;
       }, 0);
-      exposures[item] = parseFloat((parseFloat(exposures[item] || 0) + maxLoss).toFixed(2));
+      exposures[item.split("_")?.[0]] = parseFloat((parseFloat(exposures[item.split("_")?.[0]] || 0) + maxLoss).toFixed(2));
     }
     return exposures;
   }
