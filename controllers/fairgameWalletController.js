@@ -2089,11 +2089,31 @@ exports.getBetWallet = async (req, res) => {
       "betPlaced.id", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt", "match.teamC", "betPlaced.runnerId", "betPlaced.isCommissionActive"
     ];
 
-    const demoUsers = await getAllUsers({ isDemo: true });
-
-    select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
-    result = await getBet(`user.id is not null ${demoUsers?.length?`and betPlaced.createBy not in ('${demoUsers?.map((item) => item?.id).join("','")}')`:""}`, queryData, roleName, select, userId, isTeamNameAllow == 'false' ? false : true);
-
+    if (roleName == userRoleConstant.user) {
+      result = await getBet({ createBy: userId }, queryData, roleName, select, null, true);
+    } else if (![userRoleConstant.fairGameAdmin, userRoleConstant.fairGameWallet].includes(roleName)) {
+      let childsId = await getChildsWithOnlyUserRole(userId);
+      childsId = childsId.map(item => item.id);
+      if (!childsId.length) {
+        return SuccessResponse(
+          {
+            statusCode: 200,
+            message: { msg: "fetched", keys: { type: "Bet" } },
+            data: { count: 0, rows: [] },
+          },
+          req,
+          res
+        );
+      }
+      let partnershipColumn = partnershipPrefixByRole[roleName] + 'Partnership';
+      select.push("user.id", "user.userName", `user.${partnershipColumn}`);
+      result = await getBet({ createBy: In(childsId) }, queryData, roleName, select, null, true);
+    }
+    else {
+      const demoUsers = await getAllUsers({ isDemo: true });
+      select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
+      result = await getBet(`user.id is not null ${demoUsers?.length ? `and betPlaced.createBy not in ('${demoUsers?.map((item) => item?.id).join("','")}')` : ""}`, queryData, roleName, select, userId, isTeamNameAllow == 'false' ? false : true);
+    }
 
     if (!result[1]) {
       return SuccessResponse(
