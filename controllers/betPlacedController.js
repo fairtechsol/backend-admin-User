@@ -18,8 +18,12 @@ const { getMatchData } = require('../services/matchService');
 
 exports.getBet = async (req, res) => {
   try {
-    const reqUser = req.user;
-    let { isCurrentBets, ...query } = req.query;
+    let { isCurrentBets, userId, ...query } = req.query;
+    let reqUser;
+    if (userId) {
+      reqUser = await getUserById(userId);
+    }
+    else { reqUser = req.user; }
 
     const result = await this.getBetsCondition(reqUser, query, isCurrentBets);
 
@@ -167,12 +171,12 @@ exports.matchBettingBetPlaced = async (req, res) => {
       betOnTeam = betOnTeam?.toUpperCase();
     }
 
-    if(![teamA,teamB,teamC].includes(betOnTeam)){
+    if (![teamA, teamB, teamC].includes(betOnTeam)) {
       logger.info({
         info: `Team name different for bet ${reqUser.id}`,
         data: req.body
       });
-      return ErrorResponse({ statusCode: 403, message: { msg: "refreshPage"} }, req, res);
+      return ErrorResponse({ statusCode: 403, message: { msg: "refreshPage" } }, req, res);
 
     }
 
@@ -224,7 +228,7 @@ exports.matchBettingBetPlaced = async (req, res) => {
     if ([matchBettingType.matchOdd, matchBettingType.tiedMatch1, matchBettingType.completeMatch]?.includes(matchBetType) && newCalculateOdd > 400) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.oddNotAllow", keys: { gameType: "cricket" } } }, req, res);
     }
-   
+
 
     if (bettingType == betType.BACK) {
       winAmount = (stake * newCalculateOdd) / 100;
@@ -1686,10 +1690,10 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
         let oddLength = 0;
 
         matchBettingData.section.forEach((section) => {
-            const filteredOdds = section.odds.filter((odd) => odd.odds > 0 && odd.otype == betObj?.betType?.toLowerCase());
-            if (filteredOdds.length > oddLength) {
-              oddLength = filteredOdds.length;
-            }
+          const filteredOdds = section.odds.filter((odd) => odd.odds > 0 && odd.otype == betObj?.betType?.toLowerCase());
+          if (filteredOdds.length > oddLength) {
+            oddLength = filteredOdds.length;
+          }
         });
 
         // let oddLength = filterData?.odds?.filter((item) => item?.otype == betObj?.betType?.toLowerCase() && item.odds > 0).length;
@@ -1721,7 +1725,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
 exports.deleteMultipleBet = async (req, res) => {
   try {
     const {
-      matchId, data, deleteReason,isPermanentDelete
+      matchId, data, deleteReason, isPermanentDelete
     } = req.body;
     // const { id } = req.user;
     if (data?.length == 0) {
@@ -1817,7 +1821,7 @@ exports.deleteMultipleBet = async (req, res) => {
         };
       }
     }
-    if(isPermanentDelete){
+    if (isPermanentDelete) {
       await betPlacedService.deleteBet({ id: In(placedBetIdArray) });
     }
     return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
@@ -1916,7 +1920,7 @@ exports.deleteMultipleBetForOther = async (req, res) => {
         };
       }
     }
-    if(isPermanentDelete){
+    if (isPermanentDelete) {
       await betPlacedService.deleteBet({ id: In(placedBetIdArray) });
     }
     return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
@@ -3518,7 +3522,7 @@ exports.deleteRaceMultipleBet = async (req, res) => {
         };
       }
     }
-    if(isPermanentDelete){
+    if (isPermanentDelete) {
       await betPlacedService.deleteBet({ id: In(placedBetIdArray) });
     }
     return SuccessResponse({ statusCode: 200, message: { msg: "updated" }, }, req, res);
