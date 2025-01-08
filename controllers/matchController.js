@@ -828,7 +828,7 @@ exports.userEventWiseExposure = async (req, res) => {
     const matchList = await getMatchList({ stopAt: null }, ["id", "matchType", "title"]);
 
     for(let item of matchList){
-      eventNameByMatchId[item.id] = {type:item.matchType,name:item.title};
+      eventNameByMatchId[item.id] = { type: item.matchType, name: item.title };
     }
 
     const result = {};
@@ -846,15 +846,17 @@ exports.userEventWiseExposure = async (req, res) => {
     });
     if (Object.keys(allMatchBetData || {}).length) {
       for (let item of Object.keys(allMatchBetData)) {
-        if (!result[eventNameByMatchId[item].type]) {
-          result[eventNameByMatchId[item].type] = { exposure: 0, match: {} };
-        }
-        result[eventNameByMatchId[item].type].exposure = (result[eventNameByMatchId[item].type].exposure || 0) + allMatchBetData[item];
-        if (!result[eventNameByMatchId[item].type].match[item]) {
-          result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: allMatchBetData[item] };
-        }
-        else {
-          result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: (result[eventNameByMatchId[item].type].match[item]?.exposure || 0) + allMatchBetData[item] };
+        if (eventNameByMatchId[item]) {
+          if (!result[eventNameByMatchId[item].type]) {
+            result[eventNameByMatchId[item].type] = { exposure: 0, match: {} };
+          }
+          result[eventNameByMatchId[item].type].exposure = (result[eventNameByMatchId[item].type].exposure || 0) + allMatchBetData[item];
+          if (!result[eventNameByMatchId[item].type].match[item]) {
+            result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: allMatchBetData[item] };
+          }
+          else {
+            result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: (result[eventNameByMatchId[item].type].match[item]?.exposure || 0) + allMatchBetData[item] };
+          }
         }
       }
     }
