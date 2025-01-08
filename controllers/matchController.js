@@ -8,7 +8,7 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const { listMatch, getMatchList, getMatchData } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
-const { calculateProfitLossForCardMatchToResult, getRedisKeys, calculateProfitLossForOtherMatchToResult, calculateRatesOtherMatch, calculateRatesRacingMatch, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament } = require("../services/commonService");
+const { calculateProfitLossForCardMatchToResult, getRedisKeys, calculateProfitLossForOtherMatchToResult, calculateRatesOtherMatch, calculateRatesRacingMatch, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament, getVirtualCasinoExposure } = require("../services/commonService");
 
 exports.matchDetails = async (req, res) => {
   try {
@@ -867,6 +867,14 @@ exports.userEventWiseExposure = async (req, res) => {
         return { name: cardGames.find((items) => items.type == item)?.name, type: item, exposure: cardData.cardWiseExposure[item] }
       })
     };
+
+    const virtualCasinoData = await getVirtualCasinoExposure(user);
+    result.virtual={
+      exposure: virtualCasinoData?.count?.totalAmount,
+      match:virtualCasinoData?.list?.map((item) => {
+        return { name: item.gameName, type: item.providerName, exposure: item.totalAmount }
+      })
+    }
 
     return SuccessResponse(
       {

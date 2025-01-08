@@ -37,3 +37,9 @@ exports.updateVirtualCasinoBetPlaced = async (conditionObj, updateColumsObj) => 
 exports.getVirtualCasinoBetPlaced = async (where, select) => {
     return await VirtualCasino.findOne({ where:where, select: select });
 }
+
+exports.getVirtualCasinoExposureSum = async (where) => {
+    const count = await VirtualCasino.createQueryBuilder().where(where).select("SUM(amount)", "totalAmount").getRawOne();
+    const list = await VirtualCasino.createQueryBuilder().where(where).select("SUM(amount)", "totalAmount").addSelect(['virtualCasinoBetPlaced.gameName as "gameName"', 'virtualCasinoBetPlaced.providerName as "providerName"']).groupBy("virtualCasinoBetPlaced.gameName").addGroupBy("virtualCasinoBetPlaced.providerName").getRawMany();
+    return { count, list };
+}

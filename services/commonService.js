@@ -17,6 +17,7 @@ const { deleteButton } = require("./buttonService");
 const { deleteUserBalance } = require("./userBalanceService");
 const { getAuthenticator, addAuthenticator } = require("./authService");
 const { verifyAuthToken } = require("../utils/generateAuthToken");
+const { getVirtualCasinoExposureSum } = require("./virtualCasinoBetPlacedsService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -2337,6 +2338,19 @@ let cardWiseExposure = {};
 
   }
   return { totalExposure: resultExposure, cardWiseExposure: cardWiseExposure };
+}
+
+exports.getVirtualCasinoExposure = async (user) => {
+  let bets = [];
+  if (user.roleName == userRoleConstant.user) {
+    bets = await getVirtualCasinoExposureSum({ userId: user.id, settled: false });
+  }
+  else {
+    const users = await getChildsWithOnlyUserRole(user.id);
+    bets = await getVirtualCasinoExposureSum({ userId: In(users.map((item) => item.id)), settled: false, });
+  }
+
+  return bets;
 }
 
 exports.getUserProfitLossMatch = async (user,matchId) => {
