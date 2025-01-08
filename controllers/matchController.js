@@ -872,7 +872,7 @@ exports.userEventWiseExposure = async (req, res) => {
     result.virtual={
       exposure: virtualCasinoData?.count?.totalAmount,
       match:virtualCasinoData?.list?.map((item) => {
-        return { name: item.gameName, type: item.providerName, exposure: item.totalAmount }
+        return { name: item.gameName, type: item.providerName, exposure: Math.abs(item.totalAmount) }
       })
     }
 
