@@ -2374,32 +2374,32 @@ exports.getUserProfitLossMatch = async (user,matchId) => {
         if (result.lowerLimitOdds) {
           sessionResult[`${currBets.betId}`].lowerLimitOdds = result.lowerLimitOdds;
         }
-        else {
-          let apiResponse;
-          try {
-            let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + currBets.matchId + ([gameType.cricket, gameType.politics].includes(currBets.eventType) ? `?type=${currBets?.marketType}&id=${currBets?.betId}` : `?type=${matchBettingType.quickbookmaker1}`);
-            apiResponse = await apiCall(apiMethod.get, url);
-          } catch (error) {
-            logger.info({
-              info: `Error at get match details in login.`
-            });
-            return;
-          }
-          let redisData = await this.calculateProfitLossForOtherMatchToResult([currBets.betId], user.id, apiResponse?.data?.match, [gameType.cricket, gameType.politics].includes(currBets.eventType) ? apiResponse?.data?.matchBetting : null);
-          Object.values(redisData)?.forEach((plData) => {
-            const currType=[matchBettingType.matchOdd,matchBettingType.bookmaker,matchBettingType.bookmaker2,matchBettingType.quickbookmaker1,matchBettingType.quickbookmaker2,matchBettingType.quickbookmaker3].includes(plData.type)?matchBettingType.matchOdd:[matchBettingType.tiedMatch1,matchBettingType.tiedMatch2,matchBettingType.tiedMatch3].includes(plData.type)?matchBettingType.tiedMatch1:[matchBettingType.completeManual,matchBettingType.completeMatch1,matchBettingType.completeMatch].includes(plData.type)?matchBettingType.completeMatch:plData.type;
-            matchResult[currType] = {
-              data: {
-                [`${otherEventMatchBettingRedisKey[plData?.type].a}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.a + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].a}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0),
-                [`${otherEventMatchBettingRedisKey[plData?.type].b}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.b + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].b}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0),
-                ...(plData?.rates?.c ? { [`${otherEventMatchBettingRedisKey[plData?.type].c}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.c + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].c}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0) } : {}),
-              },
-              betDetails: currBets
-            }
-          });
-        }
+ 
       }
-
+      else {
+        let apiResponse;
+        try {
+          let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + currBets.matchId + ([gameType.cricket, gameType.politics].includes(currBets.eventType) ? `?type=${currBets?.marketType}&id=${currBets?.betId}` : `?type=${matchBettingType.quickbookmaker1}`);
+          apiResponse = await apiCall(apiMethod.get, url);
+        } catch (error) {
+          logger.info({
+            info: `Error at get match details in login.`
+          });
+          return;
+        }
+        let redisData = await this.calculateProfitLossForOtherMatchToResult([currBets.betId], user.id, apiResponse?.data?.match, [gameType.cricket, gameType.politics].includes(currBets.eventType) ? apiResponse?.data?.matchBetting : null);
+        Object.values(redisData)?.forEach((plData) => {
+          const currType=[matchBettingType.matchOdd,matchBettingType.bookmaker,matchBettingType.bookmaker2,matchBettingType.quickbookmaker1,matchBettingType.quickbookmaker2,matchBettingType.quickbookmaker3].includes(plData.type)?matchBettingType.matchOdd:[matchBettingType.tiedMatch1,matchBettingType.tiedMatch2,matchBettingType.tiedMatch3].includes(plData.type)?matchBettingType.tiedMatch1:[matchBettingType.completeManual,matchBettingType.completeMatch1,matchBettingType.completeMatch].includes(plData.type)?matchBettingType.completeMatch:plData.type;
+          matchResult[currType] = {
+            data: {
+              [`${otherEventMatchBettingRedisKey[plData?.type].a}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.a + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].a}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0),
+              [`${otherEventMatchBettingRedisKey[plData?.type].b}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.b + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].b}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0),
+              ...(plData?.rates?.c ? { [`${otherEventMatchBettingRedisKey[plData?.type].c}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`]: plData?.rates?.c + (matchResult?.[currType]?.data?.[`${otherEventMatchBettingRedisKey[plData?.type].c}${plData?.type == matchBettingType?.other ? plData?.betId + "_" : ""}${currBets.matchId}`] || 0) } : {}),
+            },
+            betDetails: currBets
+          }
+        });
+      }
       return { match: matchResult, session: sessionResult };
     }
   }
@@ -2445,9 +2445,7 @@ exports.getUserProfitLossMatch = async (user,matchId) => {
       }
     }
     for (const placedBet of Object.keys(betResult.session)) {
-
       const betPlaceProfitLoss = await this.calculatePLAllBet(betResult.session[placedBet], betResult?.session?.[placedBet]?.[0]?.marketType, 100, null, null, matchIdDetail[betResult?.session?.[placedBet]?.[0]?.matchId]);
-  
       sessionResult[`${placedBet}`] = {
         upperLimitOdds: betPlaceProfitLoss?.betData?.[betPlaceProfitLoss?.betData?.length - 1]?.odds,
         lowerLimitOdds: betPlaceProfitLoss?.betData?.[0]?.odds,
