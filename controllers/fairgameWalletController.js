@@ -2168,7 +2168,7 @@ exports.getVirtualBetExposures = async (req, res) => {
       }
     
     let result = {
-      exposure: Math.abs(bets?.count?.totalAmount),
+      exposure: Math.abs(bets?.count?.totalAmount || 0),
       match: bets?.list?.reduce((prev,curr) => {
         prev[curr.gameName] = { ...curr, totalAmount: Math.abs(curr.totalAmount) };
         return prev;
@@ -5042,7 +5042,6 @@ const calculateProfitLossOtherMatchForUserUnDeclare = async (users, betId, match
   };
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
-
 
 exports.declarTournamentMatchResult = async (req, res) => {
   try {
