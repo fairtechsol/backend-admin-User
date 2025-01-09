@@ -2092,6 +2092,7 @@ exports.getBetWallet = async (req, res) => {
     ];
 
     if (roleName == userRoleConstant.user) {
+      select.push("user.id", "user.userName");
       result = await getBet({ createBy: userId }, queryData, roleName, select, null, true);
     } else if (![userRoleConstant.fairGameAdmin, userRoleConstant.fairGameWallet].includes(roleName)) {
       let childsId = await getChildsWithOnlyUserRole(userId);
