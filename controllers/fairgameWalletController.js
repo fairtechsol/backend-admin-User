@@ -2137,7 +2137,6 @@ exports.getBetWallet = async (req, res) => {
       };
     });
 
-
     return SuccessResponse({
       statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
         count: result[1],
@@ -2169,9 +2168,9 @@ exports.getVirtualBetExposures = async (req, res) => {
       }
     
     let result = {
-      exposure: bets?.count?.totalAmount,
+      exposure: Math.abs(bets?.count?.totalAmount),
       match: bets?.list?.reduce((prev,curr) => {
-        prev[curr.gameName]=curr;
+        prev[curr.gameName] = { ...curr, totalAmount: Math.abs(curr.totalAmount) };
         return prev;
       },{})
     }
