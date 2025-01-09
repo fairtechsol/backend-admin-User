@@ -2400,8 +2400,8 @@ exports.getUserProfitLossMatch = async (user,matchId) => {
           }
         });
       }
-      return { match: matchResult, session: sessionResult };
     }
+    return { match: matchResult, session: sessionResult };
   }
   else {
     const users = await getChildsWithOnlyUserRole(user.id);
