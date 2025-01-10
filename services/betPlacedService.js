@@ -49,7 +49,7 @@ exports.getBet = async (where, query, roleName, select, superParentId, isTeamNam
       `betPlaced.createBy = user.id AND user.superParentId = '${superParentId}'`
     )
   }
-  else if (roleName != userRoleConstant.user) {
+  else {
     pgQuery.leftJoinAndMapOne(
       "betPlaced.user",
       "user",

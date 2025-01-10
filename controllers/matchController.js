@@ -8,7 +8,7 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const { listMatch, getMatchList, getMatchData } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
-const { calculateProfitLossForCardMatchToResult, getRedisKeys, calculateProfitLossForOtherMatchToResult, calculateRatesOtherMatch, calculateRatesRacingMatch, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament } = require("../services/commonService");
+const { calculateProfitLossForCardMatchToResult, getRedisKeys, calculateProfitLossForOtherMatchToResult, calculateRatesOtherMatch, calculateRatesRacingMatch, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament, getVirtualCasinoExposure } = require("../services/commonService");
 
 exports.matchDetails = async (req, res) => {
   try {
@@ -828,7 +828,7 @@ exports.userEventWiseExposure = async (req, res) => {
     const matchList = await getMatchList({ stopAt: null }, ["id", "matchType", "title"]);
 
     for(let item of matchList){
-      eventNameByMatchId[item.id] = {type:item.matchType,name:item.title};
+      eventNameByMatchId[item.id] = { type: item.matchType, name: item.title };
     }
 
     const result = {};
@@ -846,15 +846,17 @@ exports.userEventWiseExposure = async (req, res) => {
     });
     if (Object.keys(allMatchBetData || {}).length) {
       for (let item of Object.keys(allMatchBetData)) {
-        if (!result[eventNameByMatchId[item].type]) {
-          result[eventNameByMatchId[item].type] = { exposure: 0, match: {} };
-        }
-        result[eventNameByMatchId[item].type].exposure = (result[eventNameByMatchId[item].type].exposure || 0) + allMatchBetData[item];
-        if (!result[eventNameByMatchId[item].type].match[item]) {
-          result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: allMatchBetData[item] };
-        }
-        else {
-          result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: (result[eventNameByMatchId[item].type].match[item]?.exposure || 0) + allMatchBetData[item] };
+        if (eventNameByMatchId[item]) {
+          if (!result[eventNameByMatchId[item].type]) {
+            result[eventNameByMatchId[item].type] = { exposure: 0, match: {} };
+          }
+          result[eventNameByMatchId[item].type].exposure = (result[eventNameByMatchId[item].type].exposure || 0) + allMatchBetData[item];
+          if (!result[eventNameByMatchId[item].type].match[item]) {
+            result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: allMatchBetData[item] };
+          }
+          else {
+            result[eventNameByMatchId[item].type].match[item] = { name: eventNameByMatchId[item].name, exposure: (result[eventNameByMatchId[item].type].match[item]?.exposure || 0) + allMatchBetData[item] };
+          }
         }
       }
     }
@@ -865,6 +867,14 @@ exports.userEventWiseExposure = async (req, res) => {
         return { name: cardGames.find((items) => items.type == item)?.name, type: item, exposure: cardData.cardWiseExposure[item] }
       })
     };
+
+    const virtualCasinoData = await getVirtualCasinoExposure(user);
+    result.virtual={
+      exposure: Math.abs(virtualCasinoData?.count?.totalAmount),
+      match:virtualCasinoData?.list?.map((item) => {
+        return { name: item.gameName, type: item.providerName, exposure: Math.abs(item.totalAmount) }
+      })
+    }
 
     return SuccessResponse(
       {

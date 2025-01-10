@@ -72,6 +72,7 @@ exports.getBetsCondition = async (reqUser, query, isCurrentBets) => {
 
   if (reqUser.roleName == userRoleConstant.user) {
     where.createBy = reqUser.id;
+    select.push("user.id", "user.userName");
     return await betPlacedService.getBet(where, query, reqUser.roleName, select, null, true, isCurrentBets);
   } else {
     let childsId = await userService.getChildsWithOnlyUserRole(reqUser.id);
