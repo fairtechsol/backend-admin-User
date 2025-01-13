@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fullscreen Iframe Example</title>
+    <style>
+        .iframe-wrapper {
+            position: relative;
+            display: inline-block;
+            margin: 10px;
+            text-align: center;
+        }
+        .fullscreen-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #000;
+            color: #ffffff;
+            border: none;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .iframe-id-label {
+            margin-top: 5px;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="iframeContainer"></div>
+
+    <script>
+        const ids = [
+            { id: '32b', value: 3034 },
+            { id: 'bac2', value: 3033 },
+            { id: 'dt20', value: 3035 },
+            { id: 'l7b', value: 3032 },
+            { id: 'odtp', value: 3031 },
+            { id: 'race20', value: 3036 },
+            { id: 'teen20', value: 3030 },
+            { id: 'worli2', value: 3040 },
+            { id: '3cardj', value: 3039 },
+            { id: 'btable', value: 3041 },
+            { id: 'queen', value: 3037 },
+            { id: 'cwar', value: 3038 },
+            { id: '5-5cricket', value: 3042 },
+            { id: 'ab2', value: 3043 },
+            { id: 'bac1', value: 3044 },
+            { id: '20-20cricket', value: 3045 },
+            { id: 'casinometer', value: 3046 },
+            { id: '20dtl', value: 3047 },
+            { id: 'testtp', value: 3048 },
+            { id: 'opentp', value: 3049 },
+            { id: '6poker', value: 3050 },
+            { id: '1daypoker', value: 3051 },
+            { id: '20poker', value: 3052 },
+            { id: 'ab1', value: 3053 },
+            { id: 'worli1', value: 3054 },
+            { id: '32a', value: 3055 },
+            { id: 'amarakbar', value: 3056 },
+            { id: '1daydt', value: 3057 },
+            { id: 'l7a', value: 3058 },
+            { id: 'dragontiger2', value: 3059 },
+            { id: 'superover', value: 3060 },
+            { id: 'ballbyball', value: 3061 }
+        ];
+
+        const baseUrl = "https://maxbet9.fairgame.club/videoPage/";
+        const iframeContainer = document.getElementById('iframeContainer');
+
+        ids.forEach(id => {
+            const url = `${baseUrl}${id.value}`;
+
+            const iframeWrapper = document.createElement('div');
+            iframeWrapper.className = 'iframe-wrapper';
+
+            const iframe = document.createElement('iframe');
+            iframe.src = url;
+            iframe.width = "120";
+            iframe.height = "120";
+            iframe.frameBorder = "0";
+
+            const fullscreenButton = document.createElement('button');
+            fullscreenButton.className = 'fullscreen-button';
+            fullscreenButton.innerText = 'Fullscreen';
+            fullscreenButton.addEventListener('click', (event) => {
+                event.stopPropagation();
+                if (iframe.requestFullscreen) {
+                    iframe.requestFullscreen();
+                } else if (iframe.mozRequestFullScreen) {
+                    iframe.mozRequestFullScreen();
+                } else if (iframe.webkitRequestFullscreen) {
+                    iframe.webkitRequestFullscreen();
+                } else if (iframe.msRequestFullscreen) {
+                    iframe.msRequestFullscreen();
+                }
+            });
+
+            const idLabel = document.createElement('div');
+            idLabel.className = 'iframe-id-label';
+            idLabel.innerText = `ID: ${id.id}`;
+
+            iframeWrapper.appendChild(iframe);
+            iframeWrapper.appendChild(fullscreenButton);
+            iframeWrapper.appendChild(idLabel);
+            iframeContainer.appendChild(iframeWrapper);
+        });
+    </script>
+</body>
+</html>
