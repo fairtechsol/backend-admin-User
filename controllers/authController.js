@@ -580,7 +580,18 @@ exports.removeAuthenticator = async (req, res) => {
 
     if (authDevice.type == authenticatorType.app) {
       const redisAuthToken = await getRedisKey(`${authDevice.deviceId}_${redisKeys.authenticatorToken}`);
-
+      if (!redisAuthToken) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authTokenExpired",
+            },
+          },
+          req,
+          res
+        );
+      }
       const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
 
       if (!isTokenMatch) {
@@ -598,7 +609,18 @@ exports.removeAuthenticator = async (req, res) => {
     }
     else{
       const redisAuthToken = await getRedisKey(`${redisKeys.telegramToken}_${id}`);
-
+      if (!redisAuthToken) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.authTokenExpired",
+            },
+          },
+          req,
+          res
+        );
+      }
       const isTokenMatch = await verifyAuthToken(authToken, redisAuthToken);
 
       if (!isTokenMatch) {

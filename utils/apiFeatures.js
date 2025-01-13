@@ -121,7 +121,7 @@ class ApiFeature {
     if (this.options.page) {
       const page = this.options.page;
       const limit = this.options.limit || 10;
-      const skip = parseInt((parseInt(page) - 1) * parseInt(limit));
+      const skip = parseInt((parseFloat(page) - 1) * parseInt(limit));
 
       this.query.skip(skip).take(limit);
     }

@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, declareMatchResult, unDeclareMatchResult, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss, declareOtherMatchResult, unDeclareOtherMatchResult, declarRaceMatchResult, unDeclareRaceMatchResult, getUsersRacingProfitLoss, declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, declareMatchOtherMarketResult, unDeclareMatchOtherMarketResult, declarTournamentMatchResult, unDeclareTournamentMatchResult } = require("../controllers/fairgameWalletController");
+const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, declareMatchResult, unDeclareMatchResult, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss, declareOtherMatchResult, unDeclareOtherMatchResult, declarRaceMatchResult, unDeclareRaceMatchResult, getUsersRacingProfitLoss, declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, declareMatchOtherMarketResult, unDeclareMatchOtherMarketResult, declarTournamentMatchResult, unDeclareTournamentMatchResult, getVirtualBetExposures } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword, changeBetsDeleteReasonValidator } = require("../validators/fairgameWalletValidator");
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
 const { settleCommissions } = require("../controllers/userBalanceController");
 const { settleCommission } = require("../validators/userBalanceValidator");
+const { userEventWiseExposure, marketAnalysis } = require("../controllers/matchController");
 
 router.post("/add/user", validator(CreateSuperAdmin), createSuperAdmin);
 router.post("/update/user", validator(UpdateSuperAdmin), updateSuperAdmin);
@@ -66,5 +67,8 @@ router.delete("/user/delete/:id", deleteWalletUsers);
 router.get("/user/searchList", getAllChildSearchList);
 
 router.post("/bet/change/deleteReason", validator(changeBetsDeleteReasonValidator), changeBetsDeleteReason);
+router.get('/eventWise/exposure/:userId', userEventWiseExposure);
+router.get('/marketAnalysis', marketAnalysis);
+router.get('/virtualBetExposure', getVirtualBetExposures);
 
 module.exports = router;

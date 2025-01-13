@@ -85,7 +85,7 @@ module.exports.fileType = {
 
 module.exports.redisTimeOut = 10 * 60 * 60;
 module.exports.demoRedisTimeOut = 60 * 60;
-module.exports.authenticatorExpiryTime = 30;
+module.exports.authenticatorExpiryTime = 33;
 module.exports.teleAuthenticatorExpiryTime = 60*5;
 
 module.exports.matchComissionTypeConstant = {

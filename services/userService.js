@@ -248,6 +248,17 @@ exports.getChildsWithOnlyUserRole = async (userId) => {
   const results = await user.query(query, [userId, userRoleConstant.user]);
   return results;
 }
+
+exports.getChildsWithOnlyMultiUserRole = async (userIds) => {
+  const query = `WITH RECURSIVE p AS (
+      SELECT * FROM "users" WHERE "users"."id" in ('${userIds?.join("','")}')
+      UNION
+      SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
+    )
+    SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND "roleName" = $1;`;
+  const results = await user.query(query, [userRoleConstant.user]);
+  return results;
+}
 exports.getParentsWithBalance = async (userId) => {
   const query = `WITH RECURSIVE p AS (
       SELECT * FROM "users" WHERE "users"."id" = $1
