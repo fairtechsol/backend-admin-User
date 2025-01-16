@@ -87,7 +87,6 @@ exports.getBetsCondition = async (reqUser, query, isCurrentBets) => {
   }
 };
 
-
 exports.getAccountStatementBet = async (req, res) => {
   try {
     let { query, user: reqUser } = req;
@@ -558,6 +557,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
     if (match?.stopAt) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
     }
+    const domainUrl = `${req.protocol}://${req.get('host')}`;
 
     let betPlacedObj = {
       matchId: matchId,
@@ -578,9 +578,11 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       eventName: match.title,
       eventType: match.matchType,
       bettingName: bettingName,
-      runnerId: runnerId
+      runnerId: runnerId,
+      isCommissionActive: matchBetting.isCommissionActive && domainUrl == oldBetFairDomain
+
     }
-    await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { placeIndex });
+    await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { placeIndex }, runners);
 
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
@@ -685,7 +687,6 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       selectionId
     }
 
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
 
     let walletJobData = {
       domainUrl: domainUrl,
@@ -1442,7 +1443,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
   // check the rates of third party api
 };
 
-const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) => {
+const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams, runners) => {
   if (matchBettingDetail?.activeStatus != betStatusType.live) {
     logger.info({
       info: `match betting details are not live. ${matchBettingDetail?.activeStatus}`,
@@ -1473,8 +1474,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
-  let isManuallBookmakerMarket = [matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3]?.includes(betObj.matchBetType);
-  if (betObj.amount > matchBettingDetail?.maxBet || (isManuallBookmakerMarket && matchBettingDetail?.maxBet / (3 - teams.placeIndex) < betObj.amount)) {
+  if (betObj.amount > matchBettingDetail?.maxBet || (matchBettingDetail.isManual && matchBettingDetail?.maxBet / (3 - teams.placeIndex) < betObj.amount)) {
     logger.info({
       info: `bookmaker max value for index.`,
     });
@@ -1486,15 +1486,10 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
     };
   }
 
-
-  let isBookmakerMarket = [matchBettingType.bookmaker, matchBettingType.bookmaker2]?.includes(betObj.matchBetType);
-
-  let isRateChange = false;
-  let manualBets = Object.values(manualMatchBettingType);
-  if (manualBets.includes(matchBettingDetail?.type)) {
-    isRateChange = await checkRate(matchBettingDetail, betObj, teams);
+  if (matchBettingDetail?.isManual) {
+    isRateChange = await checkRate(matchBettingDetail, betObj, runners, teams.placeIndex);
   } else {
-    isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams, isBookmakerMarket);
+    isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams);
   }
   if (isRateChange) {
     throw {
@@ -1510,37 +1505,19 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams) =>
 
 }
 
-const checkRate = async (bettingDetail, betObj, teams) => {
-  const matchBettingDetail = JSON.parse(JSON.stringify(bettingDetail));
-  if (teams.placeIndex != 0) {
-    matchBettingDetail.backTeamA = parseInt(matchBettingDetail.backTeamA);
-    matchBettingDetail.backTeamB = parseInt(matchBettingDetail.backTeamB);
-    matchBettingDetail.backTeamC = parseInt(matchBettingDetail.backTeamC);
-    matchBettingDetail.layTeamA = parseInt(matchBettingDetail.layTeamA);
-    matchBettingDetail.layTeamB = parseInt(matchBettingDetail.layTeamB);
-    matchBettingDetail.layTeamC = parseInt(matchBettingDetail.layTeamC);
-  }
-  if (betObj.betType == betType.BACK && teams.teamA == betObj.teamName && !(matchBettingDetail.statusTeamA == teamStatus.active && matchBettingDetail.backTeamA - teams.placeIndex == betObj.odds)) {
+const checkRate = async (bettingDetail, betObj, teams, placeIndex) => {
+  let currRunner = teams.find((item) => item.id == betObj.runnerId );
+  if (!currRunner) {
     return true;
   }
-  else if (betObj.betType == betType.BACK && teams.teamB == betObj.teamName && !(matchBettingDetail.statusTeamB == teamStatus.active && matchBettingDetail.backTeamB - teams.placeIndex == betObj.odds)) {
+  if (betObj.betType == betType.BACK && currRunner.status != teamStatus.active && currRunner.backRate - placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.BACK && teams.teamC == betObj.teamName && !(matchBettingDetail.statusTeamC == teamStatus.active && matchBettingDetail.backTeamC - teams.placeIndex == betObj.odds)) {
+  if (betObj.betType == betType.LAY && currRunner.status != teamStatus.active && currRunner.layRate + placeIndex != betObj.odds) {
     return true;
   }
-  else if (betObj.betType == betType.LAY && teams.teamA == betObj.teamName && !(matchBettingDetail.statusTeamA == teamStatus.active && +matchBettingDetail.layTeamA + teams.placeIndex == betObj.odds)) {
-    return true;
-  }
-  else if (betObj.betType == betType.LAY && teams.teamB == betObj.teamName && !(matchBettingDetail.statusTeamB == teamStatus.active && +matchBettingDetail.layTeamB + teams.placeIndex == betObj.odds)) {
-    return true;
-  }
-  else if (betObj.betType == betType.LAY && teams.teamC == betObj.teamName && !(matchBettingDetail.statusTeamC == teamStatus.active && +matchBettingDetail.layTeamC + teams.placeIndex == betObj.odds)) {
-    return true;
-  }
-  else {
-    return false;
-  }
+  return false;
+
 }
 
 const validateRacingBettingDetails = async (matchBettingDetail, betObj, placeIndex, selectionId) => {
@@ -1662,7 +1639,7 @@ let calculateRacingUserExposure = (userOldExposure, oldTeamRate, newTeamRate) =>
   return Number(newExposure.toFixed(2));
 }
 
-let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerMarket) => {
+let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams) => {
   let url = "";
   const microServiceUrl = microServiceDomain;
   try {
@@ -1687,26 +1664,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
       if (filterData?.odds?.find((item) => item.tno == teams?.placeIndex && item.otype == betObj?.betType?.toLowerCase())?.odds != betObj?.odds) {
         return true;
       }
-      if (isBookmakerMarket) {
-        let oddLength = 0;
-
-        matchBettingData.section.forEach((section) => {
-          const filteredOdds = section.odds.filter((odd) => odd.odds > 0 && odd.otype == betObj?.betType?.toLowerCase());
-          if (filteredOdds.length > oddLength) {
-            oddLength = filteredOdds.length;
-          }
-        });
-
-        // let oddLength = filterData?.odds?.filter((item) => item?.otype == betObj?.betType?.toLowerCase() && item.odds > 0).length;
-        if (!oddLength || matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
-          throw {
-            statusCode: 400,
-            message: {
-              msg: "bet.maxAmountViolate"
-            }
-          };
-        }
-      }
+     
       return false;
     }
     return true;
