@@ -841,3 +841,4 @@ exports.teenPattiWinRatio = {
 }
 
 exports.casinoProvider = Array.from(new Set(mac88Games.map((item) => item?.provider_name)));
+exports.matchOddName="MATCH_ODDS"

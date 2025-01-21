@@ -348,12 +348,15 @@ exports.listMatch = async (req, res) => {
       for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
         let matchDetail = apiResponse.data?.matches[i];
         apiResponse.data.matches[i].totalBet = betPlaced?.filter((match) => match?.matchId === matchDetail?.id)?.length;
-        const redisIds = [`${redisKeys.userTeamARate}${matchDetail?.id}`, `${redisKeys.userTeamBRate}${matchDetail?.id}`];
+        const redisId = `${matchDetail?.matchOddTournament?.id}_profitLoss_${matchDetail?.id}`;
 
-        let redisData = await getUserRedisKeys(user.id, redisIds);
-
-        apiResponse.data.matches[i].teamARate = redisData?.[0];
-        apiResponse.data.matches[i].teamBRate = redisData?.[1];
+        let redisData = await getUserRedisKey(user.id, redisId);
+        if (redisData) {
+          redisData = JSON.parse(redisData);
+          const runners = matchDetail?.matchOddTournament?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
+          apiResponse.data.matches[i].teamARate = redisData?.[runners?.[0]?.id] || 0;
+          apiResponse.data.matches[i].teamBRate = redisData?.[runners?.[1]?.id];
+        }
       }
     }
     return SuccessResponse(
