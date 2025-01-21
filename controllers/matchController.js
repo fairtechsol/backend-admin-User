@@ -1,7 +1,7 @@
 const { In } = require("typeorm");
 const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, tieCompleteBetType, matchBettingType, redisKeysMarketWise, gameType, cardGames } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId, getChildUsersAllPlaceBets } = require("../services/betPlacedService");
-const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKey } = require("../services/redis/commonfunction");
+const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKey, getUserRedisKeyData } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getUsers, getChildUser, getUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
@@ -350,7 +350,7 @@ exports.listMatch = async (req, res) => {
         apiResponse.data.matches[i].totalBet = betPlaced?.filter((match) => match?.matchId === matchDetail?.id)?.length;
         const redisId = `${matchDetail?.matchOddTournament?.id}_profitLoss_${matchDetail?.id}`;
 
-        let redisData = await getUserRedisKey(user.id, redisId);
+        let redisData = await getUserRedisKeyData(user.id, redisId);
         if (redisData) {
           redisData = JSON.parse(redisData);
           const runners = matchDetail?.matchOddTournament?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
