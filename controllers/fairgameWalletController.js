@@ -5324,7 +5324,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
     });
 
     // deducting 1% from match odd win amount 
-    if (parseFloat(getWinAmount) > 0) {
+    if (parseFloat(getWinAmount) > 0 && isMatchOdd) {
       profitLoss -= parseFloat(((parseFloat(getWinAmount) / 100)).toFixed(2));
     }
 
@@ -5609,7 +5609,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
 exports.unDeclareTournamentMatchResult = async (req, res) => {
   try {
 
-    const { matchId, match, matchBetting, userId, matchOddId, betType: matchBetType } = req.body;
+    const { matchId, match, matchBetting, userId, matchOddId, betType: matchBetType, isMatchOdd } = req.body;
 
     const betIds = [matchOddId];
     let users = await getDistinctUserBetPlaced(In(betIds));
@@ -5643,7 +5643,8 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
       matchBetting,
       matchBetType,
       commissionData,
-      matchOddsWinBets
+      matchOddsWinBets,
+      isMatchOdd
     );
     deleteCommission(matchOddId);
 
@@ -5762,7 +5763,7 @@ exports.unDeclareTournamentMatchResult = async (req, res) => {
   }
 }
 
-const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, matchDetails, merketBetType, commissionData, matchOddsWinBets) => {
+const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, matchId, fwProfitLoss, redisEventName, userId, bulkWalletRecord, upperUserObj, matchDetails, merketBetType, commissionData, matchOddsWinBets, isMatchOdd) => {
 
   let faAdminCal = {
     admin: {},
@@ -5811,7 +5812,6 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
     profitLoss = parseFloat(getWinAmount.toString()) - parseFloat(getLossAmount.toString());
     fwProfitLoss = parseFloat((parseFloat(fwProfitLoss.toString()) - parseFloat(((-profitLoss * user.user.fwPartnership) / 100).toString())).toFixed(2));
 
-
     let userCurrentBalance = parseFloat(user.user.userBalance.currentBalance);
     matchOddsWinBets?.filter((item) => item.createBy == user.user.id)?.forEach((matchOddData, uniqueId) => {
       userCurrentBalance += parseFloat(parseFloat((matchOddData?.winAmount) / 100).toFixed(2))
@@ -5833,7 +5833,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
 
 
     // deducting 1% from match odd win amount 
-    if (parseFloat(getWinAmount) > 0) {
+    if (parseFloat(getWinAmount) > 0 && isMatchOdd) {
       profitLoss -= parseFloat(((parseFloat(getWinAmount) / 100)).toFixed(2));
     }
 
@@ -5898,7 +5898,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
     });
 
     // deducting 1% from match odd win amount 
-    if (parseFloat(getWinAmount) > 0) {
+    if (parseFloat(getWinAmount) > 0 && isMatchOdd) {
       user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance + (parseFloat(getWinAmount) / 100)).toFixed(2));
     }
     
