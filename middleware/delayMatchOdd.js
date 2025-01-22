@@ -1,6 +1,6 @@
 const { promisify } = require('util');
 // Redis client configuration
-const { matchBettingType } = require('../config/contants');
+const { matchOddName } = require('../config/contants');
 const internalRedis = require('../config/internalRedisConnection');
 const { getUser } = require('../services/userService');
 const { ErrorResponse } = require('../utils/response');
@@ -13,9 +13,9 @@ const redisExpireAsync = promisify(internalRedis.expire).bind(internalRedis);
 // Middleware function for rate limiting
 const delayMatchOddBet = async (req, res, next) => {
     try {
-        const { matchBetType } = req.body;
+        const { bettingName } = req.body;
 
-        if (matchBetType == matchBettingType.matchOdd) {
+        if (bettingName == matchOddName) {
 
             const userId = req.user.id; // Assuming user ID is available in req.user.id
             const { delayTime } = await getUser({ id: userId }, ["id", "delayTime"]); // Function to fetch user delay time from a service
