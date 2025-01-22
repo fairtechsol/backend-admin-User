@@ -6109,8 +6109,8 @@ exports.totalProfitLossWallet = async (req, res) => {
     if (user.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
     }
-    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
-    let subQuery = await childIdquery(user, searchId)
+    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.bettingName = '${matchOddName}' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
+    let subQuery = await childIdquery(user, searchId);
     const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, subQuery);
     const racingReport = await getTotalProfitLossRacing(where, startDate, endDate, totalLoss, subQuery);
     return SuccessResponse(
@@ -6163,7 +6163,7 @@ exports.totalProfitLossByMatch = async (req, res) => {
       rateProfitLoss = '-' + rateProfitLoss;
       sessionProfitLoss = '-' + sessionProfitLoss;
     }
-    let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.marketType = 'matchOdd' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
+    let totalDeduction = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.bettingName = '${matchOddName}' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction"`;
     let subQuery = await childIdquery(user, searchId);
     let result, count;
     if (isRacing) {
