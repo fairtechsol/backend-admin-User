@@ -5323,6 +5323,11 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
       });
     });
 
+    // deducting 1% from match odd win amount 
+    if (parseFloat(getWinAmount) > 0) {
+      profitLoss -= parseFloat(((parseFloat(getWinAmount) / 100)).toFixed(2));
+    }
+
     const userCurrBalance = Number(user.user.userBalance.currentBalance + profitLoss).toFixed(2);
     let userBalanceData = {
       currentBalance: userCurrBalance,
@@ -5828,10 +5833,9 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
 
 
     // deducting 1% from match odd win amount 
-    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-      profitLoss -= parseFloat(((parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
+    if (parseFloat(getWinAmount) > 0) {
+      profitLoss -= parseFloat(((parseFloat(getWinAmount) / 100)).toFixed(2));
     }
-
 
     const userCurrBalance = Number(
       (user.user.userBalance.currentBalance - profitLoss).toFixed(2)
@@ -5894,8 +5898,8 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
     });
 
     // deducting 1% from match odd win amount 
-    if (parseFloat(getMultipleAmount?.winAmountMatchOdd) > 0) {
-      user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance + (parseFloat(getMultipleAmount?.winAmountMatchOdd) / 100)).toFixed(2));
+    if (parseFloat(getWinAmount) > 0) {
+      user.user.userBalance.currentBalance = parseFloat(parseFloat(user.user.userBalance.currentBalance + (parseFloat(getWinAmount) / 100)).toFixed(2));
     }
     
     let currBal = user.user.userBalance.currentBalance;
