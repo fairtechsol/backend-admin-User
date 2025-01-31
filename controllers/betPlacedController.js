@@ -1871,7 +1871,7 @@ exports.deleteMultipleBetForOther = async (req, res) => {
           let betId = value;
           let bet = userDataDelete[value];
           if (bet.isTournamentBet) {
-            await updateUserAtMatchOddsTournament(userId, betId, matchId, bet.array, deleteReason, domainUrl, tournamentBettingDetail?.find((item) => item?.id == betId)?.runners);
+            await updateUserAtMatchOddsTournament(userId, betId, matchId, bet.array, deleteReason, domainUrl, tournamentBettingDetail?.find((item) => item?.id == betId)?.runners, isPermanentDelete);
           }
           else {
             await updateUserAtMatchOddsForOther(userId, betId, matchId, bet.array, deleteReason, domainUrl, matchDetails);
