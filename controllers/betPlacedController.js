@@ -1665,7 +1665,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
         return true;
       }
 
-      if (isBookmakerMarket) {
+      // if (isBookmakerMarket) {
         let oddLength = filterData?.odds?.length;
         // let oddLength = filterData?.odds?.filter((item) => item?.otype == betObj?.betType?.toLowerCase() && item.odds > 0).length;
         if (matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
@@ -1676,7 +1676,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
             }
           };
         }
-      }
+      // }
       
      
       return false;
