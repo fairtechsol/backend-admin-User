@@ -1736,7 +1736,7 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
 
     let apiResponse;
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBettingType.tournament + "&id=" + placedBet;      
+      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + placedBet;      
       apiResponse = await apiCall(apiMethod.get, url);
     } catch (error) {
       logger.info({
