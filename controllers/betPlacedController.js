@@ -1489,7 +1489,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams, ru
   if (matchBettingDetail?.isManual) {
     isRateChange = await checkRate(matchBettingDetail, betObj, runners, teams.placeIndex);
   } else {
-    isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams, matchBettingDetail?.name?.toLowerCase()?.includes("bookamker"));
+    isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams, matchBettingDetail?.name?.toLowerCase()?.includes("bookmaker"));
   }
   if (isRateChange) {
     throw {
@@ -1506,14 +1506,20 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams, ru
 }
 
 const checkRate = async (bettingDetail, betObj, teams, placeIndex) => {
-  let currRunner = teams.find((item) => item.id == betObj.runnerId );
+  let currRunner = teams.find((item) => item.id == betObj.runnerId);
   if (!currRunner) {
     return true;
   }
-  if (betObj.betType == betType.BACK && currRunner.status != teamStatus.active && currRunner.backRate - placeIndex != betObj.odds) {
+  if (placeIndex != 0) {
+    currRunner.backRate = parseInt(currRunner.backRate);
+    currRunner.layRate = parseInt(currRunner.layRate);
+  }
+
+
+  if (betObj.betType == betType.BACK && (currRunner.status != teamStatus.active || currRunner.backRate - placeIndex != betObj.odds)) {
     return true;
   }
-  if (betObj.betType == betType.LAY && currRunner.status != teamStatus.active && currRunner.layRate + placeIndex != betObj.odds) {
+  if (betObj.betType == betType.LAY && (currRunner.status != teamStatus.active || currRunner.layRate + placeIndex != betObj.odds)) {
     return true;
   }
   return false;
