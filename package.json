@@ -47,5 +47,10 @@
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
+  },
+  "overrides": {
+    "swagger-autogen": {
+      "glob": "^10.4.5"
+    }
   }
 }
