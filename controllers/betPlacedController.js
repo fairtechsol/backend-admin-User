@@ -1659,7 +1659,7 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
     );
     let filterData = matchBettingData?.section?.find((item) => item?.sid?.toString() == betObj?.selectionId?.toString());
     if (filterData) {
-      if (!['ACTIVE', 'OPEN', ''].includes(filterData.gstatus)) {
+      if (!['ACTIVE', 'OPEN', ''].includes(filterData.gstatus) || !['ACTIVE', 'OPEN', ''].includes(matchBettingData.status)) {
         throw {
           statusCode: 400,
           message: {
