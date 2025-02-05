@@ -551,6 +551,7 @@ exports.getBetsProfitLoss = async (where, totalLoss, subQuery,domain) => {
       'user.userName as userName',
       'placeBet.deleteReason as "deleteReason"',
       'placeBet.bettingName  as "bettingName"',
+      'placeBet.isCommissionActive  as "isCommissionActive"',
     ])
     .addSelect(`'${domain}'`, `domain`)
     .groupBy('placeBet.id, user.userName').orderBy('placeBet.createdAt', 'DESC');
