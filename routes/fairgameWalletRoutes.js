@@ -71,6 +71,6 @@ router.post("/bet/change/deleteReason", validator(changeBetsDeleteReasonValidato
 router.get('/eventWise/exposure/:userId', userEventWiseExposure);
 router.get('/marketAnalysis', marketAnalysis);
 router.get('/virtualBetExposure', getVirtualBetExposures);
-router.get('/verifyBet', verifyBet);
+router.post('/verifyBet', verifyBet);
 
 module.exports = router;
