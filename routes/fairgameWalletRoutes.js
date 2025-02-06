@@ -7,6 +7,7 @@ const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList
 const { settleCommissions } = require("../controllers/userBalanceController");
 const { settleCommission } = require("../validators/userBalanceValidator");
 const { userEventWiseExposure, marketAnalysis } = require("../controllers/matchController");
+const { verifyBet } = require("../controllers/betPlacedController");
 
 router.post("/add/user", validator(CreateSuperAdmin), createSuperAdmin);
 router.post("/update/user", validator(UpdateSuperAdmin), updateSuperAdmin);
@@ -70,5 +71,6 @@ router.post("/bet/change/deleteReason", validator(changeBetsDeleteReasonValidato
 router.get('/eventWise/exposure/:userId', userEventWiseExposure);
 router.get('/marketAnalysis', marketAnalysis);
 router.get('/virtualBetExposure', getVirtualBetExposures);
+router.get('/verifyBet', verifyBet);
 
 module.exports = router;

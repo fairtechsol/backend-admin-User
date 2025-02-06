@@ -1444,7 +1444,7 @@ const checkApiSessionRates = async (apiBetData, betDetail) => {
 };
 
 const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams, runners) => {
-  if (matchBettingDetail?.activeStatus != betStatusType.live) {
+  if (matchBettingDetail?.activeStatus != betStatusType.live || !matchBettingDetail?.isActive) {
     logger.info({
       info: `match betting details are not live. ${matchBettingDetail?.activeStatus}`,
     });
@@ -4466,4 +4466,21 @@ function calculateBetRate(match, selectionId, bettingType) {
   }
 
   return 0;
+}
+
+exports.verifyBet = async (req, res) => {
+  try {
+    let { isVerified,id } = req.body;
+    await betPlacedService.updatePlaceBet({ id: id }, { isVerified: isVerified })
+    return SuccessResponse({ statusCode: 200, message: { msg: "isVerified" } }, req, res)
+
+
+  } catch (error) {
+    logger.error({
+      error: `Error at verify bet.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res)
+  }
 }
