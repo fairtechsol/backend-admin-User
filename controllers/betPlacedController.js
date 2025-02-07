@@ -4472,7 +4472,7 @@ exports.verifyBet = async (req, res) => {
   try {
     let { isVerified, id, verifyBy } = req.body;
     await betPlacedService.updatePlaceBet({ id: id }, { isVerified: isVerified, verifyBy: verifyBy })
-    return SuccessResponse({ statusCode: 200, message: { msg: "isVerified" } }, req, res)
+    return SuccessResponse({ statusCode: 200, message: { msg: "bet.isVerified" } }, req, res)
   } catch (error) {
     logger.error({
       error: `Error at verify bet.`,
