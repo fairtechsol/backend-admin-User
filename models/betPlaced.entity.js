@@ -108,6 +108,14 @@ const betPlacedSchema = new EntitySchema({
         isCommissionActive:{
             type: "boolean",
             default: false
+        },
+        isVerified: {
+            type: "boolean",
+            default: false
+        },
+        verifyBy: {
+            type: "varchar",
+            nullable: true
         }
     },
     relations: {
