@@ -561,7 +561,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
 
     let betPlacedObj = {
       matchId: matchId,
-      betId: betId,
+      betId: matchBetting?.parentBetId || betId,
       winAmount,
       lossAmount,
       result: betResultStatus.PENDING,
@@ -579,8 +579,8 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       eventType: match.matchType,
       bettingName: bettingName,
       runnerId: runnerId,
-      isCommissionActive: matchBetting.isCommissionActive && domainUrl == oldBetFairDomain
-
+      isCommissionActive: matchBetting.isCommissionActive && domainUrl == oldBetFairDomain,
+      childBetId: betId
     }
     await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { placeIndex }, runners);
 
