@@ -30,7 +30,7 @@ const {
   matchOddName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss, getBetCountData } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -8323,3 +8323,19 @@ exports.changeBetsDeleteReason = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.checkVerifiedBets = async (req, res) => {
+  try {
+    let { betId } = req.body;
+    const betCount = await getBetCountData({ betId: betId, isVerified: false, deleteReason: IsNull() })
+    return SuccessResponse({ statusCode: 200, message: { msg: "bet.isVerified" }, data: betCount }, req, res);
+
+  } catch (error) {
+    logger.error({
+      error: `Error at get verify bet.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res)
+  }
+}
