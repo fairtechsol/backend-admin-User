@@ -30,7 +30,7 @@ const {
   matchOddName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss, getBetCountData } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -6082,6 +6082,73 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
   return { fwProfitLoss, faAdminCal, superAdminData };
 }
 
+exports.declarFinalMatchResult = async (req, res) => {
+  try {
+    const { matchId,matchType } = req.body;
+
+    logger.info({
+      message: "Match final result declared.",
+      data: {
+        matchId
+      },
+    });
+
+    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: matchType, isMatchDeclare: true });
+    await updateMatchData({ id: matchId }, { stopAt: new Date() });
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "bet.resultDeclared" },
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at declare final match result for the user.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(error, req, res);
+  }
+};
+
+exports.unDeclareFinalMatchResult = async (req, res) => {
+  try {
+
+    const { matchId,matchType } = req.body;
+
+    logger.info({
+      message: "Final match result un declared.",
+      data: {
+        matchId
+      }
+    });
+
+    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: matchType });
+    await updateMatchData({ id: matchId }, { stopAt: null });
+
+    return SuccessResponse(
+      {
+        statusCode: 200,
+        message: { msg: "bet.resultUnDeclared" },
+      },
+      req,
+      res
+    );
+
+  } catch (error) {
+    logger.error({
+      error: `Error at un declare final match result for the user.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    // Handle any errors and return an error response
+    return ErrorResponse(error, req, res);
+  }
+}
+
 exports.totalProfitLossWallet = async (req, res) => {
   try {
     let { user, startDate, endDate, matchId, searchId, partnerShipRoleName } = req.body;
@@ -8256,3 +8323,19 @@ exports.changeBetsDeleteReason = async (req, res) => {
     return ErrorResponse(err, req, res);
   }
 };
+
+exports.checkVerifiedBets = async (req, res) => {
+  try {
+    let { betId } = req.body;
+    const betCount = await getBetCountData({ betId: betId, isVerified: false, deleteReason: IsNull() })
+    return SuccessResponse({ statusCode: 200, message: { msg: "bet.isVerified" }, data: betCount }, req, res);
+
+  } catch (error) {
+    logger.error({
+      error: `Error at get verify bet.`,
+      stack: error.stack,
+      message: error.message,
+    });
+    return ErrorResponse(error, req, res)
+  }
+}
