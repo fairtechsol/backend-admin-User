@@ -1,5 +1,5 @@
 const { In, Not, IsNull, LessThanOrEqual } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType, sessionBettingType, redisTimeOut, jwtSecret, demoRedisTimeOut, authenticatorType } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, tiedManualTeamName, matchBettingType, redisKeys, marketBetType, expertDomain, matchesTeamName, profitLossKeys, otherEventMatchBettingRedisKey, gameType, racingBettingType, betResultStatus, cardGameType, sessionBettingType, redisTimeOut, jwtSecret, demoRedisTimeOut, authenticatorType, matchOddName } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -1716,7 +1716,7 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
 
   let matchResult = {};
 
-  const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, marketType: In([matchBettingType.bookmaker, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3, matchBettingType.matchOdd]) });
+  const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, bettingName: matchOddName });
   bets?.forEach((item) => {
     let itemData = {
       ...item,
@@ -1736,7 +1736,7 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
 
     let apiResponse;
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.MatchBettingDetail + matchId + "?type=" + matchBettingType.quickbookmaker1;
+      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + placedBet;      
       apiResponse = await apiCall(apiMethod.get, url);
     } catch (error) {
       logger.info({
@@ -1744,32 +1744,18 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
       });
       return;
     }
-    if (apiResponse?.data?.match?.matchType == gameType.cricket) {
-      let redisData = await this.calculateRatesMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
-
-      let teamARate = redisData?.teamARate ?? Number.MAX_VALUE;
-      let teamBRate = redisData?.teamBRate ?? Number.MAX_VALUE;
-      let teamCRate = redisData?.teamCRate ?? Number.MAX_VALUE;
+      let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
+      const runners = apiResponse?.data?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
+      let teamARate = Object.values(redisData)?.[0]?.[runners?.[0]?.id] ?? Number.MAX_VALUE;
+      let teamBRate = Object.values(redisData)?.[0]?.[runners?.[1]?.id]  ?? Number.MAX_VALUE;
+      let teamCRate = Object.values(redisData)?.[0]?.[runners?.[2]?.id]  ?? Number.MAX_VALUE;
       matchResult = {
         ...matchResult,
         ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]: teamARate + (matchResult[redisKeys.userTeamARate + matchId] || 0) } : {}),
         ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]: teamBRate + (matchResult[redisKeys.userTeamBRate + matchId] || 0) } : {}),
         ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]: teamCRate + (matchResult[redisKeys.userTeamCRate + matchId] || 0) } : {}),
       }
-    }
-    else {
-      let redisData = await this.calculateRatesOtherMatch(betResult.match[placedBet], 100, apiResponse?.data?.match);
-
-      Object.values(redisData)?.forEach((plData) => {
-
-        matchResult = {
-          ...matchResult,
-          [otherEventMatchBettingRedisKey[plData?.type].a + matchId]: plData?.rates?.a,
-          [otherEventMatchBettingRedisKey[plData?.type].b + matchId]: plData?.rates?.b,
-          ...(plData?.rates?.c ? { [otherEventMatchBettingRedisKey[plData?.type].c + matchId]: plData?.rates?.c } : {}),
-        }
-      });
-    }
+    
   }
   return {
     ...matchResult

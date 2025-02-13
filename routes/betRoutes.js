@@ -13,7 +13,7 @@ router.get('/accountStatement', isAuthenticate, getAccountStatementBet);
 router.get('/session/profitLoss/:betId', isAuthenticate, getSessionProfitLoss);
 router.post('/matchBetting',apiLimiter,  isAuthenticate, delayMatchOddBet, validator(MatchBetPlacedValidator), matchBettingBetPlaced);
 router.post('/session', apiLimiter, isAuthenticate, validator(SessionBetPlacedValidator), sessionBetPlace);
-router.post('/tournament', apiLimiter, isAuthenticate, validator(TournamentBetPlacedValidator), tournamentBettingBetPlaced);
+router.post('/tournament', apiLimiter, isAuthenticate, delayMatchOddBet, validator(TournamentBetPlacedValidator), tournamentBettingBetPlaced);
 
 router.post('/raceBetting', apiLimiter, isAuthenticate,delayMatchOddBet, validator(RaceBetPlacedValidator), racingBettingBetPlaced);
 router.post('/cardBetting', apiLimiter, isAuthenticate, validator(CardBetPlacedValidator), cardBettingBetPlaced);

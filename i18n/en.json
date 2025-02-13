@@ -87,7 +87,8 @@
     "placeBetAfter5": "Place bet after {time} seconds",
     "alreadyPlacedOnDiff": "Bet not confirm bet already exists on {name} Card.",
     "limitExceed":"You cannot place a bet more than {limit} times.",
-    "equalMinMax":"Bet Not Confirm Reason Min And Max Bet Range Not Valid."
+    "equalMinMax":"Bet Not Confirm Reason Min And Max Bet Range Not Valid.",
+    "isVerified": "Bet verified successfully."
   },
   "telegramBot":{
     "start":"Hey! You are 1 step away from 2-Step Verification, Now please proceed for further step: /connect your_id to enable it for your account.",

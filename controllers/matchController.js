@@ -1,7 +1,7 @@
 const { In } = require("typeorm");
 const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, tieCompleteBetType, matchBettingType, redisKeysMarketWise, gameType, cardGames } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId, getChildUsersAllPlaceBets } = require("../services/betPlacedService");
-const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache } = require("../services/redis/commonfunction");
+const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKey, getUserRedisKeyData } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getUsers, getChildUser, getUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
@@ -348,12 +348,15 @@ exports.listMatch = async (req, res) => {
       for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
         let matchDetail = apiResponse.data?.matches[i];
         apiResponse.data.matches[i].totalBet = betPlaced?.filter((match) => match?.matchId === matchDetail?.id)?.length;
-        const redisIds = [`${redisKeys.userTeamARate}${matchDetail?.id}`, `${redisKeys.userTeamBRate}${matchDetail?.id}`];
+        const redisId = `${matchDetail?.matchOddTournament?.id}_profitLoss_${matchDetail?.id}`;
 
-        let redisData = await getUserRedisKeys(user.id, redisIds);
-
-        apiResponse.data.matches[i].teamARate = redisData?.[0];
-        apiResponse.data.matches[i].teamBRate = redisData?.[1];
+        let redisData = await getUserRedisKeyData(user.id, redisId);
+        if (redisData) {
+          redisData = JSON.parse(redisData);
+          const runners = matchDetail?.matchOddTournament?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
+          apiResponse.data.matches[i].teamARate = redisData?.[runners?.[0]?.id] || 0;
+          apiResponse.data.matches[i].teamBRate = redisData?.[runners?.[1]?.id];
+        }
       }
     }
     return SuccessResponse(
