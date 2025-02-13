@@ -63,7 +63,6 @@ exports.matchDetails = async (req, res) => {
         let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);;
         redisData?.forEach((item, index) => {
           if (item) {
-
             sessionResult.push({
               betId: redisIds?.[index]?.split("_")[0],
               maxLoss: JSON.parse(item)?.maxLoss,

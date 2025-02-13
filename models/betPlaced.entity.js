@@ -116,6 +116,10 @@ const betPlacedSchema = new EntitySchema({
         verifyBy: {
             type: "varchar",
             nullable: true
+        },
+        childBetId:{
+            type: 'uuid',
+            nullable: true,
         }
     },
     relations: {
