@@ -590,6 +590,19 @@ exports.getUserWiseProfitLoss = async (where, select) => {
   return result;
 }
 
+exports.getUserSessionsProfitLoss = async (where, select) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
+    .where(where)
+    .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
+    .groupBy("user.id")
+    .addGroupBy("user.userName")
+  query = query
+    .select(select);
+
+  let result = await query.getRawMany();
+  return result;
+}
 
 exports.getPlacedBetsWithCategory = async (userId) => {
   const query = BetPlaced.createQueryBuilder()
