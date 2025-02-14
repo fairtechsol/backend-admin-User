@@ -1,4 +1,4 @@
-const { IsNull, In, MoreThan, ILike, Not } = require("typeorm");
+const { IsNull, In, ILike, Not } = require("typeorm");
 const {
   transType,
   walletDescription,
@@ -30,7 +30,7 @@ const {
   matchOddName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss, getBetCountData } = require("../services/betPlacedService");
+const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, findAllPlacedBetWithUserIdAndBetId, updatePlaceBet, getBet, getMultipleAccountMatchProfitLoss, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss, getBetCountData, getUserSessionsProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   calculateProfitLossForSessionToResult,
@@ -82,9 +82,7 @@ const {
   userBlockUnblock,
   betBlockUnblock,
   getParentsWithBalance,
-  getAllUsersByRole,
   getChildsWithOnlyUserRole,
-  getUsers,
   getChildUserBalanceSum,
   getAllUsersBalanceSumByFgId,
   getAllUsers,
@@ -100,12 +98,11 @@ const {
 } = require("../services/userService");
 const { sendMessageToUser, broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { insertCommissions, getCombinedCommission, deleteCommission} = require("../services/commissionService");
+const { getCombinedCommission, deleteCommission} = require("../services/commissionService");
 const { insertButton } = require("../services/buttonService");
 const { updateMatchData, getMatchData } = require("../services/matchService");
 const { updateRaceMatchData } = require("../services/racingServices");
 const { CardWinOrLose } = require("../services/cardService/cardWinAccordingToBet");
-const { apiMethod, allApiRoutes, apiCall } = require("../utils/apiService");
 const { CardResultTypeWin } = require("../services/cardService/winCardAccordingToTransaction");
 const { getVirtualCasinoExposureSum } = require("../services/virtualCasinoBetPlacedsService");
 
@@ -8337,5 +8334,41 @@ exports.checkVerifiedBets = async (req, res) => {
       message: error.message,
     });
     return ErrorResponse(error, req, res)
+  }
+}
+
+exports.getSessionBetProfitLossExpert = async (req, res) => {
+  try {
+    let { betId } = req.body;
+
+    let queryColumns = ``;
+    let where = { betId: betId };
+
+    queryColumns = await profitLossPercentCol({roleName:userRoleConstant.fairGameWallet}, queryColumns);
+    let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.marketBetType = '${marketBetType.SESSION}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.marketBetType = '${marketBetType.SESSION}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss", COUNT(placeBet.id) as "totalBet"`;
+
+    const userData = await getUserSessionsProfitLoss(where, [sessionProfitLoss, 'user.userName as "userName"', 'user.id as "userId"']);
+
+    return SuccessResponse(
+      {
+        statusCode: 200, data: userData
+      },
+      req,
+      res
+    );
+  } catch (error) {
+    logger.error({
+      context: `Error in get bet profit loss.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    return ErrorResponse(
+      {
+        statusCode: 500,
+        message: error.message,
+      },
+      req,
+      res
+    );
   }
 }
