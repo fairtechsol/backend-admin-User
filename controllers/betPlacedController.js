@@ -552,16 +552,21 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       throw error?.response?.data;
     }
     let { match, matchBetting, runners } = apiResponse.data;
-    await checkBetLimit(matchBetting?.betLimit, betId, matchId);
+
+    await checkBetLimit(matchBetting?.betLimit, matchBetting?.parentBetId || betId, matchId);
     matchBetting.eventId = match.eventId;
     if (match?.stopAt) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
     }
     const domainUrl = `${req.protocol}://${req.get('host')}`;
 
+    const currRunner = runners.find((item) => item.id == runnerId);
+    runnerId = currRunner?.parentRunnerId || runnerId;
+    runners = runners.map((item) => ({ ...item, id: item?.parentRunnerId || item?.id }));
+
     let betPlacedObj = {
       matchId: matchId,
-      betId: betId,
+      betId: matchBetting?.parentBetId || betId,
       winAmount,
       lossAmount,
       result: betResultStatus.PENDING,
@@ -579,10 +584,13 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       eventType: match.matchType,
       bettingName: bettingName,
       runnerId: runnerId,
-      isCommissionActive: matchBetting.isCommissionActive && domainUrl == oldBetFairDomain
-
+      isCommissionActive: matchBetting.isCommissionActive && domainUrl == oldBetFairDomain,
+      childBetId: betId
     }
     await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { placeIndex }, runners);
+    
+    //assigning bet id for cloned market
+    betId = matchBetting?.parentBetId || betId;
 
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
@@ -686,7 +694,6 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       matchExposure: matchExposure,
       selectionId
     }
-
 
     let walletJobData = {
       domainUrl: domainUrl,
