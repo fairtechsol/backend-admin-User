@@ -1791,7 +1791,7 @@ exports.getUserProfitLossForMatch = async (req, res, next) => {
       currUserProfitLossData.userName = element?.userName;
       currUserProfitLossData.profitLoss = betsData;
 
-      if (Object.keys(betsData).length>0) {
+      if (Object.keys(betsData || {}).length > 0) {
         userProfitLossData.push(currUserProfitLossData);
       }
     }

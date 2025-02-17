@@ -6729,7 +6729,7 @@ exports.getUsersProfitLoss = async (req, res) => {
       userProfitLossData.userName = userData?.userName;
       userProfitLossData.profitLoss = betsData;
 
-      if (Object.keys(betsData).length > 0) {
+      if (Object.keys(betsData || {}).length > 0) {
         resUserData.push(userProfitLossData);
       }
     }
