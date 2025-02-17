@@ -1742,7 +1742,7 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
       logger.info({
         info: `Error at get match details in login.`
       });
-      return;
+      continue;
     }
     let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
     const runners = apiResponse?.data?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
