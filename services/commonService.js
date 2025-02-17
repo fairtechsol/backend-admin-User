@@ -1716,7 +1716,7 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
 
   let matchResult = {};
 
-  const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId });
+  const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, marketType: matchBettingType.tournament });
   bets?.forEach((item) => {
     let itemData = {
       ...item,
