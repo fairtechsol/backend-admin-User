@@ -6705,7 +6705,7 @@ exports.getUsersProfitLoss = async (req, res) => {
     const { matchId } = req.params;
 
     const resUserData = [];
-    const markets = {};
+    let markets = {};
 
     for (let userData of userIds?.split("|")) {
       userData = JSON.parse(userData);

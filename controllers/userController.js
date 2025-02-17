@@ -1767,7 +1767,7 @@ exports.getUserProfitLossForMatch = async (req, res, next) => {
 
     const users = await getFirstLevelChildUserWithPartnership(id, partnershipPrefixByRole[roleName] + "Partnership");
 
-    const markets = {};
+    let markets = {};
     const userProfitLossData = [];
     for (let element of users) {
       element.partnerShip = element[partnershipPrefixByRole[roleName] + "Partnership"];
