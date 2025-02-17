@@ -6705,6 +6705,7 @@ exports.getUsersProfitLoss = async (req, res) => {
     const { matchId } = req.params;
 
     const resUserData = [];
+    const markets = {};
 
     for (let userData of userIds?.split("|")) {
       userData = JSON.parse(userData);
@@ -6712,19 +6713,29 @@ exports.getUsersProfitLoss = async (req, res) => {
 
 
       let betsData = await getUserProfitLossForUpperLevel(userData, matchId);
-      userProfitLossData = {
-        teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
-        percentTeamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0, percentTeamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0, percentTeamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0
-      }
+      // userProfitLossData = {
+      //   teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
+      //   percentTeamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0, percentTeamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0, percentTeamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2) : 0
+      // }
+      Object.keys(betsData || {}).forEach((item) => {
+        markets[item]={ betId: item, name: betsData[item]?.name };
+        Object.keys(betsData[item].teams || {})?.forEach((teams) => {
+          betsData[item].teams[teams].pl = {
+            rate: betsData[item].teams?.[teams]?.pl,
+            percent: parseFloat(parseFloat(parseFloat(betsData[item].teams?.[teams]?.pl).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2)
+          }
+        })
+      });
       userProfitLossData.userName = userData?.userName;
+      userProfitLossData.profitLoss = betsData;
 
-      if (userProfitLossData.teamRateA || userProfitLossData.teamRateB || userProfitLossData.teamRateC) {
+      if (Object.keys(betsData).length > 0) {
         resUserData.push(userProfitLossData);
       }
     }
     return SuccessResponse(
       {
-        statusCode: 200, data: resUserData
+        statusCode: 200, data: { profitLoss: resUserData, markets: Object.values(markets) }
       },
       req,
       res
