@@ -1132,7 +1132,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, f
           ((profitLoss * upLinePartnership) / 100).toString()
         );
 
-        let parentCommission = parseFloat((((parseFloat(patentUser?.sessionCommission) * parseFloat(bulkCommission?.[user.user.id]?.reduce((prev,curr)=>prev+curr.amount,0))) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
+        let parentCommission = parseFloat((((parseFloat(patentUser?.sessionCommission) * parseFloat(bulkCommission?.[user.user.id]?.reduce((prev, curr) => prev + curr.amount, 0) || 0)) / 10000) * parseFloat(upLinePartnership)).toFixed(2));
 
         if (upperUserObj[patentUser.id]) {
           upperUserObj[patentUser.id].profitLoss = upperUserObj[patentUser.id].profitLoss + profitLoss;

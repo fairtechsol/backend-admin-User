@@ -39,7 +39,7 @@ exports.commissionMatchReport = (userId, matchId,queryColumns) => {
 }
 
 exports.settleCommission = async (userId) => {
-  await Commission.update({ parentId: userId },{
+  await Commission.update({ parentId: userId, settled: false }, {
     settled:true
   });
 }
