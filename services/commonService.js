@@ -1716,7 +1716,7 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
 
   let matchResult = {};
 
-  const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, bettingName: matchOddName });
+  const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, marketType: matchBettingType.tournament });
   bets?.forEach((item) => {
     let itemData = {
       ...item,
@@ -1742,24 +1742,29 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
       logger.info({
         info: `Error at get match details in login.`
       });
-      return;
+      continue;
     }
-      let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
-      const runners = apiResponse?.data?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
-      let teamARate = Object.values(redisData)?.[0]?.[runners?.[0]?.id] ?? Number.MAX_VALUE;
-      let teamBRate = Object.values(redisData)?.[0]?.[runners?.[1]?.id]  ?? Number.MAX_VALUE;
-      let teamCRate = Object.values(redisData)?.[0]?.[runners?.[2]?.id]  ?? Number.MAX_VALUE;
-      matchResult = {
-        ...matchResult,
-        ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]: teamARate + (matchResult[redisKeys.userTeamARate + matchId] || 0) } : {}),
-        ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]: teamBRate + (matchResult[redisKeys.userTeamBRate + matchId] || 0) } : {}),
-        ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]: teamCRate + (matchResult[redisKeys.userTeamCRate + matchId] || 0) } : {}),
-      }
+    let redisData = await this.calculateRatesRacingMatch(betResult.match[placedBet], 100, apiResponse?.data);
+    const runners = apiResponse?.data?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
+    matchResult[placedBet] = {
+      name: apiResponse?.data?.matchBetting?.name,
+      teams: runners?.reduce((prev, curr) => {
+        prev[curr.id] = { pl: (Object.values(redisData)?.[0]?.[curr.id] || 0) + (matchResult[curr.id]?.pl || 0), name: curr.runnerName  }
+        return prev
+      }, {})
+    }
+    // let teamARate = Object.values(redisData)?.[0]?.[runners?.[0]?.id] ?? Number.MAX_VALUE;
+      // let teamBRate = Object.values(redisData)?.[0]?.[runners?.[1]?.id]  ?? Number.MAX_VALUE;
+      // let teamCRate = Object.values(redisData)?.[0]?.[runners?.[2]?.id]  ?? Number.MAX_VALUE;
+      // matchResult = {
+      //   ...matchResult,
+      //   ...(teamARate != Number.MAX_VALUE && teamARate != null && teamARate != undefined ? { [redisKeys.userTeamARate + matchId]: teamARate + (matchResult[redisKeys.userTeamARate + matchId] || 0) } : {}),
+      //   ...(teamBRate != Number.MAX_VALUE && teamBRate != null && teamBRate != undefined ? { [redisKeys.userTeamBRate + matchId]: teamBRate + (matchResult[redisKeys.userTeamBRate + matchId] || 0) } : {}),
+      //   ...(teamCRate != Number.MAX_VALUE && teamCRate != null && teamCRate != undefined ? { [redisKeys.userTeamCRate + matchId]: teamCRate + (matchResult[redisKeys.userTeamCRate + matchId] || 0) } : {}),
+      // }
     
   }
-  return {
-    ...matchResult
-  }
+  return matchResult;
 }
 
 exports.getUserProfitLossRacingForUpperLevel = async (user, matchId) => {
