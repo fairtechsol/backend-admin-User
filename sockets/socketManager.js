@@ -98,6 +98,12 @@ exports.socketManager = (server) => {
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
+    },
+    perMessageDeflate: {
+      threshold: 1024, // Compress messages larger than 1KB
+      zlibDeflateOptions: {
+        level: 3
+      }
     }
   });
 
