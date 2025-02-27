@@ -28,7 +28,7 @@ bot.onText(/\/connect/, async (msg) => {
             await forceLogoutIfLogin(userId);
             bot.sendMessage(msg.chat.id, __mf("auth.authConnected"));
         }
-        else{
+        else {
             bot.sendMessage(msg.chat.id, __mf("telegramBot.codeInvalid"));
         }
     }
@@ -37,10 +37,11 @@ bot.onText(/\/connect/, async (msg) => {
     }
 });
 
-
-bot.on("polling_error", (msg) => console.log(msg));
-bot.startPolling().catch((error)=>{
-    console.log(error);
-});
+if (process.env.TELEGRAM_BOT) {
+    bot.on("polling_error", (msg) => console.log(msg));
+    bot.startPolling().catch((error) => {
+        console.log(error);
+    });
+}
 
 module.exports = bot;
