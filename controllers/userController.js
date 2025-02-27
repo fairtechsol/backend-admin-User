@@ -15,6 +15,7 @@ const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
+const { bot } = require('../config/telegramBot');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -1941,3 +1942,17 @@ exports.checkMatchLock = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 }
+
+exports.telegramBot = async (req, res) => {
+  try {
+    if (req.body) {
+      // Process update from Telegram
+      bot.processUpdate(req.body);
+    }
+    // Always respond with 200 OK to Telegram
+    res.sendStatus(200);
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};
