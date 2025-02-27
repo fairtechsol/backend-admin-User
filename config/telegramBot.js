@@ -36,7 +36,7 @@ async function setupWebhook() {
 }
 
 // Command handlers
-bot.onText("/start", (msg) => {
+bot.onText(/\/start/, (msg) => {
     bot.sendMessage(msg.chat.id, __mf("telegramBot.start"));
 });
 
