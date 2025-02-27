@@ -18,14 +18,17 @@ const WEBHOOK_URL = process.env.SERVER_URL + WEBHOOK_PATH;
 // Setup webhook
 async function setupWebhook() {
     try {
-        // First delete any existing webhook
-        await bot.deleteWebhook();
-        // Then set the new webhook
-        const result = await bot.setWebhook(WEBHOOK_URL);
-        if (result) {
-            console.log(`Telegram webhook set successfully to ${WEBHOOK_URL}`);
-        } else {
-            console.error('Failed to set Telegram webhook');
+        console.log(bot);
+        if (bot) {
+            // First delete any existing webhook
+            await bot.deleteWebHook();
+            // Then set the new webhook
+            const result = await bot.setWebHook(WEBHOOK_URL);
+            if (result) {
+                console.log(`Telegram webhook set successfully to ${WEBHOOK_URL}`);
+            } else {
+                console.error('Failed to set Telegram webhook');
+            }
         }
     } catch (error) {
         console.error('Error setting up webhook:', error);
