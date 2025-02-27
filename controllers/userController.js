@@ -8,7 +8,7 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
 const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
-const { getUserBalanceDataByUserId, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance, updateUserBalanceData } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
@@ -789,8 +789,6 @@ exports.userList = async (req, res, next) => {
 
     let data = await Promise.all(
       users[0].map(async (element) => {
-
-
         element['percentProfitLoss'] = element.userBal['myProfitLoss'];
         let partner_ships = 100;
         if (partnershipCol && partnershipCol.length) {
@@ -1147,7 +1145,8 @@ exports.setCreditReferrence = async (req, res, next) => {
     }
 
     let profitLoss = parseFloat(userBalance.profitLoss) + previousCreditReference - amount;
-    let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss });
+    await updateUserBalanceData(user.id, { profitLoss: previousCreditReference - amount, balance: 0 });
+    // let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss });
     const userExistRedis = await hasUserInCache(user.id);
 
     if (userExistRedis) {
@@ -1173,7 +1172,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       description: "CREDIT REFRENCE " + (remark || '')
     }]
 
-    const transactioninserted = await insertTransactions(transactionArray);
+    await insertTransactions(transactionArray);
     let updateLoginUser = {
       downLevelCreditRefrence: parseInt(loginUser.downLevelCreditRefrence) - previousCreditReference + amount
     }

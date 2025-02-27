@@ -62,7 +62,6 @@ bot.onText(/\/connect/, async (msg) => {
 });
 
 
-
 // Initialize webhook when the module is loaded
 if (process.env.TELEGRAM_BOT && process.env.SERVER_URL) {
     setupWebhook().catch(console.error);
