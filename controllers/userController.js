@@ -15,7 +15,7 @@ const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
-const { bot } = require('../config/telegramBot');
+const bot = require('../config/telegramBot');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
