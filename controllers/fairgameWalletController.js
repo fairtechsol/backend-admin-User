@@ -360,16 +360,23 @@ exports.updateSuperAdminBalance = async (req, res) => {
         profitLoss: parseFloat(userBalanceData.profitLoss) + parseFloat(amount),
       }
 
+      let updateMyProfitLoss = parseFloat(amount);
       if (parseFloat(userBalanceData.myProfitLoss) + parseFloat(amount) > 0) {
+        updateMyProfitLoss = userBalanceData.myProfitLoss
         updateData.myProfitLoss = 0;
       }
       else {
         updateData.myProfitLoss = parseFloat(userBalanceData.myProfitLoss) + parseFloat(amount);
       }
 
-      await updateUserBalanceByUserId(user.id, updateData);
+      // await updateUserBalanceByUserId(user.id, updateData);
+      await updateUserBalanceData(user.id, { 
+        profitLoss: parseFloat(amount), 
+        myProfitLoss: updateMyProfitLoss, 
+        exposure: 0, 
+        totalCommission: 0, 
+        balance: parseFloat(amount)});
       if (userExistRedis) {
-
         await updateUserDataRedis(user.id, updateData);
       }
     } else if (transactionType == transType.withDraw) {
@@ -387,14 +394,22 @@ exports.updateSuperAdminBalance = async (req, res) => {
         profitLoss: parseFloat(userBalanceData.profitLoss) - parseFloat(amount),
       }
 
+      let updateMyProfitLoss = -parseFloat(amount);
       if (parseFloat(userBalanceData.myProfitLoss) - parseFloat(amount) < 0) {
+        updateMyProfitLoss = -insertUserBalanceData.myProfitLoss
         updateData.myProfitLoss = 0;
       }
       else {
         updateData.myProfitLoss = parseFloat(userBalanceData.myProfitLoss) - parseFloat(amount);
       }
 
-      await updateUserBalanceByUserId(user.id, updateData);
+      // await updateUserBalanceByUserId(user.id, updateData);
+      await updateUserBalanceData(user.id, { 
+        profitLoss: -parseFloat(amount), 
+        myProfitLoss: updateMyProfitLoss, 
+        exposure: 0, 
+        totalCommission: 0, 
+        balance: -parseFloat(amount)});
       if (userExistRedis) {
 
         await updateUserDataRedis(user.id, updateData);
@@ -455,15 +470,12 @@ exports.setExposureLimitSuperAdmin = async (req, res, next) => {
 
     childUsers.map(async (childObj) => {
       let childUser = await getUserById(childObj.id);
-      if (
-        childUser.exposureLimit > exposureLimit ||
-        childUser.exposureLimit == 0
-      ) {
+      if ( childUser.exposureLimit > exposureLimit || childUser.exposureLimit == 0 ) {
         childUser.exposureLimit = exposureLimit;
-        await addUser(childUser);
+        await updateUser(childUser.id, { exposureLimit: exposureLimit });
       }
     });
-    await addUser(user);
+    await updateUser(user.id, { exposureLimit: exposureLimit });
     return SuccessResponse(
       {
         statusCode: 200,
@@ -541,7 +553,8 @@ exports.setCreditReferrenceSuperAdmin = async (req, res, next) => {
     };
 
     let profitLoss = userBalance.profitLoss + previousCreditReference - amount;
-    await updateUserBalanceByUserId(user.id, { profitLoss });
+    await updateUserBalanceData(user.id, { profitLoss: previousCreditReference - amount, balance: 0 });
+    // await updateUserBalanceByUserId(user.id, { profitLoss });
     const userExistRedis = await hasUserInCache(user.id);
 
     if (userExistRedis) {

@@ -74,13 +74,13 @@ exports.getBet = async (where, query, roleName, select, superParentId, isTeamNam
     "betPlaced.matchId = match.id"
   ).select(select).orderBy("betPlaced.createdAt", 'DESC')
 
-  if (isTeamNameAllow) {
-    pgQuery.addSelect(`CASE
-    WHEN "betPlaced"."marketType" IN (:...bettingType) THEN "betPlaced"."teamName"  || ' ' || REGEXP_REPLACE("betPlaced"."marketType", '[^0-9.]+', '', 'g')
-    ELSE "betPlaced"."teamName"
-  END`, `${pgQuery.alias}_teamName`)
-      .setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))]);
-  }
+  // if (isTeamNameAllow) {
+  //   pgQuery.addSelect(`CASE
+  //   WHEN "betPlaced"."marketType" IN (:...bettingType) THEN "betPlaced"."teamName"  || ' ' || REGEXP_REPLACE("betPlaced"."marketType", '[^0-9.]+', '', 'g')
+  //   ELSE "betPlaced"."teamName"
+  // END`, `${pgQuery.alias}_teamName`)
+  //     .setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))]);
+  // }
 
   return await new ApiFeature(
     pgQuery,
