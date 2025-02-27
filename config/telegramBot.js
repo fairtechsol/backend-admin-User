@@ -12,7 +12,7 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT, {
 });
 
 // Webhook path
-const WEBHOOK_PATH = '/telegram-webhook/' + process.env.TELEGRAM_BOT;
+const WEBHOOK_PATH = 'telegram-webhook/' + process.env.TELEGRAM_BOT;
 const WEBHOOK_URL = process.env.SERVER_URL + WEBHOOK_PATH;
 
 // Setup webhook
