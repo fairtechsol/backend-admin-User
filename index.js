@@ -46,7 +46,7 @@ app.use(compression({
   threshold: '1kb', // Skip compressing tiny responses
 }));
 
-app.enable("trust proxy");
+app.set('trust proxy', 1);
 app.use(helmet());
 
 // Parse incoming JSON data with a size limit of 2MB
