@@ -14,6 +14,7 @@ const betRoutes = require("./betRoutes.js");
 const cardRoutes = require("./cardRoutes.js");
 const mac88CasinoRoutes = require("./mac88CasinoRoutes.js");
 const { pendingCardResult } = require('../controllers/matchController.js');
+const { telegramBot } = require('../controllers/userController.js');
 
 
 // Define routes
@@ -52,5 +53,7 @@ router.use("/", mac88CasinoRoutes
     );
 
 router.get("/pendingCardResult", pendingCardResult)
+// Configure the webhook endpoint
+router.post(`/telegram-webhook/${process.env.TELEGRAM_BOT}`,telegramBot);
 
 module.exports = router;

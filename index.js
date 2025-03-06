@@ -18,6 +18,7 @@ const { deleteMultipleDemoUser } = require("./services/commonService.js");
 const path = require("path");
 require('./config/telegramBot.js');
 // const encryptDecryptData = require("./middleware/encryptDecryptData.js");
+const compression = require('compression');
 
 // Create Express app
 const app = express();
@@ -36,6 +37,14 @@ if (process.env.NODE_ENV === "production") {
 } else {
   app.use(cors({ origin: "*" }));
 }
+// Configure compression for ALL HTTP traffic
+app.use(compression({
+  brotli: {
+    quality: 4, // 4-6 is ideal for APIs (balance speed/size)
+  },
+  level: 6, // gzip level 6 (optimal balance)
+  threshold: '1kb', // Skip compressing tiny responses
+}));
 
 app.enable("trust proxy");
 app.use(helmet());
