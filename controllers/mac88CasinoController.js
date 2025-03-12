@@ -427,14 +427,13 @@ const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId
 exports.getMac88GameList = async (req, res) => {
     try {
 
-        let casinoData = {
-            "operator_id": mac88CasinoOperatorId
-        }
-        let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
-        // let result = {
-        //     data: mac88Games
+        // let casinoData = {
+        //     "operator_id": mac88CasinoOperatorId
         // }
-        console.log("result", result);
+        // let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
+        let result = {
+            data: mac88Games
+        }
         result = result?.data?.reduce((prev, curr) => {
             return { ...prev, [curr.provider_name]: { ...(prev[curr.provider_name] || {}), [curr?.category]: [...(prev?.[curr.provider_name]?.[curr.category] || []), curr] } }
         }, {});
