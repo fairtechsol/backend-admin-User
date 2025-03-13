@@ -213,6 +213,10 @@ exports.resultRequestMac88 = async (req, res) => {
         });
     }
     catch (error) {
+        logger.error({
+            message: `Error in result request of virtual casino for user ${req.body.transactionId}: `,
+            error: error
+        });
         return res.status(500).json({
             "status": "OP_GENERAL_ERROR"
         });
@@ -390,6 +394,10 @@ exports.rollBackRequestMac88 = async (req, res) => {
         });
     }
     catch (error) {
+        logger.error({
+            message: `Error in rollback request of virtual casino for user ${req.body.transactionId}: `,
+            error: error
+        });
         return res.status(500).json({
             "status": "OP_GENERAL_ERROR"
         });
@@ -397,28 +405,22 @@ exports.rollBackRequestMac88 = async (req, res) => {
 }
 
 const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId) => {
-
     const user = await getUserDataWithUserBalance({ id: userId });
     if (!user) {
         return res.status(400).json({
             "status": "OP_USER_NOT_FOUND"
         });
     }
-
     const userCurrProfitLoss = 0;
     const userCurrBalance = parseFloat(user?.userBal?.currentBalance) + parseFloat(creditAmount);
-
-
     await updateUserBalanceData(user.id, {
         balance: parseFloat(creditAmount)
     });
-
     sendMessageToUser(
         userId,
         socketData.userBalanceUpdateEvent,
         { currentBalance: userCurrBalance }
     );
-
     updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true, isRollback: true });
 }
 
