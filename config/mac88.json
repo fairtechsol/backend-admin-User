@@ -180,16 +180,6 @@
         "game_code": "MAC88-YTTP102"
     },
     {
-        "game_id": "150024",
-        "game_name": "The Trap",
-        "category": "Live",
-        "provider_name": "MAC88",
-        "sub_provider_name": "Mac88 Gaming",
-        "status": "ACTIVE",
-        "url_thumb": "https://cdn.dreamdelhi.com/mac88/trap.webp",
-        "game_code": "MAC88-XTRP101"
-    },
-    {
         "game_id": "150025",
         "game_name": "Trio",
         "category": "Live",
@@ -440,6 +430,76 @@
         "game_code": "MAC88-YXC101"
     },
     {
+        "game_id": "150054",
+        "game_name": "Muflis Teenpatti",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/mtp.webp",
+        "game_code": "MAC88-ZMTP101"
+    },
+    {
+        "game_id": "150055",
+        "game_name": "Instant worli",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/iw.webp",
+        "game_code": "MAC88-ZIW101"
+    },
+    {
+        "game_id": "150056",
+        "game_name": "Instant Teen Patti",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/itp.webp",
+        "game_code": "MAC88-ZITP101"
+    },
+    {
+        "game_id": "150057",
+        "game_name": "Andar Bahar 50",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/ab50.webp",
+        "game_code": "MAC88-ZABL101"
+    },
+    {
+        "game_id": "150058",
+        "game_name": "Super Over",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/so.webp",
+        "game_code": "MAC88-ZSP101"
+    },
+    {
+        "game_id": "150059",
+        "game_name": "Center card",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/cc.webp",
+        "game_code": "MAC88-ZCC101"
+    },
+    {
+        "game_id": "150061",
+        "game_name": "Side Bet city",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/sbc.webp",
+        "game_code": "MAC88-ZSBC101"
+    },
+    {
         "game_id": "150066",
         "game_name": "20 20 Teenpatti 2",
         "category": "Live",
@@ -458,6 +518,26 @@
         "status": "ACTIVE",
         "url_thumb": "https://cdn.dreamdelhi.com/mac88/dt2.webp",
         "game_code": "MAC88-DT2101"
+    },
+    {
+        "game_id": "150068",
+        "game_name": "Lucky 5",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/lucky5.webp",
+        "game_code": "MAC88-XLK5101"
+    },
+    {
+        "game_id": "150070",
+        "game_name": "AK47 Teenpatti",
+        "category": "Live",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/ak47tp.webp",
+        "game_code": "MAC88-XAK47101"
     },
     {
         "game_id": "151003",
@@ -680,83 +760,793 @@
         "game_code": "MAC88-CAVB101"
     },
     {
-        "game_id": "230001",
-        "game_name": "Crash",
-        "category": "Slot",
-        "provider_name": "DC",
-        "sub_provider_name": "Monk88",
+        "game_id": "151068",
+        "game_name": "High Card VR",
+        "category": "Virtual",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
-        "url_thumb": "https://cdn.dreamdelhi.com/monk88/crash.webp",
-        "game_code": "monk88_crash"
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/vr_hc.webp",
+        "game_code": "MAC88-HC101"
     },
     {
-        "game_id": "230002",
-        "game_name": "Diamonds",
-        "category": "Slot",
-        "provider_name": "DC",
-        "sub_provider_name": "Monk88",
+        "game_id": "151069",
+        "game_name": "Center Card VR",
+        "category": "Virtual",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
-        "url_thumb": "https://cdn.dreamdelhi.com/monk88/diamonds.webp",
-        "game_code": "monk88_diamonds"
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/vr_cc.webp",
+        "game_code": "MAC88-CC101"
     },
     {
-        "game_id": "230003",
-        "game_name": "Dice",
-        "category": "Slot",
-        "provider_name": "DC",
-        "sub_provider_name": "Monk88",
+        "game_id": "151070",
+        "game_name": "Kaun Banega Crorepati VR",
+        "category": "Virtual",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
-        "url_thumb": "https://cdn.dreamdelhi.com/monk88/dice.webp",
-        "game_code": "monk88_dice"
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/kbc_vr.webp",
+        "game_code": "MAC88-KBC101"
     },
     {
-        "game_id": "230004",
+        "game_id": "151071",
+        "game_name": "AK47 VR",
+        "category": "Virtual",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/ak47_vr.webp",
+        "game_code": "MAC88-AK47101"
+    },
+    {
+        "game_id": "151072",
+        "game_name": "Crash X",
+        "category": "Crash Games",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/crashx.webp",
+        "game_code": "MAC88-CCK101"
+    },
+    {
+        "game_id": "151073",
         "game_name": "Limbo",
-        "category": "Slot",
+        "category": "Slot Games",
         "provider_name": "DC",
-        "sub_provider_name": "Monk88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
         "url_thumb": "https://cdn.dreamdelhi.com/monk88/limbo.webp",
-        "game_code": "monk88_limbo"
+        "game_code": "MAC88-CLIM101"
     },
     {
-        "game_id": "230005",
-        "game_name": "Mines",
-        "category": "Slot",
+        "game_id": "151074",
+        "game_name": "Dice",
+        "category": "Slot Games",
         "provider_name": "DC",
-        "sub_provider_name": "Monk88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/dice.webp",
+        "game_code": "MAC88-CDIC101"
+    },
+    {
+        "game_id": "151075",
+        "game_name": "Mines",
+        "category": "Slot Games",
+        "provider_name": "DC",
+        "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
         "url_thumb": "https://cdn.dreamdelhi.com/monk88/mines.webp",
-        "game_code": "monk88_mines"
+        "game_code": "MAC88-CMIN101"
     },
     {
-        "game_id": "230006",
+        "game_id": "151076",
+        "game_name": "Diamonds",
+        "category": "Slot Games",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/diamonds.webp",
+        "game_code": "MAC88-CDIM101"
+    },
+    {
+        "game_id": "151077",
         "game_name": "Plinko",
-        "category": "Slot",
+        "category": "Virtual",
         "provider_name": "DC",
-        "sub_provider_name": "Monk88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
         "url_thumb": "https://cdn.dreamdelhi.com/monk88/plinko.webp",
-        "game_code": "monk88_plinko"
+        "game_code": "MAC88-CPLI101"
     },
     {
-        "game_id": "230007",
-        "game_name": "X-Roulette",
-        "category": "Slot",
+        "game_id": "151078",
+        "game_name": "Lucky 5",
+        "category": "Virtual",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/vlucky5.webp",
+        "game_code": "MAC88-LK5101"
+    },
+    {
+        "game_id": "151081",
+        "game_name": "Lucky 15",
+        "category": "Virtual",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/lucky15.webp",
+        "game_code": "MAC88-L15101"
+    },
+    {
+        "game_id": "151082",
+        "game_name": "X Roulette",
+        "category": "Slot Games",
         "provider_name": "DC",
-        "sub_provider_name": "Monk88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
         "url_thumb": "https://cdn.dreamdelhi.com/monk88/roulette.webp",
-        "game_code": "monk88_slide"
+        "game_code": "MAC88-CRO101"
     },
     {
-        "game_id": "230008",
-        "game_name": "Hilo",
-        "category": "Slot",
+        "game_id": "151083",
+        "game_name": "Ball by Ball VR",
+        "category": "Virtual",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/bbb.webp",
+        "game_code": "MAC88-BB101"
+    },
+    {
+        "game_id": "151084",
+        "game_name": "Pushpa Rani",
+        "category": "Crash Games",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/pushpa.webp",
+        "game_code": "MAC88-VTGCPU101"
+    },
+    {
+        "game_id": "151085",
+        "game_name": "Hi Lo",
+        "category": "Slot Games",
         "provider_name": "DC",
-        "sub_provider_name": "Monk88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
         "status": "ACTIVE",
         "url_thumb": "https://cdn.dreamdelhi.com/monk88/hilo.webp",
-        "game_code": "monk88_hilo"
+        "game_code": "MAC88-CHI101"
+    },
+    {
+        "game_id": "151086",
+        "game_name": "Kitex",
+        "category": "Crash Games",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/kitex.webp",
+        "game_code": "MAC88-CKIT101"
+    },
+    {
+        "game_id": "151088",
+        "game_name": "5 Boys",
+        "category": "Virtual",
+        "provider_name": "MAC88",
+        "sub_provider_name": "Mac88 Gaming Virtual",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/mac88/5boys.webp",
+        "game_code": "MAC88-FB101"
+    },
+    {
+        "game_id": "151054",
+        "game_name": "WINGO",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/wingo.webp",
+        "game_code": "MAC88-CWI101"
+    },
+    {
+        "game_id": "151055",
+        "game_name": "WINGO3",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/wingo.webp",
+        "game_code": "MAC88-CWI102"
+    },
+    {
+        "game_id": "151056",
+        "game_name": "WINGO5",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/wingo.webp",
+        "game_code": "MAC88-CWI103"
+    },
+    {
+        "game_id": "151057",
+        "game_name": "WINGO10",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/wingo.webp",
+        "game_code": "MAC88-CWI104"
+    },
+    {
+        "game_id": "151058",
+        "game_name": "5D Lottery 1",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/sd_lotto.webp",
+        "game_code": "MAC88-CLOT5101"
+    },
+    {
+        "game_id": "151059",
+        "game_name": "5D Lottery 3",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/sd_lotto.webp",
+        "game_code": "MAC88-CLOT5102"
+    },
+    {
+        "game_id": "151060",
+        "game_name": "5D Lottery 5",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/sd_lotto.webp",
+        "game_code": "MAC88-CLOT5103"
+    },
+    {
+        "game_id": "151061",
+        "game_name": "5D Lottery 10",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/sd_lotto.webp",
+        "game_code": "MAC88-CLOT5104"
+    },
+    {
+        "game_id": "151062",
+        "game_name": "K3 Lottery 1",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/3k_lotre.webp",
+        "game_code": "MAC88-CK3101"
+    },
+    {
+        "game_id": "151063",
+        "game_name": "K3 Lottery 3",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/3k_lotre.webp",
+        "game_code": "MAC88-CK3102"
+    },
+    {
+        "game_id": "151064",
+        "game_name": "K3 Lottery 5",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/3k_lotre.webp",
+        "game_code": "MAC88-CK3103"
+    },
+    {
+        "game_id": "151065",
+        "game_name": "K3 Lottery 10",
+        "category": "COLOR PREDICTION",
+        "provider_name": "MAC88",
+        "sub_provider_name": "COLOR PREDICTION",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/monk88/3k_lotre.webp",
+        "game_code": "MAC88-CK3104"
+    },
+    {
+        "game_id": "150600",
+        "game_name": "Dragon Tiger",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/dt.webp",
+        "game_code": "ME-BDT101"
+    },
+    {
+        "game_id": "150601",
+        "game_name": "Baccarat",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/baccarat.webp",
+        "game_code": "ME-BBAC101"
+    },
+    {
+        "game_id": "150602",
+        "game_name": "Sic Bo",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/sb.webp",
+        "game_code": "ME-BSB101"
+    },
+    {
+        "game_id": "150603",
+        "game_name": "Roulette",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/roulette.webp",
+        "game_code": "ME-BRT101"
+    },
+    {
+        "game_id": "150604",
+        "game_name": "Poker 20-20",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/2020poker.webp",
+        "game_code": "ME-BPOK101"
+    },
+    {
+        "game_id": "150605",
+        "game_name": "Lucky 7",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/l7.webp",
+        "game_code": "ME-BLK7101"
+    },
+    {
+        "game_id": "150606",
+        "game_name": "Andar Bahar",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/ab.webp",
+        "game_code": "ME-BAB101"
+    },
+    {
+        "game_id": "150607",
+        "game_name": "Teenpatti One Day",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/tp1d.webp",
+        "game_code": "ME-B1TP101"
+    },
+    {
+        "game_id": "150608",
+        "game_name": "32 Cards",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/32c.webp",
+        "game_code": "ME-B32CA102"
+    },
+    {
+        "game_id": "150609",
+        "game_name": "Dragon Tiger Lion",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/dtl.webp",
+        "game_code": "ME-BDTL101"
+    },
+    {
+        "game_id": "150610",
+        "game_name": "Amar Akbar Anthony",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/aaa.webp",
+        "game_code": "ME-BA3101"
+    },
+    {
+        "game_id": "150611",
+        "game_name": "3 Cards Judgement",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/3cj.webp",
+        "game_code": "ME-B3CJ101"
+    },
+    {
+        "game_id": "150612",
+        "game_name": "Queen Race",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/queen.webp",
+        "game_code": "ME-BQR102"
+    },
+    {
+        "game_id": "150613",
+        "game_name": "Race 20",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/r20.webp",
+        "game_code": "ME-BRTT102"
+    },
+    {
+        "game_id": "150614",
+        "game_name": "Casino War",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/cw.webp",
+        "game_code": "ME-BCAW101"
+    },
+    {
+        "game_id": "150616",
+        "game_name": "Lottery",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/lottery.webp",
+        "game_code": "ME-BLOT101"
+    },
+    {
+        "game_id": "150617",
+        "game_name": "Test Teenpatti",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/ttp.webp",
+        "game_code": "ME-BTTP102"
+    },
+    {
+        "game_id": "150619",
+        "game_name": "Trio",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/trio.webp",
+        "game_code": "ME-BTRI101"
+    },
+    {
+        "game_id": "150620",
+        "game_name": "29 Baccarat",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/29b.webp",
+        "game_code": "ME-B29BC101"
+    },
+    {
+        "game_id": "150621",
+        "game_name": "Two Card Teenpatti",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/2ctp.webp",
+        "game_code": "ME-B12TP101"
+    },
+    {
+        "game_id": "150622",
+        "game_name": "Muflis Teenpatti One Day",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/mtp1d.webp",
+        "game_code": "ME-B1MTP101"
+    },
+    {
+        "game_id": "150623",
+        "game_name": "Bollywood Casino",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/bc.webp",
+        "game_code": "ME-BBOC102"
+    },
+    {
+        "game_id": "150624",
+        "game_name": "Poker 1-Day",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/1dpoker.webp",
+        "game_code": "ME-B1POK101"
+    },
+    {
+        "game_id": "150625",
+        "game_name": "20-20 Teenpatti",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/2020tp.webp",
+        "game_code": "ME-BTPTT101"
+    },
+    {
+        "game_id": "150628",
+        "game_name": "1 Day Dragon Tiger",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/dt1d.webp",
+        "game_code": "ME-B1DT101"
+    },
+    {
+        "game_id": "150629",
+        "game_name": "Dus Ka Dum",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/dkd.webp",
+        "game_code": "ME-B1DKD101"
+    },
+    {
+        "game_id": "150630",
+        "game_name": "One Card 20 20",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/1c.webp",
+        "game_code": "ME-BCTT101"
+    },
+    {
+        "game_id": "150633",
+        "game_name": "6 Player Poker",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/6pp.webp",
+        "game_code": "ME-B6PP101"
+    },
+    {
+        "game_id": "150634",
+        "game_name": "Instant 2 Cards Teenpatti",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/instant_2ctp.webp",
+        "game_code": "ME-B2TP101"
+    },
+    {
+        "game_id": "150635",
+        "game_name": "Race to 17",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/race17.webp",
+        "game_code": "ME-BRT17101"
+    },
+    {
+        "game_id": "150636",
+        "game_name": "Note Number",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/nn.webp",
+        "game_code": "ME-B1NN101"
+    },
+    {
+        "game_id": "150637",
+        "game_name": "Cricket Match 20-20",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/cm.webp",
+        "game_code": "ME-BCM101"
+    },
+    {
+        "game_id": "150639",
+        "game_name": "Race to 2nd",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/race2.webp",
+        "game_code": "ME-B1RTS101"
+    },
+    {
+        "game_id": "150640",
+        "game_name": "Open Teen patti",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/otp.webp",
+        "game_code": "ME-BOTP101"
+    },
+    {
+        "game_id": "150641",
+        "game_name": "Center Card One Day",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/cc1d.webp",
+        "game_code": "ME-B1CC101"
+    },
+    {
+        "game_id": "150642",
+        "game_name": "High Low",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/hl.webp",
+        "game_code": "ME-BHL101"
+    },
+    {
+        "game_id": "150643",
+        "game_name": "Baccarat One Day",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/b1d.webp",
+        "game_code": "ME-B1BAC101"
+    },
+    {
+        "game_id": "150645",
+        "game_name": "20 20 Teenpatti 2",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/2020tp2.webp",
+        "game_code": "ME-BTPTT2101"
+    },
+    {
+        "game_id": "150646",
+        "game_name": "Dragon Tiger 2",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/dt2.webp",
+        "game_code": "ME-BDT2101"
+    },
+    {
+        "game_id": "150647",
+        "game_name": "Muflis Teenpatti",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/mtp.webp",
+        "game_code": "ME-BMTP101"
+    },
+    {
+        "game_id": "150648",
+        "game_name": "One Card One Day",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/1c1d.webp",
+        "game_code": "ME-B1OC101"
+    },
+    {
+        "game_id": "150649",
+        "game_name": "AK47 Teenpatti",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/ak47tp.webp",
+        "game_code": "ME-BAK47101"
+    },
+    {
+        "game_id": "150650",
+        "game_name": "Center Card",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/cc.webp",
+        "game_code": "ME-BCC101"
+    },
+    {
+        "game_id": "150651",
+        "game_name": "Lucky 5",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/lucky5.webp",
+        "game_code": "ME-BLK5101"
+    },
+    {
+        "game_id": "150652",
+        "game_name": "Side Bet City",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/sbc.webp",
+        "game_code": "ME-BSBC101"
+    },
+    {
+        "game_id": "150653",
+        "game_name": "Instant Worli",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/iw.webp",
+        "game_code": "ME-BIW101"
+    },
+    {
+        "game_id": "150654",
+        "game_name": "Instant Super Over",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/iso.webp",
+        "game_code": "ME-BSP101"
+    },
+    {
+        "game_id": "150656",
+        "game_name": "Andar Bahar 50",
+        "category": "Live",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/ab50.webp",
+        "game_code": "ME-BABL101"
+    },
+    {
+        "game_id": "150657",
+        "game_name": "FootBall Studio Dice",
+        "category": "Game Shows",
+        "provider_name": "MAC Excite",
+        "sub_provider_name": "MAC Excite",
+        "status": "ACTIVE",
+        "url_thumb": "https://cdn.dreamdelhi.com/macexcite/fsd.webp",
+        "game_code": "ME-BFBS101"
     }
 ]

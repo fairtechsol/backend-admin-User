@@ -1,5 +1,5 @@
 const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, tieCompleteBetType, matchBettingType, redisKeysMarketWise, gameType, cardGames } = require("../config/contants");
+const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, tieCompleteBetType, matchBettingType, redisKeysMarketWise, gameType, cardGames, betResultStatus } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId, getChildUsersAllPlaceBets } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKey, getUserRedisKeyData } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getUsers, getChildUser, getUser } = require("../services/userService");
@@ -63,7 +63,6 @@ exports.matchDetails = async (req, res) => {
         let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);;
         redisData?.forEach((item, index) => {
           if (item) {
-
             sessionResult.push({
               betId: redisIds?.[index]?.split("_")[0],
               maxLoss: JSON.parse(item)?.maxLoss,
@@ -343,7 +342,7 @@ exports.listMatch = async (req, res) => {
     if (user.roleName != userRoleConstant.user && oldBetFairDomain == domainUrl) {
       const users = await getChildsWithOnlyUserRole(user.id);
 
-      const betPlaced = await findAllPlacedBet({ createBy: In(users?.map((item) => item.id)) });
+      const betPlaced = await findAllPlacedBet({ createBy: In(users?.map((item) => item.id)), result: betResultStatus.PENDING });
 
       for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
         let matchDetail = apiResponse.data?.matches[i];

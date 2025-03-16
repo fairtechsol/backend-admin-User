@@ -74,13 +74,13 @@ exports.getBet = async (where, query, roleName, select, superParentId, isTeamNam
     "betPlaced.matchId = match.id"
   ).select(select).orderBy("betPlaced.createdAt", 'DESC')
 
-  if (isTeamNameAllow) {
-    pgQuery.addSelect(`CASE
-    WHEN "betPlaced"."marketType" IN (:...bettingType) THEN "betPlaced"."teamName"  || ' ' || REGEXP_REPLACE("betPlaced"."marketType", '[^0-9.]+', '', 'g')
-    ELSE "betPlaced"."teamName"
-  END`, `${pgQuery.alias}_teamName`)
-      .setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))]);
-  }
+  // if (isTeamNameAllow) {
+  //   pgQuery.addSelect(`CASE
+  //   WHEN "betPlaced"."marketType" IN (:...bettingType) THEN "betPlaced"."teamName"  || ' ' || REGEXP_REPLACE("betPlaced"."marketType", '[^0-9.]+', '', 'g')
+  //   ELSE "betPlaced"."teamName"
+  // END`, `${pgQuery.alias}_teamName`)
+  //     .setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))]);
+  // }
 
   return await new ApiFeature(
     pgQuery,
@@ -590,6 +590,19 @@ exports.getUserWiseProfitLoss = async (where, select) => {
   return result;
 }
 
+exports.getUserSessionsProfitLoss = async (where, select) => {
+  let query = BetPlaced.createQueryBuilder('placeBet')
+    .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
+    .where(where)
+    .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
+    .groupBy("user.id")
+    .addGroupBy("user.userName")
+  query = query
+    .select(select);
+
+  let result = await query.getRawMany();
+  return result;
+}
 
 exports.getPlacedBetsWithCategory = async (userId) => {
   const query = BetPlaced.createQueryBuilder()

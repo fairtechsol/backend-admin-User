@@ -1,4 +1,3 @@
-
 const TelegramBot = require('node-telegram-bot-api');
 const { forceLogoutIfLogin } = require('../services/commonService');
 const { getRedisKey } = require('../services/redis/commonfunction');
@@ -7,9 +6,32 @@ const { authenticatorType } = require('./contants');
 const { addAuthenticator } = require('../services/authService');
 const { updateUser } = require('../services/userService');
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT);
+// Initialize the bot with webhook = true
+const bot = new TelegramBot(process.env.TELEGRAM_BOT, {
+    polling: false // Disable polling
+});
 
-bot.onText("/start", (msg) => {
+// Webhook path
+const WEBHOOK_PATH = 'telegram-webhook/' + process.env.TELEGRAM_BOT;
+const WEBHOOK_URL = process.env.SERVER_URL + WEBHOOK_PATH;
+
+// Setup webhook
+async function setupWebhook() {
+    try {
+        if (bot) {
+            // First delete any existing webhook
+            await bot.deleteWebHook();
+            // Then set the new webhook
+            const result = await bot.setWebHook(WEBHOOK_URL);
+           
+        }
+    } catch (error) {
+        console.error('Error setting up webhook:', error);
+    }
+}
+
+// Command handlers
+bot.onText(/\/start/, (msg) => {
     bot.sendMessage(msg.chat.id, __mf("telegramBot.start"));
 });
 
@@ -28,7 +50,7 @@ bot.onText(/\/connect/, async (msg) => {
             await forceLogoutIfLogin(userId);
             bot.sendMessage(msg.chat.id, __mf("auth.authConnected"));
         }
-        else{
+        else {
             bot.sendMessage(msg.chat.id, __mf("telegramBot.codeInvalid"));
         }
     }
@@ -38,9 +60,12 @@ bot.onText(/\/connect/, async (msg) => {
 });
 
 
-bot.on("polling_error", (msg) => console.log(msg));
-bot.startPolling().catch((error)=>{
-    console.log(error);
-});
+// Initialize webhook when the module is loaded
+if (process.env.TELEGRAM_BOT && process.env.SERVER_URL) {
+    setupWebhook().catch(console.error);
+} else {
+    console.warn('TELEGRAM_BOT or SERVER_URL environment variables are not set. Webhook setup skipped.');
+}
 
 module.exports = bot;
+

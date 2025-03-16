@@ -8,13 +8,14 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
 const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
-const { getUserBalanceDataByUserId, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, getAllChildProfitLossSum, updateUserBalanceByUserId, addInitialUserBalance, updateUserBalanceData } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
 const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
+const bot = require('../config/telegramBot');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -788,8 +789,6 @@ exports.userList = async (req, res, next) => {
 
     let data = await Promise.all(
       users[0].map(async (element) => {
-
-
         element['percentProfitLoss'] = element.userBal['myProfitLoss'];
         let partner_ships = 100;
         if (partnershipCol && partnershipCol.length) {
@@ -1146,7 +1145,8 @@ exports.setCreditReferrence = async (req, res, next) => {
     }
 
     let profitLoss = parseFloat(userBalance.profitLoss) + previousCreditReference - amount;
-    let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss });
+    await updateUserBalanceData(user.id, { profitLoss: previousCreditReference - amount, balance: 0 });
+    // let newUserBalanceData = await updateUserBalanceByUserId(user.id, { profitLoss });
     const userExistRedis = await hasUserInCache(user.id);
 
     if (userExistRedis) {
@@ -1172,7 +1172,7 @@ exports.setCreditReferrence = async (req, res, next) => {
       description: "CREDIT REFRENCE " + (remark || '')
     }]
 
-    const transactioninserted = await insertTransactions(transactionArray);
+    await insertTransactions(transactionArray);
     let updateLoginUser = {
       downLevelCreditRefrence: parseInt(loginUser.downLevelCreditRefrence) - previousCreditReference + amount
     }
@@ -1767,20 +1767,31 @@ exports.getUserProfitLossForMatch = async (req, res, next) => {
 
     const users = await getFirstLevelChildUserWithPartnership(id, partnershipPrefixByRole[roleName] + "Partnership");
 
+    let markets = {};
     const userProfitLossData = [];
     for (let element of users) {
       element.partnerShip = element[partnershipPrefixByRole[roleName] + "Partnership"];
 
       let currUserProfitLossData = {};
       let betsData = await getUserProfitLossForUpperLevel(element, matchId);
-      currUserProfitLossData = {
-        teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
-        percentTeamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2) : 0, percentTeamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2) : 0, percentTeamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2) : 0
-      }
+      Object.keys(betsData||{}).forEach((item)=>{
+        markets[item]={ betId: item, name: betsData[item]?.name };
+        Object.keys(betsData[item].teams||{})?.forEach((teams)=>{
+          betsData[item].teams[teams].pl={
+            rate:betsData[item].teams?.[teams]?.pl,
+            percent: parseFloat(parseFloat(parseFloat(betsData[item].teams?.[teams]?.pl).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2)
+          }
+        })
+      });
+      // currUserProfitLossData = {
+      //   teamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2) : 0, teamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2) : 0, teamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? -parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2) : 0,
+      //   percentTeamRateA: betsData?.[redisKeys.userTeamARate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamARate + matchId]).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2) : 0, percentTeamRateB: betsData?.[redisKeys.userTeamBRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamBRate + matchId]).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2) : 0, percentTeamRateC: betsData?.[redisKeys.userTeamCRate + matchId] ? parseFloat(parseFloat(parseFloat(betsData?.[redisKeys.userTeamCRate + matchId]).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2) : 0
+      // }
 
       currUserProfitLossData.userName = element?.userName;
+      currUserProfitLossData.profitLoss = betsData;
 
-      if (currUserProfitLossData.teamRateA || currUserProfitLossData.teamRateB || currUserProfitLossData.teamRateC) {
+      if (Object.keys(betsData || {}).length > 0) {
         userProfitLossData.push(currUserProfitLossData);
       }
     }
@@ -1788,7 +1799,7 @@ exports.getUserProfitLossForMatch = async (req, res, next) => {
     return SuccessResponse(
       {
         statusCode: 200,
-        data: userProfitLossData
+        data: { profitLoss: userProfitLossData, markets: Object.values(markets) }
       },
       req,
       res
@@ -1930,3 +1941,17 @@ exports.checkMatchLock = async (req, res) => {
     return ErrorResponse(error, req, res);
   }
 }
+
+exports.telegramBot = async (req, res) => {
+  try {
+    if (req.body) {
+      // Process update from Telegram
+      bot.processUpdate(req.body);
+    }
+    // Always respond with 200 OK to Telegram
+    res.sendStatus(200);
+
+  } catch (err) {
+    return ErrorResponse(err, req, res);
+  }
+};

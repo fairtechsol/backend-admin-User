@@ -116,6 +116,10 @@ const betPlacedSchema = new EntitySchema({
         verifyBy: {
             type: "varchar",
             nullable: true
+        },
+        childBetId:{
+            type: 'uuid',
+            nullable: true,
         }
     },
     relations: {
@@ -134,6 +138,14 @@ const betPlacedSchema = new EntitySchema({
         {
             name: 'betPlaced_createBy',   // index name should be start with the table name
             columns: ['createBy'],
+        },
+        {
+            name: 'betPlaced_betId',   // index name should be start with the table name
+            columns: ['betId'],
+        },
+        {
+            name: 'betPlaced_matchId',   // index name should be start with the table name
+            columns: ['matchId'],
         }
     ],
 });

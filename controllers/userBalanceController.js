@@ -7,6 +7,7 @@ const {
   updateUserBalanceByUserId,
   addInitialUserBalance,
   getUserBalanceDataByUserId,
+  updateUserBalanceData,
 } = require("../services/userBalanceService");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const {
@@ -58,6 +59,7 @@ exports.updateUserBalance = async (req, res) => {
     loginUserBalanceData = usersBalanceData[0];
     let updatedLoginUserBalanceData = {};
     let updatedUpdateUserBalanceData = {};
+    let loginUserBalanceChagne = 0;
     if (transactionType == transType.add) {
       if (amount > loginUserBalanceData.currentBalance)
         return ErrorResponse(
@@ -69,29 +71,35 @@ exports.updateUserBalance = async (req, res) => {
           res
         );
       insertUserBalanceData = usersBalanceData[1];
-      updatedUpdateUserBalanceData.currentBalance =
-        parseFloat(insertUserBalanceData.currentBalance) + parseFloat(amount);
-      updatedUpdateUserBalanceData.profitLoss =
-        parseFloat(insertUserBalanceData.profitLoss) + parseFloat(amount);
+      updatedUpdateUserBalanceData.currentBalance = parseFloat(insertUserBalanceData.currentBalance) + parseFloat(amount);
+      updatedUpdateUserBalanceData.profitLoss = parseFloat(insertUserBalanceData.profitLoss) + parseFloat(amount);
 
+      let updateMyProfitLoss = parseFloat(amount);
       if (parseFloat(insertUserBalanceData.myProfitLoss) + parseFloat(amount) > 0) {
+        updateMyProfitLoss = insertUserBalanceData.myProfitLoss
         updatedUpdateUserBalanceData.myProfitLoss = 0;
       }
       else {
         updatedUpdateUserBalanceData.myProfitLoss = parseFloat(insertUserBalanceData.myProfitLoss) + parseFloat(amount);
       }
 
-      let newUserBalanceData = await updateUserBalanceByUserId(
-        user.id,
-        updatedUpdateUserBalanceData
-      );
+      // let newUserBalanceData = await updateUserBalanceByUserId(
+      //   user.id,
+      //   updatedUpdateUserBalanceData
+      // );
+      await updateUserBalanceData(user.id, { 
+        profitLoss: parseFloat(amount), 
+        myProfitLoss: updateMyProfitLoss, 
+        exposure: 0, 
+        totalCommission: 0, 
+        balance: parseFloat(amount)});
 
       if (userExistRedis) {
         await updateUserDataRedis(userId, updatedUpdateUserBalanceData);
       }
 
       updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
-    
+      loginUserBalanceChagne = -parseFloat(amount);
      
     } else if (transactionType == transType.withDraw) {
       insertUserBalanceData = usersBalanceData[1];
@@ -109,25 +117,31 @@ exports.updateUserBalance = async (req, res) => {
       updatedUpdateUserBalanceData.profitLoss =
         parseFloat(insertUserBalanceData.profitLoss) - parseFloat(amount);
 
+      let updateMyProfitLoss = -parseFloat(amount);
       if (parseFloat(insertUserBalanceData.myProfitLoss) - parseFloat(amount) < 0) {
+        updateMyProfitLoss = -insertUserBalanceData.myProfitLoss
         updatedUpdateUserBalanceData.myProfitLoss = 0;
       }
       else {
         updatedUpdateUserBalanceData.myProfitLoss = parseFloat(insertUserBalanceData.myProfitLoss) - parseFloat(amount);
       }
-
-
-      let newUserBalanceData = await updateUserBalanceByUserId(
-        user.id,
-        updatedUpdateUserBalanceData
-      );
+      // let newUserBalanceData = await updateUserBalanceByUserId(
+      //   user.id,
+      //   updatedUpdateUserBalanceData
+      // );
+      await updateUserBalanceData(user.id, { 
+        profitLoss: -parseFloat(amount), 
+        myProfitLoss: updateMyProfitLoss, 
+        exposure: 0, 
+        totalCommission: 0, 
+        balance: -parseFloat(amount)});
 
       if (userExistRedis) {
         await updateUserDataRedis(userId, updatedUpdateUserBalanceData);
       }
 
-      updatedLoginUserBalanceData.currentBalance =
-        parseFloat(loginUserBalanceData.currentBalance) + parseFloat(amount);
+      updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) + parseFloat(amount);
+      loginUserBalanceChagne = parseFloat(amount);
     } else {
       return ErrorResponse(
         {
@@ -139,10 +153,16 @@ exports.updateUserBalance = async (req, res) => {
       );
     }
 
-    let newLoginUserBalanceData = await updateUserBalanceByUserId(
-      reqUser.id,
-      updatedLoginUserBalanceData
-    );
+    await updateUserBalanceData(reqUser.id, { 
+      profitLoss: 0, 
+      myProfitLoss: 0, 
+      exposure: 0, 
+      totalCommission: 0, 
+      balance: loginUserBalanceChagne});
+    // let newLoginUserBalanceData = await updateUserBalanceByUserId(
+    //   reqUser.id,
+    //   updatedLoginUserBalanceData
+    // );
 
     const parentUserExistRedis = await hasUserInCache(reqUser.id);
 
@@ -229,9 +249,12 @@ exports.settleCommissions = async (req, res) => {
         settled: true
       });
 
-      userData.userBal.totalCommission = 0;
-
-      await addInitialUserBalance(userData.userBal);
+      // userData.userBal.totalCommission = 0;
+      await updateUserBalanceData(userId, {
+        balance: 0,
+        totalCommission: -userData.userBal.totalCommission
+      });
+      // await addInitialUserBalance(userData.userBal);
 
     }
     return SuccessResponse(

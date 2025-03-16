@@ -1,9 +1,11 @@
 const socketIO = require("socket.io");
+const { createAdapter } = require("@socket.io/redis-adapter");
+const Redis = require("ioredis");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
-const redis = require("socket.io-redis");
 require("dotenv").config();
 
 let io;
+
 /**
  * Handles a new socket connection.
  * @param {object} client - The socket client object representing the connection.
@@ -28,7 +30,7 @@ const handleConnection = async (client) => {
       return;
     }
 
-    // Extract user ID and role from the decoded user object
+    // Extract user ID from the decoded user object
     const { id: userId } = decodedUser;
 
     // Retrieve the user's token from Redis
@@ -43,7 +45,6 @@ const handleConnection = async (client) => {
     // Join the room with the user's ID
     client.join(userId);
   } catch (err) {
-    // Handle any errors by disconnecting the client
     console.error(err);
     client.disconnect();
   }
@@ -71,14 +72,12 @@ const handleDisconnect = async (client) => {
       return;
     }
 
-    // Extract user ID and role from the decoded user object
+    // Extract user ID from the decoded user object
     const { id: userId } = decodedUser;
 
     // Leave the room with the user's ID
     client.leave(userId);
-
   } catch (err) {
-    // Handle any errors by disconnecting the client
     console.error(err);
     client.disconnect();
   }
@@ -99,17 +98,28 @@ exports.socketManager = (server) => {
     cors: {
       origin: "*",
       methods: ["GET", "POST"]
+    },
+    transports: ["websocket", "polling"], // Enable both WebSocket and polling
+    perMessageDeflate: {
+      threshold: 1024,  // Only compress messages larger than 1024 bytes
+      zlibDeflateOptions: { level: 6 }, // Maximum compression
+      zlibInflateOptions: { chunkSize: 64 * 1024 }, // Efficient decompression
+      clientNoContextTakeover: true, // Reduce memory usage
+      serverNoContextTakeover: true, // Reduce memory usage
+      serverMaxWindowBits: 10, // Low memory usage
     }
   });
 
-  // Use the Redis adapter
-  io.adapter(
-    redis({
-      host: process.env.INTERNAL_REDIS_HOST || "localhost",
-      port: process.env.INTERNAL_REDIS_PORT || 6379,
-      password :  process.env.INTERNAL_REDIS_PASSWORD
-    })
-  );
+  // Create Redis clients using ioredis
+  const pubClient = new Redis({
+    host: process.env.INTERNAL_REDIS_HOST || "localhost",
+    port: process.env.INTERNAL_REDIS_PORT || 6379,
+    password: process.env.INTERNAL_REDIS_PASSWORD
+  });
+  const subClient = pubClient.duplicate();
+
+  // Use the Redis adapter with ioredis pub/sub clients
+  io.adapter(createAdapter(pubClient, subClient));
 
   // Event listener for a new socket connection
   io.on("connect", (client) => {
@@ -123,22 +133,18 @@ exports.socketManager = (server) => {
     });
   });
 };
+
 /**
  * Sends a message to a specific user or room.
  *
  * @param {string} roomId - The ID of the user or room to send the message to.
  * @param {string} event - The name of the event to emit.
  * @param {any} data - The data to send with the message.
- *
- * @throws {Error} Throws an error if the Socket.IO instance (io) is not initialized.
- *
- * @example
- * // Sending a message to a user with ID '123'
- * sendMessageToUser('123', 'customEvent', { message: 'Hello, user!' });
  */
 exports.sendMessageToUser = (roomId, event, data) => {
   io.to(roomId).emit(event, data);
 };
+
 /**
  * Broadcasts an event to all connected clients.
  * @param {string} event - The event name to broadcast.
