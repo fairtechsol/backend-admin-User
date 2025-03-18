@@ -136,7 +136,21 @@ exports.getBetsMac88 = async (req, res) => {
         await updateUserBalanceData(userId, { balance: -parseFloat(debitAmount) });
         const updatedBalance = parseFloat(await incrementRedisBalance(userId, "currentBalance", -parseFloat(debitAmount)));
 
-        const currGame = mac88Games.find((item) => item.game_id == gameId);
+        // const currGame = mac88Games.find((item) => item.game_id == gameId);
+        const currGame = {};
+        for (const provider in mac88Games) {
+            const categories = mac88Games[provider];
+            // Iterate over each category within the provider
+            for (const category in categories) {
+              const games = categories[category];
+              // Iterate over the array of game objects
+              for (const game of games) {
+                if (game.game_id === gameId) {
+                  return game; // Return the first matching game object
+                }
+              }
+            }
+          }
         await addVirtualCasinoBetPlaced({
             betType: betType,
             amount: -debitAmount,
@@ -431,16 +445,17 @@ exports.getMac88GameList = async (req, res) => {
         //     "operator_id": mac88CasinoOperatorId
         // }
         // let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
-        let result = {
-            data: mac88Games
-        }
-        result = result?.data?.reduce((prev, curr) => {
-            return { ...prev, [curr.provider_name]: { ...(prev[curr.provider_name] || {}), [curr?.category]: [...(prev?.[curr.provider_name]?.[curr.category] || []), curr] } }
-        }, {});
+        
+        // let result = {
+        //     data: mac88Games
+        // }
+        // result = result?.data?.reduce((prev, curr) => {
+        //     return { ...prev, [curr.provider_name]: { ...(prev[curr.provider_name] || {}), [curr?.category]: [...(prev?.[curr.provider_name]?.[curr.category] || []), curr] } }
+        // }, {});
         return SuccessResponse(
             {
                 statusCode: 200,
-                data: result,
+                data: mac88Games,
             },
             req,
             res
