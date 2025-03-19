@@ -578,12 +578,42 @@
                 "status": "ACTIVE",
                 "url_thumb": "https://cdn.dreamdelhi.com/mac88/lankesh.jpeg",
                 "game_code": "MAC88-VTGLN101"
+            },
+            {
+                "game_id": 151079,
+                "game_name": "vr Bollywood Kiss",
+                "category": "crash",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/bk1.webp",
+                "game_code": "MAC88-VTGLN101"
             }
         ],
         "crash": [
             {
                 "game_id": "151086",
                 "game_name": "Kitex",
+                "category": "Crash Games",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/kitex.webp",
+                "game_code": "MAC88-CKIT101"
+            },
+            {
+                "game_id": "151084",
+                "game_name": "Pushpa Rani",
+                "category": "Crash Games",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/pushpa.webp",
+                "game_code": "MAC88-VTGCPU101"
+            },
+            {
+                "game_id": "151086",
+                "game_name": "Patang Baazi",
                 "category": "Crash Games",
                 "provider_name": "MAC88",
                 "sub_provider_name": "Mac88 Gaming Virtual",
@@ -602,6 +632,25 @@
                 "status": "ACTIVE",
                 "url_thumb": "https://cdn.dreamdelhi.com/mac88/aviatorx2.webp",
                 "game_code": "MAC88-CAVB101"
+            },
+            {
+                "game_id": 151087,
+                "game_name": "Jet XT",
+                "category": "Virtual",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/jetxt.webp",
+                "game_code": "MAC88-CAV101-VR"
+            },
+            {
+                "game_id": "151027",
+                "game_name": "Aviator X",
+                "category": "Virtual",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/aviatorx.webp",
+                "game_code": "MAC88-CAV101-VR"
             }
         ],
         "hi low": [
@@ -615,6 +664,68 @@
                 "multiplier": 100000,
                 "position": 1998,
                 "event_type_id": 99995
+            }
+        ],
+        "slots": [
+            {
+                "game_id": "151076",
+                "game_name": "Diamonds",
+                "category": "Slot Games",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/diamonds.webp",
+                "game_code": "MAC88-CDIM101"
+            },
+            {
+                "game_id": "151074",
+                "game_name": "Dice",
+                "category": "Slot Games",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/dice.webp",
+                "game_code": "MAC88-CDIC101"
+            },
+            {
+                "game_id": "151073",
+                "game_name": "Limbo",
+                "category": "Slot Games",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/limbo.webp",
+                "game_code": "MAC88-CLIM101"
+            },
+            {
+                "game_id": "151077",
+                "game_name": "Plinko",
+                "category": "Virtual",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/plinko.webp",
+                "game_code": "MAC88-CPLI101"
+            },
+            {
+                "game_id": "151082",
+                "game_name": "X Roulette",
+                "category": "Slot Games",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/roulette.webp",
+                "game_code": "MAC88-CRO101"
+            },
+            {
+                "game_id": 151080,
+                "game_name": "Vortext",
+                "category": "slots",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/vortex.webp",
+                "game_code": "MAC88-CRO101"
             }
         ]
     },
@@ -889,14 +1000,14 @@
         ],
         "hi low": [
             {
-                "game_id": "151027",
-                "game_name": "Aviator X",
+                "game_id": "151020",
+                "game_name": "VR High low",
                 "category": "Virtual",
                 "provider_name": "MAC88",
                 "sub_provider_name": "Mac88 Gaming Virtual",
                 "status": "ACTIVE",
-                "url_thumb": "https://cdn.dreamdelhi.com/monk88/aviatorx.webp",
-                "game_code": "MAC88-CAV101-VR"
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/vr_hilo.webp",
+                "game_code": "MAC88-VTGHL101"
             }
         ]
     },
@@ -913,6 +1024,36 @@
                 "game_code": "MAC88-CWI101"
             },
             {
+                "game_id": "151055",
+                "game_name": "WINGO3",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/wingo.webp",
+                "game_code": "MAC88-CWI102"
+            },
+            {
+                "game_id": "151056",
+                "game_name": "WINGO5",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/wingo.webp",
+                "game_code": "MAC88-CWI103"
+            },
+            {
+                "game_id": "151057",
+                "game_name": "WINGO10",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/wingo.webp",
+                "game_code": "MAC88-CWI104"
+            },
+            {
                 "game_id": "151058",
                 "game_name": "5D Lottery 1",
                 "category": "COLOR PREDICTION",
@@ -923,6 +1064,36 @@
                 "game_code": "MAC88-CLOT5101"
             },
             {
+                "game_id": "151059",
+                "game_name": "5D Lottery 3",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/sd_lotto.webp",
+                "game_code": "MAC88-CLOT5102"
+            },
+            {
+                "game_id": "151060",
+                "game_name": "5D Lottery 5",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/sd_lotto.webp",
+                "game_code": "MAC88-CLOT5103"
+            },
+            {
+                "game_id": "151061",
+                "game_name": "5D Lottery 10",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/sd_lotto.webp",
+                "game_code": "MAC88-CLOT5104"
+            },
+            {
                 "game_id": "151062",
                 "game_name": "K3 Lottery 1",
                 "category": "COLOR PREDICTION",
@@ -931,6 +1102,36 @@
                 "status": "ACTIVE",
                 "url_thumb": "https://cdn.dreamdelhi.com/monk88/3k_lotre.webp",
                 "game_code": "MAC88-CK3101"
+            },
+            {
+                "game_id": "151063",
+                "game_name": "K3 Lottery 3",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/3k_lotre.webp",
+                "game_code": "MAC88-CK3102"
+            },
+            {
+                "game_id": "151064",
+                "game_name": "K3 Lottery 5",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/3k_lotre.webp",
+                "game_code": "MAC88-CK3103"
+            },
+            {
+                "game_id": "151065",
+                "game_name": "K3 Lottery 10",
+                "category": "COLOR PREDICTION",
+                "provider_name": "MAC88",
+                "sub_provider_name": "COLOR PREDICTION",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/monk88/3k_lotre.webp",
+                "game_code": "MAC88-CK3104"
             }
         ]
     },
