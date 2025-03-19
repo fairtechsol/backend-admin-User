@@ -478,6 +478,16 @@
                 "status": "ACTIVE",
                 "url_thumb": "https://cdn.dreamdelhi.com/mac88/sbc.webp",
                 "game_code": "MAC88-ZSBC101"
+            },
+            {
+                "game_id": "150039",
+                "game_name": "One Card Meter",
+                "category": "Live",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/1_card_meter.webp",
+                "game_code": "MAC88-XOCM101"
             }
         ],
         "lottery": [
@@ -558,7 +568,7 @@
         ],
         "live game show": [
             {
-                "game_id": 150063,
+                "game_id": "150063",
                 "game_name": "Dream Wheel",
                 "category": "live game show",
                 "provider_name": "MAC88",
@@ -592,7 +602,7 @@
                 "game_code": "MAC88-VTGLN101"
             },
             {
-                "game_id": 151079,
+                "game_id": "151079",
                 "game_name": "vr Bollywood Kiss",
                 "category": "crash",
                 "provider_name": "MAC88",
@@ -632,6 +642,16 @@
                 "status": "ACTIVE",
                 "url_thumb": "https://cdn.dreamdelhi.com/mac88/kitex.webp",
                 "game_code": "MAC88-CKIT101"
+            },
+            {
+                "game_id": "151072",
+                "game_name": "Crash X",
+                "category": "Crash Games",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/crashx.webp",
+                "game_code": "MAC88-CCK101"
             }
         ],
         "aviator": [
@@ -646,7 +666,7 @@
                 "game_code": "MAC88-CAVB101"
             },
             {
-                "game_id": 151087,
+                "game_id": "151087",
                 "game_name": "Jet XT",
                 "category": "Virtual",
                 "provider_name": "MAC88",
@@ -1615,6 +1635,16 @@
                 "status": "ACTIVE",
                 "url_thumb": "https://cdn.dreamdelhi.com/macexcite/fsd.webp",
                 "game_code": "ME-BFBS101"
+            },
+            {
+                "game_id": "150603",
+                "game_name": "Roulette",
+                "category": "Live",
+                "provider_name": "MAC Excite",
+                "sub_provider_name": "MAC Excite",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/macexcite/roulette.webp",
+                "game_code": "ME-BRT101"
             }
         ],
         "lottery": [
