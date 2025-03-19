@@ -555,6 +555,18 @@
                 "url_thumb": "https://cdn.dreamdelhi.com/mac88/high_low.webp",
                 "game_code": "MAC88-YHL101"
             }
+        ],
+        "live game show": [
+            {
+                "game_id": 150063,
+                "game_name": "Dream Wheel",
+                "category": "live game show",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming",
+                "status": "ACTIVE",
+                "url_thumb": "https://cdn.dreamdelhi.com/mac88/dw.webp",
+                "game_code": "MAC88-YLGS101"
+            }
         ]
     },
     "FUN GAMES": {
