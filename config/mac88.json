@@ -667,15 +667,14 @@
         ],
         "hi low": [
             {
-                "id": 230008,
-                "name": "Hilo",
-                "category": "hi low",
-                "product": "FUN GAMES",
-                "game_type": "hi low",
+                "game_id": "151085",
+                "game_name": "Hi Lo",
+                "category": "Slot Games",
+                "provider_name": "MAC88",
+                "sub_provider_name": "Mac88 Gaming Virtual",
+                "status": "ACTIVE",
                 "url_thumb": "https://cdn.dreamdelhi.com/monk88/hilo.webp",
-                "multiplier": 100000,
-                "position": 1998,
-                "event_type_id": 99995
+                "game_code": "MAC88-CHI101"
             }
         ],
         "mines": [

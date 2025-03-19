@@ -138,7 +138,9 @@ exports.getBetsMac88 = async (req, res) => {
 
         // const currGame = mac88Games.find((item) => item.game_id == gameId);
         const currGame = {};
+        let providerName = "";
         for (const provider in mac88Games) {
+            providerName = provider;
             const categories = mac88Games[provider];
             // Iterate over each category within the provider
             for (const category in categories) {
@@ -162,7 +164,7 @@ exports.getBetsMac88 = async (req, res) => {
             token: token,
             transactionId: transactionId,
             userId: userId,
-            providerName: currGame.provider_name,
+            providerName: providerName,
             gameName: currGame.game_name
         });
 
@@ -440,7 +442,6 @@ const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId
 
 exports.getMac88GameList = async (req, res) => {
     try {
-
         // let casinoData = {
         //     "operator_id": mac88CasinoOperatorId
         // }
