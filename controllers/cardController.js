@@ -7,6 +7,7 @@ const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { getBetsCondition } = require("./betPlacedController");
 const { getQueryColumns } = require("./fairgameWalletController");
+const { logger } = require("../config/logger");
 
 exports.getCardResultByFGWallet = async (req, res) => {
   try {
