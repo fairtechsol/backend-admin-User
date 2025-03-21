@@ -93,7 +93,7 @@ exports.totalProfitLossLiveCasinoWallet = async (req, res) => {
       );
     }
     queryColumns = await getQueryColumns(user, partnerShipRoleName);
-    totalLoss = `(Sum(ROUND(virtualCasinoBetPlaced.amount / 100 * ${queryColumns}, 2))) as "totalLoss"`;
+    totalLoss = `(Sum(ROUND(placeBet.amount / 100 * ${queryColumns}, 2))) as "totalLoss"`;
 
     if (user.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
@@ -143,7 +143,7 @@ exports.totalProfitLossByProviderNameLiveCasino = async (req, res) => {
       );
     }
     queryColumns = await getQueryColumns(user, partnerShipRoleName);
-    let rateProfitLoss = `(Sum( ROUND(virtualCasinoBetPlaced.amount / 100 * ${queryColumns}, 2)))  as "rateProfitLoss"`;
+    let rateProfitLoss = `(Sum( ROUND(placeBet.amount / 100 * ${queryColumns}, 2)))  as "rateProfitLoss"`;
 
     if (req?.user?.roleName == userRoleConstant.user) {
       rateProfitLoss = '-' + rateProfitLoss;
@@ -197,7 +197,7 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
       );
     }
     queryColumns = await getQueryColumns(user, partnerShipRoleName);
-    let totalLoss = `(Sum(ROUND(virtualCasinoBetPlaced.amount / 100 * ${queryColumns}, 2))) as "totalLoss"`;
+    let totalLoss = `(Sum(ROUND(placeBet.amount / 100 * ${queryColumns}, 2))) as "totalLoss"`;
 
     if (req?.user?.roleName == userRoleConstant.user) {
       totalLoss = '-' + totalLoss;
@@ -250,8 +250,8 @@ exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
       );
     }
     queryColumns = await profitLossPercentCol(partnerShipRoleName ? { roleName: partnerShipRoleName } : user, queryColumns);
-    let totalLoss = `(Sum( ROUND(virtualCasinoBetPlaced.amount / 100 * ${queryColumns}, 2) ) ) as "totalLoss"`;
-    let rateProfitLoss = `-(Sum( ROUND(virtualCasinoBetPlaced.amount / 100 * ${queryColumns}, 2))) as "rateProfitLoss"`;
+    let totalLoss = `(Sum( ROUND(placeBet.amount / 100 * ${queryColumns}, 2) ) ) as "totalLoss"`;
+    let rateProfitLoss = `-(Sum( ROUND(placeBet.amount / 100 * ${queryColumns}, 2))) as "rateProfitLoss"`;
 
     if (req?.user?.roleName == userRoleConstant.user) {
       rateProfitLoss = "-" + rateProfitLoss;
