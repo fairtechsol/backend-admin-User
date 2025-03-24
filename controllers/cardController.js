@@ -284,9 +284,9 @@ exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
       if (!childrenId.length) {
         continue;
       }
-      where.createBy = In(childrenId);
+      where.userId = In(childrenId);
 
-      const userData = await getUserWiseProfitLossLiveCasino(where, [totalLoss, rateProfitLoss, sessionProfitLoss]);
+      const userData = await getUserWiseProfitLossLiveCasino(where, [totalLoss, rateProfitLoss]);
       if (userData.totalLoss != null && userData.totalLoss != undefined) {
         result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, userName: directUser.userName });
       }
