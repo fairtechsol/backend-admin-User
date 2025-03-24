@@ -34,7 +34,7 @@ exports.loginMac88Casino = async (req, res) => {
             "balance": userRedisData.isDemo ? 0 : userCurrBalance,
             "redirectUrl": domainUrl
         }
-        let result =  await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.login, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) }); 
+        let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.login, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
 
         const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: userId, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
         if (!userTransaction) {
@@ -136,7 +136,22 @@ exports.getBetsMac88 = async (req, res) => {
         await updateUserBalanceData(userId, { balance: -parseFloat(debitAmount) });
         const updatedBalance = parseFloat(await incrementRedisBalance(userId, "currentBalance", -parseFloat(debitAmount)));
 
-        const currGame = mac88Games.find((item) => item.game_id == gameId);
+        // const currGame = mac88Games.find((item) => item.game_id == gameId);
+        let currGame = {};
+        let providerName = "";
+        outerLoop: for (const provider in mac88Games) {
+            const categories = mac88Games[provider];
+            for (const category in categories) {
+                const games = categories[category];
+                for (const game of games) {
+                    if (game.game_id === gameId) {
+                        currGame = game;
+                        providerName = provider;
+                        break outerLoop; // Exit all loops when game is found
+                    }
+                }
+            }
+        }
         await addVirtualCasinoBetPlaced({
             betType: betType,
             amount: -debitAmount,
@@ -148,7 +163,7 @@ exports.getBetsMac88 = async (req, res) => {
             token: token,
             transactionId: transactionId,
             userId: userId,
-            providerName: currGame.provider_name,
+            providerName: providerName,
             gameName: currGame.game_name
         });
 
@@ -180,9 +195,9 @@ exports.resultRequestMac88 = async (req, res) => {
         }
 
         const userRedisData = await getUserRedisData(userId);
-        if(!userRedisData[transactionId]){
+        if (!userRedisData[transactionId]) {
             const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId }, ["id", "settled", "isRollback"]);
-            if(!userPrevBetPlaced){
+            if (!userPrevBetPlaced) {
                 return res.status(400).json({ status: "OP_TRANSACTION_NOT_FOUND" })
             }
             if (userPrevBetPlaced.settled && userPrevBetPlaced.isRollback) {
@@ -190,7 +205,7 @@ exports.resultRequestMac88 = async (req, res) => {
                     "status": "OP_ERROR_TRANSACTION_INVALID"
                 })
             }
-            if(userPrevBetPlaced.settled){
+            if (userPrevBetPlaced.settled) {
                 return res.status(400).json({
                     "status": "OP_DUPLICATE_TRANSACTION"
                 })
@@ -365,12 +380,12 @@ exports.rollBackRequestMac88 = async (req, res) => {
         }
 
         const userRedisData = await getUserRedisData(userId);
-        if(!userRedisData[transactionId]){
-            const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId},["id","settled"]);
-            if(!userPrevBetPlaced){
+        if (!userRedisData[transactionId]) {
+            const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId }, ["id", "settled"]);
+            if (!userPrevBetPlaced) {
                 return res.status(400).json({ status: "OP_TRANSACTION_NOT_FOUND" })
             }
-            if(userPrevBetPlaced?.settled){
+            if (userPrevBetPlaced?.settled) {
                 return res.status(400).json({
                     "status": "OP_DUPLICATE_TRANSACTION"
                 })
@@ -426,21 +441,21 @@ const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId
 
 exports.getMac88GameList = async (req, res) => {
     try {
-
         // let casinoData = {
         //     "operator_id": mac88CasinoOperatorId
         // }
         // let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.gameList, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
-        let result = {
-            data: mac88Games
-        }
-        result = result?.data?.reduce((prev, curr) => {
-            return { ...prev, [curr.provider_name]: { ...(prev[curr.provider_name] || {}), [curr?.category]: [...(prev?.[curr.provider_name]?.[curr.category] || []), curr] } }
-        }, {});
+
+        // let result = {
+        //     data: mac88Games
+        // }
+        // result = result?.data?.reduce((prev, curr) => {
+        //     return { ...prev, [curr.provider_name]: { ...(prev[curr.provider_name] || {}), [curr?.category]: [...(prev?.[curr.provider_name]?.[curr.category] || []), curr] } }
+        // }, {});
         return SuccessResponse(
             {
                 statusCode: 200,
-                data: result,
+                data: mac88Games,
             },
             req,
             res
