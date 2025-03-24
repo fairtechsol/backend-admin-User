@@ -18,9 +18,9 @@ router.get('/mac88/bets/:userId',isAuthenticate, getBetVirtualGames);
 router.get('/mac88/providers', isAuthenticate, getProviderList);
 
 
-router.post("/total/profitLoss",isAuthenticate, totalProfitLossLiveCasinoWallet);
-router.post("/total/gameWise/profitLoss",isAuthenticate, totalProfitLossByProviderNameLiveCasino);
-router.post("/total/bet/profitLoss",isAuthenticate, getLiveCasinoResultBetProfitLoss);
-router.post("/userwise/profitLoss",isAuthenticate, getLiveCasinoUserWiseTotalProfitLoss);
+router.post("/virtual/total/profitLoss",isAuthenticate, totalProfitLossLiveCasinoWallet);
+router.post("/virtual/total/gameWise/profitLoss",isAuthenticate, totalProfitLossByProviderNameLiveCasino);
+router.post("/virtual/total/bet/profitLoss",isAuthenticate, getLiveCasinoResultBetProfitLoss);
+router.post("/virtual/userwise/profitLoss",isAuthenticate, getLiveCasinoUserWiseTotalProfitLoss);
 
 module.exports = router;

@@ -396,7 +396,7 @@ exports.updateSuperAdminBalance = async (req, res) => {
 
       let updateMyProfitLoss = -parseFloat(amount);
       if (parseFloat(userBalanceData.myProfitLoss) - parseFloat(amount) < 0) {
-        updateMyProfitLoss = -insertUserBalanceData.myProfitLoss
+        updateMyProfitLoss = -userBalanceData.myProfitLoss
         updateData.myProfitLoss = 0;
       }
       else {
