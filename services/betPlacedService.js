@@ -1,4 +1,4 @@
-const { userRoleConstant, betResultStatus, matchBettingType, marketBetType } = require("../config/contants");
+const { userRoleConstant, betResultStatus, marketBetType } = require("../config/contants");
 const { In, IsNull, Not } = require("typeorm");
 const { AppDataSource } = require("../config/postGresConnection");
 const betPlacedSchema = require("../models/betPlaced.entity");
@@ -171,60 +171,17 @@ exports.getMultipleAccountProfitLoss = async (betId, userId) => {
   return betPlaced;
 };
 
-exports.getMultipleAccountMatchProfitLoss = async (betId, userId) => {
-
-  const matchTypes = [
-    [matchBettingType.bookmaker, matchBettingType.bookmaker2, matchBettingType.quickbookmaker1, matchBettingType.quickbookmaker2, matchBettingType.quickbookmaker3, matchBettingType.matchOdd],
-    [matchBettingType.tiedMatch1, matchBettingType.tiedMatch2, matchBettingType.tiedMatch3],
-    [matchBettingType.completeMatch, matchBettingType.completeManual, matchBettingType.completeMatch1],
-  ];
-
-  const betPlaced = await BetPlaced.createQueryBuilder().select([
-    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes1) THEN "winAmount" ELSE 0 END) AS "winAmount"',
-    'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes1) THEN "lossAmount" ELSE 0 END) AS "lossAmount"',
-    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes1) AND "isCommissionActive"= true THEN "winAmount" ELSE 0 END) AS "winAmountCommission"',
-    'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes1) AND "isCommissionActive"= true THEN "lossAmount" ELSE 0 END) AS "lossAmountCommission"',
-    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes2) THEN "winAmount" ELSE 0 END) AS "winAmountTied"',
-    'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes2) THEN "lossAmount" ELSE 0 END) AS "lossAmountTied"',
-    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes2) AND "isCommissionActive"= true THEN "winAmount" ELSE 0 END) AS "winAmountTiedCommission"',
-    'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes2) AND "isCommissionActive"= true THEN "lossAmount" ELSE 0 END) AS "lossAmountTiedCommission"',
-    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes3) THEN "winAmount" ELSE 0 END) AS "winAmountComplete"',
-    'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes3) THEN "lossAmount" ELSE 0 END) AS "lossAmountComplete"',
-    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes3) AND "isCommissionActive"= true THEN "winAmount" ELSE 0 END) AS "winAmountCompleteCommission"',
-    'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchTypes3) AND "isCommissionActive"= true THEN "lossAmount" ELSE 0 END) AS "lossAmountCompleteCommission"',
-    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchTypes4) THEN "winAmount" ELSE 0 END) AS "winAmountMatchOdd"',
-    'SUM(CASE WHEN "marketType" IN (:...matchTypes1) THEN 1 ELSE 0 END) AS "matchOddBetsCount"',
-    'SUM(CASE WHEN "marketType" IN (:...matchTypes2) THEN 1 ELSE 0 END) AS "tiedBetsCount"',
-    'SUM(CASE WHEN "marketType" IN (:...matchTypes3) THEN 1 ELSE 0 END) AS "completeBetsCount"',
-  ])
-    .setParameter('winStatus', betResultStatus.WIN)
-    .setParameter('lossStatus', betResultStatus.LOSS)
-    .setParameter('matchTypes1', matchTypes[0])
-    .setParameter('matchTypes2', matchTypes[1])
-    .setParameter('matchTypes3', matchTypes[2])
-    .setParameter('matchTypes4', [matchBettingType.matchOdd])
-    .andWhere('"betId" IN (:...betIds)', { betIds: betId })
-    .andWhere('"userId" = :userId', { userId: userId })
-    .andWhere('"deleteReason" IS NULL')
-    .getRawOne();
-
-  return betPlaced;
-};
-
 exports.getMultipleAccountOtherMatchProfitLoss = async (betId, userId) => {
 
   const betPlaced = await BetPlaced.createQueryBuilder().select([
     'SUM(CASE WHEN result = :winStatus THEN "winAmount" ELSE 0 END) AS "winAmount"',
     'SUM(CASE WHEN result = :lossStatus THEN "lossAmount" ELSE 0 END) AS "lossAmount"',
-    'SUM(CASE WHEN result = :winStatus AND "marketType" IN (:...matchOdd) THEN "winAmount" ELSE 0 END) AS "winAmountMatchOdd"',
-    'SUM(CASE WHEN result = :lossStatus AND "marketType" IN (:...matchOdd) THEN "lossAmount" ELSE 0 END) AS "lossAmountMatchOdd"',
     'SUM(CASE WHEN result = :lossStatus AND "isCommissionActive"= true THEN "lossAmount" ELSE 0 END) AS "lossAmountCommission"',
     'SUM(CASE WHEN result = :winStatus AND "isCommissionActive"= true THEN "winAmount" ELSE 0 END) AS "winAmountCommission"',
 
   ])
     .setParameter('winStatus', betResultStatus.WIN)
     .setParameter('lossStatus', betResultStatus.LOSS)
-    .setParameter('matchOdd', [matchBettingType.matchOdd])
     .andWhere('"betId" IN (:...betIds)', { betIds: betId })
     .andWhere('"userId" = :userId', { userId: userId })
     .andWhere('"deleteReason" IS NULL')

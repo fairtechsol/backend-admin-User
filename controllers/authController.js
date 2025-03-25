@@ -14,14 +14,13 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const {
   getUserWithUserBalance,
-  addUser,
   updateUser,
   getUserById,
 } = require("../services/userService");
-const { userLoginAtUpdate, addAuthenticator, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingOtherMatchBetsDataAtLogin, settingRacingMatchBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, loginDemoUser, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
+const { userLoginAtUpdate, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
 const { logger } = require("../config/logger");
-const { updateUserDataRedis, getUserRedisSingleKey, getRedisKey, setRedisKey, deleteKeyFromUserRedis } = require("../services/redis/commonfunction");
+const { updateUserDataRedis, getRedisKey, setRedisKey } = require("../services/redis/commonfunction");
 const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
 const { generateAuthToken, verifyAuthToken } = require("../utils/generateAuthToken");
 const bot = require("../config/telegramBot");
@@ -64,8 +63,6 @@ const setUserDetailsRedis = async (user) => {
   if (!redisUserData) {
     // Fetch and set betting data at login
     let betData = await settingBetsDataAtLogin(user);
-    let otherMatchBetData = await settingOtherMatchBetsDataAtLogin(user);
-    let racingMatchData = await settingRacingMatchBetsDataAtLogin(user);
     let tournamentBetData = await settingTournamentMatchBetsDataAtLogin(user);
     // Set user details and partnerships in Redis
     await updateUserDataRedis(user.id, {
@@ -76,8 +73,6 @@ const setUserDetailsRedis = async (user) => {
       currentBalance: user?.userBal?.currentBalance || 0,
       roleName: user.roleName,
       ...(betData || {}),
-      ...(otherMatchBetData || {}),
-      ...(racingMatchData || {}),
       ...(tournamentBetData || {}),
       partnerShips: await findUserPartnerShipObj(user),
       userRole: user.roleName,

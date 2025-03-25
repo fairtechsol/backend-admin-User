@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, declareMatchResult, unDeclareMatchResult, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss, declareOtherMatchResult, unDeclareOtherMatchResult, declarRaceMatchResult, unDeclareRaceMatchResult, getUsersRacingProfitLoss, declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, declareMatchOtherMarketResult, unDeclareMatchOtherMarketResult, declarTournamentMatchResult, unDeclareTournamentMatchResult, getVirtualBetExposures, unDeclareFinalMatchResult, declarFinalMatchResult, checkVerifiedBets, getSessionBetProfitLossExpert } = require("../controllers/fairgameWalletController");
+const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss , declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, declarTournamentMatchResult, unDeclareTournamentMatchResult, getVirtualBetExposures, unDeclareFinalMatchResult, declarFinalMatchResult, checkVerifiedBets, getSessionBetProfitLossExpert } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword, changeBetsDeleteReasonValidator } = require("../validators/fairgameWalletValidator");
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
@@ -22,20 +22,8 @@ router.post("/declare/result/session", declareApiLimiter, declareSessionResult);
 router.post("/declare/noResult/session",declareApiLimiter,  declareSessionNoResult);
 router.post("/unDeclare/result/session", declareApiLimiter, unDeclareSessionResult);
 
-router.post("/declare/result/match",  declareMatchResult);
-router.post("/unDeclare/result/match",  unDeclareMatchResult);
-
-router.post("/declare/result/other/match", declareOtherMatchResult);
-router.post("/unDeclare/result/other/match",  unDeclareOtherMatchResult);
-
-router.post("/declare/result/other/market", declareMatchOtherMarketResult);
-router.post("/unDeclare/result/other/market",  unDeclareMatchOtherMarketResult);
-
 router.post("/declare/result/tournament/match", declareApiLimiter, declarTournamentMatchResult);
 router.post("/unDeclare/result/tournament/match", declareApiLimiter, unDeclareTournamentMatchResult);
-
-router.post("/declare/result/race/match", declarRaceMatchResult);
-router.post("/unDeclare/result/race/match",  unDeclareRaceMatchResult);
 
 router.post("/declare/result/final/match", declarFinalMatchResult);
 router.post("/unDeclare/result/final/match",  unDeclareFinalMatchResult);
@@ -64,7 +52,6 @@ router.post("/userMatchLock", userMatchLock);
 router.post("/settle/commission", validator(settleCommission), settleCommissions);
 
 router.get("/user/profitLossData/:matchId", getUsersProfitLoss);
-router.get("/user/profitLossData/race/:matchId", getUsersRacingProfitLoss);
 
 router.post("/user/exposureLimitCheck", setExposureLimitByFGAdmin);
 router.post("/check/userBalance", checkUserBalance);
