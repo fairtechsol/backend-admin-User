@@ -1182,7 +1182,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams, ru
   }
 
   if (matchBettingDetail?.isManual) {
-    isRateChange = await checkRate(matchBettingDetail, betObj, runners, teams.placeIndex);
+    isRateChange = await checkRate(betObj, runners, teams.placeIndex);
   } else {
     isRateChange = await CheckThirdPartyRate(matchBettingDetail, betObj, teams, matchBettingDetail?.name?.toLowerCase()?.includes("bookmaker"));
   }
@@ -1200,7 +1200,7 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams, ru
 
 }
 
-const checkRate = async (bettingDetail, betObj, teams, placeIndex) => {
+const checkRate = async (betObj, teams, placeIndex) => {
   let currRunner = teams.find((item) => item.id == betObj.runnerId);
   if (!currRunner) {
     return true;
@@ -1332,7 +1332,19 @@ exports.deleteMultipleBet = async (req, res) => {
       }
     });
     let tournamentBettingDetail;
-
+    try {
+      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBettingType.tournament;
+      apiResponse = await apiCall(apiMethod.get, url);
+    } catch (error) {
+      logger.info({
+        info: `Error at get match details for delete match bet.`,
+        data: req.body
+      });
+      throw error?.response?.data;
+    }
+    let { matchBetting: matchBettingTournament } = apiResponse.data;
+    tournamentBettingDetail = matchBettingTournament;
+    
     const domainUrl = `${req.protocol}://${req.get('host')}`;
     if (Object.keys(updateObj).length > 0) {
       for (let key in updateObj) {
