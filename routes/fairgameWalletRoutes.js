@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionResult, declareSessionNoResult, unDeclareSessionResult, getBetWallet, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss , declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, declarTournamentMatchResult, unDeclareTournamentMatchResult, getVirtualBetExposures, unDeclareFinalMatchResult, declarFinalMatchResult, checkVerifiedBets, getSessionBetProfitLossExpert } = require("../controllers/fairgameWalletController");
+const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, declareSessionNoResult, unDeclareSessionResult, getBetWallet, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss , declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, declarTournamentMatchResult, unDeclareTournamentMatchResult, getVirtualBetExposures, unDeclareFinalMatchResult, declarFinalMatchResult, checkVerifiedBets, getSessionBetProfitLossExpert } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword, changeBetsDeleteReasonValidator } = require("../validators/fairgameWalletValidator");
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
@@ -18,7 +18,7 @@ router.post("/update/creditReference", validator(SuperAdminCreditReference), set
 router.post("/lockUnlock", validator(SuperAdminLockUnlock), lockUnlockSuperAdmin);
 router.post("/changePassword", validator(SuperAdminChangePassword), changePasswordSuperAdmin);
 
-router.post("/declare/result/session", declareApiLimiter, declareSessionResult);
+// router.post("/declare/result/session", declareApiLimiter, declareSessionResult);
 router.post("/declare/noResult/session",declareApiLimiter,  declareSessionNoResult);
 router.post("/unDeclare/result/session", declareApiLimiter, unDeclareSessionResult);
 

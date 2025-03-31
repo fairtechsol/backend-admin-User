@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package declareProvider;
+
+message DeclareSessionRequest {
+  string betId = 1; 
+  string score = 2;
+  
+  message SessionDetail {
+    string activeStatus = 1;
+    string id = 2;
+    string matchId = 3;
+    string selectionId = 4;
+    string type = 5;
+  }
+  SessionDetail sessionDetails = 4;
+  string userId = 5;
+  string matchId = 6;
+  
+  message Match{
+    string stopAt = 1;
+    string id = 2;
+    string title = 3;
+    string startAt = 4;
+  }
+  Match match = 8;
+}
+
+message DeclareSessionResponse {
+  message Data{
+    string fwProfitLoss = 1;
+    string faAdminCal=2;
+    string superAdminData=3;
+    string bulkCommission=4;
+  } 
+  Data data = 2;
+}
+
+service DeclareProvider {
+  rpc DeclareSession(DeclareSessionRequest) returns (DeclareSessionResponse);
+}

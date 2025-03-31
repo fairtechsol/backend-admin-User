@@ -453,7 +453,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
     logger.error({
       error: `Error at match tournament betting bet placed.`,
       stack: error?.stack,
-      message: error.message,
+      message: error?.message,
     });
     return ErrorResponse(error, req, res)
   }
