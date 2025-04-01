@@ -1,5 +1,5 @@
 const { Server } = require("./grpcServer");
-const { declareTournamentMatchResult, unDeclareTournamentMatchResult } = require("./handlers/declareMatchHandler");
+const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareFinalMatchResult, declareFinalMatchResult } = require("./handlers/declareMatchHandler");
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
 
 const { GRPC_PORT = 50000 } = process.env;
@@ -28,6 +28,9 @@ server
     .addService("DeclareMatchProvider", "DeclareTournament", declareTournamentMatchResult)
     .addService("DeclareMatchProvider", "UnDeclareTournament", unDeclareTournamentMatchResult)
     
+    .addService("DeclareMatchProvider", "DeclareFinalMatch", declareFinalMatchResult)
+    .addService("DeclareMatchProvider", "UnDeclareFinalMatch", unDeclareFinalMatchResult)
+
 
 
 module.exports = server;

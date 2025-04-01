@@ -75,8 +75,23 @@ message UnDeclareTournamentResponse {
   
    Data data = 2;
 }
+message DeclareFinalMatchRequest {
+  string matchId = 1;
+  string matchType = 2;
+}
+
+message DeclareFinalMatchResponse {}
+
+message UnDeclareFinalMatchRequest {
+  string matchId = 1;
+  string matchType = 2;
+}
+
+message UnDeclareFinalMatchResponse {}
 
 service DeclareMatchProvider {
   rpc DeclareTournament(DeclareTournamentRequest) returns (DeclareTournamentResponse);
   rpc UnDeclareTournament(UnDeclareTournamentRequest) returns (UnDeclareTournamentResponse);
+  rpc DeclareFinalMatch(DeclareFinalMatchRequest) returns (DeclareFinalMatchResponse);
+  rpc UnDeclareFinalMatch(UnDeclareFinalMatchRequest) returns (UnDeclareFinalMatchResponse);
 }
