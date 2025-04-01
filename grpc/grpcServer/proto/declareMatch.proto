@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package declareMatchProvider;
+
+message DeclareTournamentRequest {
+  string result = 1; 
+  message MatchBetting {
+    string id = 1;
+    string name = 2;
+    string activeStatus=3;
+    message Runners{
+      string id = 1;
+      string runnerName = 2;
+    }
+    repeated Runners runners = 5;
+  }
+  MatchBetting marketDetail = 3;
+  string userId = 4;
+  string matchId = 5;
+  
+  message Match{
+    string stopAt = 1;
+    string id = 2;
+    string title = 3;
+    string startAt = 4;
+    string matchType =5;
+  }
+  Match match = 7;
+  bool isMatchOdd=8;
+}
+
+message DeclareTournamentResponse {
+  message Data{
+    string fwProfitLoss = 1;
+    string faAdminCal=2;
+    string superAdminData=3;
+    string bulkCommission=4;
+  } 
+  Data data = 2;
+}
+
+message UnDeclareTournamentRequest {
+  message MatchBetting {
+    string id = 1;
+    string name = 2;
+    string activeStatus=3;
+    message Runners{
+      string id = 1;
+      string runnerName = 2;
+    }
+    repeated Runners runners = 5;
+    string result = 6;
+    string stopAt = 7;
+    string type = 8;
+  }
+  MatchBetting matchBettingDetails = 2;
+  string userId = 3;
+  string matchId = 4;
+  
+  message Match{
+    string stopAt = 1;
+    string id = 2;
+    string matchType =3;
+  }
+  Match match = 6;
+  bool isMatchOdd=7;
+}
+
+message UnDeclareTournamentResponse {
+  message Data{
+    int64 fwProfitLoss=1;
+    string faAdminCal=2;
+    string superAdminData=3;
+   }
+  
+   Data data = 2;
+}
+
+service DeclareMatchProvider {
+  rpc DeclareTournament(DeclareTournamentRequest) returns (DeclareTournamentResponse);
+  rpc UnDeclareTournament(UnDeclareTournamentRequest) returns (UnDeclareTournamentResponse);
+}
