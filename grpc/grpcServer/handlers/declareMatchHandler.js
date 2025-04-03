@@ -11,6 +11,8 @@ const {
     marketBetType,
     matchComissionTypeConstant,
     transactionType,
+    matchOddName,
+    partnershipPrefixByRole,
 } = require("../../../config/contants");
 const { logger } = require("../../../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountOtherMatchProfitLoss, updatePlaceBet, getDistinctUserBetPlaced, findAllPlacedBet } = require("../../../services/betPlacedService");
@@ -20,7 +22,8 @@ const {
     parseRedisData,
     calculateProfitLossForRacingMatchToResult,
 } = require("../../../services/commonService");
-
+const grpc = require("@grpc/grpc-js");
+const { __mf } = require("i18n");
 const { getUserRedisData, deleteKeyFromUserRedis, incrementValuesRedis } = require("../../../services/redis/commonfunction");
 const {
     getUserBalanceDataByUserId,
@@ -574,7 +577,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
         }
 
     };
-    return { fwProfitLoss, faAdminCal, superAdminData, bulkCommission };
+    return { fwProfitLoss, faAdminCal:JSON.stringify(faAdminCal), superAdminData:JSON.stringify(superAdminData), bulkCommission:JSON.stringify(bulkCommission) };
 }
 
 
@@ -1045,63 +1048,63 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
             faAdminCal.fwWalletDeduction = (faAdminCal.fwWalletDeduction || 0);
         }
     };
-    return { fwProfitLoss, faAdminCal, superAdminData };
+    return { fwProfitLoss, faAdminCal: JSON.stringify(faAdminCal), superAdminData: JSON.stringify(superAdminData) };
 }
 
 exports.declareFinalMatchResult = async (call) => {
-  try {
-    const { matchId,matchType } = call.request;
+    try {
+        const { matchId, matchType } = call.request;
 
-    logger.info({
-      message: "Match final result declared.",
-      data: {
-        matchId
-      },
-    });
+        logger.info({
+            message: "Match final result declared.",
+            data: {
+                matchId
+            },
+        });
 
-    broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: matchType, isMatchDeclare: true });
-    await updateMatchData({ id: matchId }, { stopAt: new Date() });
-    return {}
-  } catch (error) {
-    logger.error({
-      error: `Error at declare final match result for the user.`,
-      stack: error.stack,
-      message: error.message,
-    });
-    throw {
-        code: grpc.status.INTERNAL,
-        message: error?.message || __mf("internalServerError"),
-    };
-  }
+        broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: matchType, isMatchDeclare: true });
+        await updateMatchData({ id: matchId }, { stopAt: new Date() });
+        return {}
+    } catch (error) {
+        logger.error({
+            error: `Error at declare final match result for the user.`,
+            stack: error.stack,
+            message: error.message,
+        });
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
 };
 
 exports.unDeclareFinalMatchResult = async (call) => {
-  try {
+    try {
 
-    const { matchId,matchType } = call.request;
+        const { matchId, matchType } = call.request;
 
-    logger.info({
-      message: "Final match result un declared.",
-      data: {
-        matchId
-      }
-    });
+        logger.info({
+            message: "Final match result un declared.",
+            data: {
+                matchId
+            }
+        });
 
-    broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: matchType });
-    await updateMatchData({ id: matchId }, { stopAt: null });
+        broadcastEvent(socketData.unDeclaredMatchResultAllUser, { matchId, gameType: matchType });
+        await updateMatchData({ id: matchId }, { stopAt: null });
 
-    return {}
+        return {}
 
-  } catch (error) {
-    logger.error({
-      error: `Error at un declare final match result for the user.`,
-      stack: error.stack,
-      message: error.message,
-    });
-    // Handle any errors and return an error response
-    throw {
-        code: grpc.status.INTERNAL,
-        message: error?.message || __mf("internalServerError"),
-    };
-  }
+    } catch (error) {
+        logger.error({
+            error: `Error at un declare final match result for the user.`,
+            stack: error.stack,
+            message: error.message,
+        });
+        // Handle any errors and return an error response
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
 }

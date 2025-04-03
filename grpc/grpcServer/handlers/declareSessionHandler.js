@@ -11,6 +11,7 @@ const {
   sessionBettingType,
   transactionType,
   partnershipPrefixByRole,
+  resultType,
 } = require("../../../config/contants");
 const { logger } = require("../../../config/logger");
 const { getMatchBetPlaceWithUser, addNewBet, getMultipleAccountProfitLoss, getDistinctUserBetPlaced, updatePlaceBet, findAllPlacedBetWithUserIdAndBetId } = require("../../../services/betPlacedService");
