@@ -8,10 +8,7 @@ const {
   betResultStatus,
   redisKeys,
   partnershipPrefixByRole,
-  resultType,
-  matchBettingType,
   marketBetType,
-  matchComissionTypeConstant,
   buttonType,
   defaultButtonValue,
   sessiontButtonValue,
@@ -21,17 +18,15 @@ const {
   matchOddName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getMatchBetPlaceWithUser, addNewBet, getDistinctUserBetPlaced, updatePlaceBet, getBet, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getMultipleAccountOtherMatchProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss, getBetCountData, getUserSessionsProfitLoss } = require("../services/betPlacedService");
+const {  addNewBet,  updatePlaceBet, getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId, findAllPlacedBet, getUserWiseProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getMultipleAccountCardMatchProfitLoss, getMatchBetPlaceWithUserCard, getTotalProfitLossCard, getAllCardMatchTotalProfitLoss, getBetCountData, getUserSessionsProfitLoss } = require("../services/betPlacedService");
 const {
   forceLogoutUser,
   profitLossPercentCol,
   getUserProfitLossForUpperLevel,
   forceLogoutIfLogin,
   insertBulkTransactions,
-  insertBulkCommissions,
   childIdquery,
   parseRedisData,
-  calculateProfitLossForRacingMatchToResult,
   calculateProfitLossForCardMatchToResult,
   findUserPartnerShipObj,
 } = require("../services/commonService");
@@ -75,9 +70,7 @@ const {
 } = require("../services/userService");
 const { sendMessageToUser, broadcastEvent } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const { getCombinedCommission, deleteCommission} = require("../services/commissionService");
 const { insertButton } = require("../services/buttonService");
-const { updateMatchData } = require("../services/matchService");
 const { CardWinOrLose } = require("../services/cardService/cardWinAccordingToBet");
 const { CardResultTypeWin } = require("../services/cardService/winCardAccordingToTransaction");
 const { getVirtualCasinoExposureSum } = require("../services/virtualCasinoBetPlacedsService");
@@ -715,78 +708,6 @@ exports.changePasswordSuperAdmin = async (req, res, next) => {
       res
     );
   }
-};
-
-exports.getBetWallet = async (req, res) => {
-  try {
-    let { roleName, userId, isTeamNameAllow, ...queryData } = req.query;
-    let result;
-    let select = [
-      "betPlaced.id", "betPlaced.verifyBy", "betPlaced.isVerified", "betPlaced.eventName", "betPlaced.teamName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "betPlaced.matchId", "betPlaced.betId", "betPlaced.deleteReason", "betPlaced.bettingName", "match.startAt", "match.teamC", "betPlaced.runnerId", "betPlaced.isCommissionActive"
-    ];
-
-    if (roleName == userRoleConstant.user) {
-      select.push("user.id", "user.userName");
-      result = await getBet({ createBy: userId }, queryData, roleName, select, null, true);
-    } else if (roleName && ![userRoleConstant.fairGameAdmin, userRoleConstant.fairGameWallet].includes(roleName)) {
-      let childsId = await getChildsWithOnlyUserRole(userId);
-      childsId = childsId.map(item => item.id);
-      if (!childsId.length) {
-        return SuccessResponse(
-          {
-            statusCode: 200,
-            message: { msg: "fetched", keys: { type: "Bet" } },
-            data: { count: 0, rows: [] },
-          },
-          req,
-          res
-        );
-      }
-      let partnershipColumn = partnershipPrefixByRole[roleName] + 'Partnership';
-      select.push("user.id", "user.userName", `user.${partnershipColumn}`);
-      result = await getBet({ createBy: In(childsId) }, queryData, roleName, select, null, true);
-    }
-    else {
-      const demoUsers = await getAllUsers({ isDemo: true });
-      select.push("user.id", "user.userName", "user.fwPartnership", "user.faPartnership");
-      result = await getBet(`user.id is not null ${demoUsers?.length ? `and betPlaced.createBy not in ('${demoUsers?.map((item) => item?.id).join("','")}')` : ""}`, queryData, roleName, select, userId, isTeamNameAllow == 'false' ? false : true);
-    }
-
-    if (!result[1]) {
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "fetched", keys: { type: "Bet" } },
-          data: { count: 0, rows: [] },
-        },
-        req,
-        res
-      );
-    }
-    const domainUrl = `${req.protocol}://${req.get("host")}`;
-    result[0] = result?.[0]?.map((item) => {
-      return {
-        ...item,
-        domain: domainUrl,
-      };
-    });
-
-    return SuccessResponse({
-      statusCode: 200, message: { msg: "fetched", keys: { type: "Bet" } }, data: {
-        count: result[1],
-        rows: result[0]
-      }
-    }, req, res)
-  } catch (err) {
-    logger.error({
-      error: "Error in get bet for wallet",
-      stack: err.stack,
-      message: err.message,
-    })
-    return ErrorResponse(err, req, res);
-
-  }
-
 };
 
 exports.getVirtualBetExposures = async (req, res) => {

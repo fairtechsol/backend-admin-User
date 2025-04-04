@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package matchProvider;
+
+
+// Request to add a match
+message AddMatchRequest {
+  string matchType = 1;
+  string competitionId = 2;
+  string competitionName = 3;
+  string title = 4;
+  string marketId = 5;
+  string eventId = 6;
+  string teamA = 7;
+  string teamB = 8;
+  string teamC = 9;
+  string startAt = 10;
+  string id = 11;
+  string createdAt = 12;
+  bool isTv = 13;
+  bool isFancy = 14;
+  bool isBookmaker = 15;
+}
+
+// Response after adding a match
+message AddMatchResponse {}
+
+// ----------------- RaceMatch -----------------
+
+message AddRaceMatchRequest {
+  string matchType = 1;
+  string title = 2;
+  string marketId = 3;
+  string createBy = 4;
+  string eventId = 5;
+  string startAt = 6;
+  string id = 7;
+  string venue = 8;
+  string raceType = 9;
+  string countryCode = 10;
+  string createdAt = 11;
+}
+
+message AddRaceMatchResponse {}
+
+// Service for managing matches
+service MatchProvider {
+  rpc AddMatch(AddMatchRequest) returns (AddMatchResponse);
+  rpc AddRaceMatch(AddRaceMatchRequest) returns (AddRaceMatchResponse);
+}

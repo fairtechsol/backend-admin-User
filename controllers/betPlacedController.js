@@ -2466,18 +2466,3 @@ function calculateBetRate(match, selectionId, bettingType) {
 
   return 0;
 }
-
-exports.verifyBet = async (req, res) => {
-  try {
-    let { isVerified, id, verifyBy } = req.body;
-    await betPlacedService.updatePlaceBet({ id: id }, { isVerified: isVerified, verifyBy: verifyBy })
-    return SuccessResponse({ statusCode: 200, message: { msg: "bet.isVerified" } }, req, res)
-  } catch (error) {
-    logger.error({
-      error: `Error at verify bet.`,
-      stack: error.stack,
-      message: error.message,
-    });
-    return ErrorResponse(error, req, res)
-  }
-}
