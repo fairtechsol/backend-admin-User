@@ -16,6 +16,7 @@ const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey }
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 const bot = require('../config/telegramBot');
+const { deleteAuthenticator } = require('../services/authService');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
