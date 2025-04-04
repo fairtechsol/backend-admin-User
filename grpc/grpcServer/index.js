@@ -1,8 +1,9 @@
 const { Server } = require("./grpcServer");
-const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLossExpert } = require("./handlers/betsHandler");
+const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLossExpert, deleteMultipleBet } = require("./handlers/betsHandler");
 const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareFinalMatchResult, declareFinalMatchResult } = require("./handlers/declareMatchHandler");
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
 const { addMatch, raceAdd } = require("./handlers/matchHandler");
+const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin } = require("./handlers/userHandler");
 
 const { GRPC_PORT = 50000 } = process.env;
 
@@ -26,6 +27,11 @@ const protoOptionsArray = [
         path: `${__dirname}/proto/match.proto`, //path to proto file
         package: "matchProvider",//package in proto name
         service: "MatchProvider",//service name in proto file
+    },
+    {
+        path: `${__dirname}/proto/user.proto`, //path to proto file
+        package: "userProvider",//package in proto name
+        service: "UserService",//service name in proto file
     }
 ];
 
@@ -47,8 +53,17 @@ server
     .addService("BetsProvider", "VerifyBet", verifyBet)
     .addService("BetsProvider", "GetSessionProfitLossUserWise", getSessionBetProfitLossExpert)
     .addService("BetsProvider", "GetSessionProfitLossBet", getResultBetProfitLoss)
+    .addService("BetsProvider", "DeleteMultipleBet", deleteMultipleBet)
 
     .addService("MatchProvider", "AddMatch", addMatch)
     .addService("MatchProvider", "AddRaceMatch", raceAdd)
+
+    .addService("UserService", "CreateSuperAdmin", createSuperAdmin)
+    .addService("UserService", "UpdateSuperAdmin", updateSuperAdmin)
+    .addService("UserService", "ChangePassword", changePasswordSuperAdmin)
+    .addService("UserService", "SetExposureLimit", setExposureLimitSuperAdmin)
+    .addService("UserService", "SetCreditReference", setCreditReferenceSuperAdmin)
+    .addService("UserService", "UpdateUserBalance", updateSuperAdminBalance)
+    .addService("UserService", "LockUnlockSuperAdmin", lockUnlockSuperAdmin)
 
 module.exports = server;

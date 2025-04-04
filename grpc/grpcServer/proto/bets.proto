@@ -47,9 +47,19 @@ message SessionProfitLossBetResponse {
   string data = 1;
 }
 
+message DeleteMultipleBetRequest {
+  string data = 1; // Key-value pairs of URLs and data
+  string deleteReason = 2;
+  string matchId = 3;
+  bool isPermanentDelete = 4;
+}
+
+message DeleteMultipleBetResponse {}
+
 service BetsProvider {
   rpc GetBets(GetBetsRequest) returns (GetBetsResponse);
   rpc VerifyBet(VerifyBetRequest) returns (VerifyBetResponse);
   rpc GetSessionProfitLossUserWise(GetSessionProfitLossUserWiseRequest) returns (GetSessionProfitLossUserWiseResponse);
   rpc GetSessionProfitLossBet(SessionProfitLossBetRequest) returns (SessionProfitLossBetResponse);
+  rpc DeleteMultipleBet(DeleteMultipleBetRequest) returns (DeleteMultipleBetResponse);
 }

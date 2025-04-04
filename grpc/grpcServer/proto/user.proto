@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package userProvider;
+
+// Message for creating a new user
+message CreateSuperAdminRequest {
+    string data = 1;
+  }
+  
+  // Response after creating a user
+  message CreateSuperAdminResponse {}
+
+message UpdateSuperAdminRequest {
+    string data = 1;
+  }
+  
+  // Response after creating a user
+message UpdateSuperAdminResponse {}
+
+message ChangePasswordRequest {
+    string password = 1;
+    string userId = 2;
+  }
+  
+  // Response after creating a user
+message ChangePasswordResponse {}
+
+
+// Message for setting exposure limit
+message SetExposureLimitRequest {
+    string userId = 1;
+    float exposureLimit = 2;
+  }
+  
+message SetExposureLimitResponse {}
+  
+// Message for setting credit reference
+message SetCreditReferenceRequest {
+    string userId = 1;
+    float amount = 2;
+    string remark = 3;
+  }
+  
+message SetCreditReferenceResponse {}
+
+// Message for updating user balance
+message UpdateUserBalanceRequest {
+    string userId = 1;
+    float amount = 2;
+    string transactionType = 3;
+    string remark = 4;
+}
+
+message UpdateUserBalanceResponse {}
+
+// Message for locking/unlocking a super admin
+message LockUnlockSuperAdminRequest {
+    string userId = 1;
+    string loginId = 2;
+    bool betBlock = 3;
+    bool userBlock = 4;
+}
+
+message LockUnlockSuperAdminResponse {}
+
+// Service for user management
+service UserService {
+  rpc CreateSuperAdmin(CreateSuperAdminRequest) returns (CreateSuperAdminResponse);
+  rpc UpdateSuperAdmin(UpdateSuperAdminRequest) returns (UpdateSuperAdminResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc SetExposureLimit(SetExposureLimitRequest) returns (SetExposureLimitResponse);
+  rpc SetCreditReference(SetCreditReferenceRequest) returns (SetCreditReferenceResponse);
+  rpc UpdateUserBalance(UpdateUserBalanceRequest) returns (UpdateUserBalanceResponse);
+  rpc LockUnlockSuperAdmin(LockUnlockSuperAdminRequest) returns (LockUnlockSuperAdminResponse);
+}
