@@ -28,6 +28,14 @@ const dataSourceOption = {
   migrations: [__dirname + "/../**/migrations/*{.js,.ts}"],
   migrationsTableName: "migrations",
   namingStrategy: new PluralNamingStrategy(),
+  // Connection Pool Configuration
+  extra: {
+    max: parseInt(process.env.DB_POOL_MAX, 10) || 20, // Max connections in pool
+    min: parseInt(process.env.DB_POOL_MIN, 10) || 2,  // Min connections in pool
+    idleTimeoutMillis: 30000, // Close idle connections after 30s
+    connectionTimeoutMillis: 15000, // Timeout for acquiring connection
+    maxUses: 1000, // Max times a connection can be reused
+  },
 };
 
 if (process.env.NODE_ENV == 'production') {
