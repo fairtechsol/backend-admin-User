@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss , declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, getVirtualBetExposures, checkVerifiedBets, getSessionBetProfitLossExpert } = require("../controllers/fairgameWalletController");
+const { createSuperAdmin, updateSuperAdmin, updateSuperAdminBalance, setExposureLimitSuperAdmin, setCreditReferrenceSuperAdmin, lockUnlockSuperAdmin, changePasswordSuperAdmin, totalProfitLossWallet, totalProfitLossByMatch, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss , declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, getVirtualBetExposures, checkVerifiedBets } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { CreateSuperAdmin, UpdateSuperAdmin, SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, SuperAdminChangePassword, changeBetsDeleteReasonValidator } = require("../validators/fairgameWalletValidator");
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
@@ -22,7 +22,6 @@ router.post("/declare/result/card/match", declarCardMatchResult);
 router.get("/user/exist", isUserExist);
 router.post("/total/profitLoss", totalProfitLossWallet);
 router.post("/total/matchWise/profitLoss", totalProfitLossByMatch);
-router.post("/total/bet/profitLoss", getResultBetProfitLoss);
 router.post("/total/session/profitLoss", getSessionBetProfitLoss);
 router.post("/userwise/profitLoss", getUserWiseTotalProfitLoss);
 
@@ -51,6 +50,5 @@ router.get('/eventWise/exposure/:userId', userEventWiseExposure);
 router.get('/marketAnalysis', marketAnalysis);
 router.get('/virtualBetExposure', getVirtualBetExposures);
 router.post('/checkVerifyBet', checkVerifiedBets);
-router.post("/user/session/profitLoss/expert", getSessionBetProfitLossExpert);
 
 module.exports = router;

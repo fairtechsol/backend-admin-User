@@ -1,9 +1,12 @@
 const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
-const { userRoleConstant, partnershipPrefixByRole } = require("../../../config/contants");
-const { getBet, updatePlaceBet } = require("../../../../betFairBackend/services/betPlacedService");
+const { userRoleConstant, partnershipPrefixByRole, betResultStatus, marketBetType } = require("../../../config/contants");
+const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss } = require("../../../../betFairBackend/services/betPlacedService");
 const { getChildsWithOnlyUserRole, getAllUsers } = require("../../../../betFairBackend/services/userService");
+const { profitLossPercentCol, childIdquery } = require("../../../services/commonService");
+const { In } = require("typeorm");
+const { getQueryColumns } = require("../../../controllers/fairgameWalletController");
 
 exports.getPlacedBets = async (call) => {
   try {
@@ -74,6 +77,75 @@ exports.verifyBet = async (call) => {
     throw {
       code: grpc.status.INTERNAL,
       message: err?.message || __mf("internalServerError"),
+    };
+  }
+}
+
+exports.getSessionBetProfitLossExpert = async (call) => {
+  try {
+    let { betId } = call?.request;
+
+    let queryColumns = ``;
+    let where = { betId: betId };
+
+    queryColumns = await profitLossPercentCol({ roleName: userRoleConstant.fairGameWallet }, queryColumns);
+    let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.marketBetType = '${marketBetType.SESSION}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.marketBetType = '${marketBetType.SESSION}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss", COUNT(placeBet.id) as "totalBet"`;
+
+    const userData = await getUserSessionsProfitLoss(where, [sessionProfitLoss, 'user.userName as "userName"', 'user.id as "userId"']);
+
+    return { data: JSON.stringify(userData) };
+  } catch (error) {
+    logger.error({
+      context: `Error in get bet profit loss.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    throw {
+      code: grpc.status.INTERNAL,
+      message: error?.message || __mf("internalServerError"),
+    };
+  }
+}
+
+exports.getResultBetProfitLoss = async (call) => {
+  try {
+    let { user, matchId, betId, isSession, searchId, partnerShipRoleName } = call.request;
+    user = user;
+    partnerShipRoleName = partnerShipRoleName;
+
+    let queryColumns = ``;
+    let where = { marketBetType: isSession ? marketBetType.SESSION : In([marketBetType.MATCHBETTING, marketBetType.RACING]) };
+
+    if (matchId) {
+      where.matchId = matchId;
+    }
+    if (betId) {
+      where.betId = betId;
+    }
+
+    if (!user) {
+      throw {
+        code: grpc.status.INVALID_ARGUMENT,
+        message: __mf("invalidData"),
+      };
+    }
+    queryColumns = await getQueryColumns(user, partnerShipRoleName);
+    let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
+
+    let subQuery = await childIdquery(user, searchId);
+    const domainUrl = `${call?.call?.host}`;
+
+    const result = await getBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
+    return { data: JSON.stringify(result) };
+  } catch (error) {
+    logger.error({
+      context: `Error in get bet profit loss.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    throw {
+      code: grpc.status.INTERNAL,
+      message: error?.message || __mf("internalServerError"),
     };
   }
 }

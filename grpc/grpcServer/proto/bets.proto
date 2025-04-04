@@ -18,8 +18,38 @@ message VerifyBetRequest {
 
 message VerifyBetResponse {}
 
+message GetSessionProfitLossUserWiseRequest {
+  string betId = 1; 
+}
+
+message  GetSessionProfitLossUserWiseResponse {
+  string data = 1; 
+}
+
+// Request for session profit/loss user-wise
+message SessionProfitLossBetRequest {
+  message User {
+    string roleName = 1;
+    string id = 2;
+  }
+
+  User user = 1;
+  string matchId = 2;
+  string betId = 3;
+  bool isSession = 4;
+  string searchId = 5;
+  string partnerShipRoleName = 6;
+
+}
+
+// Response for session profit/loss
+message SessionProfitLossBetResponse {
+  string data = 1;
+}
 
 service BetsProvider {
   rpc GetBets(GetBetsRequest) returns (GetBetsResponse);
   rpc VerifyBet(VerifyBetRequest) returns (VerifyBetResponse);
+  rpc GetSessionProfitLossUserWise(GetSessionProfitLossUserWiseRequest) returns (GetSessionProfitLossUserWiseResponse);
+  rpc GetSessionProfitLossBet(SessionProfitLossBetRequest) returns (SessionProfitLossBetResponse);
 }
