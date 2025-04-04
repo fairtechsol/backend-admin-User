@@ -123,7 +123,7 @@ exports.getAccountStatBet = async (where, query, select) => {
               END`, `betPlaced_teamName`)
     .setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))])
     .select(select).orderBy("betPlaced.createdAt", 'DESC');
-  const [ data, count ] = await new ApiFeature(
+  const [data, count] = await new ApiFeature(
     pgQuery,
     query
   )
@@ -206,14 +206,14 @@ exports.getMultipleAccountCardMatchProfitLoss = async (runnerId, userId) => {
   return betPlaced;
 };
 
-exports.findAllPlacedBet = async (whereObj,select) => {
+exports.findAllPlacedBet = async (whereObj, select) => {
   return await BetPlaced.find({
     where: whereObj,
     select: select
   });
 }
 
-exports.findAllPlacedBetWithUserIdAndBetId = async (userId, betId,where) => {
+exports.findAllPlacedBetWithUserIdAndBetId = async (userId, betId, where) => {
   return await BetPlaced.find({
     where: {
       betId: betId,
@@ -230,24 +230,24 @@ exports.updatePlaceBet = async (conditionObj, updateColumsObj) => {
 
 exports.getDistinctUserBetPlaced = async (betId) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
-  .where({ betId: betId, deleteReason: IsNull() })
-  .innerJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
-  .leftJoinAndMapOne("user.userBalance", "userBalance", 'userBalance', 'user.id = userBalance.userId')
-  .distinctOn(['user.id'])
-  .getMany()
+    .where({ betId: betId, deleteReason: IsNull() })
+    .innerJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
+    .leftJoinAndMapOne("user.userBalance", "userBalance", 'userBalance', 'user.id = userBalance.userId')
+    .distinctOn(['user.id'])
+    .getMany()
   return betPlaced;
 }
 
-exports.getUserDistinctBets = async (userId,where) => {
+exports.getUserDistinctBets = async (userId, where) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
     .where({ createBy: userId, result: In([betResultStatus.PENDING]), deleteReason: IsNull(), ...(where || {}) })
-    .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType","betPlaced.marketType","betPlaced.eventType"])
+    .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType", "betPlaced.marketType", "betPlaced.eventType"])
     .distinctOn(['betPlaced.betId'])
     .getMany()
   return betPlaced;
 }
 
-exports.getBetsWithUserRole = async (ids,where) => {
+exports.getBetsWithUserRole = async (ids, where) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
     .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
     .where({ createBy: In(ids), result: betResultStatus.PENDING, deleteReason: IsNull(), ...(where || {}) })
@@ -265,7 +265,7 @@ exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, key
   if (endDate) {
     profitLoss.andWhere(`"betPlaced"."createdAt" <= :endDate`, { endDate: endDate });
   }
-  if(keyword){
+  if (keyword) {
     profitLoss.andWhere(`betPlaced.eventType ILIKE :search`, { search: `%${keyword}%` });
   }
   const count = await profitLoss.select("COUNT(DISTINCT(betPlaced.marketType, betPlaced.eventType))", "count").getRawOne();
@@ -279,9 +279,9 @@ exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, key
       `"eventType"`,
     ]).orderBy('betPlaced.eventType', 'ASC');
 
-    if (page) {
-      profitLoss = profitLoss.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
-    }
+  if (page) {
+    profitLoss = profitLoss.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
+  }
   let profitLossData = await profitLoss.getRawMany();
   return { profitLossData, count }
 }
@@ -449,7 +449,7 @@ exports.getAllRacinMatchTotalProfitLoss = async (where, startDate, endDate, sele
   return { result, count };
 }
 
-exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selectArray,subQuery) => {
+exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.match", "cardMatch", 'match', 'placeBet.matchId = match.id')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
@@ -482,7 +482,7 @@ exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selec
   return { result };
 }
 
-exports.getBetsProfitLoss = async (where, totalLoss, subQuery,domain) => {
+exports.getBetsProfitLoss = async (where, totalLoss, subQuery, domain) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
     // .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
