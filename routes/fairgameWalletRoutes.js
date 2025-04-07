@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const {  lockUnlockSuperAdmin, totalProfitLossWallet, totalProfitLossByMatch, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList,  getUserWiseTotalProfitLoss , declarCardMatchResult, totalProfitLossByRoundCards, totalProfitLossCardsWallet, getCardResultBetProfitLoss, changeBetsDeleteReason, getVirtualBetExposures, checkVerifiedBets } = require("../controllers/fairgameWalletController");
+const {  lockUnlockSuperAdmin, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList , changeBetsDeleteReason, getVirtualBetExposures, checkVerifiedBets } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
-const {SuperAdminBalance, SuperAdminExposureLimit, SuperAdminCreditReference, SuperAdminLockUnlock, changeBetsDeleteReasonValidator } = require("../validators/fairgameWalletValidator");
+const { SuperAdminLockUnlock, changeBetsDeleteReasonValidator } = require("../validators/fairgameWalletValidator");
 const { isUserExist, getCommissionReportsMatch, getCommissionBetPlaced, userList, userMatchLock, getTotalUserListBalance } = require("../controllers/userController");
 const { settleCommissions } = require("../controllers/userBalanceController");
 const { settleCommission } = require("../validators/userBalanceValidator");
@@ -11,17 +11,10 @@ const { userEventWiseExposure, marketAnalysis } = require("../controllers/matchC
 router.post("/lockUnlock", validator(SuperAdminLockUnlock), lockUnlockSuperAdmin);
 
 
-router.post("/declare/result/card/match", declarCardMatchResult);
 
 router.get("/user/exist", isUserExist);
-router.post("/total/profitLoss", totalProfitLossWallet);
-router.post("/total/matchWise/profitLoss", totalProfitLossByMatch);
 router.post("/total/session/profitLoss", getSessionBetProfitLoss);
-router.post("/userwise/profitLoss", getUserWiseTotalProfitLoss);
 
-router.post("/card/total/profitLoss", totalProfitLossCardsWallet);
-router.post("/card/total/matchWise/profitLoss", totalProfitLossByRoundCards);
-router.post("/card/total/bet/profitLoss", getCardResultBetProfitLoss);
 
 router.get("/commissionMatch/:userId", getCommissionReportsMatch);
 router.get("/commissionBetPlaced/:userId", getCommissionBetPlaced);

@@ -1,0 +1,58 @@
+syntax = "proto3";
+
+package matchProfitLossProvider;
+
+message ProfitLossRequest {
+  string user = 1;
+  string startDate = 2;
+  string endDate = 3;
+  string searchId = 4;
+}
+
+message ProfitLossResponse {
+  string data = 1;
+}
+
+message DomainProfitLossRequest {
+  string user = 1;
+  string startDate = 2;
+  string endDate = 3;
+  string type = 4;
+  string searchId = 5;
+  bool isRacing = 6;
+}
+
+message DomainProfitLossResponse {
+  string data = 1;
+}
+
+message UserWiseBetRequest {
+  string user = 1;
+  string matchId = 2;
+  string searchId = 3;
+  string partnerShipRoleName = 4;
+  string runnerId = 5;
+  string userIds = 6;
+}
+
+message UserWiseBetResponse {
+  string data = 1;
+}
+
+message SessionBetRequest {
+  string user = 1;
+  string matchId = 2;
+  string searchId = 3;
+  string partnerShipRoleName = 4;
+}
+
+message SessionBetResponse {
+  string data = 1;
+}
+
+service MatchProfitLossService {
+  rpc GetTotalProfitLoss (ProfitLossRequest) returns (ProfitLossResponse);
+  rpc GetDomainProfitLoss (DomainProfitLossRequest) returns (DomainProfitLossResponse);
+  rpc GetUserWiseBetProfitLoss (UserWiseBetRequest) returns (UserWiseBetResponse);
+  rpc GetSessionBetProfitLoss (SessionBetRequest) returns (SessionBetResponse);
+}

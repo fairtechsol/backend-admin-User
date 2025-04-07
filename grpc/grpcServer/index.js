@@ -3,7 +3,9 @@ const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLos
 const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareFinalMatchResult, declareFinalMatchResult } = require("./handlers/declareMatchHandler");
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
 const { addMatch, raceAdd } = require("./handlers/matchHandler");
+const { declareCardMatchResult, totalProfitLossCardsWallet, totalProfitLossByRoundCards, getCardResultBetProfitLoss } = require("./handlers/cardHandler");
 const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin } = require("./handlers/userHandler");
+const { totalProfitLossWallet, totalProfitLossByMatch, getUserWiseTotalProfitLoss, getSessionBetProfitLoss } = require("./handlers/matchProfitLossReportHandler");
 
 const { GRPC_PORT = 50000 } = process.env;
 
@@ -32,6 +34,16 @@ const protoOptionsArray = [
         path: `${__dirname}/proto/user.proto`, //path to proto file
         package: "userProvider",//package in proto name
         service: "UserService",//service name in proto file
+    },
+    {
+        path: `${__dirname}/proto/card.proto`, //path to proto file
+        package: "cardProvider",//package in proto name
+        service: "CardService",//service name in proto file
+    },
+    {
+        path: `${__dirname}/proto/matchProfitLossReport.proto`, // path to proto file
+        package: "matchProfitLossProvider", // package in proto name
+        service: "MatchProfitLossService", // service name in proto file
     }
 ];
 
@@ -65,5 +77,17 @@ server
     .addService("UserService", "SetCreditReference", setCreditReferenceSuperAdmin)
     .addService("UserService", "UpdateUserBalance", updateSuperAdminBalance)
     .addService("UserService", "LockUnlockSuperAdmin", lockUnlockSuperAdmin)
+
+    .addService("CardService", "DeclareCard", declareCardMatchResult)
+    .addService("CardService", "GetCardTotalProfitLoss", totalProfitLossCardsWallet)
+    .addService("CardService", "GetCardDomainProfitLoss", totalProfitLossByRoundCards)
+    .addService("CardService", "GetCardResultBetProfitLoss", getCardResultBetProfitLoss)
+
+    .addService("MatchProfitLossService", "GetTotalProfitLoss", totalProfitLossWallet)
+    .addService("MatchProfitLossService", "GetDomainProfitLoss", totalProfitLossByMatch)
+    .addService("MatchProfitLossService", "GetUserWiseBetProfitLoss", getUserWiseTotalProfitLoss)
+    .addService("MatchProfitLossService", "GetSessionBetProfitLoss", getSessionBetProfitLoss)
+
+
 
 module.exports = server;
