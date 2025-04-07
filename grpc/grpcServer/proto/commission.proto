@@ -20,8 +20,15 @@ message CommissionBetResponse {
   string data = 1;
 }
 
+message SettleCommissionRequest {
+  string userId = 1;
+}
+
+message SettleCommissionResponse {
+}
 
 service CommissionProvider {
   rpc GetCommissionReport(CommissionReportRequest) returns (CommissionReportResponse);
   rpc GetCommissionBetReport(CommissionBetRequest) returns (CommissionBetResponse);
+  rpc SettleCommission(SettleCommissionRequest) returns (SettleCommissionResponse);
 }

@@ -43,8 +43,20 @@ message AddRaceMatchRequest {
 
 message AddRaceMatchResponse {}
 
+message MatchLockRequest {
+  string userId = 1;
+  string matchId = 2;
+  string type = 3;
+  bool block = 4;
+  string roleName = 5;
+  bool operationToAll = 6;
+}
+
+message MatchLockResponse {}
+
 // Service for managing matches
 service MatchProvider {
   rpc AddMatch(AddMatchRequest) returns (AddMatchResponse);
   rpc AddRaceMatch(AddRaceMatchRequest) returns (AddRaceMatchResponse);
+  rpc MatchLock(MatchLockRequest) returns (MatchLockResponse);
 }

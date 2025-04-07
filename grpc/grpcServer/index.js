@@ -2,11 +2,11 @@ const { Server } = require("./grpcServer");
 const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLossExpert, deleteMultipleBet } = require("./handlers/betsHandler");
 const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareFinalMatchResult, declareFinalMatchResult } = require("./handlers/declareMatchHandler");
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
-const { addMatch, raceAdd } = require("./handlers/matchHandler");
+const { addMatch, raceAdd, userMatchLock } = require("./handlers/matchHandler");
 const { declareCardMatchResult, totalProfitLossCardsWallet, totalProfitLossByRoundCards, getCardResultBetProfitLoss } = require("./handlers/cardHandler");
 const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin, getTotalUserListBalance, userList, getAllUserBalance } = require("./handlers/userHandler");
 const { totalProfitLossWallet, totalProfitLossByMatch, getUserWiseTotalProfitLoss, getSessionBetProfitLoss } = require("./handlers/matchProfitLossReportHandler");
-const { getCommissionReportsMatch, getCommissionBetPlaced } = require("./handlers/commissionHandler");
+const { getCommissionReportsMatch, getCommissionBetPlaced, settleCommissions } = require("./handlers/commissionHandler");
 
 const { GRPC_PORT = 50000 } = process.env;
 
@@ -75,6 +75,7 @@ server
 
     .addService("MatchProvider", "AddMatch", addMatch)
     .addService("MatchProvider", "AddRaceMatch", raceAdd)
+    .addService("MatchProvider", "MatchLock", userMatchLock)
 
     .addService("UserService", "CreateSuperAdmin", createSuperAdmin)
     .addService("UserService", "UpdateSuperAdmin", updateSuperAdmin)
@@ -99,6 +100,7 @@ server
 
     .addService("CommissionProvider", "GetCommissionReport", getCommissionReportsMatch )
     .addService("CommissionProvider", "GetCommissionBetReport", getCommissionBetPlaced)
+    .addService("CommissionProvider", "SettleCommission", settleCommissions)
 
 
 module.exports = server;
