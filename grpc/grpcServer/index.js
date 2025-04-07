@@ -4,7 +4,7 @@ const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareF
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
 const { addMatch, raceAdd } = require("./handlers/matchHandler");
 const { declareCardMatchResult, totalProfitLossCardsWallet, totalProfitLossByRoundCards, getCardResultBetProfitLoss } = require("./handlers/cardHandler");
-const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin, getTotalUserListBalance, userList } = require("./handlers/userHandler");
+const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin, getTotalUserListBalance, userList, getAllUserBalance } = require("./handlers/userHandler");
 const { totalProfitLossWallet, totalProfitLossByMatch, getUserWiseTotalProfitLoss, getSessionBetProfitLoss } = require("./handlers/matchProfitLossReportHandler");
 const { getCommissionReportsMatch, getCommissionBetPlaced } = require("./handlers/commissionHandler");
 
@@ -85,6 +85,7 @@ server
     .addService("UserService", "LockUnlockSuperAdmin", lockUnlockSuperAdmin)
     .addService("UserService", "GetUserList", userList)
     .addService("UserService", "GetTotalUserListBalance", getTotalUserListBalance)
+    .addService("UserService", "UserBalanceSum", getAllUserBalance)
 
     .addService("CardService", "DeclareCard", declareCardMatchResult)
     .addService("CardService", "GetCardTotalProfitLoss", totalProfitLossCardsWallet)

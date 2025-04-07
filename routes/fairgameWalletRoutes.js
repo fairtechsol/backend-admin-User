@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {  lockUnlockSuperAdmin, getSessionBetProfitLoss, getBetCount, getAllUserBalance, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList , changeBetsDeleteReason, getVirtualBetExposures, checkVerifiedBets } = require("../controllers/fairgameWalletController");
+const {  lockUnlockSuperAdmin, getSessionBetProfitLoss, getBetCount, getUsersProfitLoss, setExposureLimitByFGAdmin, checkUserBalance, deleteWalletUsers, getAllChildSearchList , changeBetsDeleteReason, getVirtualBetExposures, checkVerifiedBets } = require("../controllers/fairgameWalletController");
 const validator = require("../middleware/joi.validator");
 const { SuperAdminLockUnlock, changeBetsDeleteReasonValidator } = require("../validators/fairgameWalletValidator");
 const { isUserExist, userMatchLock } = require("../controllers/userController");
@@ -17,7 +17,6 @@ router.post("/total/session/profitLoss", getSessionBetProfitLoss);
 
 
 router.get("/betCounts", getBetCount);
-router.get("/users/balanceSum/:id", getAllUserBalance);
 router.post("/userMatchLock", userMatchLock);
 router.post("/settle/commission", validator(settleCommission), settleCommissions);
 

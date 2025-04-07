@@ -1,16 +1,16 @@
 const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
-const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData } = require("../../../services/userService");
+const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData, getAllUsers, getAllUsersBalanceSumByFgId } = require("../../../services/userService");
 const { getDomainDataByDomain, addDomainData, getDomainDataByUserId, updateDomainData } = require("../../../services/domainDataService");
 const { insertTransactions } = require("../../../services/transactionService");
-const { addInitialUserBalance, getUserBalanceDataByUserId, updateUserBalanceData } = require("../../../services/userBalanceService");
+const { addInitialUserBalance, getUserBalanceDataByUserId, updateUserBalanceData, getAllUsersBalanceSum } = require("../../../services/userBalanceService");
 const { buttonType, sessiontButtonValue, casinoButtonValue, defaultButtonValue, transactionType, walletDescription, transType, userRoleConstant, socketData, oldBetFairDomain, fileType } = require("../../../config/contants");
 const { insertButton } = require("../../../services/buttonService");
 const { forceLogoutUser } = require("../../../services/commonService");
 const { updateUserDataRedis, hasUserInCache } = require("../../../services/redis/commonfunction");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
-const { Not } = require("typeorm");
+const { Not, In } = require("typeorm");
 const FileGenerate = require("../../../utils/generateFile");
 
 
@@ -688,7 +688,7 @@ exports.userList = async (call) => {
             const file = await fileGenerate.generateReport(data, header, "Client List Report");
             const fileName = `accountList_${new Date()}`
 
-            return { data: JSON.stringify({ file: file, fileName: fileName }) } 
+            return { data: JSON.stringify({ file: file, fileName: fileName }) }
         }
 
         response.list = data;
@@ -776,6 +776,44 @@ exports.getTotalUserListBalance = async (call) => {
             message: "Error in user list total balance.",
             context: error.message,
             stake: error.stack
+        });
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
+}
+
+exports.getAllUserBalance = async (call) => {
+    try {
+
+        const { roleName, userId: id } = JSON.parse(call?.request?.query || "{}");
+        let balanceSum = {};
+        if (roleName == userRoleConstant.fairGameWallet) {
+
+            const demoUserId = await getAllUsers({ isDemo: true }, ["id"]);
+            let childUsersBalances = await getAllUsersBalanceSum({ userId: Not(In(demoUserId?.map((item) => item?.id))) });
+            balanceSum[id] = parseFloat(parseFloat(childUsersBalances?.balance).toFixed(2));
+
+        }
+        else if (roleName == userRoleConstant.fairGameAdmin) {
+            let childUsersBalances = await getAllUsersBalanceSumByFgId(id);
+            balanceSum[id] = parseFloat(parseFloat(childUsersBalances?.balance).toFixed(2));
+        }
+        else {
+            balanceSum = {};
+            for (let item of id?.split(",")) {
+                let childUsersBalances = await getChildUserBalanceSum(item);
+                balanceSum[item] = parseFloat(parseFloat(childUsersBalances?.[0]?.balance).toFixed(2));
+            };
+        }
+
+        return { data: JSON.stringify({ balance: balanceSum }) }
+    } catch (error) {
+        logger.error({
+            context: `Error in get all user balance.`,
+            error: error.message,
+            stake: error.stack,
         });
         throw {
             code: grpc.status.INTERNAL,

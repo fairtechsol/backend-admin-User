@@ -81,6 +81,16 @@ message GetTotalUserListBalanceResponse {
     string data = 1;
 }
 
+// Message for getting user balance sum
+message UserBalanceSumRequest {
+    string roleName = 1;
+    string userId = 2;
+}
+
+message UserBalanceSumResponse {
+    string data = 1;
+}
+
 // Service for user management
 service UserService {
   rpc CreateSuperAdmin(CreateSuperAdminRequest) returns (CreateSuperAdminResponse);
@@ -92,4 +102,5 @@ service UserService {
   rpc LockUnlockSuperAdmin(LockUnlockSuperAdminRequest) returns (LockUnlockSuperAdminResponse);
   rpc GetUserList(GetUserListRequest) returns (GetUserListResponse);
   rpc GetTotalUserListBalance(GetTotalUserListBalanceRequest) returns (GetTotalUserListBalanceResponse);
+  rpc UserBalanceSum(UserBalanceSumRequest) returns (UserBalanceSumResponse);
 }
