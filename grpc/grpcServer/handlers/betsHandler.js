@@ -6,7 +6,7 @@ const { userRoleConstant, partnershipPrefixByRole, betResultStatus, marketBetTyp
 const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss, findAllPlacedBet, deleteBet } = require("../../../services/betPlacedService");
 const { getChildsWithOnlyUserRole, getAllUsers, getUserById } = require("../../../services/userService");
 const { profitLossPercentCol, childIdquery, findUserPartnerShipObj, calculatePLAllBet, mergeProfitLoss, forceLogoutUser, calculateProfitLossForRacingMatchToResult, calculateRacingRate, parseRedisData } = require("../../../services/commonService");
-const { In, IsNull } = require("typeorm");
+const { In, IsNull, Not } = require("typeorm");
 const { getQueryColumns } = require("../../../controllers/fairgameWalletController");
 const { allApiRoutes, apiCall, apiMethod } = require("../../../utils/apiService");
 const { getUserRedisData, incrementValuesRedis } = require("../../../services/redis/commonfunction");
@@ -749,3 +749,75 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
   const expertJob = expertTournamentMatchBetDeleteQueue.createJob(queueObject);
   await expertJob.save();
 }
+
+exports.changeBetsDeleteReason = async (call) => {
+  try {
+    let { deleteReason, betIds, matchId } = call.request;
+    betIds = JSON.parse(betIds);
+    await updatePlaceBet({ id: In(betIds), deleteReason: Not(IsNull()) }, { deleteReason: deleteReason });
+
+    const userIds = await findAllPlacedBet({ id: In(betIds) }, ["createBy", "id"]);
+
+    const userWiseBetId = {};
+    const walletWiseBetId = {};
+
+    for (let item of userIds) {
+      if (!userWiseBetId?.[item?.createBy]) {
+        let userRedisData = await getUserRedisData(item?.createBy);
+        let isUserLogin = userRedisData ? true : false;
+        let partnership = {};
+        if (isUserLogin) {
+          partnership = JSON.parse(userRedisData.partnerShips);
+        }
+        else {
+          const user = await getUserById(item?.createBy, [
+            "id",
+            "roleName",
+            "createBy",
+          ]);
+          partnership = await findUserPartnerShipObj(user);
+          partnership = JSON.parse(partnership);
+        }
+        const adminIds = Object.values(partnershipPrefixByRole)?.filter((items) => !!partnership[`${items}PartnershipId`] && items != partnershipPrefixByRole[userRoleConstant.fairGameAdmin] && items != partnershipPrefixByRole[userRoleConstant.fairGameWallet])?.map((items) => partnership[`${items}PartnershipId`]);
+        const superAdminIds = Object.keys(partnership)?.filter((items) => [`${partnershipPrefixByRole[userRoleConstant.fairGameAdmin]}PartnershipId`, `${partnershipPrefixByRole[userRoleConstant.fairGameWallet]}PartnershipId`].includes(items))?.map((items) => partnership[items]);
+        userWiseBetId[item?.createBy] = {
+          bets: [],
+          parent: adminIds,
+          superParent: superAdminIds
+        };
+      }
+      userWiseBetId?.[item?.createBy]?.bets?.push(item?.id);
+      for (let parentItem of userWiseBetId?.[item?.createBy]?.parent) {
+        if (!userWiseBetId?.[parentItem]) {
+          userWiseBetId[parentItem] = { bets: [item?.id] };
+        }
+        else {
+          userWiseBetId?.[parentItem]?.bets?.push(item?.id);
+
+        }
+      }
+      for (let parentItem of userWiseBetId?.[item?.createBy]?.superParent) {
+        if (!walletWiseBetId?.[parentItem]) {
+          walletWiseBetId[parentItem] = { bets: [item?.id] };
+        }
+        else {
+          walletWiseBetId?.[parentItem]?.bets?.push(item?.id);
+        }
+      }
+    };
+
+    Object.keys(userWiseBetId)?.forEach((item) => {
+      sendMessageToUser(item, socketData.updateDeleteReason, {
+        betIds: userWiseBetId?.[item]?.bets,
+        deleteReason: deleteReason,
+        matchId: matchId
+      });
+    });
+    return { data: JSON.stringify(walletWiseBetId) }
+  } catch (err) {
+    throw {
+      code: grpc.status.INTERNAL,
+      message: err?.message || __mf("internalServerError"),
+    };
+  }
+};

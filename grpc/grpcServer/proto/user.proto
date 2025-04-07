@@ -91,6 +91,44 @@ message UserBalanceSumResponse {
     string data = 1;
 }
 
+// Message for getting user profit loss
+message GetUserProfitLossRequest {
+    string userIds = 1;
+    string matchId = 2;
+}
+
+message GetUserProfitLossResponse {
+    string data = 1;
+}
+
+// Message for deleting a user
+message DeleteUserRequest {
+    string roleName = 1;
+    string userId = 2;
+}
+
+message DeleteUserResponse {}
+
+// Message for checking user balance before deletion  
+message CheckUserBalanceRequest {
+    string roleName = 1;
+    string userId = 2;
+}
+
+message CheckUserBalanceResponse {}
+
+// Message for user search
+message UserSearchRequest {
+    string id = 1;
+    string roleName = 2;
+    string userName = 3;
+    bool isUser = 4;
+}
+
+message UserSearchResponse {
+    string data = 1;
+}
+
 // Service for user management
 service UserService {
   rpc CreateSuperAdmin(CreateSuperAdminRequest) returns (CreateSuperAdminResponse);
@@ -103,4 +141,8 @@ service UserService {
   rpc GetUserList(GetUserListRequest) returns (GetUserListResponse);
   rpc GetTotalUserListBalance(GetTotalUserListBalanceRequest) returns (GetTotalUserListBalanceResponse);
   rpc UserBalanceSum(UserBalanceSumRequest) returns (UserBalanceSumResponse);
+  rpc GetUserProfitLoss(GetUserProfitLossRequest) returns (GetUserProfitLossResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc CheckUserBalance(CheckUserBalanceRequest) returns (CheckUserBalanceResponse);
+  rpc UserSearch(UserSearchRequest) returns (UserSearchResponse);
 }

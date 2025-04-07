@@ -1,10 +1,10 @@
 const { Server } = require("./grpcServer");
-const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLossExpert, deleteMultipleBet } = require("./handlers/betsHandler");
+const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLossExpert, deleteMultipleBet, changeBetsDeleteReason } = require("./handlers/betsHandler");
 const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareFinalMatchResult, declareFinalMatchResult } = require("./handlers/declareMatchHandler");
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
-const { addMatch, raceAdd, userMatchLock } = require("./handlers/matchHandler");
+const { addMatch, raceAdd, userMatchLock, userEventWiseExposure, marketAnalysis, getVirtualBetExposures } = require("./handlers/matchHandler");
 const { declareCardMatchResult, totalProfitLossCardsWallet, totalProfitLossByRoundCards, getCardResultBetProfitLoss } = require("./handlers/cardHandler");
-const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin, getTotalUserListBalance, userList, getAllUserBalance } = require("./handlers/userHandler");
+const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin, getTotalUserListBalance, userList, getAllUserBalance, getUsersProfitLoss, deleteWalletUsers, checkUserBalance, getAllChildSearchList } = require("./handlers/userHandler");
 const { totalProfitLossWallet, totalProfitLossByMatch, getUserWiseTotalProfitLoss, getSessionBetProfitLoss } = require("./handlers/matchProfitLossReportHandler");
 const { getCommissionReportsMatch, getCommissionBetPlaced, settleCommissions } = require("./handlers/commissionHandler");
 
@@ -72,10 +72,14 @@ server
     .addService("BetsProvider", "GetSessionProfitLossUserWise", getSessionBetProfitLossExpert)
     .addService("BetsProvider", "GetSessionProfitLossBet", getResultBetProfitLoss)
     .addService("BetsProvider", "DeleteMultipleBet", deleteMultipleBet)
+    .addService("BetsProvider", "ChangeBetsDeleteReason", changeBetsDeleteReason)
 
     .addService("MatchProvider", "AddMatch", addMatch)
     .addService("MatchProvider", "AddRaceMatch", raceAdd)
     .addService("MatchProvider", "MatchLock", userMatchLock)
+    .addService("MatchProvider", "UserEventWiseExposure", userEventWiseExposure)
+    .addService("MatchProvider", "MarketAnalysis", marketAnalysis)
+    .addService("MatchProvider", "VirtualEventWiseExposure", getVirtualBetExposures)
 
     .addService("UserService", "CreateSuperAdmin", createSuperAdmin)
     .addService("UserService", "UpdateSuperAdmin", updateSuperAdmin)
@@ -87,6 +91,10 @@ server
     .addService("UserService", "GetUserList", userList)
     .addService("UserService", "GetTotalUserListBalance", getTotalUserListBalance)
     .addService("UserService", "UserBalanceSum", getAllUserBalance)
+    .addService("UserService", "GetUserProfitLoss", getUsersProfitLoss)
+    .addService("UserService", "DeleteUser", deleteWalletUsers)
+    .addService("UserService", "CheckUserBalance", checkUserBalance)
+    .addService("UserService", "UserSearch", getAllChildSearchList)
 
     .addService("CardService", "DeclareCard", declareCardMatchResult)
     .addService("CardService", "GetCardTotalProfitLoss", totalProfitLossCardsWallet)

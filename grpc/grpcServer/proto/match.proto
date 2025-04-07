@@ -54,9 +54,38 @@ message MatchLockRequest {
 
 message MatchLockResponse {}
 
+message UserEventWiseExposureRequest {
+  string userId = 1;
+}
+
+message UserEventWiseExposureResponse {
+  string data = 1;
+}
+
+message MarketAnalysisRequest {
+  string matchId = 1;
+  string userId = 2;
+}
+
+message MarketAnalysisResponse {
+  string data = 1;
+}
+
+message VirtualEventWiseExposureRequest {
+  string userId = 1;
+  string roleName = 2;
+}
+
+message VirtualEventWiseExposureResponse {
+  string data = 1;
+}
+
 // Service for managing matches
 service MatchProvider {
   rpc AddMatch(AddMatchRequest) returns (AddMatchResponse);
   rpc AddRaceMatch(AddRaceMatchRequest) returns (AddRaceMatchResponse);
   rpc MatchLock(MatchLockRequest) returns (MatchLockResponse);
+  rpc UserEventWiseExposure(UserEventWiseExposureRequest) returns (UserEventWiseExposureResponse);
+  rpc MarketAnalysis(MarketAnalysisRequest) returns (MarketAnalysisResponse);
+  rpc VirtualEventWiseExposure(VirtualEventWiseExposureRequest) returns (VirtualEventWiseExposureResponse);
 }

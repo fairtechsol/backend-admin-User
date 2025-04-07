@@ -1,16 +1,16 @@
 const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
-const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData, getAllUsers, getAllUsersBalanceSumByFgId } = require("../../../services/userService");
+const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData, getAllUsers, getAllUsersBalanceSumByFgId, updateUserExposureLimit, deleteUserByDirectParent, softDeleteAllUsers, getMultipleUsersWithUserBalances, getUserDataWithUserBalance, getChildUserBalanceAndData } = require("../../../services/userService");
 const { getDomainDataByDomain, addDomainData, getDomainDataByUserId, updateDomainData } = require("../../../services/domainDataService");
 const { insertTransactions } = require("../../../services/transactionService");
 const { addInitialUserBalance, getUserBalanceDataByUserId, updateUserBalanceData, getAllUsersBalanceSum } = require("../../../services/userBalanceService");
 const { buttonType, sessiontButtonValue, casinoButtonValue, defaultButtonValue, transactionType, walletDescription, transType, userRoleConstant, socketData, oldBetFairDomain, fileType } = require("../../../config/contants");
 const { insertButton } = require("../../../services/buttonService");
-const { forceLogoutUser } = require("../../../services/commonService");
+const { forceLogoutUser, getUserProfitLossForUpperLevel, forceLogoutIfLogin } = require("../../../services/commonService");
 const { updateUserDataRedis, hasUserInCache } = require("../../../services/redis/commonfunction");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
-const { Not, In } = require("typeorm");
+const { Not, In, ILike } = require("typeorm");
 const FileGenerate = require("../../../utils/generateFile");
 
 
@@ -238,29 +238,22 @@ exports.changePasswordSuperAdmin = async (call) => {
 
 exports.setExposureLimitSuperAdmin = async (call) => {
     try {
-        let { exposureLimit, id } = call.request;
-
-        let user = await getUser({ id }, ["id", "exposureLimit"]);
-
-        if (!user) {
-            throw {
-                code: grpc.status.INVALID_ARGUMENT,
-                message: __mf("invalidData"),
-            };
-        }
+        let { exposureLimit, id, roleName } = call.request;
 
         exposureLimit = parseInt(exposureLimit);
-        user.exposureLimit = exposureLimit;
-        let childUsers = await getChildUser(user.id);
+        let childUsers;
 
-        childUsers.map(async (childObj) => {
-            let childUser = await getUserById(childObj.id);
-            if (childUser.exposureLimit > exposureLimit || childUser.exposureLimit == 0) {
-                childUser.exposureLimit = exposureLimit;
-                await updateUser(childUser.id, { exposureLimit: exposureLimit });
-            }
-        });
-        await updateUser(user.id, { exposureLimit: exposureLimit });
+        if (roleName) {
+            childUsers = await getAllUsers(roleName == userRoleConstant.fairGameAdmin ? { superParentId: id } : {}, ["id"]);
+        }
+        else {
+            childUsers = await getChildUser(user.id, ["id"]);
+            childUsers.push({ id: id });
+        }
+
+        const childUsersId = childUsers.map((childObj) => childObj.id);
+        await updateUserExposureLimit(exposureLimit, childUsersId);
+
         return {}
     } catch (error) {
         throw {
@@ -812,6 +805,164 @@ exports.getAllUserBalance = async (call) => {
     } catch (error) {
         logger.error({
             context: `Error in get all user balance.`,
+            error: error.message,
+            stake: error.stack,
+        });
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
+}
+
+
+exports.getUsersProfitLoss = async (call) => {
+    try {
+        const { userIds, matchId } = call.request;
+
+        const resUserData = [];
+        let markets = {};
+
+        for (let userData of userIds?.split("|")) {
+            userData = JSON.parse(userData);
+            let userProfitLossData = {};
+
+
+            let betsData = await getUserProfitLossForUpperLevel(userData, matchId);
+
+            Object.keys(betsData || {}).forEach((item) => {
+                markets[item] = { betId: item, name: betsData[item]?.name };
+                Object.keys(betsData[item].teams || {})?.forEach((teams) => {
+                    betsData[item].teams[teams].pl = {
+                        rate: betsData[item].teams?.[teams]?.pl,
+                        percent: parseFloat(parseFloat(parseFloat(betsData[item].teams?.[teams]?.pl).toFixed(2)) * parseFloat(userData.partnerShip) / 100).toFixed(2)
+                    }
+                })
+            });
+            userProfitLossData.userName = userData?.userName;
+            userProfitLossData.profitLoss = betsData;
+
+            if (Object.keys(betsData || {}).length > 0) {
+                resUserData.push(userProfitLossData);
+            }
+        }
+        return { data: JSON.stringify({ profitLoss: resUserData, markets: Object.values(markets) }) }
+    } catch (error) {
+        logger.error({
+            context: `Error in get profit loss user data.`,
+            error: error.message,
+            stake: error.stack,
+        });
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
+}
+
+
+exports.deleteWalletUsers = async (call) => {
+    try {
+        const { userId, roleName } = call.request;
+
+        if (roleName == userRoleConstant.fairGameAdmin) {
+            await deleteUserByDirectParent(userId);
+        }
+        else {
+            await softDeleteAllUsers(userId);
+        }
+
+        return {}
+    }
+    catch (error) {
+        logger.error({
+            context: `error in delete user`,
+            error: error.message,
+            stake: error.stack,
+        });
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
+}
+
+exports.checkUserBalance = async (call) => {
+    try {
+        const { roleName, userId } = call.request;
+
+        if (roleName == userRoleConstant.fairGameAdmin) {
+            const childUsers = await getMultipleUsersWithUserBalances({ superParentId: userId });
+            for (let childData of childUsers) {
+                if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
+                    return ErrorResponse(
+                        { statusCode: 400, message: { msg: "settleAccount", keys: { name: childData?.userName } } }, req, res);
+                }
+                forceLogoutIfLogin(childData.id);
+            }
+        }
+        else {
+            const userData = await getUserDataWithUserBalance({ id: userId });
+
+            if (!userData) {
+                throw {
+                    code: grpc.status.NOT_FOUND,
+                    message: __mf("notFound", { name: "User" }),
+                };
+            }
+            if (parseFloat(userData.userBal?.exposure || 0) != 0 || parseFloat(userData.userBal?.currentBalance || 0) != 0 || parseFloat(userData.userBal?.profitLoss || 0) != 0 || parseFloat(userData.creditRefrence || 0) != 0 || parseFloat(userData.userBal?.totalCommission || 0) != 0) {
+                throw {
+                    code: grpc.status.BAD_REQUEST,
+                    message: __mf("settleAccount", { name: "your" }),
+                }
+            }
+
+            const childUsers = await getChildUserBalanceAndData(id);
+            for (let childData of childUsers) {
+                if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
+
+                    throw {
+                        code: grpc.status.BAD_REQUEST, message: __mf("settleAccount", { name: childData?.userName }),
+                    }
+
+
+                }
+                forceLogoutIfLogin(childData.id);
+            }
+        }
+
+        return {}
+    }
+    catch (error) {
+        logger.error({
+            context: `error in delete user`,
+            error: error.message,
+            stake: error.stack,
+        });
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
+}
+
+exports.getAllChildSearchList = async (call) => {
+    try {
+        const { roleName, userName, id, isUser } = call.request;
+
+        let users = [];
+        if (roleName == userRoleConstant.fairGameAdmin) {
+            users = await getAllUsers({ superParentId: id, userName: ILike(`%${userName}%`), ...(isUser ? { roleName: userRoleConstant.user } : {}) }, ["id", "userName", "betBlock", "userBlock"]);
+        }
+        else {
+            users = await getAllUsers({ userName: ILike(`%${userName}%`), isDemo: false, ...(isUser ? { roleName: userRoleConstant.user } : {}) }, ["id", "userName", "betBlock", "userBlock"]);
+        }
+
+        return { data: JSON.stringify(users) };
+    }
+    catch (error) {
+        logger.error({
+            context: `error in delete user`,
             error: error.message,
             stake: error.stack,
         });
