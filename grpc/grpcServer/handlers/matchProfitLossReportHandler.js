@@ -1,5 +1,5 @@
 const { __mf } = require("i18n");
-const grpcReq = require("../../../../fairgameWalletBackend/grpc/grpcClient");
+const grpc = require("@grpc/grpc-js");
 const { matchOddName, userRoleConstant, betResultStatus, marketBetType } = require("../../../config/contants");
 const { logger } = require("../../../config/logger");
 const { getQueryColumns } = require("../../../controllers/fairgameWalletController");
@@ -22,7 +22,7 @@ exports.totalProfitLossWallet = async (call) => {
 
         if (!user) {
             throw {
-                code: grpcReq.status.INVALID_ARGUMENT,
+                code: grpc.status.INVALID_ARGUMENT,
                 message: __mf("invalidData"),
             }
         }
@@ -45,7 +45,7 @@ exports.totalProfitLossWallet = async (call) => {
             stake: error.stack,
         });
         throw {
-            code: grpcReq.status.INTERNAL,
+            code: grpc.status.INTERNAL,
             message: error?.message || __mf("internalServerError"),
         };
     }
@@ -63,7 +63,7 @@ exports.totalProfitLossByMatch = async (call) => {
 
         if (!user) {
             throw {
-                code: grpcReq.status.INVALID_ARGUMENT,
+                code: grpc.status.INVALID_ARGUMENT,
                 message: __mf("invalidData"),
             }
         }
@@ -95,7 +95,7 @@ exports.totalProfitLossByMatch = async (call) => {
             stake: error.stack,
         });
         throw {
-            code: grpcReq.status.INTERNAL,
+            code: grpc.status.INTERNAL,
             message: error?.message || __mf("internalServerError"),
         };
     }
@@ -118,7 +118,7 @@ exports.getUserWiseTotalProfitLoss = async (call) => {
 
         if (!user) {
             throw {
-                code: grpcReq.status.INVALID_ARGUMENT,
+                code: grpc.status.INVALID_ARGUMENT,
                 message: __mf("invalidData"),
             };
         }
@@ -174,7 +174,7 @@ exports.getUserWiseTotalProfitLoss = async (call) => {
             stake: error.stack,
         });
         throw {
-            code: grpcReq.status.INTERNAL,
+            code: grpc.status.INTERNAL,
             message: error?.message || __mf("internalServerError"),
         };
     }
@@ -191,7 +191,7 @@ exports.getSessionBetProfitLoss = async (call) => {
 
         if (!user) {
             throw {
-                code: grpcReq.status.INVALID_ARGUMENT,
+                code: grpc.status.INVALID_ARGUMENT,
                 message: __mf("invalidArgument"),
             };
         }
@@ -212,7 +212,7 @@ exports.getSessionBetProfitLoss = async (call) => {
             stake: error.stack,
         });
         throw {
-            code: grpcReq.status.INTERNAL,
+            code: grpc.status.INTERNAL,
             message: error?.message || __mf("internalServerError"),
         };
     }
