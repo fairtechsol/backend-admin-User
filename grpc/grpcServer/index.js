@@ -4,8 +4,9 @@ const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareF
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
 const { addMatch, raceAdd } = require("./handlers/matchHandler");
 const { declareCardMatchResult, totalProfitLossCardsWallet, totalProfitLossByRoundCards, getCardResultBetProfitLoss } = require("./handlers/cardHandler");
-const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin } = require("./handlers/userHandler");
+const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin, getTotalUserListBalance, userList } = require("./handlers/userHandler");
 const { totalProfitLossWallet, totalProfitLossByMatch, getUserWiseTotalProfitLoss, getSessionBetProfitLoss } = require("./handlers/matchProfitLossReportHandler");
+const { getCommissionReportsMatch, getCommissionBetPlaced } = require("./handlers/commissionHandler");
 
 const { GRPC_PORT = 50000 } = process.env;
 
@@ -44,7 +45,12 @@ const protoOptionsArray = [
         path: `${__dirname}/proto/matchProfitLossReport.proto`, // path to proto file
         package: "matchProfitLossProvider", // package in proto name
         service: "MatchProfitLossService", // service name in proto file
-    }
+    },
+  {
+    path: `${__dirname}/proto/commission.proto`, // path to proto file
+    package: "commissionProvider", // package in proto name
+    service: "CommissionProvider", // service name in proto file
+  }
 ];
 
 const server = new Server(`${GRPC_PORT}`, protoOptionsArray);
@@ -77,6 +83,8 @@ server
     .addService("UserService", "SetCreditReference", setCreditReferenceSuperAdmin)
     .addService("UserService", "UpdateUserBalance", updateSuperAdminBalance)
     .addService("UserService", "LockUnlockSuperAdmin", lockUnlockSuperAdmin)
+    .addService("UserService", "GetUserList", userList)
+    .addService("UserService", "GetTotalUserListBalance", getTotalUserListBalance)
 
     .addService("CardService", "DeclareCard", declareCardMatchResult)
     .addService("CardService", "GetCardTotalProfitLoss", totalProfitLossCardsWallet)
@@ -88,6 +96,8 @@ server
     .addService("MatchProfitLossService", "GetUserWiseBetProfitLoss", getUserWiseTotalProfitLoss)
     .addService("MatchProfitLossService", "GetSessionBetProfitLoss", getSessionBetProfitLoss)
 
+    .addService("CommissionProvider", "GetCommissionReport", getCommissionReportsMatch )
+    .addService("CommissionProvider", "GetCommissionBetReport", getCommissionBetPlaced)
 
 
 module.exports = server;

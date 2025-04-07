@@ -1,15 +1,17 @@
 const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
-const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock } = require("../../../services/userService");
+const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData } = require("../../../services/userService");
 const { getDomainDataByDomain, addDomainData, getDomainDataByUserId, updateDomainData } = require("../../../services/domainDataService");
 const { insertTransactions } = require("../../../services/transactionService");
 const { addInitialUserBalance, getUserBalanceDataByUserId, updateUserBalanceData } = require("../../../services/userBalanceService");
-const { buttonType, sessiontButtonValue, casinoButtonValue, defaultButtonValue, transactionType, walletDescription, transType, userRoleConstant, socketData } = require("../../../config/contants");
+const { buttonType, sessiontButtonValue, casinoButtonValue, defaultButtonValue, transactionType, walletDescription, transType, userRoleConstant, socketData, oldBetFairDomain, fileType } = require("../../../config/contants");
 const { insertButton } = require("../../../services/buttonService");
 const { forceLogoutUser } = require("../../../services/commonService");
 const { updateUserDataRedis, hasUserInCache } = require("../../../services/redis/commonfunction");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
+const { Not } = require("typeorm");
+const FileGenerate = require("../../../utils/generateFile");
 
 
 exports.createSuperAdmin = async (call) => {
@@ -514,3 +516,270 @@ exports.lockUnlockSuperAdmin = async (call) => {
         };
     }
 };
+
+
+exports.userList = async (call) => {
+    try {
+        const { type, userId, roleName, ...apiQuery } = JSON.parse(call?.request?.query || "{}");
+        let userRole = roleName;
+        let where = {
+            createBy: userId,
+            roleName: Not(userRole)
+        };
+
+        let users = await getUsersWithUsersBalanceData(where, apiQuery);
+
+        let response = {
+            count: 0,
+            list: [],
+        };
+        if (!users[1]) {
+            return { data: JSON.stringify(response) };
+        }
+        response.count = users[1];
+        let partnershipCol = [];
+        if (userRole == userRoleConstant.agent) {
+            partnershipCol = [
+                "agPartnership",
+                "mPartnership",
+                "smPartnership",
+                "aPartnership",
+                "saPartnership",
+                "faPartnership",
+                "fwPartnership",
+            ];
+        }
+        if (userRole == userRoleConstant.master) {
+            partnershipCol = [
+                "mPartnership",
+                "smPartnership",
+                "aPartnership",
+                "saPartnership",
+                "faPartnership",
+                "fwPartnership",
+            ];
+        }
+        if (userRole == userRoleConstant.superMaster) {
+            partnershipCol = [
+                "smPartnership",
+                "aPartnership",
+                "saPartnership",
+                "faPartnership",
+                "fwPartnership",
+            ];
+        }
+        if (userRole == userRoleConstant.admin) {
+            partnershipCol = [
+                "aPartnership",
+                "saPartnership",
+                "faPartnership",
+                "fwPartnership",
+            ];
+        }
+        if (userRole == userRoleConstant.superAdmin) {
+            partnershipCol = ["saPartnership", "faPartnership", "fwPartnership"];
+        }
+        if (userRole == userRoleConstant.fairGameAdmin) {
+            partnershipCol = ["faPartnership", "fwPartnership"];
+        }
+        if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
+            partnershipCol = ["fwPartnership"];
+        }
+        const domainUrl = `${call?.call?.host}`;
+
+        let data = await Promise.all(
+            users[0].map(async (element) => {
+                element['percentProfitLoss'] = element.userBal['myProfitLoss'];
+                let partner_ships = 100;
+                if (partnershipCol && partnershipCol.length) {
+                    partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
+                    element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partner_ships).toFixed(2);
+                }
+                if (element.roleName != userRoleConstant.user) {
+                    element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2))
+                    // - Number(parseFloat(element.userBal["exposure"]).toFixed(2));
+                    let childUsersBalances = await getChildUserBalanceSum(element.id);
+
+                    let balanceSum = childUsersBalances?.[0]?.balance;
+                    element['balance'] = Number((parseFloat(balanceSum || 0)).toFixed(2));
+                } else {
+                    element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
+                    element['balance'] = element.userBal['currentBalance'];
+                }
+                element['percentProfitLoss'] = element.userBal['myProfitLoss'];
+                element['commission'] = element.userBal['totalCommission']
+                if (partnershipCol && partnershipCol.length) {
+                    let partnerShips = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
+                    element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partnerShips).toFixed(2);
+                    element['commission'] = (element.userBal['totalCommission']).toFixed(2) + '(' + partnerShips + '%)';
+                    element['upLinePartnership'] = partnerShips;
+                }
+
+                // if (element?.roleName != userRoleConstant.user && domainUrl != oldBetFairDomain) {
+                //   element.exposureLimit="NA";
+                // }
+                return element;
+            })
+        );
+
+        if (type) {
+            const header = [
+                { excelHeader: "User Name", dbKey: "userName" },
+                { excelHeader: "Role", dbKey: "roleName" },
+                { excelHeader: "Credit Ref", dbKey: "creditRefrence" },
+                { excelHeader: "Balance", dbKey: "balance" },
+                { excelHeader: "Client P/L", dbKey: "userBal.profitLoss" },
+                { excelHeader: "% P/L", dbKey: "percentProfitLoss" },
+                { excelHeader: "Comission", dbKey: "commission" },
+                { excelHeader: "Exposure", dbKey: "userBal.exposure" },
+                { excelHeader: "Available Balance", dbKey: "availableBalance" },
+                { excelHeader: "UL", dbKey: "userBlock" },
+                { excelHeader: "BL", dbKey: "betBlock" },
+                ...(domainUrl == oldBetFairDomain ? [{ excelHeader: "S Com %", dbKey: "sessionCommission" }] : []),
+                { excelHeader: "Match Com Type", dbKey: "matchComissionType" },
+                { excelHeader: "M Com %", dbKey: "matchCommission" },
+                { excelHeader: "Exposure Limit", dbKey: "exposureLimit" },
+                ...(type == fileType.excel
+                    ? [
+                        {
+                            excelHeader: "FairGameWallet Partnership",
+                            dbKey: "fwPartnership",
+                        },
+                        {
+                            excelHeader: "FairGameAdmin Partnership",
+                            dbKey: "faPartnership",
+                        },
+                        { excelHeader: "SuperAdmin Partnership", dbKey: "saPartnership" },
+                        { excelHeader: "Admin Partnership", dbKey: "aPartnership" },
+                        {
+                            excelHeader: "SuperMaster Partnership",
+                            dbKey: "smPartnership",
+                        },
+                        { excelHeader: "Master Partnership", dbKey: "mPartnership" },
+                        { excelHeader: "Agent Partnership", dbKey: "agPartnership" },
+                        { excelHeader: "Full Name", dbKey: "fullName" },
+                        { excelHeader: "City", dbKey: "city" },
+                        { excelHeader: "Phone Number", dbKey: "phoneNumber" },
+                    ]
+                    : []),
+            ];
+            const total = data?.reduce((prev, curr) => {
+                prev["creditRefrence"] = (prev["creditRefrence"] || 0) + (curr["creditRefrence"] || 0);
+                prev["balance"] = (prev["balance"] || 0) + (curr["balance"] || 0);
+                prev["availableBalance"] = (prev["availableBalance"] || 0) + (curr["availableBalance"] || 0);
+
+                if (prev["userBal"]) {
+                    prev["userBal"] = {
+                        profitLoss: (prev["userBal"]["profitLoss"] || 0) + (curr["userBal"]["profitLoss"] || 0),
+                        exposure: (prev["userBal"]["exposure"] || 0) + (curr["userBal"]["exposure"] || 0)
+                    }
+                }
+                else {
+                    prev["userBal"] = {
+                        profitLoss: (curr["userBal"]["profitLoss"] || 0),
+                        exposure: (curr["userBal"]["exposure"] || 0),
+                    }
+                }
+                return prev
+            }, {});
+            data?.unshift(total);
+
+            const fileGenerate = new FileGenerate(type);
+            const file = await fileGenerate.generateReport(data, header, "Client List Report");
+            const fileName = `accountList_${new Date()}`
+
+            return { data: JSON.stringify({ file: file, fileName: fileName }) } 
+        }
+
+        response.list = data;
+
+
+        return { data: JSON.stringify(response) };
+
+    } catch (error) {
+        logger.error({
+            message: "error at user list",
+            context: error.message,
+            stake: error.stack
+        })
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
+}
+
+exports.getTotalUserListBalance = async (call) => {
+    try {
+        const { type, userId, roleName, ...apiQuery } = JSON.parse(call?.request?.query || "{}");
+        let userRole = roleName;
+        let where = {
+            createBy: userId,
+            roleName: Not(userRole)
+        };
+
+        let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum,SUM(UB.downLevelBalance) as "downLevelBalance", SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure",SUM(CASE WHEN user.roleName = 'user' THEN UB.exposure ELSE 0 END) AS "totalExposureOnlyUser",SUM(UB.totalCommission) as totalCommission`;
+
+        switch (userRole) {
+            case (userRoleConstant.fairGameWallet):
+            case (userRoleConstant.expert): {
+                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.fwPartnership)), 2) as percentProfitLoss`;
+                break;
+            }
+            case (userRoleConstant.fairGameAdmin): {
+                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.faPartnership + user.fwPartnership)), 2) as percentProfitLoss`;
+                break;
+            }
+            case (userRoleConstant.superAdmin): {
+                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+                break;
+            }
+            case (userRoleConstant.admin): {
+                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+                break;
+            }
+            case (userRoleConstant.superMaster): {
+                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+                break;
+            }
+            case (userRoleConstant.master): {
+                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+                break;
+            }
+            case (userRoleConstant.agent): {
+                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.agPartnership + user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
+                break;
+            }
+        }
+        let childUserBalanceWhere = "";
+
+        if (apiQuery.userBlock) {
+            childUserBalanceWhere = ` "p"."userBlock" = ${apiQuery?.userBlock?.slice(2)}`
+        }
+        if (apiQuery.betBlock) {
+            childUserBalanceWhere = `"p"."betBlock" = ${apiQuery?.betBlock?.slice(2)}`
+        }
+        if (apiQuery.orVal) {
+            childUserBalanceWhere = `("p"."betBlock" = true or  "p"."userBlock" = true)`
+        }
+
+        const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
+
+        let childUsersBalances = await getChildUserBalanceSum(userId, true, childUserBalanceWhere);
+
+        totalBalance.currBalance = childUsersBalances?.[0]?.balance;
+        totalBalance.availableBalance = parseFloat(totalBalance.availableBalance || 0) - parseFloat(totalBalance.totalExposureOnlyUser || 0);
+
+        return { data: JSON.stringify(totalBalance) }
+    } catch (error) {
+        logger.error({
+            message: "Error in user list total balance.",
+            context: error.message,
+            stake: error.stack
+        });
+        throw {
+            code: grpc.status.INTERNAL,
+            message: error?.message || __mf("internalServerError"),
+        };
+    }
+}
