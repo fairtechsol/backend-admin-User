@@ -787,7 +787,7 @@ exports.getTotalUserListBalance = async (call) => {
 exports.getAllUserBalance = async (call) => {
     try {
 
-        const { roleName, userId: id } = JSON.parse(call?.request?.query || "{}");
+        const { roleName, userId: id } = call?.request;
         let balanceSum = {};
         if (roleName == userRoleConstant.fairGameWallet) {
 
