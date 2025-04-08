@@ -3,7 +3,7 @@ const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
 const lodash = require("lodash");
 const { userRoleConstant, partnershipPrefixByRole, betResultStatus, marketBetType, matchBettingType, expertDomain, socketData, redisKeys, sessionBettingType, walletDomain } = require("../../../config/contants");
-const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss, findAllPlacedBet, deleteBet } = require("../../../services/betPlacedService");
+const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss, findAllPlacedBet, deleteBet, getBetsWithMatchId } = require("../../../services/betPlacedService");
 const { getChildsWithOnlyUserRole, getAllUsers, getUserById } = require("../../../services/userService");
 const { profitLossPercentCol, childIdquery, findUserPartnerShipObj, calculatePLAllBet, mergeProfitLoss, forceLogoutUser, calculateProfitLossForRacingMatchToResult, calculateRacingRate, parseRedisData } = require("../../../services/commonService");
 const { In, IsNull, Not } = require("typeorm");
@@ -821,3 +821,25 @@ exports.changeBetsDeleteReason = async (call) => {
     };
   }
 };
+
+
+exports.getBetCount = async (call) => {
+  try {
+    const { parentId, matchId } = call.request;
+    const result = await getBetsWithMatchId((parentId ? ` AND user.superParentId = '${parentId}'` : ""), (matchId ? { matchId: matchId } : {}));
+
+    return { data: JSON.stringify(result) }
+
+
+  } catch (error) {
+    logger.error({
+      context: `Error in get bet count.`,
+      error: error.message,
+      stake: error.stack,
+    });
+    throw {
+      code: grpc.status.INTERNAL,
+      message: err?.message || __mf("internalServerError"),
+    };
+  }
+}

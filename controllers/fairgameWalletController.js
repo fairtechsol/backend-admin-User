@@ -1,7 +1,6 @@
 const { IsNull, In, Not } = require("typeorm");
 const {
   userRoleConstant,
-  socketData,
   betResultStatus,
   marketBetType,
   matchOddName,
@@ -9,21 +8,15 @@ const {
 const { logger } = require("../config/logger");
 const {     getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId,  getUserWiseProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getBetCountData } = require("../services/betPlacedService");
 const {
-  forceLogoutUser,
   profitLossPercentCol,
   childIdquery,
 } = require("../services/commonService");
 
 const {
-  getUserById,
-  updateUser,
-  userBlockUnblock,
-  betBlockUnblock,
   getChildsWithOnlyUserRole,
   getAllUsers,
   getUsersByWallet,
 } = require("../services/userService");
-const { sendMessageToUser } = require("../sockets/socketManager");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.totalProfitLossWallet = async (req, res) => {
@@ -347,34 +340,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
   }
 }
 
-exports.getBetCount = async (req, res) => {
-  try {
-    const parentId = req.query.parentId;
-    const matchId = req.query.matchId;
-    const result = await getBetsWithMatchId((parentId ? ` AND user.superParentId = '${parentId}'` : ""), (matchId ? { matchId: matchId } : {}));
-    return SuccessResponse(
-      {
-        statusCode: 200, data: result
-      },
-      req,
-      res
-    );
-  } catch (error) {
-    logger.error({
-      context: `Error in get bet count.`,
-      error: error.message,
-      stake: error.stack,
-    });
-    return ErrorResponse(
-      {
-        statusCode: 500,
-        message: error.message,
-      },
-      req,
-      res
-    );
-  }
-}
+
 
 exports.checkVerifiedBets = async (req, res) => {
   try {

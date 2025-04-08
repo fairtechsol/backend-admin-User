@@ -3,9 +3,6 @@ const { getUser, getUserDataWithUserBalance } = require("../services/userService
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
 const {
-  getUserBalanceDataByUserIds,
-  updateUserBalanceByUserId,
-  addInitialUserBalance,
   getUserBalanceDataByUserId,
   updateUserBalanceData,
 } = require("../services/userBalanceService");

@@ -66,6 +66,15 @@ message ChangeBetsDeleteReasonResponse {
   string data = 1;
 }
 
+message GetBetCountRequest {
+  string parentId = 1; 
+}
+
+message GetBetCountResponse {
+  string data = 1; 
+}
+
+
 service BetsProvider {
   rpc GetBets(GetBetsRequest) returns (GetBetsResponse);
   rpc VerifyBet(VerifyBetRequest) returns (VerifyBetResponse);
@@ -73,4 +82,5 @@ service BetsProvider {
   rpc GetSessionProfitLossBet(SessionProfitLossBetRequest) returns (SessionProfitLossBetResponse);
   rpc DeleteMultipleBet(DeleteMultipleBetRequest) returns (DeleteMultipleBetResponse);
   rpc ChangeBetsDeleteReason(ChangeBetsDeleteReasonRequest) returns (ChangeBetsDeleteReasonResponse);
+  rpc GetBetCount(GetBetCountRequest) returns (GetBetCountResponse);
 }

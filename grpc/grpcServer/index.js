@@ -1,5 +1,5 @@
 const { Server } = require("./grpcServer");
-const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLossExpert, deleteMultipleBet, changeBetsDeleteReason } = require("./handlers/betsHandler");
+const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLossExpert, deleteMultipleBet, changeBetsDeleteReason, getBetCount } = require("./handlers/betsHandler");
 const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareFinalMatchResult, declareFinalMatchResult } = require("./handlers/declareMatchHandler");
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
 const { addMatch, raceAdd, userMatchLock, userEventWiseExposure, marketAnalysis, getVirtualBetExposures } = require("./handlers/matchHandler");
@@ -73,6 +73,7 @@ server
     .addService("BetsProvider", "GetSessionProfitLossBet", getResultBetProfitLoss)
     .addService("BetsProvider", "DeleteMultipleBet", deleteMultipleBet)
     .addService("BetsProvider", "ChangeBetsDeleteReason", changeBetsDeleteReason)
+    .addService("BetsProvider", "GetBetCount", getBetCount)
 
     .addService("MatchProvider", "AddMatch", addMatch)
     .addService("MatchProvider", "AddRaceMatch", raceAdd)
