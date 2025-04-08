@@ -15,6 +15,8 @@ const { getUserBalanceDataByUserId, updateUserExposure } = require("../../../ser
 const { updateUser } = require("../../../controllers/userController");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
 const { walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletTournamentMatchBetDeleteQueue, expertTournamentMatchBetDeleteQueue } = require("../../../queue/consumer");
+const { getTournamentBettingHandler } = require("../../grpcClient/handlers/expert/matchHandler");
+const { lockUnlockUserByUserPanelHandler } = require("../../grpcClient/handlers/wallet/userHandler");
 
 exports.getPlacedBets = async (call) => {
   try {
@@ -199,8 +201,7 @@ exports.deleteMultipleBet = async (call) => {
     });
     let tournamentBettingDetail;
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBettingType.tournament;
-      apiResponse = await apiCall(apiMethod.get, url);
+      apiResponse = await getTournamentBettingHandler({ matchId: matchID });
     } catch (error) {
       logger.info({
         info: `Error at get match details for delete match bet.`,
@@ -336,9 +337,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     });
 
     if (userCreatedBy?.createBy == userId) {
-      await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+      await lockUnlockUserByUserPanelHandler(
         {
           userId: userId, userBlock: true, parentId: userCreatedBy?.superParentId, autoBlock: true
         }
@@ -364,9 +363,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     });
 
     if (userCreatedBy?.createBy == userId) {
-      await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+      await lockUnlockUserByUserPanelHandler(
         {
           userId: userId, userBlock: false, parentId: null, autoBlock: false
         }
@@ -597,9 +594,7 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
     });
 
     if (userCreatedBy?.createBy == userId) {
-      await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+      await lockUnlockUserByUserPanelHandler(
         {
           userId: userId, userBlock: true, parentId: userCreatedBy.superParentId, autoBlock: true
         }
@@ -625,9 +620,7 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
     });
 
     if (userCreatedBy?.createBy == userId) {
-      await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+      await lockUnlockUserByUserPanelHandler(
         {
           userId: userId, userBlock: false, parentId: null, autoBlock: false
         }

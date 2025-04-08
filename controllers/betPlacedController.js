@@ -1,18 +1,19 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, expertDomain, partnershipPrefixByRole, microServiceDomain, casinoMicroServiceDomain, cardGameType, sessionBettingType,  oldBetFairDomain } = require("../config/contants");
+const { betStatusType, teamStatus, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, expertDomain, partnershipPrefixByRole, microServiceDomain, casinoMicroServiceDomain, cardGameType, sessionBettingType, oldBetFairDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, getUserRedisKey, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
-const {  calculateProfitLossSession, parseRedisData, calculateRacingRate, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, checkBetLimit, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
+const { calculateProfitLossSession, parseRedisData, calculateRacingRate, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, checkBetLimit, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
 const { SessionMatchBetQueue, WalletSessionBetQueue, ExpertSessionBetQueue, CardMatchBetQueue, WalletCardMatchBetQueue, MatchTournamentBetQueue, WalletMatchTournamentBetQueue, ExpertMatchTournamentBetQueue } = require('../queue/consumer');
 const { In, Not, IsNull } = require('typeorm');
 let lodash = require("lodash");
 const { getCardMatch } = require('../services/cardMatchService');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 const { getMatchData } = require('../services/matchService');
+const { getTournamentBettingHandler, getSessionDetailsHandler } = require('../grpc/grpcClient/handlers/expert/matchHandler');
 
 exports.getBet = async (req, res) => {
   try {
@@ -225,18 +226,17 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
     lossAmount = Number(lossAmount.toFixed(2));
 
     //fetched match details from expert
-    let apiResponse = {};
-
-    try {
-      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBetType + "&id=" + betId;
-      apiResponse = await apiCall(apiMethod.get, url);
-    } catch (error) {
+    let apiResponse = await getTournamentBettingHandler({
+      matchId: matchId,
+      id: betId
+    }).catch(error => {
       logger.info({
         info: `Error at get match details.`,
         data: req.body
       });
       throw error?.response?.data;
-    }
+    });
+
     let { match, matchBetting, runners } = apiResponse.data;
 
     await checkBetLimit(matchBetting?.betLimit, matchBetting?.parentBetId || betId, matchId);
@@ -274,7 +274,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
       childBetId: betId
     }
     await validateMatchBettingDetails(matchBetting, { ...betPlacedObj, mid, selectionId }, { placeIndex }, runners);
-    
+
     //assigning bet id for cloned market
     betId = matchBetting?.parentBetId || betId;
 
@@ -541,15 +541,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     try {
       // Make an API call to fetch session details for the specified match
-      let response = await apiCall(
-        apiMethod.get,
-        expertDomain + allApiRoutes.MATCHES.sessionDetail + matchId,
-        null,
-        null,
-        {
-          id: betId,
-        }
-      );
+      let response = await getSessionDetailsHandler({id: betId});
 
       // Extract session details from the API response
       sessionDetails = response?.data;

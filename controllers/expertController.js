@@ -1,21 +1,17 @@
 const { expertDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
+const { getMatchCompetitionsHandler, getMatchDatesHandler, getMatchesByDateHandler, getBlinkingTabsHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
+const { getNotificationHandler } = require("../grpc/grpcClient/handlers/expert/userHandler");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.getNotification = async (req, res) => {
   try {
-    let response = await apiCall(
-      apiMethod.get,
-      expertDomain + allApiRoutes.notification,
-      null,
-      null,
-      req.query
-    );
+    let response = await getNotificationHandler({ query: JSON.stringify(req.query) });
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response.data,
+        data: response,
       },
       req,
       res
@@ -27,14 +23,11 @@ exports.getNotification = async (req, res) => {
 
 exports.getBlinkingTabs = async (req, res) => {
   try {
-    let response = await apiCall(
-      apiMethod.get,
-      expertDomain + allApiRoutes.blinkingTabs
-    );
+    let response = await getBlinkingTabsHandler();
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response.data,
+        data: response,
       },
       req,
       res
@@ -48,15 +41,12 @@ exports.getMatchCompetitionsByType = async (req, res) => {
   try {
     const { type } = req.params;
 
-    let response = await apiCall(
-      apiMethod.get,
-      expertDomain + allApiRoutes.getCompetitionList + `/${type}`
-    );
+    let response = await getMatchCompetitionsHandler({ type: type });
 
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response.data,
+        data: response,
       },
       req,
       res
@@ -76,15 +66,12 @@ exports.getMatchDatesByCompetitionId = async (req, res) => {
   try {
     const { competitionId } = req.params;
 
-    let response = await apiCall(
-      apiMethod.get,
-      expertDomain + allApiRoutes.getDatesByCompetition + `/${competitionId}`
-    );
+    let response = await getMatchDatesHandler({ competitionId: competitionId });
 
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response?.data,
+        data: response,
       },
       req,
       res
@@ -104,17 +91,15 @@ exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
   try {
     const { competitionId, date } = req.params;
 
-    let response = await apiCall(
-      apiMethod.get,
-      expertDomain +
-        allApiRoutes.getMatchByCompetitionAndDate +
-        `/${competitionId}/${new Date(date)}`
-    );
+    let response = await getMatchesByDateHandler({
+      competitionId: competitionId,
+      date: new Date(date)
+    });
 
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response?.data,
+        data: response,
       },
       req,
       res

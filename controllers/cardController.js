@@ -8,16 +8,17 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { getBetsCondition } = require("./betPlacedController");
 const { getQueryColumns } = require("./fairgameWalletController");
 const { logger } = require("../config/logger");
+const { getCardResultHandler, getCardResultDetailHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
 
 exports.getCardResultByFGWallet = async (req, res) => {
   try {
     const { type } = req.params;
     const query = req.query;
-    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultList + type, null, null, query);
+    let result = await getCardResultHandler({ query: JSON.stringify({ type: type, ...query }) });
     return SuccessResponse(
       {
         statusCode: 200,
-        data: result?.data,
+        data: result,
       },
       req,
       res
@@ -39,7 +40,7 @@ exports.getCardResultDetailByFGWallet = async (req, res) => {
   try {
     const { id } = req.params;
 
-    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultDetail + id, null, null, null)
+    let result = await getCardResultDetailHandler({ id: id })
     if (!result?.data) {
       result = await apiCall(apiMethod.get, casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.cardResultDetail + id, null, null, null);
       result = {

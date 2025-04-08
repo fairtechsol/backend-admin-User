@@ -1,18 +1,25 @@
 const GrpcClient = require("./grpcClient");
 
-const testProtoOptionsArray = [
+const expertProtoOptionsArray = [
     {
-        path: `${__dirname}/proto/`, //path to proto file
-        package: "",//package in proto name
-        service: "",//service name in proto file
-    }
+        path: `${__dirname}/proto/match.proto`, //path to proto file
+        package: "matchProvider",//package in proto name
+        service: "MatchProvider",//service name in proto file
+    },
+    {
+        path: `${__dirname}/proto/user.proto`, //path to proto file
+        package: "userProvider",//package in proto name
+        service: "UserService",//service name in proto file
+    },
 ];
 
 
-const testServerAddress = "localhost:60600";
+const expertServerAddress = "localhost:60600";
+const walletServerAddress = "localhost:50500";
 
 const grpcReq = {
-  
+    expert: new GrpcClient(expertProtoOptionsArray, expertServerAddress),
+    wallet: new GrpcClient(expertProtoOptionsArray, walletServerAddress),
 };
 
 module.exports = grpcReq;

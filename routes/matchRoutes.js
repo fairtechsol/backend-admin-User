@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { isAuthenticate } = require('../middleware/auth');
-const { matchDetails, listMatch, matchDetailsForFootball, listRacingCountryCode, listRacingMatch, raceDetails, listSearchMatch, cardMatchDetails, marketAnalysis, initialCardMatchDetails, marketWiseUserBook, userEventWiseExposure } = require('../controllers/matchController');
+const { matchDetails, listMatch, listRacingCountryCode, listRacingMatch, raceDetails, listSearchMatch, cardMatchDetails, marketAnalysis, initialCardMatchDetails, marketWiseUserBook, userEventWiseExposure } = require('../controllers/matchController');
 
 router.get('/list', isAuthenticate, listMatch);
 router.get('/search/:keyword', isAuthenticate, listSearchMatch);
@@ -16,7 +16,6 @@ router.get('/initial/card/:type', isAuthenticate, initialCardMatchDetails);
 
 router.get('/marketAnalysis',isAuthenticate, marketAnalysis);
 router.get('/:id', isAuthenticate, matchDetails);
-router.get('/other/:id', isAuthenticate, matchDetailsForFootball);
 
 router.get('/marketWise/userBook/:matchId', isAuthenticate, marketWiseUserBook);
 router.get('/eventWise/exposure/:userId', isAuthenticate, userEventWiseExposure);

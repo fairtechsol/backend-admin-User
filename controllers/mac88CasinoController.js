@@ -12,6 +12,7 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const mac88Games = require("../config/mac88.json");
 const moment = require("moment/moment");
+const { declareVirtualCasinoResultHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
 exports.loginMac88Casino = async (req, res) => {
     try {
         const { gameId, platformId, providerName } = req.body;
@@ -366,7 +367,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
         message: `wallet data for virtual casino result declare: `,
         data: walletData
     });
-    apiCall(apiMethod.post, walletDomain + allApiRoutes.WALLET.virtualCasinoResult, walletData);
+    declareVirtualCasinoResultHandler({ data: JSON.stringify(walletData) });
 }
 
 exports.rollBackRequestMac88 = async (req, res) => {

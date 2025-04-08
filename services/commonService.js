@@ -18,6 +18,8 @@ const { deleteUserBalance } = require("./userBalanceService");
 const { getAuthenticator, addAuthenticator } = require("./authService");
 const { verifyAuthToken } = require("../utils/generateAuthToken");
 const { getVirtualCasinoExposureSum } = require("./virtualCasinoBetPlacedsService");
+const { getTournamentBettingHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
+const { lockUnlockUserByUserPanelHandler, getPartnershipIdHandler } = require("../grpc/grpcClient/handlers/wallet/userHandler");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -906,17 +908,14 @@ exports.findUserPartnerShipObj = async (user) => {
         currentUser?.roleName == userRoleConstant.fairGameAdmin) {
         if (currentUser?.id == currentUser?.createBy) {
           try {
-            let response = await apiCall(
-              apiMethod.get,
-              walletDomain + allApiRoutes.EXPERT.partnershipId + currentUser.id
-            ).catch((err) => {
+            let response = await getPartnershipIdHandler({ userId: currentUser.id }).catch((err) => {
               throw err?.response?.data;
             });
             await traverseHierarchy(
-              response?.data?.find(
-                (item) => (item?.roleName == userRoleConstant.fairGameAdmin && response?.data?.length == 2) || (item?.roleName == userRoleConstant.fairGameWallet && response?.data?.length == 1)
+              response?.find(
+                (item) => (item?.roleName == userRoleConstant.fairGameAdmin && response?.length == 2) || (item?.roleName == userRoleConstant.fairGameWallet && response?.length == 1)
               ),
-              response?.data
+              response
             );
           } catch (err) {
 
@@ -1052,8 +1051,7 @@ exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + currBets.matchId + "?type=" + matchBettingType.tournament + "&id=" + currBets?.betId;
-        apiResponse = await apiCall(apiMethod.get, url);
+        apiResponse = await getTournamentBettingHandler({ matchID: currBets?.matchId, id: currBets?.betId });
       } catch (error) {
         logger.info({
           info: `Error at get match details in login.`
@@ -1108,8 +1106,7 @@ exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + placedBet;
-        apiResponse = await apiCall(apiMethod.get, url);
+        apiResponse = await getTournamentBettingHandler({ matchId: matchId, id: placedBet });
       } catch (error) {
         logger.info({
           info: `Error at get match details in login.`
@@ -1207,8 +1204,7 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
 
     let apiResponse;
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + placedBet;
-      apiResponse = await apiCall(apiMethod.get, url);
+      apiResponse = await getTournamentBettingHandler({ matchId: matchId, id: placedBet });
     } catch (error) {
       logger.info({
         info: `Error at get match details in login.`
@@ -1284,9 +1280,7 @@ exports.transactionPasswordAttempts = async (user) => {
     await userBlockUnblock(user.id, user.createBy == user.id ? user.superParentId : user.createBy, true);
 
     if (user?.createBy == user.id) {
-      await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.WALLET.autoLockUnlockUser,
+      await lockUnlockUserByUserPanelHandler(
         {
           userId: user.id, userBlock: true, parentId: user?.superParentId, autoBlock: false
         }
@@ -1516,8 +1510,7 @@ exports.getUserExposuresTournament = async (user) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + currBets.matchId + "?type=" + matchBettingType.tournament + "&id=" + currBets?.betId;
-        apiResponse = await apiCall(apiMethod.get, url);
+        apiResponse = await getTournamentBettingHandler({ matchId: currBets.matchId, id: currBets.betId });
       } catch (error) {
         logger.info({
           info: `Error at get match details in login.`
@@ -1562,8 +1555,7 @@ exports.getUserExposuresTournament = async (user) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + placedBet.split("_")?.[0];
-        apiResponse = await apiCall(apiMethod.get, url);
+        apiResponse = await getTournamentBettingHandler({ matchId: matchId, id: placedBet.split("_")?.[0] });
       } catch (error) {
         logger.info({
           info: `Error at get match details in login.`
@@ -1691,7 +1683,7 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
         }
 
       }
-    
+
     }
     return { session: sessionResult };
   }
@@ -1751,8 +1743,7 @@ exports.getUserProfitLossTournament = async (user, matchId) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + currBets.matchId + "?type=" + matchBettingType.tournament + "&id=" + currBets?.betId;
-        apiResponse = await apiCall(apiMethod.get, url);
+        apiResponse = await getTournamentBettingHandler({ matchId: currBets.matchId, id: currBets.betId });
       } catch (error) {
         logger.info({
           info: `Error at get match details in login.`
@@ -1791,8 +1782,7 @@ exports.getUserProfitLossTournament = async (user, matchId) => {
 
       let apiResponse;
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + placedBet.split("_")?.[0];
-        apiResponse = await apiCall(apiMethod.get, url);
+        apiResponse = await getTournamentBettingHandler({ matchId: matchId, id: placedBet.split("_")?.[0] });
       } catch (error) {
         logger.info({
           info: `Error at get match details in login.`

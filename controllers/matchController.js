@@ -9,18 +9,15 @@ const { logger } = require("../config/logger");
 const { listMatch, getMatchList } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
 const { calculateProfitLossForCardMatchToResult, calculateRatesRacingMatch, getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament, getVirtualCasinoExposure } = require("../services/commonService");
+const { getMatchDetailsHandler, getRaceDetailsHandler, getMatchListHandler, getRaceListHandler, getRaceCountryCodeListHandler, getTournamentBettingHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 
 exports.matchDetails = async (req, res) => {
   try {
     const matchId = req.params.id;
-    let domain = expertDomain;
     let apiResponse = {};
     const { id: userId } = req.user;
     try {
-      apiResponse = await apiCall(
-        apiMethod.get,
-        domain + allApiRoutes.MATCHES.matchDetails + matchId
-      );
+      apiResponse = await getMatchDetailsHandler({ matchId: matchId });
     } catch (error) {
       throw error?.response?.data;
     }
@@ -96,13 +93,9 @@ exports.raceDetails = async (req, res) => {
   try {
     let userId = req.user.id;
     const raceId = req.params.id;
-    let domain = expertDomain;
     let apiResponse = {};
     try {
-      apiResponse = await apiCall(
-        apiMethod.get,
-        domain + allApiRoutes.MATCHES.raceDetails + raceId
-      );
+      apiResponse = await getRaceDetailsHandler({ raceId: raceId })
     } catch (error) {
       throw error?.response?.data;
     }
@@ -263,79 +256,17 @@ exports.cardMatchDetails = async (req, res) => {
   }
 };
 
-exports.matchDetailsForFootball = async (req, res) => {
-  const matchType = req.query.matchType;
-  try {
-    const matchId = req.params.id;
-
-    if (!matchType) {
-      return ErrorResponse({ statusCode: 404, message: { msg: "notFound", keys: { name: "Match" } } }, req, res);
-    }
-    let domain = expertDomain;
-    let apiResponse = {};
-    const { id: userId } = req.user;
-    try {
-      apiResponse = await apiCall(
-        apiMethod.get,
-        domain + allApiRoutes.MATCHES.matchDetailsForFootball + matchId
-      );
-    } catch (error) {
-      throw error?.response?.data;
-    }
-
-    if (apiResponse?.data) {
-      if (Array.isArray(apiResponse?.data)) {
-        for (let i = 0; i < apiResponse?.data?.length; i++) {
-          const matchId = apiResponse?.data?.[i]?.id;
-          let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);
-          apiResponse.data[i].profitLossDataMatch = matchResult;
-        }
-      }
-      else {
-        let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);
-        apiResponse.data.profitLossDataMatch = matchResult;
-      }
-    }
-
-
-    return SuccessResponse(
-      {
-        statusCode: 200,
-        message: { msg: "match details", keys: { name: "Match" } },
-        data: apiResponse.data,
-      },
-      req,
-      res
-    );
-
-  } catch (error) {
-    logger.error({
-      error: `Error at get match details for ${matchType}`,
-      stack: error?.stack,
-      message: error.message,
-    });
-    return ErrorResponse(error, req, res);
-  }
-};
-
 exports.listMatch = async (req, res) => {
   try {
     let user = req.user;
-    let domain = expertDomain;
     let apiResponse = {};
     try {
-      apiResponse = await apiCall(
-        apiMethod.get,
-        domain + allApiRoutes.MATCHES.matchList,
-        null,
-        null,
-        req.query
-      );
+      apiResponse = await getMatchListHandler({query:JSON.stringify(req.query)});
     } catch (error) {
       throw error?.response?.data;
     }
 
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
+    const domainUrl = `${req.get('host')}`;
 
 
     if (user.roleName != userRoleConstant.user && oldBetFairDomain == domainUrl) {
@@ -374,16 +305,9 @@ exports.listMatch = async (req, res) => {
 exports.listRacingMatch = async (req, res) => {
   try {
     // let user = req.user;
-    let domain = expertDomain;
     let apiResponse = {};
     try {
-      apiResponse = await apiCall(
-        apiMethod.get,
-        domain + allApiRoutes.MATCHES.racingMatchList,
-        null,
-        null,
-        req.query
-      );
+      apiResponse = await getRaceListHandler({ query: JSON.stringify(req.query) });
     } catch (error) {
       throw error?.response?.data;
     }
@@ -404,16 +328,9 @@ exports.listRacingMatch = async (req, res) => {
 
 exports.listRacingCountryCode = async (req, res) => {
   try {
-    let domain = expertDomain;
     let apiResponse = {};
     try {
-      apiResponse = await apiCall(
-        apiMethod.get,
-        domain + allApiRoutes.MATCHES.racingMatchCountryCodeList,
-        null,
-        null,
-        req.query
-      );
+      apiResponse = await getRaceCountryCodeListHandler({ matchType: req.query?.matchType });
     } catch (error) {
       throw error?.response?.data;
     }
@@ -468,10 +385,7 @@ exports.marketAnalysis = async (req, res) => {
 
       if (matchesBetsByUsers?.length) {
         try {
-          matchDetails = await apiCall(
-            apiMethod.get,
-            expertDomain + allApiRoutes.MATCHES.matchDetails + Array.from(matchIds).join(",")
-          );
+          matchDetails = await getMatchDetailsHandler({ matchId: Array.from(matchIds).join(",") });
           if (!Array.isArray(matchDetails?.data)) {
             matchDetails.data = [matchDetails?.data];
           }
@@ -565,10 +479,7 @@ exports.marketAnalysis = async (req, res) => {
       let matchDetails;
 
       try {
-        matchDetails = await apiCall(
-          apiMethod.get,
-          expertDomain + allApiRoutes.MATCHES.matchDetails + matchId
-        );
+        matchDetails = await getMatchDetailsHandler({ matchId: matchId })
       } catch (error) {
         throw error?.response?.data;
       }
@@ -663,8 +574,7 @@ exports.marketWiseUserBook = async (req, res) => {
     let apiResponse;
 
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament + "&id=" + betId;
-      apiResponse = await apiCall(apiMethod.get, url);
+      apiResponse = await getTournamentBettingHandler({ matchId: matchId, id: betId });
     } catch (error) {
       logger.info({
         info: `Error at get match details in login.`

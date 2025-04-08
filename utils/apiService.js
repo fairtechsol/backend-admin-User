@@ -43,37 +43,7 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
 };
 
 exports.allApiRoutes = {
-  notification: "/general/notification",
-  blinkingTabs: "/superAdmin/blinkingTabs",
-  getCompetitionList:"/match/competitionList",
-  getDatesByCompetition:"/match/competition/dates",
-  getMatchByCompetitionAndDate:"/match/competition/getMatch",
-  MATCHES: {
-    matchDetails: "/superAdmin/match/",
-    raceDetails: "/superAdmin/match/racing/",
-    matchDetailsForFootball:"/superadmin/otherMatch/",
-    matchList: "/superAdmin/match/list",
-    racingMatchList: "/superAdmin/match/racing/list",
-    racingMatchCountryCodeList: "/superAdmin/match/racing/countryCode",
-    MatchBettingDetail : "/superAdmin/matchBetting/",
-    raceBettingDetail : "/superAdmin/raceBetting/",
-    tournamentBettingDetail : "/superAdmin/tournamentBetting/",
-    sessionDetail: "/superAdmin/session/"
-  },
-  WALLET:{
-    updateBalance:"/superAdmin/update/balance/SA",
-    autoLockUnlockUser:"/superAdmin/auto/lockUnlockUser",
-    cardResultList:"/superadmin/cards/result/",
-    cardResultDetail:"/superadmin/cards/result/detail/",
-    virtualCasinoResult:"/superadmin/virtual/casino/result"
-  },
-  EXPERT:{
-    partnershipId:"/superAdmin/partnershipId/"
-  },
   MICROSERVICE : {
-    matchOdd : "/matchOdds/",
-    bookmaker : "/bookmaker/",
-    session : "/session/",
     casinoData: "/getdata/",
     cardResultDetail: "/getdetailresult/",
     cardTopTenResultDetail: "/getresult/",

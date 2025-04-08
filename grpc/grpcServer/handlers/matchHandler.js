@@ -11,6 +11,7 @@ const { getChildUsersPlaceBets } = require("../../../services/betPlacedService")
 const { apiCall, allApiRoutes, apiMethod } = require("../../../utils/apiService");
 const { getVirtualCasinoExposureSum } = require("../../../services/virtualCasinoBetPlacedsService");
 const { In } = require("typeorm");
+const { getMatchDetailsHandler } = require("../../grpcClient/handlers/expert/matchHandler");
 
 
 exports.addMatch = async (call) => {
@@ -213,10 +214,8 @@ exports.marketAnalysis = async (call) => {
 
       if (matchesBetsByUsers?.length) {
         try {
-          matchDetails = await apiCall(
-            apiMethod.get,
-            expertDomain + allApiRoutes.MATCHES.matchDetails + Array.from(matchIds).join(",")
-          );
+          matchDetails = await getMatchDetailsHandler({matchId:Array.from(matchIds).join(",")})
+        
           if (!Array.isArray(matchDetails?.data)) {
             matchDetails.data = [matchDetails?.data];
           }
@@ -313,10 +312,7 @@ exports.marketAnalysis = async (call) => {
       let matchDetails;
 
       try {
-        matchDetails = await apiCall(
-          apiMethod.get,
-          expertDomain + allApiRoutes.MATCHES.matchDetails + matchId
-        );
+        matchDetails = await getMatchDetailsHandler({ matchId: matchId });
       } catch (error) {
         throw {
           code: grpc.status.INTERNAL,
