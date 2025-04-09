@@ -57,7 +57,7 @@ exports.getCommissionReportsMatch = async (call) => {
 
     commissionReportData = await commissionReport(userId, JSON.parse(query), queryColumns);
 
-    return { data: JSON.parse(commissionReportData) };
+    return { data: JSON.stringify(commissionReportData) };
 
   } catch (error) {
     logger.error({
@@ -123,7 +123,7 @@ exports.getCommissionBetPlaced = async (call) => {
 
     commissionReportData = await commissionMatchReport(userId, matchId, queryColumns);
 
-    return { data: JSON.parse(commissionReportData) };
+    return { data: JSON.stringify(commissionReportData) };
   } catch (error) {
     logger.error({
       context: `error in get commission report of bet places`,

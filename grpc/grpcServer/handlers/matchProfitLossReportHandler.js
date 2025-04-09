@@ -87,7 +87,7 @@ exports.totalProfitLossByMatch = async (call) => {
             result = data.result;
         }
 
-        return { date: JSON.stringify(result) }
+        return { data: JSON.stringify(result) }
     } catch (error) {
         logger.error({
             context: `error in get total domain wise profit loss`,
