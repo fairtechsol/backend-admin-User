@@ -247,7 +247,7 @@ exports.setExposureLimitSuperAdmin = async (call) => {
             childUsers = await getAllUsers(roleName == userRoleConstant.fairGameAdmin ? { superParentId: id } : {}, ["id"]);
         }
         else {
-            childUsers = await getChildUser(user.id, ["id"]);
+            childUsers = await getChildUser(id, ["id"]);
             childUsers.push({ id: id });
         }
 
