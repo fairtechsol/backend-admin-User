@@ -205,7 +205,7 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
       totalLoss = '-' + totalLoss;
     }
     let subQuery = await childIdquery(user, searchId);
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
+    const domainUrl = `${process.env.GRPC_URL}`;
 
     const result = await getLiveCasinoBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
     return SuccessResponse(

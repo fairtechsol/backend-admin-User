@@ -266,7 +266,7 @@ exports.listMatch = async (req, res) => {
       throw error?.response?.data;
     }
 
-    const domainUrl = `${req.get('host')}`;
+    const domainUrl = `${process.env.GRPC_URL}`;
 
 
     if (user.roleName != userRoleConstant.user && oldBetFairDomain == domainUrl) {

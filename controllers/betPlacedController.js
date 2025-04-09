@@ -244,7 +244,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
     if (match?.stopAt) {
       return ErrorResponse({ statusCode: 403, message: { msg: "bet.matchNotLive" } }, req, res);
     }
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
+    const domainUrl = `${process.env.GRPC_URL}`;
 
     const currRunner = runners.find((item) => item.id == runnerId);
     runnerId = currRunner?.parentRunnerId || runnerId;
@@ -816,7 +816,7 @@ exports.sessionBetPlace = async (req, res, next) => {
         res
       );
     }
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
+    const domainUrl = `${process.env.GRPC_URL}`;
 
     const placedBet = await betPlacedService.addNewBet({
       result: betResultStatus.PENDING,
@@ -1576,7 +1576,7 @@ exports.cardBettingBetPlaced = async (req, res) => {
       matchType: match?.type
     }
 
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
+    const domainUrl = `${process.env.GRPC_URL}`;
 
     let walletJobData = {
       domainUrl: domainUrl,

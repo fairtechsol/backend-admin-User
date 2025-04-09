@@ -605,7 +605,7 @@ exports.changePassword = async (req, res, next) => {
 
     if (!isPasswordMatch) {
 
-      const currDomain = `${req.protocol}://${req.get('host')}`;
+      const currDomain = `${process.env.GRPC_URL}`;
 
       if (currDomain != oldBetFairDomain) {
         await transactionPasswordAttempts(user);
