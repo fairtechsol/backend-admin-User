@@ -37,6 +37,9 @@ exports.commissionReport = async (userId, query, queryColumns) => {
     .leftJoin("match", "match", "commission.matchId = match.id")
     .groupBy("match.id")
     .addGroupBy("match.title")
+    .select([
+      'match.id as "matchId"',
+    ])
     .addGroupBy("match.startAt");
 
   const totalRecords = (await countQuery.getRawMany())?.length || 0;
