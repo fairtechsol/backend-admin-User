@@ -1051,7 +1051,7 @@ exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
 
       let apiResponse;
       try {
-        apiResponse = await getTournamentBettingHandler({ matchID: currBets?.matchId, id: currBets?.betId });
+        apiResponse = await getTournamentBettingHandler({ matchId: currBets?.matchId, id: currBets?.betId });
       } catch (error) {
         logger.info({
           info: `Error at get match details in login.`
