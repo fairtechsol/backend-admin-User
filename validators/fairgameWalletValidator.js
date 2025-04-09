@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const { userRoleConstant, transType, matchComissionTypeConstant } = require("../config/contants");
+const { userRoleConstant, transType, matchComissionTypeConstant, maxAmount } = require("../config/contants");
 
 module.exports.CreateSuperAdmin = Joi.object({
   userName: Joi.string().trim(),
@@ -18,8 +18,8 @@ module.exports.CreateSuperAdmin = Joi.object({
   smPartnership: Joi.number(),
   mPartnership: Joi.number(),
   agPartnership: Joi.number(),
-  creditRefrence: Joi.number(),
-  exposureLimit: Joi.number(),
+  creditRefrence: Joi.number().max(maxAmount),
+  exposureLimit: Joi.number().max(maxAmount),
   maxBetLimit: Joi.number(),
   minBetLimit: Joi.number(),
   isOldFairGame: Joi.boolean(),
@@ -64,18 +64,18 @@ module.exports.UpdateSuperAdmin = Joi.object({
 module.exports.SuperAdminBalance = Joi.object({
   userId: Joi.string().guid({ version: "uuidv4" }).required(),
   transactionType: Joi.string().valid(...Object.values(transType)),
-  amount: Joi.number(),
+  amount: Joi.number().max(maxAmount),
   remark: Joi.string().trim().allow(""),
 });
 
 module.exports.SuperAdminExposureLimit = Joi.object({
   id: Joi.string().guid({ version: "uuidv4" }).required(),
-  exposureLimit: Joi.number(),
+  exposureLimit: Joi.number().max(maxAmount),
 });
 
 module.exports.SuperAdminCreditReference = Joi.object({
   userId: Joi.string().guid({ version: "uuidv4" }).required(),
-  amount: Joi.number(),
+  amount: Joi.number().max(maxAmount),
   remark: Joi.string().trim().allow(""),
 });
 

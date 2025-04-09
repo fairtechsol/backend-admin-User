@@ -11,6 +11,7 @@ module.exports.jwtSecret = process.env.JWT_SECRET || "secret";
 module.exports.mac88Domain = process.env.MAC_88_DOMAIN || "https://dev-api.dreamdelhi.com/api";
 module.exports.mac88CasinoPPK = process.env.MAC88_PRIVATE_KEY;
 module.exports.mac88CasinoOperatorId = process.env.MAC88_OPERATOR_ID;
+module.exports.maxAmount = 999999999;
 
 
 module.exports.resultType = {
