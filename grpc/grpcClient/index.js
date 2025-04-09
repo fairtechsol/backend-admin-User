@@ -1,3 +1,4 @@
+const { expertDomain, walletDomain } = require("../../config/contants");
 const GrpcClient = require("./grpcClient");
 
 const expertProtoOptionsArray = [
@@ -14,8 +15,8 @@ const expertProtoOptionsArray = [
 ];
 
 
-const expertServerAddress = "127.0.0.1:60600";
-const walletServerAddress = "127.0.0.1:50500";
+const expertServerAddress = expertDomain;
+const walletServerAddress = walletDomain;
 
 const grpcReq = {
     expert: new GrpcClient(expertProtoOptionsArray, expertServerAddress),

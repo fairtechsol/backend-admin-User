@@ -917,7 +917,7 @@ exports.checkUserBalance = async (call) => {
                 }
             }
 
-            const childUsers = await getChildUserBalanceAndData(id);
+            const childUsers = await getChildUserBalanceAndData(userId);
             for (let childData of childUsers) {
                 if (parseFloat(childData?.exposure || 0) != 0 || parseFloat(childData?.currentBalance || 0) != 0 || parseFloat(childData?.profitLoss || 0) != 0 || parseFloat(childData.creditRefrence || 0) != 0 || parseFloat(childData?.totalCommission || 0) != 0) {
 
