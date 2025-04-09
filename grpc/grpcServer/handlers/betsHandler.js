@@ -201,13 +201,13 @@ exports.deleteMultipleBet = async (call) => {
     });
     let tournamentBettingDetail;
     try {
-      apiResponse = await getTournamentBettingHandler({ matchId: matchID });
+      apiResponse = await getTournamentBettingHandler({ matchId: matchId });
     } catch (error) {
       logger.info({
         info: `Error at get match details for delete match bet.`,
         data: call.request
       });
-      throw error?.response?.data;
+      throw error;
     }
     let { matchBetting: matchBettingTournament } = apiResponse.data;
     tournamentBettingDetail = matchBettingTournament;
