@@ -541,14 +541,14 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     try {
       // Make an API call to fetch session details for the specified match
-      let response = await getSessionDetailsHandler({id: betId});
+      let response = await getSessionDetailsHandler({ id: betId, matchId: matchId });
 
       // Extract session details from the API response
       sessionDetails = response?.data;
       sessionDetails.eventId = matchDetail.eventId;
     } catch (err) {
       // Handle API call error and return an error response
-      return ErrorResponse(err?.response?.data, req, res);
+      return ErrorResponse(err, req, res);
     }
 
     await validateSessionBet(sessionDetails, req.body, id);
