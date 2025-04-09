@@ -14,8 +14,8 @@ const expertProtoOptionsArray = [
 ];
 
 
-const expertServerAddress = "localhost:60600";
-const walletServerAddress = "localhost:50500";
+const expertServerAddress = "127.0.0.1:60600";
+const walletServerAddress = "127.0.0.1:50500";
 
 const grpcReq = {
     expert: new GrpcClient(expertProtoOptionsArray, expertServerAddress),
