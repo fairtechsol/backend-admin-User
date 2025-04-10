@@ -16,7 +16,7 @@ const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey }
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 const bot = require('../config/telegramBot');
-const { getAccessUserByUserName } = require('../services/accessUserService');
+const { getAccessUserByUserName, getAccessUserWithPermission } = require('../services/accessUserService');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -27,9 +27,15 @@ exports.getProfile = async (req, res) => {
   let where = {
     id: userId,
   };
-  let user = await getUsersWithUserBalance(where);
+  let user;
+  if (reqUser?.isAccessUser) {
+    user = await getAccessUserWithPermission(where);
+  }
+  else {
+    user = await getUsersWithUserBalance(where);
+  }
   let response = lodash.omit(user, ["password", "transPassword"])
-  return SuccessResponse({ statusCode: 200, message: { msg: "user.profile" }, data: response }, req, res)
+  return SuccessResponse({ statusCode: 200, data: response }, req, res)
 }
 
 exports.isUserExist = async (req, res) => {
