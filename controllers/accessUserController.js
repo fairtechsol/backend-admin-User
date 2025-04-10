@@ -1,8 +1,8 @@
 
 const { Not } = require("typeorm");
-const { getAccessUserById, getAccessUsers, getAccessUserByUserName } = require("../services/accessUserService");
+const { getAccessUserById, getAccessUsers, getAccessUserByUserName, addAccessUser } = require("../services/accessUserService");
 const { addPermission } = require("../services/permissionService");
-const { getUserById, getUserByUserName, addUser } = require("../services/userService");
+const { getUserById, getUserByUserName } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt=require("bcryptjs");
 
@@ -34,7 +34,7 @@ exports.createAccessUser = async (req, res) => {
             mainParentId: creator ? creator?.id : accessUser.mainParentId,
             permission: permissionData?.id
         };
-        await addUser(userData);
+        await addAccessUser(userData);
 
         return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { type: "User" } } }, req, res);
     } catch (err) {
