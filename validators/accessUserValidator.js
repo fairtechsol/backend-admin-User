@@ -9,6 +9,9 @@ module.exports.CreateAccessUser = Joi.object({
         'string.pattern.base': 'user.passwordMatch',
         'any.required': 'Password is required',
     }),
+    transactionPassword: Joi.string().required().messages({
+        'any.required': 'Transaction Password is required'
+    }),
     confirmPassword: Joi.string().required().valid(Joi.ref('password')).label('Confirm Password').messages({
         'string.base': 'Confirm Password must be a string',
         'any.required': 'Confirm Password is required',

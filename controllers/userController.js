@@ -16,6 +16,7 @@ const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey }
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 const bot = require('../config/telegramBot');
+const { getAccessUserByUserName } = require('../services/accessUserService');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -54,7 +55,7 @@ exports.createUser = async (req, res) => {
     creator.myPartnership = parseInt(myPartnership);
 
     const upperCaseUserName = userName?.toUpperCase();
-    const userExist = await getUserByUserName(upperCaseUserName);
+    const userExist = (!!(await getUserByUserName(upperCaseUserName)) || !!(await getAccessUserByUserName(upperCaseUserName)));
     if (userExist)
       return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
 

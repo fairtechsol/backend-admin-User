@@ -1,6 +1,6 @@
 
 const { Not } = require("typeorm");
-const { getAccessUserById, getAccessUsers } = require("../services/accessUserService");
+const { getAccessUserById, getAccessUsers, getAccessUserByUserName } = require("../services/accessUserService");
 const { addPermission } = require("../services/permissionService");
 const { getUserById, getUserByUserName } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
@@ -17,7 +17,7 @@ exports.createAccessUser = async (req, res) => {
             return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
 
         const upperCaseUserName = userName?.toUpperCase();
-        const userExist = (!!(await getUserByUserName(upperCaseUserName)) || !!(await getAccessUserById(upperCaseUserName)));
+        const userExist = (!!(await getUserByUserName(upperCaseUserName,["id"])) || !!(await getAccessUserByUserName(upperCaseUserName,["id"])));
         if (userExist)
             return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
 
