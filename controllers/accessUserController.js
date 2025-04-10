@@ -2,8 +2,9 @@
 const { Not } = require("typeorm");
 const { getAccessUserById, getAccessUsers, getAccessUserByUserName } = require("../services/accessUserService");
 const { addPermission } = require("../services/permissionService");
-const { getUserById, getUserByUserName } = require("../services/userService");
+const { getUserById, getUserByUserName, addUser } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
+const bcrypt=require("bcryptjs");
 
 exports.createAccessUser = async (req, res) => {
     try {
