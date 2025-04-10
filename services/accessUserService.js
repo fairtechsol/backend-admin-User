@@ -42,3 +42,10 @@ exports.getAccessUserByUserName = async (userName, select) => {
         select: select,
     });
 };
+
+
+exports.getAccessUserWithPermission = async (where = {}, select) => {
+    return await AccessUser.createQueryBuilder()
+        .leftJoinAndMapOne("accessUser.permission", "permission", "permission", "permission.id=accessUser.permission")
+        .where(where).select(select).getOne();
+};

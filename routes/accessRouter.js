@@ -9,7 +9,7 @@ const { CreateAccessUser } = require('../validators/accessUserValidator');
 
 
 router.route("/")
-    .get(isAuthenticate, checkTransactionPassword, validator(CreateAccessUser), createAccessUser)
-    .post(isAuthenticate, getAccessUser); // example controller
+    .post(isAuthenticate, checkTransactionPassword, validator(CreateAccessUser), createAccessUser)
+    .get(isAuthenticate, getAccessUser); // example controller
 
 module.exports = router;
