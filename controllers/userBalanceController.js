@@ -13,7 +13,6 @@ const {
 } = require("../services/redis/commonfunction");
 const { logger } = require("../config/logger");
 const { settleCommission, insertCommissions } = require("../services/commissionService");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { transactionType: transactionTypeConstant } = require("../config/contants");
 const { updateBalanceAPICallHandler } = require("../grpc/grpcClient/handlers/expert/userHandler");
 exports.updateUserBalance = async (req, res) => {
