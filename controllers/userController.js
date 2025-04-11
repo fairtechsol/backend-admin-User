@@ -29,10 +29,10 @@ exports.getProfile = async (req, res) => {
   };
   let user;
   if (reqUser?.isAccessUser) {
-    user = await getAccessUserWithPermission(where);
+    user = await getAccessUserWithPermission({ id: reqUser?.childId });
   }
   else {
-    user = await getUsersWithUserBalance(where);
+    user = await getUserDataWithUserBalance(where);
   }
   let response = lodash.omit(user, ["password", "transPassword"])
   return SuccessResponse({ statusCode: 200, data: response }, req, res)

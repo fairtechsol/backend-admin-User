@@ -52,6 +52,10 @@ exports.isAuthenticate = async (req, res, next) => {
       }
 
       req.user = decodedUser;
+      if (req.user?.isAccessUser) {
+        req.user.childId = req.user.id;
+        req.user.id = req.user.mainParentId;
+      }
       next();
     }
   } catch (err) {
@@ -112,7 +116,7 @@ exports.checkTransactionPassword = async (req, res, next) => {
   let check = bcrypt.compareSync(transactionPassword, user.transPassword);
   if(!check){
 
-    const currDomain = `${req.protocol}://${req.get('host')}`;
+    const currDomain = `${process.env.GRPC_URL}`;
 
     if (currDomain != oldBetFairDomain) {
       await transactionPasswordAttempts(user);
