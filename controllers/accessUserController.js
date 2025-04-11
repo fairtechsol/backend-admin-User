@@ -21,7 +21,7 @@ exports.createAccessUser = async (req, res) => {
                 fullName
             });
             await updatePermission({ id: accessUser.permission }, permission);
-            return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { type: "User" } } }, req, res);
+            return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "User" } } }, req, res);
         }
 
         const accessUser = await getAccessUserById(reqUser.id, ["id", "mainParentId"]);
