@@ -1,15 +1,27 @@
 
 const { Not } = require("typeorm");
-const { getAccessUserById, getAccessUsers, getAccessUserByUserName, addAccessUser } = require("../services/accessUserService");
-const { addPermission } = require("../services/permissionService");
+const { getAccessUserById, getAccessUsers, getAccessUserByUserName, addAccessUser, updateAccessUser } = require("../services/accessUserService");
+const { addPermission, updatePermission } = require("../services/permissionService");
 const { getUserById, getUserByUserName } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 
 exports.createAccessUser = async (req, res) => {
     try {
-        const { userName, fullName, password, permission } = req.body;
+        const { userName, fullName, password, permission, id } = req.body;
         let reqUser = req.user || {};
+
+        if (id) {
+            const accessUser = await getAccessUserById(id, ["id", "permission"]);
+            if (!accessUser) {
+                return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "USer" } } }, req, res);
+            }
+            await updateAccessUser({ id: id }, {
+                fullName
+            });
+            await updatePermission({ id: accessUser.permission }, permission);
+            return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { type: "User" } } }, req, res);
+        }
 
         const accessUser = await getAccessUserById(reqUser.id, ["id", "mainParentId"]);
         const creator = await getUserById(reqUser.id, ["id"]);

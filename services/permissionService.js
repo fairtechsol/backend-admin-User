@@ -22,13 +22,13 @@ exports.addPermission = async (body) => {
   return insertUser;
 };
 
-exports.insertPermission = async (Permissions) => {
-  let insertUser = await Permission.insert(Permissions);
+exports.insertPermission = async (body) => {
+  let insertUser = await Permission.insert(body);
   return insertUser;
 };
 
-exports.updatePermission = async (Permissions) => {
-  await Permission.update(Permissions?.id, Permissions);
+exports.updatePermission = async (where,body) => {
+  await Permission.update(where,body);
 };
 
 
