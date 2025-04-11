@@ -1,3 +1,4 @@
+const { logger } = require("../../../../config/logger");
 const grpcReq = require("../../index");
 
   
@@ -23,6 +24,23 @@ exports.lockUnlockUserByUserPanelHandler = async (requestData) => {
     );
     return {};
   } catch (error) {
+    throw error;
+  }
+};
+
+exports.updateBalanceAPICallHandler = async (requestData) => {
+  try {
+  await grpcReq.wallet.callMethod(
+      "UserService",
+      "UpdateBalanceAPICall",
+      requestData
+    );
+  } catch (error) {
+    logger.error({
+      error: `Error at update balance via gRPC.`,
+      stack: error.stack,
+      message: error.message,
+    });
     throw error;
   }
 };

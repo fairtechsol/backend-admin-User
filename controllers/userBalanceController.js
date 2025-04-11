@@ -15,7 +15,7 @@ const { logger } = require("../config/logger");
 const { settleCommission, insertCommissions } = require("../services/commissionService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { transactionType: transactionTypeConstant } = require("../config/contants");
-const { updateBalanceAPICallHandler } = require("../grpc/grpcClient/handlers/expert/userHandler");
+const { updateBalanceAPICallHandler } = require("../grpc/grpcClient/handlers/wallet/userHandler");
 exports.updateUserBalance = async (req, res) => {
   try {
     let { userId, transactionType, amount, transactionPassword, remark } =
