@@ -1,4 +1,5 @@
 const { oldBetFairDomain } = require("../config/contants");
+const { getAccessUserById } = require("../services/accessUserService");
 const {  transactionPasswordAttempts } = require("../services/commonService");
 const { getUserById, updateUser } = require("../services/userService");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
@@ -75,7 +76,7 @@ exports.isAuthenticate = async (req, res, next) => {
 
 exports.checkTransactionPassword = async (req, res, next) => {
   let {transactionPassword} = req.body
-  let {id} = req.user
+  let { id, isAccessUser, childId } = req.user
   if(!transactionPassword) 
   return ErrorResponse(
     {
@@ -88,8 +89,14 @@ exports.checkTransactionPassword = async (req, res, next) => {
     req,
     res
   );
-   // Retrieve user's transaction password from the database
-  const user = await getUserById(id, ["transPassword", "id", "transactionPasswordAttempts", "createBy","superParentId"]);
+
+  let user;
+  if(isAccessUser){
+    user = await getAccessUserById(childId, ["transPassword", "id"]);
+  }
+  else {
+    user = await getUserById(id, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
+  }
   if(!user)
   return ErrorResponse(
     {
@@ -118,7 +125,7 @@ exports.checkTransactionPassword = async (req, res, next) => {
 
     const currDomain = `${process.env.GRPC_URL}`;
 
-    if (currDomain != oldBetFairDomain) {
+    if (currDomain != oldBetFairDomain && !isAccessUser) {
       await transactionPasswordAttempts(user);
     }
     return ErrorResponse(

@@ -27,8 +27,8 @@ exports.insertAccessUser = async (AccessUsers) => {
     return insertUser;
 };
 
-exports.updateAccessUser = async (AccessUsers) => {
-    await AccessUser.update(AccessUsers?.id, AccessUsers);
+exports.updateAccessUser = async (where, body) => {
+    await AccessUser.update(where, body);
 };
 
 

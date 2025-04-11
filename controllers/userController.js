@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType, matchOddName } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole,  getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket,  insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket, insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -8,15 +8,15 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
 const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
-const { getUserBalanceDataByUserId, getAllChildProfitLossSum,  addInitialUserBalance, updateUserBalanceData } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, getAllChildProfitLossSum, addInitialUserBalance, updateUserBalanceData } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
-const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey } = require('../services/redis/commonfunction');
+const { hasUserInCache, updateUserDataRedis, getUserRedisKey } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 const bot = require('../config/telegramBot');
-const { getAccessUserByUserName, getAccessUserWithPermission } = require('../services/accessUserService');
+const { getAccessUserByUserName, getAccessUserWithPermission, getAccessUserById, updateAccessUser } = require('../services/accessUserService');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -498,9 +498,15 @@ function generateTransactionPass() {
 }
 
 // Check old password against the stored password
-const checkOldPassword = async (userId, oldPassword) => {
-  // Retrieve user's password from the database
-  const user = await getUserById(userId, ["password"]);
+const checkOldPassword = async (userId, oldPassword, isAccessUser = false) => {
+  let user;
+  if (isAccessUser) {
+    user = await getAccessUserById(userId, ["password"]);
+  }
+  else {
+    // Retrieve user's password from the database
+    user = await getUserById(userId, ["password"]);
+  }
   if (!user) {
     // User not found, return error response
     throw {
@@ -545,12 +551,12 @@ exports.changePassword = async (req, res, next) => {
 
     // Hash the new password
     const password = bcrypt.hashSync(newPassword, 10);
-
+    const isAccessUser = req.user.isAccessUser;
     // If user is changing its password after login or logging in for the first time
     if (oldPassword && !transactionPassword) {
       // Check if the old password is correct
-      const userId = req.user.id;
-      const isPasswordMatch = await checkOldPassword(userId, oldPassword);
+      const userId = isAccessUser ? req.user.childId : req.user.id;
+      const isPasswordMatch = await checkOldPassword(userId, oldPassword, isAccessUser);
 
 
       if (!isPasswordMatch) {
@@ -565,17 +571,26 @@ exports.changePassword = async (req, res, next) => {
       }
 
       // Retrieve additional user information
-      const user = await getUserById(userId, ["loginAt", "roleName"]);
+      const user = isAccessUser ? await getAccessUserById(userId, ["loginAt", "id"]) : await getUserById(userId, ["loginAt", "roleName"]);
 
       // Update loginAt and generate new transaction password if conditions are met
       if (user.loginAt == null && user.roleName !== userRoleConstant.user) {
         const generatedTransPass = generateTransactionPass();
-        await updateUser(userId, {
-          loginAt: new Date(),
-          transPassword: bcrypt.hashSync(generatedTransPass, 10),
-          password,
-        });
-        await forceLogoutUser(userId, true);
+        if (isAccessUser) {
+          await updateAccessUser({ id: userId }, {
+            loginAt: new Date(),
+            transPassword: bcrypt.hashSync(generatedTransPass, 10),
+            password,
+          });
+        }
+        else {
+          await updateUser(userId, {
+            loginAt: new Date(),
+            transPassword: bcrypt.hashSync(generatedTransPass, 10),
+            password,
+          });
+        }
+        await forceLogoutUser(userId, true, isAccessUser, isAccessUser ? req.user.id : null);
         return SuccessResponse(
           {
             statusCode: 200,
@@ -588,8 +603,13 @@ exports.changePassword = async (req, res, next) => {
       }
 
       // Update only the password if conditions are not met
-      await updateUser(userId, { loginAt: new Date(), password });
-      await forceLogoutUser(userId);
+      if (isAccessUser) {
+        await updateAccessUser({ id: userId }, { loginAt: new Date(), password });
+      }
+      else {
+        await updateUser(userId, { loginAt: new Date(), password });
+      }
+      await forceLogoutUser(userId, false, isAccessUser, isAccessUser ? req.user.id : null);
 
       return SuccessResponse(
         {
@@ -1781,11 +1801,11 @@ exports.getUserProfitLossForMatch = async (req, res, next) => {
 
       let currUserProfitLossData = {};
       let betsData = await getUserProfitLossForUpperLevel(element, matchId);
-      Object.keys(betsData||{}).forEach((item)=>{
-        markets[item]={ betId: item, name: betsData[item]?.name };
-        Object.keys(betsData[item].teams||{})?.forEach((teams)=>{
-          betsData[item].teams[teams].pl={
-            rate:betsData[item].teams?.[teams]?.pl,
+      Object.keys(betsData || {}).forEach((item) => {
+        markets[item] = { betId: item, name: betsData[item]?.name };
+        Object.keys(betsData[item].teams || {})?.forEach((teams) => {
+          betsData[item].teams[teams].pl = {
+            rate: betsData[item].teams?.[teams]?.pl,
             percent: parseFloat(parseFloat(parseFloat(betsData[item].teams?.[teams]?.pl).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2)
           }
         })

@@ -27,6 +27,7 @@ const { generateAuthToken, verifyAuthToken } = require("../utils/generateAuthTok
 const bot = require("../config/telegramBot");
 const { __mf } = require("i18n");
 const { getAccessUserWithPermission } = require("../services/accessUserService");
+const { ILike } = require("typeorm");
 
 
 
@@ -34,7 +35,7 @@ const { getAccessUserWithPermission } = require("../services/accessUserService")
 const validateUser = async (userName, password) => {
   // Find user by username and select specific fields
   const user = await getUserWithUserBalance(userName);
-  const accessUser = await getAccessUserWithPermission({ userName: userName });
+  const accessUser = await getAccessUserWithPermission({ userName: ILike(userName) });
   // Check if the user is found
   if (user || accessUser) {
     // Check if the provided password matches the hashed password in the database

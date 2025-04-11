@@ -31,12 +31,24 @@ exports.forceLogoutIfLogin = async (userId) => {
 };
 
 
-exports.forceLogoutUser = async (userId, stopForceLogout) => {
+exports.forceLogoutUser = async (userId, stopForceLogout, isAccessUser = false, mainParentId) => {
 
   if (!stopForceLogout) {
     await this.forceLogoutIfLogin(userId);
   }
-  await internalRedis.hdel(userId, "token");
+  if (!isAccessUser) {
+    const userAccessData = await internalRedis.hget(userId, "accessUser");
+    if (!userAccessData || !userAccessData.length) {
+      await internalRedis.del(userId);
+    }
+    else {
+      await internalRedis.hdel(userId, "token");
+    }
+  } else {
+    await internalRedis.del(userId);
+    const mainUserData = await internalRedis.hget(mainParentId, "accessUser");
+    await internalRedis.hmset(mainParentId, { accessUser: mainUserData?.filter((item) => item != userId) });
+  }
 
 };
 
