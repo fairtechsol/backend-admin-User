@@ -302,7 +302,7 @@ exports.logout = async (req, res) => {
     } else {
       await internalRedis.del(user.id);
       const mainUserData = await internalRedis.hget(user.mainParentId, "accessUser");
-      await internalRedis.hmset(user.mainParentId, { accessUser: mainUserData.filter((item) => item != user.id) });
+      await internalRedis.hmset(user.mainParentId, { accessUser: mainUserData?.filter((item) => item != user.id) });
     }
 
     if (user.isDemo) {
