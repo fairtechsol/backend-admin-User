@@ -5,6 +5,7 @@ const { addPermission, updatePermission } = require("../services/permissionServi
 const { getUserById, getUserByUserName } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
+const { logger } = require("../config/logger");
 
 exports.createAccessUser = async (req, res) => {
     try {
@@ -50,6 +51,11 @@ exports.createAccessUser = async (req, res) => {
 
         return SuccessResponse({ statusCode: 200, message: { msg: "created", keys: { type: "User" } } }, req, res);
     } catch (err) {
+        logger.error({
+            error: `Error at creating access user: ${err.message} `,
+            stack: err.stack,
+            message: err.message,
+        });
         return ErrorResponse(err, req, res);
     }
 };
@@ -72,6 +78,31 @@ exports.lockUnlockAccessUser = async (req, res) => {
         await updateAccessUser({ id: id }, { userBlock: isBlock, userBlockedBy: isBlock ? reqUser.childId || reqUser?.id : null })
         return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } }, req, res);
     } catch (err) {
+        logger.error({
+            error: `Error at lock/unlock access user: ${err.message} `,
+            stack: err.stack,
+            message: err.message,
+        });
+        return ErrorResponse(err, req, res);
+    }
+};
+
+exports.changeAccessUserPassword = async (req, res) => {
+    try {
+        const { password, id } = req.body;
+
+        const hashedPassword = await bcrypt.hash(password, process.env.BCRYPTSALT || 10);
+        await updateAccessUser({ id: id }, {
+            password: hashedPassword
+        });
+
+        return SuccessResponse({ statusCode: 200, message: { msg: "auth.passwordChanged" } }, req, res);
+    } catch (err) {
+        logger.error({
+            error: `Error at change password: ${err.message} `,
+            stack: err.stack,
+            message: err.message,
+        });
         return ErrorResponse(err, req, res);
     }
 };
