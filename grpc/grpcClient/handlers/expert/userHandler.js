@@ -1,3 +1,4 @@
+const { logger } = require("../../../../config/logger");
 const grpcReq = require("../../index");
 
 exports.getNotificationHandler = async (requestData) => {
