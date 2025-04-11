@@ -172,7 +172,7 @@ exports.updateUser = async (req, res) => {
     updateUser.phoneNumber = phoneNumber ?? updateUser.phoneNumber;
     updateUser.city = city || updateUser.city;
     updateUser.sessionCommission = sessionCommission ?? updateUser.sessionCommission;
-    updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
+    updateUser.matchComissionType = matchComissionType;
     updateUser.matchCommission = matchCommission ?? updateUser.matchCommission;
     updateUser.remark = remark || updateUser.remark;
     updateUser = await addUser(updateUser);
