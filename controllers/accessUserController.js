@@ -63,3 +63,15 @@ exports.getAccessUser = async (req, res) => {
         return ErrorResponse(err, req, res);
     }
 };
+
+exports.lockUnlockAccessUser = async (req, res) => {
+    try {
+        const { id, isBlock } = req.body;
+        let reqUser = req.user || {};
+
+        await updateAccessUser({ id: id }, { userBlock: isBlock, userBlockedBy: isBlock ? reqUser.childId || reqUser?.id : null })
+        return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } }, req, res);
+    } catch (err) {
+        return ErrorResponse(err, req, res);
+    }
+};

@@ -83,7 +83,6 @@ const setUserDetailsRedis = async (user) => {
         ...(betData || {}),
         ...(tournamentBetData || {}),
         partnerShips,
-        userRole: userObj.roleName
       };
     };
 
