@@ -4,7 +4,7 @@ const { getAccessUserById, getAccessUsers, getAccessUserByUserName, addAccessUse
 const { addPermission } = require("../services/permissionService");
 const { getUserById, getUserByUserName } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
-const bcrypt=require("bcryptjs");
+const bcrypt = require("bcryptjs");
 
 exports.createAccessUser = async (req, res) => {
     try {
@@ -18,7 +18,7 @@ exports.createAccessUser = async (req, res) => {
             return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "Login user" } } }, req, res);
 
         const upperCaseUserName = userName?.toUpperCase();
-        const userExist = (!!(await getUserByUserName(upperCaseUserName,["id"])) || !!(await getAccessUserByUserName(upperCaseUserName,["id"])));
+        const userExist = (!!(await getUserByUserName(upperCaseUserName, ["id"])) || !!(await getAccessUserByUserName(upperCaseUserName, ["id"])));
         if (userExist)
             return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
 
@@ -45,7 +45,7 @@ exports.createAccessUser = async (req, res) => {
 exports.getAccessUser = async (req, res) => {
     try {
         const { id, childId } = req.user;
-        const accessUser = await getAccessUsers({ mainParentId: id, id: Not(childId) });
+        const accessUser = await getAccessUsers({ mainParentId: id, ...(childId ? { id: Not(childId) } : {}) });
         return SuccessResponse({ statusCode: 200, data: accessUser }, req, res);
     } catch (err) {
         return ErrorResponse(err, req, res);
