@@ -19,5 +19,6 @@ module.exports.CreateAccessUser = Joi.object({
     }),
     permission: Joi.object().required().messages({
         'any.required': 'Permission is required',
-    })
+    }),
+    id: Joi.string().optional()
 });
