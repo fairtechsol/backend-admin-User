@@ -746,7 +746,7 @@ exports.userList = async (req, res, next) => {
     const { type, userId, roleName, ...apiQuery } = req.query;
     let userRole = roleName || reqUser?.roleName;
     let where = {
-      createBy: userId || reqUser.id,
+      createBy: reqUser?.isAccessUser ? reqUser.id : (userId || reqUser.id),
       roleName: Not(userRole)
     };
 
@@ -959,7 +959,7 @@ exports.getTotalUserListBalance = async (req, res, next) => {
     const { type, userId, roleName, ...apiQuery } = req.query;
     let userRole = roleName || reqUser?.roleName;
     let where = {
-      createBy: userId || reqUser.id,
+      createBy: reqUser?.isAccessUser ? reqUser.id : (userId || reqUser.id),
       roleName: Not(userRole)
     };
 

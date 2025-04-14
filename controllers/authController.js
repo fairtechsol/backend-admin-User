@@ -165,7 +165,7 @@ exports.login = async (req, res) => {
       );
     }
 
-    const { roleName } = user;
+    let { roleName } = user;
     const throwUserNotCorrectError = () => {
       return ErrorResponse(
         {
@@ -207,6 +207,8 @@ exports.login = async (req, res) => {
       if (loginType != userRoleConstant.admin) {
         return throwUserNotCorrectError();
       }
+      const mainParent = await getUserById(user.mainParentId, ["roleName"]);
+      roleName = mainParent?.roleName;
     }
     // force logout user if already login on another device
     await forceLogoutIfLogin(user.id);
@@ -214,7 +216,7 @@ exports.login = async (req, res) => {
     setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, roleName: user.roleName, userName: user.userName, isAuthenticatorEnable: user.isAuthenticatorEnable, ...(user.isAccessUser ? { mainParentId: user.mainParentId, isAccessUser: true } : {}) },
+      { id: user.id, roleName: roleName, userName: user.userName, isAuthenticatorEnable: user.isAuthenticatorEnable, ...(user.isAccessUser ? { mainParentId: user.mainParentId, isAccessUser: true } : {}) },
       jwtSecret
     );
 
