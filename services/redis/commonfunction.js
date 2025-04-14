@@ -136,10 +136,6 @@ exports.setRedisKey = async (key, value, expire) => {
   await pipeline.exec();
 }
 
-exports.setExternalRedisKey = async (key, val) => {
-  await externalRedis.set(key, val);
-}
-
 exports.getExternalRedisKey = async (key) => {
   return await externalRedis.get(key);
 }
