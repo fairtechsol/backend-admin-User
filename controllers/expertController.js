@@ -1,23 +1,33 @@
-const { expertDomain } = require("../config/contants");
+const { expertDomain, redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { addMatchData } = require("../services/matchService");
 const { addRaceData } = require("../services/racingServices");
+const { getExternalRedisKey } = require("../services/redis/commonfunction");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.getNotification = async (req, res) => {
   try {
-    let response = await apiCall(
-      apiMethod.get,
-      expertDomain + allApiRoutes.notification,
-      null,
-      null,
-      req.query
-    );
+    const type = req.query.type || "notification";
+    let notification = await getExternalRedisKey(type);
+    if (!notification) {
+      let response = await apiCall(
+        apiMethod.get,
+        expertDomain + allApiRoutes.notification,
+        null,
+        null,
+        req.query
+      );
+      notification = response?.data;
+    }
+    else {
+      notification = { value: notification };
+    }
+
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response.data,
+        data: notification,
       },
       req,
       res
@@ -29,14 +39,22 @@ exports.getNotification = async (req, res) => {
 
 exports.getBlinkingTabs = async (req, res) => {
   try {
-    let response = await apiCall(
-      apiMethod.get,
-      expertDomain + allApiRoutes.blinkingTabs
-    );
+    let blinkingTabs = await getExternalRedisKey(redisKeys.blinkingTabs);
+    if (!blinkingTabs) {
+
+      let response = await apiCall(
+        apiMethod.get,
+        expertDomain + allApiRoutes.blinkingTabs
+      );
+      blinkingTabs = response?.data;
+    }
+    else {
+      blinkingTabs = JSON.parse(blinkingTabs);
+    }
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response.data,
+        data: blinkingTabs,
       },
       req,
       res
@@ -109,8 +127,8 @@ exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
     let response = await apiCall(
       apiMethod.get,
       expertDomain +
-        allApiRoutes.getMatchByCompetitionAndDate +
-        `/${competitionId}/${new Date(date)}`
+      allApiRoutes.getMatchByCompetitionAndDate +
+      `/${competitionId}/${new Date(date)}`
     );
 
     return SuccessResponse(
@@ -133,8 +151,8 @@ exports.getMatchDatesByCompetitionIdAndDate = async (req, res) => {
 };
 
 
-exports.addMatch= async (req,res)=>{
-  try{
+exports.addMatch = async (req, res) => {
+  try {
     const data = req.body;
 
     await addMatchData(data);
@@ -147,7 +165,7 @@ exports.addMatch= async (req,res)=>{
       res
     );
   }
-  catch(err){
+  catch (err) {
     logger.error({
       error: `Error at get match for the user.`,
       stack: err.stack,
@@ -158,8 +176,8 @@ exports.addMatch= async (req,res)=>{
   }
 }
 
-exports.raceAdd= async (req,res)=>{
-  try{
+exports.raceAdd = async (req, res) => {
+  try {
     const data = req.body;
 
     await addRaceData(data);
@@ -172,7 +190,7 @@ exports.raceAdd= async (req,res)=>{
       res
     );
   }
-  catch(err){
+  catch (err) {
     logger.error({
       error: `Error at get match for the user.`,
       stack: err.stack,

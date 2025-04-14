@@ -422,7 +422,10 @@ module.exports.redisKeys = {
   userTeamCRateOther: "userTeamCRateOther_",
 
   profitLoss: "_profitLoss",
-  card: "_card"
+  card: "_card",
+  notification:"notification",
+  banner:"banner",
+  blinkingTabs:"blinkingTabs"
 }
 module.exports.redisKeysMatchWise = {
   [this.gameType.cricket]: [this.redisKeys.userTeamARate, this.redisKeys.userTeamBRate, this.redisKeys.userTeamCRate, this.redisKeys.noRateComplete, this.redisKeys.yesRateComplete, this.redisKeys.noRateTie, this.redisKeys.yesRateTie],
