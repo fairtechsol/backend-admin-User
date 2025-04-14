@@ -29,7 +29,11 @@ exports.getProfile = async (req, res) => {
   };
   let user;
   if (reqUser?.isAccessUser) {
+    const mainUser = await getUser({ id: req.user.id }, ["roleName"])
     user = await getAccessUserWithPermission({ id: reqUser?.childId });
+    if (user) {
+      user.roleName = mainUser?.roleName;
+    }
   }
   else {
     user = await getUserDataWithUserBalance(where);

@@ -267,7 +267,8 @@ exports.login = async (req, res) => {
           userId: user?.id,
           isBetExist: isBetExist?.length > 0,
           isAuthenticator: user.isAuthenticatorEnable,
-          authenticatorType: userAuthType
+          authenticatorType: userAuthType,
+          permissions: user?.permission
         },
       },
       req,
