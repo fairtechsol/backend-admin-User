@@ -230,13 +230,9 @@ exports.login = async (req, res) => {
 
     if (user?.isAccessUser) {
       const mainUserData = await internalRedis.hget(user.mainParentId, "accessUser");
-      if (!mainUserData) {
-        await internalRedis.hmset(user.mainParentId, { accessUser: [user.id] });
-      }
-      else {
-        await internalRedis.hmset(user.mainParentId, { accessUser: [...mainUserData, user.id] });
 
-      }
+      await internalRedis.hmset(user.mainParentId, { accessUser: JSON.stringify([...JSON.parse(mainUserData || "[]"), user.id]) });
+
       await internalRedis.hmset(user.id, { token: token });
     }
     // setting token in redis for checking if user already loggedin
@@ -296,16 +292,16 @@ exports.logout = async (req, res) => {
 
     if (!user.isAccessUser) {
       const userAccessData = await internalRedis.hget(user.id, "accessUser");
-      if (!userAccessData || !userAccessData.length) {
+      if (!userAccessData || !JSON.parse(userAccessData||"[]").length) {
         await internalRedis.del(user.id);
       }
       else {
         await internalRedis.hdel(user.id, "token");
       }
     } else {
-      await internalRedis.del(user.id);
-      const mainUserData = await internalRedis.hget(user.mainParentId, "accessUser");
-      await internalRedis.hmset(user.mainParentId, { accessUser: mainUserData?.filter((item) => item != user.id) });
+      await internalRedis.del(user.childId);
+      const mainUserData = await internalRedis.hget(user.id, "accessUser");
+      await internalRedis.hmset(user.id, { accessUser: JSON.stringify(JSON.parse(mainUserData || "[]")?.filter((item) => item != user.childId)) });
     }
 
     if (user.isDemo) {

@@ -1,4 +1,4 @@
-const { transType, socketData, matchComissionTypeConstant, walletDomain, userRoleConstant } = require("../config/contants");
+const { transType, socketData, matchComissionTypeConstant, walletDomain, userRoleConstant, permissions } = require("../config/contants");
 const { getUser, getUserDataWithUserBalance } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
@@ -20,6 +20,33 @@ exports.updateUserBalance = async (req, res) => {
     let { userId, transactionType, amount, transactionPassword, remark } =
       req.body;
     let reqUser = req.user;
+
+    if (reqUser?.isAccessUser) {
+      if (transactionType == transType.add && reqUser.permission != permissions.deposit) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.unauthorizeRole",
+            },
+          },
+          req,
+          res
+        );
+      }
+      else if (transactionType == transType.withDraw && reqUser.permission != permissions.withdraw) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.unauthorizeRole",
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
 
     const userExistRedis = await hasUserInCache(userId);
 
@@ -84,12 +111,13 @@ exports.updateUserBalance = async (req, res) => {
       //   user.id,
       //   updatedUpdateUserBalanceData
       // );
-      await updateUserBalanceData(user.id, { 
-        profitLoss: parseFloat(amount), 
-        myProfitLoss: updateMyProfitLoss, 
-        exposure: 0, 
-        totalCommission: 0, 
-        balance: parseFloat(amount)});
+      await updateUserBalanceData(user.id, {
+        profitLoss: parseFloat(amount),
+        myProfitLoss: updateMyProfitLoss,
+        exposure: 0,
+        totalCommission: 0,
+        balance: parseFloat(amount)
+      });
 
       if (userExistRedis) {
         await updateUserDataRedis(userId, updatedUpdateUserBalanceData);
@@ -97,7 +125,7 @@ exports.updateUserBalance = async (req, res) => {
 
       updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
       loginUserBalanceChagne = -parseFloat(amount);
-     
+
     } else if (transactionType == transType.withDraw) {
       insertUserBalanceData = usersBalanceData[1];
       if (amount > insertUserBalanceData.currentBalance - (user.roleName == userRoleConstant.user ? insertUserBalanceData.exposure : 0))
@@ -126,12 +154,13 @@ exports.updateUserBalance = async (req, res) => {
       //   user.id,
       //   updatedUpdateUserBalanceData
       // );
-      await updateUserBalanceData(user.id, { 
-        profitLoss: -parseFloat(amount), 
-        myProfitLoss: updateMyProfitLoss, 
-        exposure: 0, 
-        totalCommission: 0, 
-        balance: -parseFloat(amount)});
+      await updateUserBalanceData(user.id, {
+        profitLoss: -parseFloat(amount),
+        myProfitLoss: updateMyProfitLoss,
+        exposure: 0,
+        totalCommission: 0,
+        balance: -parseFloat(amount)
+      });
 
       if (userExistRedis) {
         await updateUserDataRedis(userId, updatedUpdateUserBalanceData);
@@ -150,12 +179,13 @@ exports.updateUserBalance = async (req, res) => {
       );
     }
 
-    await updateUserBalanceData(reqUser.id, { 
-      profitLoss: 0, 
-      myProfitLoss: 0, 
-      exposure: 0, 
-      totalCommission: 0, 
-      balance: loginUserBalanceChagne});
+    await updateUserBalanceData(reqUser.id, {
+      profitLoss: 0,
+      myProfitLoss: 0,
+      exposure: 0,
+      totalCommission: 0,
+      balance: loginUserBalanceChagne
+    });
     // let newLoginUserBalanceData = await updateUserBalanceByUserId(
     //   reqUser.id,
     //   updatedLoginUserBalanceData

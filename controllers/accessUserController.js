@@ -6,6 +6,7 @@ const { getUserById, getUserByUserName } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const bcrypt = require("bcryptjs");
 const { logger } = require("../config/logger");
+const { forceLogoutUser } = require("../services/commonService");
 
 exports.createAccessUser = async (req, res) => {
     try {
@@ -13,7 +14,7 @@ exports.createAccessUser = async (req, res) => {
         let reqUser = req.user || {};
 
         if (id) {
-            const accessUser = await getAccessUserById(id, ["id", "permission"]);
+            const accessUser = await getAccessUserById(id, ["id", "permission", "mainParentId"]);
             if (!accessUser) {
                 return ErrorResponse({ statusCode: 400, message: { msg: "notFound", keys: { name: "USer" } } }, req, res);
             }
@@ -21,6 +22,7 @@ exports.createAccessUser = async (req, res) => {
                 fullName
             });
             await updatePermission({ id: accessUser.permission }, permission);
+            await forceLogoutUser(id, false, true, accessUser?.mainParentId);
             return SuccessResponse({ statusCode: 200, message: { msg: "updated", keys: { name: "User" } } }, req, res);
         }
 
@@ -75,7 +77,8 @@ exports.lockUnlockAccessUser = async (req, res) => {
         const { id, isBlock } = req.body;
         let reqUser = req.user || {};
 
-        await updateAccessUser({ id: id }, { userBlock: isBlock, userBlockedBy: isBlock ? reqUser.childId || reqUser?.id : null })
+        await updateAccessUser({ id: id }, { userBlock: isBlock, userBlockedBy: isBlock ? reqUser?.id : null })
+        await forceLogoutUser(id, false, true, reqUser?.id);
         return SuccessResponse({ statusCode: 200, message: { msg: "user.lock/unlockSuccessfully" } }, req, res);
     } catch (err) {
         logger.error({
@@ -95,6 +98,7 @@ exports.changeAccessUserPassword = async (req, res) => {
         await updateAccessUser({ id: id }, {
             password: hashedPassword
         });
+        await forceLogoutUser(id, false, true, req.user?.id);
 
         return SuccessResponse({ statusCode: 200, message: { msg: "auth.passwordChanged" } }, req, res);
     } catch (err) {

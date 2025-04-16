@@ -12,7 +12,12 @@ function getUserTokenFromRedis(userId) {
   return internalRedis.hget(userId, "token");
 }
 
+function getUserPermissionFromRedis(userId) {
+  return internalRedis.hget(userId,"permission");
+}
+
 module.exports = {
   verifyToken,
   getUserTokenFromRedis,
+  getUserPermissionFromRedis
 };

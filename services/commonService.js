@@ -2,7 +2,6 @@ const { In, Not, IsNull, LessThanOrEqual } = require("typeorm");
 const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, matchBettingType, redisKeys, marketBetType, expertDomain, gameType, betResultStatus, cardGameType, sessionBettingType, jwtSecret, demoRedisTimeOut, authenticatorType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard, getBetCountData, deleteBet } = require("./betPlacedService");
 const { getUserById, getChildsWithOnlyUserRole, getAllUsers, userBlockUnblock, updateUser, userPasswordAttempts, deleteUser } = require("./userService");
 const { logger } = require("../config/logger");
@@ -38,7 +37,7 @@ exports.forceLogoutUser = async (userId, stopForceLogout, isAccessUser = false, 
   }
   if (!isAccessUser) {
     const userAccessData = await internalRedis.hget(userId, "accessUser");
-    if (!userAccessData || !userAccessData.length) {
+    if (!userAccessData || !JSON.parse(userAccessData || "[]").length) {
       await internalRedis.del(userId);
     }
     else {
@@ -47,7 +46,7 @@ exports.forceLogoutUser = async (userId, stopForceLogout, isAccessUser = false, 
   } else {
     await internalRedis.del(userId);
     const mainUserData = await internalRedis.hget(mainParentId, "accessUser");
-    await internalRedis.hmset(mainParentId, { accessUser: mainUserData?.filter((item) => item != userId) });
+    await internalRedis.hmset(mainParentId, { accessUser: JSON.stringify(JSON.parse(mainUserData || "[]")?.filter((item) => item != userId)) });
   }
 
 };
