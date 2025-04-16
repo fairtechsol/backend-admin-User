@@ -8,7 +8,7 @@ const {
   status,
 } = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
-const grpcReflection = require("grpc-reflection-js");
+const { ReflectionService } = require('@grpc/reflection');
 
 // Default values for gRPC port and shutdown timeout
 const { GRPC_PORT = 50000, SHUTDOWN_TIMEOUT = "1000" } = process.env;
@@ -141,12 +141,6 @@ class Server {
         );
       });
 
-      // ➕ Add reflection support
-      grpcReflection.addReflection(this.server, {
-        services: Object.keys(this.services),
-      });
-      
-
       // Bind the server to the specified port
       this.server.bindAsync(
         `0.0.0.0:${port}`,
@@ -160,7 +154,8 @@ class Server {
           resolve(); // Resolve the promise once the server starts
         }
       );
-
+      const reflection = new ReflectionService(this.services);
+      reflection.addToServer(this.server);
       // Handle shutdown signals for graceful termination
       process.on("SIGINT", this.handleShutdown.bind(this));
       process.on("SIGTERM", this.handleShutdown.bind(this));
