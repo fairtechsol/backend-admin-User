@@ -8,7 +8,6 @@ const {
     status,
   } = require("@grpc/grpc-js");
   const protoLoader = require("@grpc/proto-loader");
-const fs = require("fs");
   
   // Default values for gRPC port and shutdown timeout
   const { GRPC_PORT = 50000, SHUTDOWN_TIMEOUT = "1000" } = process.env;
@@ -61,10 +60,7 @@ const fs = require("fs");
    * Creates insecure credentials for gRPC connections.
    * @returns {ChannelCredentials} The insecure channel credentials.
    */
-  const createInsecure = () => credentials.createSsl(null, [{
-    cert_chain: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/fullchain.pem`),
-    private_key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/privkey.pem`)
-  }], false);
+  const createInsecure = () => credentials.createInsecure();
   
   /**
    * Represents a gRPC server.
@@ -147,10 +143,7 @@ const fs = require("fs");
         // Bind the server to the specified port
         this.server.bindAsync(
           `0.0.0.0:${port}`,
-          ServerCredentials.createSsl(null, [{
-            cert_chain: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/fullchain.pem`),
-            private_key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/privkey.pem`)
-          }], false),
+          ServerCredentials.createInsecure(),
           (err) => {
             if (err) {
               reject(err); // Reject the promise if there's an error
