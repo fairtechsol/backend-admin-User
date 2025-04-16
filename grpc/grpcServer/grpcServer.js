@@ -77,7 +77,7 @@ class Server {
     this.server = new GrpcServer(); // Initialize the gRPC server
     this.impl = {}; // Store service implementations
     this.services = this.loadProtoServices(protoOptionsArray); // Load proto services
-    this.reflection = null;
+    this.refServices = this.loadReflectionProtoServices(protoOptionsArray); // Load proto services
   }
 
   /**
@@ -108,7 +108,21 @@ class Server {
     });
     return services;
   }
+  loadReflectionProtoServices(protoOptionsArray) {
+    let protoOptions = protoOptionsArray[0] || {};
+    const options = {
+      keepCase: true,
+      longs: String,
+      enums: String,
+      defaults: true,
+      oneofs: true,
+      ...(protoOptions?.options || {}),
+    };
+    // Load proto file definition
+    const definition = protoLoader.loadSync(protoOptions.path, options);
 
+    return definition
+  }
   /**
    * Adds a gRPC service to the server.
    * @param {string} serviceName - The name of the service.
@@ -157,8 +171,9 @@ class Server {
           resolve(); // Resolve the promise once the server starts
         }
       );
-      if (this.reflection) {
-        this.reflection.addToServer(this.server);
+      let reflection = new ReflectionService(this.refServices);
+      if (reflection) {
+        reflection.addToServer(this.server);
       }
       // Handle shutdown signals for graceful termination
       process.on("SIGINT", this.handleShutdown.bind(this));
