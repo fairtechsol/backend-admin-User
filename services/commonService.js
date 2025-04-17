@@ -1407,7 +1407,7 @@ exports.deleteMultipleDemoUser = async () => {
   await deleteTransactions({ userId: In(userIds) });
   await deleteBet({ createBy: In(userIds) });
   await deleteUserBalance({ userId: In(userIds) });
-  await deleteUser({ id: In(userIds) });
+  await deleteUser({ isDemo: true, createdAt: LessThanOrEqual(deleteTime) });
 }
 
 
