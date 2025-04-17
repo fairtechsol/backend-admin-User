@@ -10,7 +10,7 @@ const { getUserRedisData } = require("../../../services/redis/commonfunction");
 const { getChildUsersPlaceBets } = require("../../../services/betPlacedService");
 const { apiCall, allApiRoutes, apiMethod } = require("../../../utils/apiService");
 const { getVirtualCasinoExposureSum } = require("../../../services/virtualCasinoBetPlacedsService");
-const { In } = require("typeorm");
+const { In, IsNull } = require("typeorm");
 const { getMatchDetailsHandler } = require("../../grpcClient/handlers/expert/matchHandler");
 
 
@@ -135,7 +135,7 @@ exports.userEventWiseExposure = async (call) => {
     const user = await getUser({ id: userId });
 
     const eventNameByMatchId = {};
-    const matchList = await getMatchList({ stopAt: null }, ["id", "matchType", "title"]);
+    const matchList = await getMatchList({ stopAt: IsNull() }, ["id", "matchType", "title"]);
 
     for (let item of matchList) {
       eventNameByMatchId[item.id] = { type: item.matchType, name: item.title };
