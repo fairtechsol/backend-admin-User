@@ -1,4 +1,4 @@
-const { In } = require("typeorm");
+const { In, IsNull } = require("typeorm");
 const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, redisKeysMatchWise, microServiceDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, tieCompleteBetType, matchBettingType, redisKeysMarketWise, gameType, cardGames, betResultStatus } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId, getChildUsersAllPlaceBets } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKey, getUserRedisKeyData } = require("../services/redis/commonfunction");
@@ -827,7 +827,7 @@ exports.userEventWiseExposure = async (req, res) => {
     const user = await getUser({ id: userId });
 
     const eventNameByMatchId = {};
-    const matchList = await getMatchList({ stopAt: null }, ["id", "matchType", "title"]);
+    const matchList = await getMatchList({ stopAt: IsNull() }, ["id", "matchType", "title"]);
 
     for(let item of matchList){
       eventNameByMatchId[item.id] = { type: item.matchType, name: item.title };

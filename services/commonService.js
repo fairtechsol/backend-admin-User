@@ -2028,7 +2028,7 @@ exports.deleteMultipleDemoUser = async () => {
   await deleteTransactions({ userId: In(userIds) });
   await deleteBet({ createBy: In(userIds) });
   await deleteUserBalance({ userId: In(userIds) });
-  await deleteUser({ id: In(userIds) });
+  await deleteUser({ isDemo: true, createdAt: LessThanOrEqual(deleteTime) });
 }
 
 
@@ -2261,11 +2261,11 @@ exports.getUserExposuresTournament = async (user) => {
 exports.getCasinoMatchDetailsExposure = async (user) => {
   let bets = [];
   if (user.roleName == userRoleConstant.user) {
-    bets = await findAllPlacedBet({ createBy: user.id, marketBetType: marketBetType.CARD, result: betResultStatus.PENDING, deleteReason: null });
+    bets = await findAllPlacedBet({ createBy: user.id, marketBetType: marketBetType.CARD, result: betResultStatus.PENDING, deleteReason: IsNull() });
   }
   else {
     const users = await getChildsWithOnlyUserRole(user.id);
-    bets = await findAllPlacedBet({ createBy: In(users.map((item) => item.id)), marketBetType: marketBetType.CARD, result: betResultStatus.PENDING, deleteReason: null });
+    bets = await findAllPlacedBet({ createBy: In(users.map((item) => item.id)), marketBetType: marketBetType.CARD, result: betResultStatus.PENDING, deleteReason: IsNull() });
 
   }
   const betsData = {};
