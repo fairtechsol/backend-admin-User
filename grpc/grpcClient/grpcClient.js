@@ -1,5 +1,6 @@
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
+const lodash = require("lodash");
 
 /**
  * GrpcClient class for managing gRPC clients and making RPC calls.
@@ -36,9 +37,8 @@ class GrpcClient {
         options
       );
       const grpcObject = grpc.loadPackageDefinition(packageDefinition);
-      clients[protoOptions.service] = new grpcObject[protoOptions.package][
-        protoOptions.service
-      ](this.serverAddress, grpc.credentials.createInsecure());
+      let grpcObj = lodash.get(grpcObject, `${protoOptions.package}.${protoOptions.service}`);
+      clients[protoOptions.service] = new grpcObj(this.serverAddress, ...(process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev" ? [grpc.credentials.createSsl()] : [grpc.credentials.createInsecure()]));
     });
     return clients;
   }

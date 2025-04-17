@@ -4,12 +4,12 @@ const GrpcClient = require("./grpcClient");
 const expertProtoOptionsArray = [
     {
         path: `${__dirname}/proto/match.proto`, //path to proto file
-        package: "matchProvider",//package in proto name
+        package: "grpc.matchProvider",//package in proto name
         service: "MatchProvider",//service name in proto file
     },
     {
         path: `${__dirname}/proto/user.proto`, //path to proto file
-        package: "userProvider",//package in proto name
+        package: "grpc.userProvider",//package in proto name
         service: "UserService",//service name in proto file
     },
 ];

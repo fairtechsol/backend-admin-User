@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package matchProfitLossProvider;
+package grpc.matchProfitLossProvider;
 
 message ProfitLossRequest {
   string user = 1;

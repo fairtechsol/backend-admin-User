@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package cardProvider;
+package grpc.cardProvider;
 
 message DeclareCardResultRequest {
   string  result=1;

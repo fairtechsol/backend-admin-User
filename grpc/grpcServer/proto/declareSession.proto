@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package declareSessionProvider;
+package grpc.declareSessionProvider;
 
 message DeclareSessionRequest {
   string betId = 1; 

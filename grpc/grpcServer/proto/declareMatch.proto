@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package declareMatchProvider;
+package grpc.declareMatchProvider;
 
 message DeclareTournamentRequest {
   string result = 1; 

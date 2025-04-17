@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package userProvider;
+package grpc.userProvider;
 
 // Message for notifications
 message NotificationRequest {

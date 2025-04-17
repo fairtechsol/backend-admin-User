@@ -9,6 +9,8 @@ const {
 } = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
 const { ReflectionService } = require('@grpc/reflection');
+const lodash = require("lodash");
+const fs = require("fs");
 
 // Default values for gRPC port and shutdown timeout
 const { GRPC_PORT = 50000, SHUTDOWN_TIMEOUT = "1000" } = process.env;
@@ -98,13 +100,12 @@ class Server {
       };
       // Load proto file definition
       const definition = protoLoader.loadSync(protoOptions.path, options);
-      this.reflection = new ReflectionService(definition);
 
       // Load gRPC package definition
       const grpcObject = loadPackageDefinition(definition);
       // Map the service definition to the services object
-      services[protoOptions.service] =
-        grpcObject[protoOptions.package][protoOptions.service].service;
+      services[protoOptions.service] = lodash.get(grpcObject, `${protoOptions.package}.${protoOptions.service}.service`);
+
     });
     return services;
   }
@@ -161,7 +162,17 @@ class Server {
       // Bind the server to the specified port
       this.server.bindAsync(
         `0.0.0.0:${port}`,
-        ServerCredentials.createInsecure(),
+        process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev" ? ServerCredentials.createSsl(
+          null,    // No client certificate (mutual TLS not needed)
+          [
+            {
+              cert_chain: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/fullchain.pem`),
+              private_key: fs.readFileSync(`/etc/letsencrypt/live/${process.env.SSL_PATH}/privkey.pem`)
+            }
+          ],
+          false
+          // If true, the server will require a client to connect using SSL
+        ) : ServerCredentials.createInsecure(),
         (err) => {
           if (err) {
             reject(err); // Reject the promise if there's an error
