@@ -37,8 +37,8 @@ const dataSourceOption = {
     min: parseInt(process.env.DB_POOL_MIN || '1', 10),
     idleTimeoutMillis: 10000,    // close idle clients after 10 sec
     connectionTimeoutMillis: 8000,  // wait max 8 sec for a connection
-    statement_timeout: 7000,     // server-side: cancel query if > 5 sec
-    query_timeout: 7000,         // client-side: wait max 5 sec for a query response
+    statement_timeout: 60000,     // server-side: cancel query if > 5 sec
+    query_timeout: 60000,         // client-side: wait max 5 sec for a query response
   },
 };
 
