@@ -1,4 +1,4 @@
-const { redisKeys } = require("../../config/contants");
+const { redisKeys, marketBettingTypeByBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const externalRedis = require("../../config/externalRedisConnection");
 
@@ -138,4 +138,51 @@ exports.setRedisKey = async (key, value, expire) => {
 
 exports.getExternalRedisKey = async (key) => {
   return await externalRedis.get(key);
+}
+
+
+exports.getMatchFromCache = async (matchId) => {
+  let matchKey = `${matchId}_match`;
+  let matchData = await externalRedis.hgetall(matchKey);
+  if (Object.keys(matchData)?.length) {
+    if (matchData?.sessionMaxBets) {
+      matchData.sessionMaxBets = JSON.parse(matchData.sessionMaxBets)
+    }
+
+    Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+      if (matchData?.[item]) {
+        matchData[item] = JSON.parse(matchData[item]);
+      }
+    });
+
+    return matchData;
+  }
+  return null;
+}
+
+exports.getAllSessionRedis = async (matchId) => {
+  // Retrieve all session data for the match from Redis
+  const sessionData = await externalRedis.hgetall(`${matchId}_session`);
+
+  // Return the session data as an object or null if no data is found
+  return Object.keys(sessionData)?.length == 0 ? null : sessionData;
+};
+
+exports.getSessionFromRedis = async (matchId, sessionId) => {
+  // Retrieve session data from Redis
+  const sessionData = await externalRedis.hget(`${matchId}_session`, sessionId);
+
+  // Parse and return the session data or null if it doesn't exist
+  return sessionData ? JSON.parse(sessionData) : null;
+};
+
+exports.hasMatchInCache = async (matchId) => {
+  let key = `${matchId}_match`;
+  return await externalRedis.exists(key);
+}
+
+exports.getMultipleMatchKey = async (matchId) => {
+  let matchKey = `${matchId}_match`;
+  let MatchData = await externalRedis.hgetall(matchKey);
+  return MatchData;
 }
