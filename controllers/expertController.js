@@ -1,4 +1,4 @@
-const { expertDomain, redisKeys } = require("../config/contants");
+const { redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchCompetitionsHandler, getMatchDatesHandler, getMatchesByDateHandler, getBlinkingTabsHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 const { getNotificationHandler } = require("../grpc/grpcClient/handlers/expert/userHandler");
