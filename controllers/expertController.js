@@ -2,6 +2,7 @@ const { redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchCompetitionsHandler, getMatchDatesHandler, getMatchesByDateHandler, getBlinkingTabsHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 const { getNotificationHandler } = require("../grpc/grpcClient/handlers/expert/userHandler");
+const { getExternalRedisKey } = require("../services/redis/commonfunction");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.getNotification = async (req, res) => {
