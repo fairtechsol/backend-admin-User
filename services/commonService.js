@@ -1,5 +1,5 @@
 const { In, Not, IsNull, LessThanOrEqual } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, walletDomain, matchBettingType, redisKeys, marketBetType, expertDomain, gameType, betResultStatus, cardGameType, sessionBettingType, jwtSecret, demoRedisTimeOut, authenticatorType } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, matchBettingType, redisKeys, marketBetType, expertDomain, gameType, betResultStatus, cardGameType, sessionBettingType, jwtSecret, demoRedisTimeOut, authenticatorType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
@@ -11,7 +11,7 @@ const { insertTransactions, deleteTransactions } = require("./transactionService
 const { insertCommissions } = require("./commissionService");
 const { CardProfitLoss } = require("./cardService/cardProfitLossCalc");
 const { getMatchData } = require("./matchService");
-const { updateUserDataRedis, getUserRedisSingleKey } = require("./redis/commonfunction");
+const { updateUserDataRedis, getUserRedisSingleKey, getMatchFromCache, getAllSessionRedis } = require("./redis/commonfunction");
 const jwt = require("jsonwebtoken");
 const { deleteButton } = require("./buttonService");
 const { deleteUserBalance } = require("./userBalanceService");
@@ -1806,3 +1806,46 @@ exports.getUserProfitLossTournament = async (user, matchId) => {
     return matchResult;
   }
 }
+
+
+exports.commonGetMatchDetailsFromRedis = async (matchId) => {
+  if (!matchId) return null;
+
+  const ids = matchId.split(",");
+  const isMultiple = ids.length > 1;
+
+  const result = [];
+  const matchNotPresent = [];
+
+  for (const id of ids) {
+    const match = await getMatchFromCache(id);
+    if (!match) {
+      matchNotPresent.push(id);
+      continue;
+    }
+
+    const sessions = Object.values(await getAllSessionRedis(id) || {});
+    match.sessionBettings = sessions;
+
+    if (match.tournament) {
+      match[matchBettingType.tournament] = match.tournament;
+    }
+
+    result.push(match);
+  }
+
+  if (matchNotPresent.length) {
+    try {
+      const apiResponse = await apiCall(
+        apiMethod.get,
+        `${expertDomain}${allApiRoutes.MATCHES.matchDetails}${matchNotPresent?.join(",")}`
+      );
+      result.push(...((Array.isArray(apiResponse?.data) ? apiResponse?.data : [apiResponse?.data]) || []));
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  return { data: isMultiple ? result : result[0] || null };
+};
+

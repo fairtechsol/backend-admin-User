@@ -1,3 +1,5 @@
+const { commonGetMatchDetailsFromRedis } = require("../../../../services/commonService");
+const { getTournamentBettingDetailsFromCache, getSessionsFromCache } = require("../../../../services/matchCacheService");
 const grpcReq = require("../../index");
 
 exports.getMatchCompetitionsHandler = async (requestData) => {
@@ -41,12 +43,17 @@ exports.getMatchesByDateHandler = async (requestData) => {
 
 exports.getMatchDetailsHandler = async (requestData) => {
     try {
-        const response = await grpcReq.expert.callMethod(
+        const redisMatch = await commonGetMatchDetailsFromRedis(requestData?.matchId);
+        if (redisMatch?.data) {
+            return redisMatch;
+        }
+        response = await grpcReq.expert.callMethod(
             "MatchProvider",
             "MatchDetail",
             requestData
         );
         return { data: JSON.parse(response?.data || "{}") };
+
     } catch (error) {
         throw error;
     }
@@ -122,6 +129,11 @@ exports.getRaceCountryCodeListHandler = async (requestData) => {
 
 exports.getTournamentBettingHandler = async (requestData) => {
     try {
+        const data = await getTournamentBettingDetailsFromCache(requestData?.id, requestData?.matchId);
+        if (data) {
+            return data;
+        }
+
         const response = await grpcReq.expert.callMethod(
             "MatchProvider",
             "GetTournamentBetting",
@@ -148,6 +160,10 @@ exports.getBlinkingTabsHandler = async (requestData) => {
 
 exports.getSessionDetailsHandler = async (requestData) => {
     try {
+        const data = await getSessionsFromCache(requestData?.id, requestData?.matchId);
+        if (data) {
+            return data;
+        }
         const response = await grpcReq.expert.callMethod(
             "MatchProvider",
             "SessionDetail",

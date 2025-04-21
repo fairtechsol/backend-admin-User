@@ -13,7 +13,7 @@ let lodash = require("lodash");
 const { getCardMatch } = require('../services/cardMatchService');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 const { getMatchData } = require('../services/matchService');
-const { getTournamentBettingHandler, getSessionDetailsHandler } = require('../grpc/grpcClient/handlers/expert/matchHandler');
+const { getSessionDetailsHandler } = require('../grpc/grpcClient/handlers/expert/matchHandler');
 
 exports.getBet = async (req, res) => {
   try {
@@ -545,7 +545,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
       // Extract session details from the API response
       sessionDetails = response?.data;
-      sessionDetails.eventId = matchDetail.eventId;
+      sessionDetails.eventId = matchDetail?.eventId;
     } catch (err) {
       // Handle API call error and return an error response
       return ErrorResponse(err, req, res);
