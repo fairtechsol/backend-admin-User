@@ -5,10 +5,9 @@ const { addMatchData, getMatchList } = require("../../../services/matchService")
 const { addRaceData } = require("../../../services/racingServices");
 const { userRoleConstant, matchWiseBlockType, expertDomain, marketBetType, redisKeys, matchBettingType } = require("../../../config/contants");
 const { getAllUsers, getChildUser, isAllChildDeactive, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getUser, getChildsWithOnlyMultiUserRole } = require("../../../services/userService");
-const { getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure, getVirtualCasinoExposure, getUserProfitLossMatch, getUserProfitLossTournament } = require("../../../services/commonService");
+const { getUserExposuresGameWise, getCasinoMatchDetailsExposure, getVirtualCasinoExposure, getUserProfitLossMatch, getUserProfitLossTournament } = require("../../../services/commonService");
 const { getUserRedisData } = require("../../../services/redis/commonfunction");
 const { getChildUsersPlaceBets } = require("../../../services/betPlacedService");
-const { apiCall, allApiRoutes, apiMethod } = require("../../../utils/apiService");
 const { getVirtualCasinoExposureSum } = require("../../../services/virtualCasinoBetPlacedsService");
 const { In, IsNull } = require("typeorm");
 const { getMatchDetailsHandler } = require("../../grpcClient/handlers/expert/matchHandler");
@@ -135,25 +134,17 @@ exports.userEventWiseExposure = async (call) => {
     const user = await getUser({ id: userId });
 
     const eventNameByMatchId = {};
-    const matchList = await getMatchList({ stopAt: IsNull() }, ["id", "matchType", "title"]);
+    const matchList = await getMatchList({ stopAt: IsNull() }, ["id", "matchType", "title","teamC"]);
 
     for (let item of matchList) {
-      eventNameByMatchId[item.id] = { type: item.matchType, name: item.title };
+      eventNameByMatchId[item.id] = { type: item.matchType, name: item.title,teamC: item.teamC };
     }
 
     const result = {};
-    let gamesExposure = await getUserExposuresGameWise(user);
-    let tournamentExposure = await getUserExposuresTournament(user);
+    let gamesExposure = await getUserExposuresGameWise(user, eventNameByMatchId);
 
-    const allMatchBetData = { ...(gamesExposure || {}) };
-    Object.keys(tournamentExposure).forEach((item) => {
-      if (allMatchBetData[item]) {
-        allMatchBetData[item] += tournamentExposure[item];
-      }
-      else {
-        allMatchBetData[item] = tournamentExposure[item];
-      }
-    });
+    const allMatchBetData = gamesExposure || {};
+    
     if (Object.keys(allMatchBetData || {}).length) {
       for (let item of Object.keys(allMatchBetData)) {
         if (eventNameByMatchId[item]) {

@@ -8,7 +8,7 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const { listMatch, getMatchList } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
-const { calculateProfitLossForCardMatchToResult, calculateRatesRacingMatch, getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament, getVirtualCasinoExposure } = require("../services/commonService");
+const { calculateProfitLossForCardMatchToResult, calculateRatesRacingMatch, getUserExposuresGameWise, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament, getVirtualCasinoExposure } = require("../services/commonService");
 const { getMatchDetailsHandler, getRaceDetailsHandler, getMatchListHandler, getRaceListHandler, getRaceCountryCodeListHandler, getTournamentBettingHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 
 exports.matchDetails = async (req, res) => {
@@ -637,18 +637,10 @@ exports.userEventWiseExposure = async (req, res) => {
     }
 
     const result = {};
-    let gamesExposure = await getUserExposuresGameWise(user);
-    let tournamentExposure = await getUserExposuresTournament(user);
+    let gamesExposure = await getUserExposuresGameWise(user, {...eventNameByMatchId});
 
-    const allMatchBetData = { ...(gamesExposure || {}) };
-    Object.keys(tournamentExposure).forEach((item) => {
-      if (allMatchBetData[item]) {
-        allMatchBetData[item] += tournamentExposure[item];
-      }
-      else {
-        allMatchBetData[item] = tournamentExposure[item];
-      }
-    });
+    const allMatchBetData = gamesExposure || {};
+  
     if (Object.keys(allMatchBetData || {}).length) {
       for (let item of Object.keys(allMatchBetData)) {
         if (eventNameByMatchId[item]) {
@@ -679,7 +671,7 @@ exports.userEventWiseExposure = async (req, res) => {
       match: virtualCasinoData?.list?.map((item) => {
         return { name: item.gameName, type: item.providerName, exposure: Math.abs(item.totalAmount) }
       })
-    }
+    };
 
     return SuccessResponse(
       {

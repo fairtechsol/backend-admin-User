@@ -1,4 +1,4 @@
-const { getMatchFromCache, getSessionFromRedis, hasMatchInCache, getMultipleMatchKey } = require("./redis/commonfunction");
+const { getMatchFromCache, getSessionFromRedis, hasMatchInCache, getMultipleMatchKey, getAllSessionRedis } = require("./redis/commonfunction");
 
 exports.getTournamentBettingDetailsFromCache = async (id, matchId) => {
     const matchDetails = await getMatchFromCache(matchId);
@@ -65,3 +65,49 @@ exports.getSessionsFromCache = async (sessionId, matchId) => {
 
     return { data: { ...session, ...match } };
 };
+
+
+
+exports.commonGetMatchDetailsFromRedis = async (matchId) => {
+    if (!matchId) return null;
+  
+    const ids = matchId.split(",");
+    const isMultiple = ids.length > 1;
+  
+    const result = [];
+    const matchNotPresent = [];
+  
+    for (const id of ids) {
+      const match = await getMatchFromCache(id);
+      if (!match) {
+        matchNotPresent.push(id);
+        continue;
+      }
+  
+      const sessions = Object.values(await getAllSessionRedis(id) || {});
+      match.sessionBettings = sessions;
+  
+      if (match.tournament) {
+        match[matchBettingType.tournament] = match.tournament;
+      }
+  
+      result.push(match);
+    }
+  
+    if (matchNotPresent.length) {
+      try {
+        let apiResponse = await grpcReq.expert.callMethod(
+            "MatchProvider",
+            "MatchDetail",
+            { matchId: matchNotPresent?.join(",") }
+        );
+        apiResponse= { data: JSON.parse(response?.data || "{}") };
+        result.push(...((Array.isArray(apiResponse?.data) ? apiResponse?.data : [apiResponse?.data]) || []));
+      } catch (err) {
+        throw err;
+      }
+    }
+  
+    return { data: isMultiple ? result : result[0] || null };
+  };
+  

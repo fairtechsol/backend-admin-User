@@ -1,5 +1,4 @@
-const { commonGetMatchDetailsFromRedis } = require("../../../../services/commonService");
-const { getTournamentBettingDetailsFromCache, getSessionsFromCache } = require("../../../../services/matchCacheService");
+const { getTournamentBettingDetailsFromCache, getSessionsFromCache, commonGetMatchDetailsFromRedis } = require("../../../../services/matchCacheService");
 const grpcReq = require("../../index");
 
 exports.getMatchCompetitionsHandler = async (requestData) => {
