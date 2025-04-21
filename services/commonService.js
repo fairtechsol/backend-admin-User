@@ -18,7 +18,7 @@ const { deleteUserBalance } = require("./userBalanceService");
 const { getAuthenticator, addAuthenticator } = require("./authService");
 const { verifyAuthToken } = require("../utils/generateAuthToken");
 const { getVirtualCasinoExposureSum } = require("./virtualCasinoBetPlacedsService");
-const { getTournamentBettingHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
+const { getTournamentBettingHandler, getMatchDetailsHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 const { lockUnlockUserByUserPanelHandler, getPartnershipIdHandler } = require("../grpc/grpcClient/handlers/wallet/userHandler");
 
 exports.forceLogoutIfLogin = async (userId) => {
@@ -1836,10 +1836,7 @@ exports.commonGetMatchDetailsFromRedis = async (matchId) => {
 
   if (matchNotPresent.length) {
     try {
-      const apiResponse = await apiCall(
-        apiMethod.get,
-        `${expertDomain}${allApiRoutes.MATCHES.matchDetails}${matchNotPresent?.join(",")}`
-      );
+      const apiResponse = await getMatchDetailsHandler({matchId:matchNotPresent?.join(",")});
       result.push(...((Array.isArray(apiResponse?.data) ? apiResponse?.data : [apiResponse?.data]) || []));
     } catch (err) {
       throw err;
