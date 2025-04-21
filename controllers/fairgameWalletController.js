@@ -248,7 +248,7 @@ const getQueryColumns = async (user, partnerShipRoleName) => {
   return partnerShipRoleName ? await profitLossPercentCol({ roleName: partnerShipRoleName }) : await profitLossPercentCol(user);
 }
 
-exports.getQueryColumns=getQueryColumns;
+exports.getQueryColumns = getQueryColumns;
 
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {
@@ -261,7 +261,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
     if (matchId) {
       where.matchId = matchId;
     }
-    if(runnerId){
+    if (runnerId) {
       where.runnerId = runnerId;
     }
 

@@ -1,5 +1,5 @@
 const { In, IsNull } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, matchBettingType, cardGames } = require("../config/contants");
+const { redisKeys, userRoleConstant, oldBetFairDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, matchBettingType, cardGames } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKeyData } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getChildUser, getUser } = require("../services/userService");
@@ -272,7 +272,7 @@ exports.listMatch = async (req, res) => {
     if (user.roleName != userRoleConstant.user && oldBetFairDomain == domainUrl) {
       const users = await getChildsWithOnlyUserRole(user.id);
 
-      const betPlaced = await findAllPlacedBet({ createBy: In(users?.map((item) => item.id)) });
+      const betPlaced = await findAllPlacedBet({ createBy: In(users?.map((item) => item.id)), result: betResultStatus.PENDING });
 
       for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
         let matchDetail = apiResponse.data?.matches[i];

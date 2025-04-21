@@ -16,6 +16,7 @@ const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey }
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 const bot = require('../config/telegramBot');
+const { deleteAuthenticator } = require('../services/authService');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -545,15 +546,12 @@ exports.changePassword = async (req, res, next) => {
       const userId = req.user.id;
       const isPasswordMatch = await checkOldPassword(userId, oldPassword);
 
-
       if (!isPasswordMatch) {
         return ErrorResponse(
           {
             statusCode: 403,
             message: { msg: "auth.invalidPass", keys: { type: "old" } },
-          },
-          req,
-          res
+          }, req, res
         );
       }
 
@@ -632,12 +630,11 @@ exports.changePassword = async (req, res, next) => {
       });
       await forceLogoutUser(req.user.id);
     } else {
-      // Update loginAt, password, and reset transactionPassword
+      // Update loginAt, password, and reset transactionPassword, remvoe auth when change password by parent
       await updateUser(userId, {
-        loginAt: null,
-        password,
-        transPassword: null,
+        loginAt: null, password, transPassword: null, isAuthenticatorEnable: false
       });
+      deleteAuthenticator({ userId: userId });
       await forceLogoutUser(userId);
     }
     return SuccessResponse(
@@ -1774,11 +1771,11 @@ exports.getUserProfitLossForMatch = async (req, res, next) => {
 
       let currUserProfitLossData = {};
       let betsData = await getUserProfitLossForUpperLevel(element, matchId);
-      Object.keys(betsData||{}).forEach((item)=>{
-        markets[item]={ betId: item, name: betsData[item]?.name };
-        Object.keys(betsData[item].teams||{})?.forEach((teams)=>{
-          betsData[item].teams[teams].pl={
-            rate:betsData[item].teams?.[teams]?.pl,
+      Object.keys(betsData || {}).forEach((item) => {
+        markets[item] = { betId: item, name: betsData[item]?.name };
+        Object.keys(betsData[item].teams || {})?.forEach((teams) => {
+          betsData[item].teams[teams].pl = {
+            rate: betsData[item].teams?.[teams]?.pl,
             percent: parseFloat(parseFloat(parseFloat(betsData[item].teams?.[teams]?.pl).toFixed(2)) * parseFloat(element.partnerShip) / 100).toFixed(2)
           }
         })

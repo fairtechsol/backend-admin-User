@@ -37,10 +37,10 @@ exports.loginMac88Casino = async (req, res) => {
         }
         let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.login, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
 
-        const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: userId, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
-        if (!userTransaction) {
-            await addTransaction({ searchId: userId, type: transactionType.virtualCasino, userId: userId, actionBy: userId, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
-        }
+        // const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: userId, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
+        // if (!userTransaction) {
+        //     await addTransaction({ searchId: userId, type: transactionType.virtualCasino, userId: userId, actionBy: userId, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
+        // }
 
         return SuccessResponse(
             {
@@ -284,9 +284,9 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
 
     updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true });
 
-    const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
-    if (!userTransaction) {
-        await addTransaction({ searchId: user.id, type: transactionType.virtualCasino, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
+    const userTransaction = await getTransaction({ searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) }, null, { createdAt: "DESC" });
+    if (userTransaction?.type != transactionType.virtualCasino) {
+        await addTransaction({ searchId: user.id, type: transactionType.virtualCasino, userId: user.id, actionBy: user.id, amount: userCurrProfitLoss, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
     } else {
         await updateTransactionData(userTransaction?.id, { amount: userCurrProfitLoss });
     }

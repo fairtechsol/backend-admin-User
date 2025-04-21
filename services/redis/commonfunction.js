@@ -9,8 +9,8 @@ exports.updateMatchExposure = async (userId, matchId, value) => {
   await internalRedis.hset(userId, redisKeys.userMatchExposure + matchId, value);
 };
 
-exports.getUserRedisData = async (userId)=>{
-  
+exports.getUserRedisData = async (userId) => {
+
   // Retrieve all user data for the match from Redis
   const userData = await internalRedis.hgetall(userId);
 
@@ -18,22 +18,22 @@ exports.getUserRedisData = async (userId)=>{
   return Object.keys(userData)?.length == 0 ? null : userData;
 }
 
-exports.getUserRedisKey = async (userId,key)=>{
-  
+exports.getUserRedisKey = async (userId, key) => {
+
   // Retrieve all user data for the match from Redis
-  const userData = await internalRedis.hmget(userId,key);
+  const userData = await internalRedis.hmget(userId, key);
 
   // Return the user data as an object or null if no data is found
-  return  userData;
+  return userData;
 }
 
-exports.getUserRedisKeyData = async (userId,key)=>{
-  
+exports.getUserRedisKeyData = async (userId, key) => {
+
   // Retrieve all user data for the match from Redis
-  const userData = await internalRedis.hget(userId,key);
+  const userData = await internalRedis.hget(userId, key);
 
   // Return the user data as an object or null if no data is found
-  return  userData;
+  return userData;
 }
 
 exports.updateUserDataRedis = async (userId, value) => {
@@ -65,31 +65,31 @@ exports.hasUserInCache = async (userId) => {
   return await internalRedis.exists(userId);
 }
 
-exports.deleteKeyFromUserRedis = async (userId,...key) => {
-  return await internalRedis.hdel(userId,key);
+exports.deleteKeyFromUserRedis = async (userId, ...key) => {
+  return await internalRedis.hdel(userId, key);
 }
 
-exports.getUserRedisKeys = async (userId,keys)=>{
+exports.getUserRedisKeys = async (userId, keys) => {
   // Retrieve all user data for the match from Redis
-  const userData = await internalRedis.hmget(userId,keys);
+  const userData = await internalRedis.hmget(userId, keys);
 
   // Return the user data as an object or null if no data is found
-  return  userData;
+  return userData;
 }
 
-exports.getUserRedisSingleKey = async (userId,key)=>{
+exports.getUserRedisSingleKey = async (userId, key) => {
   // Retrieve all user data for the match from Redis
-  const userData = await internalRedis.hget(userId,key);
+  const userData = await internalRedis.hget(userId, key);
 
   // Return the user data as an object or null if no data is found
-  return  userData;
+  return userData;
 }
 
 exports.setCardBetPlaceRedis = async (mid, key, value) => {
   await externalRedis.hincrbyfloat(`${mid}${redisKeys.card}`, key, value);
 }
 
-exports.deleteHashKeysByPattern = async (key,pattern) => {
+exports.deleteHashKeysByPattern = async (key, pattern) => {
   let cursor = '0';
   do {
     const result = await internalRedis.hscan(key, cursor, 'MATCH', pattern);
@@ -103,7 +103,7 @@ exports.deleteHashKeysByPattern = async (key,pattern) => {
 
 exports.getHashKeysByPattern = async (key, pattern) => {
   let cursor = '0';
-  let resultObj={};
+  let resultObj = {};
   do {
     const result = await internalRedis.hscan(key, cursor, 'MATCH', pattern);
     cursor = result[0];
@@ -134,4 +134,8 @@ exports.setRedisKey = async (key, value, expire) => {
 
   // Execute the pipeline
   await pipeline.exec();
+}
+
+exports.getExternalRedisKey = async (key) => {
+  return await externalRedis.get(key);
 }

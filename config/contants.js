@@ -227,7 +227,10 @@ module.exports.redisKeys = {
   authenticatorToken: "authenticatorToken",
   telegramToken: "telegramToken",
   profitLoss: "_profitLoss",
-  card: "_card"
+  card: "_card",
+  notification:"notification",
+  banner:"banner",
+  blinkingTabs:"blinkingTabs"
 }
 
 module.exports.betResultStatus = {

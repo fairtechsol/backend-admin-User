@@ -1,13 +1,20 @@
-const { expertDomain } = require("../config/contants");
+const { expertDomain, redisKeys } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getMatchCompetitionsHandler, getMatchDatesHandler, getMatchesByDateHandler, getBlinkingTabsHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 const { getNotificationHandler } = require("../grpc/grpcClient/handlers/expert/userHandler");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.getNotification = async (req, res) => {
   try {
-    let response = await getNotificationHandler({ query: JSON.stringify(req.query) });
+
+    const type = req.query.type || "notification";
+    let notification = await getExternalRedisKey(type);
+    if (!notification) {
+      notification = await getNotificationHandler({ query: JSON.stringify(req.query) });
+    }
+    else {
+      notification = { value: notification };
+    }
     return SuccessResponse(
       {
         statusCode: 200,
@@ -23,7 +30,14 @@ exports.getNotification = async (req, res) => {
 
 exports.getBlinkingTabs = async (req, res) => {
   try {
-    let response = await getBlinkingTabsHandler();
+    let blinkingTabs = await getExternalRedisKey(redisKeys.blinkingTabs);
+    if (!blinkingTabs) {
+      blinkingTabs = await getBlinkingTabsHandler();
+    }
+    else {
+      blinkingTabs = JSON.parse(blinkingTabs);
+    }
+    
     return SuccessResponse(
       {
         statusCode: 200,
