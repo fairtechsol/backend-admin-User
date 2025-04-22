@@ -1,5 +1,5 @@
-const { In, Not, IsNull, LessThanOrEqual } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, matchBettingType, redisKeys, marketBetType, expertDomain, gameType, betResultStatus, cardGameType, sessionBettingType, jwtSecret, demoRedisTimeOut, authenticatorType } = require("../config/contants");
+const { In, IsNull, LessThanOrEqual } = require("typeorm");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, matchBettingType, redisKeys, marketBetType, gameType, betResultStatus, cardGameType, sessionBettingType, jwtSecret, demoRedisTimeOut, authenticatorType } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard, getBetCountData, deleteBet } = require("./betPlacedService");
@@ -9,8 +9,8 @@ const { __mf } = require("i18n");
 const { insertTransactions, deleteTransactions } = require("./transactionService");
 const { insertCommissions } = require("./commissionService");
 const { CardProfitLoss } = require("./cardService/cardProfitLossCalc");
-const { getMatchData } = require("./matchService");
-const { updateUserDataRedis, getUserRedisSingleKey, getMatchFromCache, getAllSessionRedis } = require("./redis/commonfunction");
+const { getMatchData, getMatchList } = require("./matchService");
+const { updateUserDataRedis, getUserRedisSingleKey } = require("./redis/commonfunction");
 const jwt = require("jsonwebtoken");
 const { deleteButton } = require("./buttonService");
 const { deleteUserBalance } = require("./userBalanceService");
@@ -28,7 +28,6 @@ exports.forceLogoutIfLogin = async (userId) => {
     sendMessageToUser(userId, socketData.logoutUserForceEvent, { message: __mf("auth.forceLogout") })
   }
 };
-
 
 exports.forceLogoutUser = async (userId, stopForceLogout) => {
 
@@ -776,10 +775,13 @@ exports.calculateRatesRacingMatch = async (betPlace, partnerShip = 100, matchDat
   return teamRates;
 }
 
-exports.calculateProfitLossForSessionToResult = async (betId, userId) => {
+exports.calculateProfitLossForSessionToResult = async (betId, userId, matchData) => {
   let betPlace = await findAllPlacedBetWithUserIdAndBetId(userId, betId);
-  const matchDetail = await getMatchData({ id: betPlace?.[0]?.matchId }, ["id", "teamC"]);
-  let redisData = await this.calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, 100, null, null, matchDetail);
+  let matchDetail;
+  if (!matchData) {
+    matchDetail = await getMatchData({ id: betPlace?.[0]?.matchId }, ["id", "teamC"]);
+  }
+  let redisData = await this.calculatePLAllBet(betPlace, betPlace?.[0]?.marketType, 100, null, null, matchData || matchDetail);
   return redisData;
 }
 
@@ -955,12 +957,21 @@ exports.findUserPartnerShipObj = async (user) => {
  */
 exports.settingBetsDataAtLogin = async (user, matchGametype) => {
   if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id, { eventType: (matchGametype || In([gameType.cricket, gameType.politics, gameType.football, gameType.tennis])), marketType: Not(matchBettingType.tournament) });
+    const bets = await getUserDistinctBets(user.id, { eventType: (matchGametype || In([gameType.cricket, gameType.politics, gameType.football, gameType.tennis])) });
     let sessionResult = {};
     let sessionExp = {};
+
+    let matchResult = {};
+    let matchExposure = {};
+
+    const matchDetails = (await getMatchList({ id: In(Array.from(new Set(bets?.map((item) => item.matchId)))) }, ["id", "teamC"]))?.reduce((acc, key) => {
+      acc[key?.id] = key;
+      return acc;
+    }, {});
+
     for (let currBets of bets) {
       if (currBets.marketBetType == marketBetType.SESSION) {
-        let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id);
+        let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id, matchDetails?.[currBets.matchId]);
         sessionResult[`${currBets.betId}${redisKeys.profitLoss}`] = {
           maxLoss: result.maxLoss,
           betPlaced: result.betData,
@@ -974,25 +985,54 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
         }
         sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] = parseFloat((parseFloat(sessionExp[`${redisKeys.userSessionExposure}${currBets.matchId}`] || 0) + result.maxLoss).toFixed(2));
       }
+      else if (currBets.marketBetType == marketBetType.MATCHBETTING) {
+        let apiResponse;
+        try {
+          apiResponse = await getTournamentBettingHandler({ matchId: currBets?.matchId, id: currBets?.betId });
+        } catch (error) {
+          logger.info({
+            info: `Error at get match details in login.`
+          });
+          return;
+        }
+
+        let redisData = await this.calculateProfitLossForRacingMatchToResult([currBets.betId], user.id, apiResponse?.data);
+        let maxLoss = 0;
+        Object.keys(redisData)?.forEach((key) => {
+          maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
+          redisData[key] = JSON.stringify(redisData[key]);
+        });
+
+        matchResult = {
+          ...matchResult,
+          ...redisData
+        }
+
+        matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] || 0) + maxLoss).toFixed(2));
+      }
     }
     Object.keys(sessionResult)?.forEach((item) => {
       sessionResult[item] = JSON.stringify(sessionResult[item]);
     });
     return {
-      ...sessionExp, ...sessionResult
+      ...sessionExp, ...sessionResult, ...matchExposure, ...matchResult
     }
   }
   else {
     const users = await getChildsWithOnlyUserRole(user.id);
     let sessionResult = {};
     let sessionExp = {};
+
+    let matchResult = {};
+    let matchExposure = {};
+
     let betResult = {
       session: {},
       match: {}
     };
 
     const matchIdDetail = {};
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: (matchGametype || In([gameType.cricket, gameType.politics])), marketType: Not(matchBettingType.tournament) });
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: (matchGametype || In([gameType.cricket, gameType.politics])) });
     for (let item of bets) {
 
       let itemData = {
@@ -1001,12 +1041,15 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
         lossAmount: -parseFloat((parseFloat(item.lossAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
         ...(item.marketType == sessionBettingType.meter ? { amount: -parseFloat((parseFloat(item.amount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)) } : {})
       };
-      if (betResult.session[item.betId]) {
+      if (betResult.session[item.betId] || betResult.match[item.betId]) {
         if (item.marketBetType == marketBetType.SESSION) {
           if (!matchIdDetail[item?.matchId]) {
             matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId].push(itemData);
+        }
+        else if (currBets.marketBetType == marketBetType.MATCHBETTING) {
+          betResult.match[item.betId].push(itemData);
         }
       }
       else {
@@ -1015,6 +1058,9 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
             matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId] = [itemData];
+        }
+        else if (currBets.marketBetType == marketBetType.MATCHBETTING) {
+          betResult.match[item.betId] = [itemData];
         }
       }
     }
@@ -1030,75 +1076,9 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
       sessionExp[`${redisKeys.userSessionExposure}${betResult.session[placedBet]?.[0]?.matchId}`] = parseFloat((parseFloat(sessionExp[`${redisKeys.userSessionExposure}${betResult.session[placedBet]?.[0]?.matchId}`] || 0) + sessionResult?.[`${placedBet}${redisKeys.profitLoss}`].maxLoss).toFixed(2));
 
     }
-
     Object.keys(sessionResult)?.forEach((item) => {
       sessionResult[item] = JSON.stringify(sessionResult[item]);
     });
-    return {
-      ...sessionExp, ...sessionResult
-    }
-  }
-}
-
-exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
-  if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id, { marketType: matchBettingType.tournament });
-
-    let matchResult = {};
-    let matchExposure = {};
-    for (let currBets of bets) {
-
-      let apiResponse;
-      try {
-        apiResponse = await getTournamentBettingHandler({ matchId: currBets?.matchId, id: currBets?.betId });
-      } catch (error) {
-        logger.info({
-          info: `Error at get match details in login.`
-        });
-        return;
-      }
-
-      let redisData = await this.calculateProfitLossForRacingMatchToResult([currBets.betId], user.id, apiResponse?.data);
-      let maxLoss = 0;
-      Object.keys(redisData)?.forEach((key) => {
-        maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
-        redisData[key] = JSON.stringify(redisData[key]);
-      });
-
-      matchResult = {
-        ...matchResult,
-        ...redisData
-      }
-
-      matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] || 0) + maxLoss).toFixed(2));
-
-    }
-    return {
-      ...matchExposure, ...matchResult
-    }
-  }
-  else {
-    const users = await getChildsWithOnlyUserRole(user.id);
-
-    let betResult = { match: {} };
-
-    let matchResult = {};
-    let matchExposure = {};
-
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { marketType: matchBettingType.tournament });
-    for (let item of bets) {
-      let itemData = {
-        ...item,
-        winAmount: -parseFloat((parseFloat(item.winAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2)),
-        lossAmount: -parseFloat((parseFloat(item.lossAmount) * parseFloat(item?.user?.[`${partnershipPrefixByRole[user.roleName]}Partnership`]) / 100).toFixed(2))
-      };
-      if (betResult.match[item.betId]) {
-        betResult.match[item.betId].push(itemData);
-      }
-      else {
-        betResult.match[item.betId] = [itemData];
-      }
-    }
 
     for (const placedBet of Object.keys(betResult.match)) {
       const matchId = betResult.match[placedBet]?.[0]?.matchId;
@@ -1132,9 +1112,7 @@ exports.settingTournamentMatchBetsDataAtLogin = async (user) => {
     Object.keys(matchResult)?.forEach((key) => {
       matchResult[key] = JSON.stringify(matchResult[key]);
     });
-    return {
-      ...matchExposure, ...matchResult
-    }
+    return { ...sessionExp, ...sessionResult, ...matchExposure, ...matchResult }
   }
 }
 
@@ -1233,7 +1211,6 @@ exports.getUserProfitLossForUpperLevel = async (user, matchId) => {
   return matchResult;
 }
 
-
 exports.profitLossPercentCol = (body, queryColumns) => {
   switch (body.roleName) {
     case (userRoleConstant.fairGameWallet):
@@ -1272,7 +1249,6 @@ exports.profitLossPercentCol = (body, queryColumns) => {
   }
   return queryColumns;
 }
-
 
 exports.transactionPasswordAttempts = async (user) => {
   if (user?.transactionPasswordAttempts + 1 >= 11) {
@@ -1409,7 +1385,6 @@ exports.deleteMultipleDemoUser = async () => {
   await deleteUser({ isDemo: true, createdAt: LessThanOrEqual(deleteTime) });
 }
 
-
 exports.connectAppWithToken = async (authToken, deviceId, user) => {
   try {
     const isDeviceExist = await getAuthenticator({ userId: user.id }, ["id"]);
@@ -1444,16 +1419,14 @@ exports.connectAppWithToken = async (authToken, deviceId, user) => {
 
 }
 
-exports.getUserExposuresGameWise = async (user,matchData) => {
+exports.getUserExposuresGameWise = async (user, matchData) => {
   if (user.roleName == userRoleConstant.user) {
     const bets = await getUserDistinctBets(user.id, { eventType: (In([gameType.cricket, gameType.politics, gameType.tennis, gameType.football])) });
     let exposures = {};
 
-    let matchIds = new Set();
     let betPlace = (await findAllPlacedBet({ createBy: user.id, eventType: (In([gameType.cricket, gameType.politics, gameType.tennis, gameType.football])), deleteReason: IsNull() })).reduce((prev, curr) => {
       prev[curr.betId] = prev[curr.betId] || [];
       prev[curr.betId].push(curr);
-      matchIds.push(curr.matchId);
       return prev;
     }, {});
 
@@ -1641,11 +1614,19 @@ exports.getVirtualCasinoExposure = async (user) => {
 
 exports.getUserProfitLossMatch = async (user, matchId) => {
   let sessionResult = {};
+  let matchResult = {};
+
   if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id, { matchId: matchId, marketType: Not(matchBettingType.tournament) });
+    const bets = await getUserDistinctBets(user.id, { matchId: matchId });
+
+    const matchDetails = (await getMatchList({ id: In(Array.from(new Set(bets?.map((item) => item.matchId)))) }, ["id", "teamC"]))?.reduce((acc, key) => {
+      acc[key?.id] = key;
+      return acc;
+    }, {})
+
     for (let currBets of bets) {
       if (currBets.marketBetType == marketBetType.SESSION) {
-        let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id);
+        let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id, matchDetails?.[currBets?.matchId]);
 
         sessionResult[`${currBets.betId}`] = {
           maxLoss: result.maxLoss,
@@ -1661,9 +1642,25 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
         }
 
       }
+      if (currBets.marketBetType == marketBetType.MATCHBETTING) {
+
+        let apiResponse;
+        try {
+          apiResponse = await getTournamentBettingHandler({ matchId: currBets.matchId, id: currBets.betId });
+        } catch (error) {
+          logger.info({
+            info: `Error at get match details in login.`
+          });
+          return;
+        }
+
+        let redisData = await this.calculateProfitLossForRacingMatchToResult([currBets.betId], user.id, apiResponse?.data);
+        matchResult[currBets.betId] = { data: redisData, betDetails: currBets };
+
+      }
 
     }
-    return { session: sessionResult };
+    return { session: sessionResult, match: matchResult };
   }
   else {
     const users = await getChildsWithOnlyUserRole(user.id);
@@ -1671,8 +1668,11 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
       session: {},
       match: {}
     };
+
+    let tempData = {};
+
     const matchIdDetail = {};
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId, marketType: Not(matchBettingType.tournament) });
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId });
     for (let item of bets) {
       let itemData = {
         ...item,
@@ -1686,6 +1686,10 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
           }
           betResult.session[item.betId + '_' + item?.user?.id].push(itemData);
         }
+        else if (item.marketBetType == marketBetType.MATCHBETTING) {
+          betResult.match[item.betId + '_' + item?.user?.id].push(itemData);
+        }
+
       }
       else {
 
@@ -1694,6 +1698,9 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
             matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
           }
           betResult.session[item.betId + '_' + item?.user?.id] = [itemData];
+        }
+        else if (item.marketBetType == marketBetType.MATCHBETTING) {
+          betResult.match[item.betId + '_' + item?.user?.id] = [itemData];
         }
       }
     }
@@ -1708,53 +1715,6 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
         betDetails: betResult?.session?.[placedBet]?.[0]
       };
     }
-    return { session: sessionResult };
-  }
-}
-
-exports.getUserProfitLossTournament = async (user, matchId) => {
-  let matchResult = {};
-
-  if (user.roleName == userRoleConstant.user) {
-    const bets = await getUserDistinctBets(user.id, { marketType: matchBettingType.tournament, matchId: matchId });
-    for (let currBets of bets) {
-
-      let apiResponse;
-      try {
-        apiResponse = await getTournamentBettingHandler({ matchId: currBets.matchId, id: currBets.betId });
-      } catch (error) {
-        logger.info({
-          info: `Error at get match details in login.`
-        });
-        return;
-      }
-
-      let redisData = await this.calculateProfitLossForRacingMatchToResult([currBets.betId], user.id, apiResponse?.data);
-      matchResult[currBets.betId] = { data: redisData, betDetails: currBets };
-
-    }
-    return matchResult
-  }
-  else {
-    const users = await getChildsWithOnlyUserRole(user.id);
-
-    let betResult = { match: {} };
-    let tempData = {};
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { marketType: matchBettingType.tournament, matchId: matchId });
-    for (let item of bets) {
-      let itemData = {
-        ...item,
-        winAmount: parseFloat((parseFloat(item.winAmount)).toFixed(2)),
-        lossAmount: parseFloat((parseFloat(item.lossAmount)).toFixed(2))
-      };
-      if (betResult.match[item.betId + '_' + item?.user?.id]) {
-        betResult.match[item.betId + '_' + item?.user?.id].push(itemData);
-      }
-      else {
-        betResult.match[item.betId + '_' + item?.user?.id] = [itemData];
-      }
-    }
-
     for (const placedBet of Object.keys(betResult.match)) {
       const matchId = betResult.match[placedBet]?.[0]?.matchId;
 
@@ -1781,7 +1741,6 @@ exports.getUserProfitLossTournament = async (user, matchId) => {
 
       matchResult[placedBet] = { data: tempData, betDetails: betResult?.match?.[placedBet]?.[0] };
     }
-    return matchResult;
+    return { session: sessionResult, match: matchResult };
   }
 }
-

@@ -8,7 +8,7 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const { listMatch, getMatchList } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
-const { calculateProfitLossForCardMatchToResult, calculateRatesRacingMatch, getUserExposuresGameWise, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament, getVirtualCasinoExposure } = require("../services/commonService");
+const { calculateProfitLossForCardMatchToResult, calculateRatesRacingMatch, getUserExposuresGameWise, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getVirtualCasinoExposure } = require("../services/commonService");
 const { getMatchDetailsHandler, getRaceDetailsHandler, getMatchListHandler, getRaceListHandler, getRaceCountryCodeListHandler, getTournamentBettingHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 
 exports.matchDetails = async (req, res) => {
@@ -475,7 +475,7 @@ exports.marketAnalysis = async (req, res) => {
     }
     else {
       const user = await getUser({ id: userId });
-      const [matchData, tournamentData] = await Promise.all([getUserProfitLossMatch(user, matchId), getUserProfitLossTournament(user, matchId)]);
+      const matchData = await getUserProfitLossMatch(user, matchId);
       let matchDetails;
 
       try {
@@ -506,7 +506,7 @@ exports.marketAnalysis = async (req, res) => {
         }
       }
 
-      for (let item of Object.values(tournamentData)) {
+      for (let item of Object.values(matchData?.match)) {
         let { betDetails, data } = item;
         let currRedisData = {}, teams;
         let currBetPL = data[betDetails?.betId + redisKeys.profitLoss + "_" + betDetails?.matchId];
