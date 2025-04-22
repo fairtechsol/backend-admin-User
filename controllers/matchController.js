@@ -395,7 +395,7 @@ exports.marketAnalysis = async (req, res) => {
         for (let item of matchesBetsByUsers) {
           const currMatchDetail = result.findIndex((items) => items?.matchId == item?.matchId);
           if (item?.marketBetType == marketBetType.SESSION) {
-            const currRedisData = JSON.parse(redisData?.[item?.betId + redisKeys.profitLoss]);
+            const currRedisData = JSON.parse(redisData?.[item?.betId + redisKeys.profitLoss]||"{}");
             if (currMatchDetail == -1) {
               result.push({
                 title: item?.title,
@@ -430,7 +430,7 @@ exports.marketAnalysis = async (req, res) => {
 
             if (item?.marketType == matchBettingType.tournament) {
               currRedisData = {};
-              let currBetPL = JSON.parse(redisData[item?.betId + redisKeys.profitLoss + "_" + item?.matchId]);
+              let currBetPL = JSON.parse(redisData[item?.betId + redisKeys.profitLoss + "_" + item?.matchId]||"{}");
               teams = currMatchData?.tournament?.find((items) => items?.id == item?.betId)?.runners?.sort((a, b) => a.sortPriority - b.sortPriority)?.map((items, i) => {
                 currRedisData[String.fromCharCode(97 + i)] = currBetPL[items?.id];
                 return items?.runnerName

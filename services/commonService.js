@@ -1032,7 +1032,7 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
     };
 
     const matchIdDetail = {};
-    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: (matchGametype || In([gameType.cricket, gameType.politics])) });
+    const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: (matchGametype || In([gameType.cricket, gameType.politics, gameType.football, gameType.tennis])) });
     for (let item of bets) {
 
       let itemData = {
@@ -1048,7 +1048,7 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
           }
           betResult.session[item.betId].push(itemData);
         }
-        else if (currBets.marketBetType == marketBetType.MATCHBETTING) {
+        else if (item.marketBetType == marketBetType.MATCHBETTING) {
           betResult.match[item.betId].push(itemData);
         }
       }
@@ -1059,7 +1059,7 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
           }
           betResult.session[item.betId] = [itemData];
         }
-        else if (currBets.marketBetType == marketBetType.MATCHBETTING) {
+        else if (item.marketBetType == marketBetType.MATCHBETTING) {
           betResult.match[item.betId] = [itemData];
         }
       }
