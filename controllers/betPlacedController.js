@@ -13,7 +13,7 @@ let lodash = require("lodash");
 const { getCardMatch } = require('../services/cardMatchService');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 const { getMatchData } = require('../services/matchService');
-const { getSessionDetailsHandler } = require('../grpc/grpcClient/handlers/expert/matchHandler');
+const { getSessionDetailsHandler, getTournamentBettingHandler } = require('../grpc/grpcClient/handlers/expert/matchHandler');
 
 exports.getBet = async (req, res) => {
   try {
