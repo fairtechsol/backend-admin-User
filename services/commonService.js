@@ -1031,8 +1031,15 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
       match: {}
     };
 
-    const matchIdDetail = {};
+    
+
     const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: (matchGametype || In([gameType.cricket, gameType.politics, gameType.football, gameType.tennis])) });
+
+    const matchIdDetail = (await getMatchList({ id: In(Array.from(new Set(bets?.map((item) => item.matchId)))) }, ["id", "teamC"]))?.reduce((acc, key) => {
+      acc[key?.id] = key;
+      return acc;
+    }, {});
+
     for (let item of bets) {
 
       let itemData = {
@@ -1043,9 +1050,6 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
       };
       if (betResult.session[item.betId] || betResult.match[item.betId]) {
         if (item.marketBetType == marketBetType.SESSION) {
-          if (!matchIdDetail[item?.matchId]) {
-            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
-          }
           betResult.session[item.betId].push(itemData);
         }
         else if (item.marketBetType == marketBetType.MATCHBETTING) {
@@ -1054,9 +1058,6 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
       }
       else {
         if (item.marketBetType == marketBetType.SESSION) {
-          if (!matchIdDetail[item?.matchId]) {
-            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
-          }
           betResult.session[item.betId] = [itemData];
         }
         else if (item.marketBetType == marketBetType.MATCHBETTING) {
@@ -1671,8 +1672,13 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
 
     let tempData = {};
 
-    const matchIdDetail = {};
     const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId });
+
+    const matchDetail = (await getMatchList({ id: In(Array.from(new Set(bets?.map((item) => item.matchId)))) }, ["id", "teamC"]))?.reduce((acc, key) => {
+      acc[key?.id] = key;
+      return acc;
+    }, {})
+
     for (let item of bets) {
       let itemData = {
         ...item,
@@ -1681,9 +1687,6 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
       };
       if (betResult.session[item.betId + '_' + item?.user?.id] || betResult.match[item.betId + '_' + item?.user?.id]) {
         if (item.marketBetType == marketBetType.SESSION) {
-          if (!matchIdDetail[item?.matchId]) {
-            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
-          }
           betResult.session[item.betId + '_' + item?.user?.id].push(itemData);
         }
         else if (item.marketBetType == marketBetType.MATCHBETTING) {
@@ -1694,9 +1697,6 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
       else {
 
         if (item.marketBetType == marketBetType.SESSION) {
-          if (!matchIdDetail[item?.matchId]) {
-            matchIdDetail[item?.matchId] = await getMatchData({ id: item?.matchId }, ["id", "teamC"]);
-          }
           betResult.session[item.betId + '_' + item?.user?.id] = [itemData];
         }
         else if (item.marketBetType == marketBetType.MATCHBETTING) {
