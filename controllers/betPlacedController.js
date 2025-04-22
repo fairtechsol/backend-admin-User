@@ -542,7 +542,7 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
     let apiResponse = {};
 
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBetType + "&id=" + betId;
+      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBetType + "&id=" + betId;
       apiResponse = await apiCall(apiMethod.get, url);
     } catch (error) {
       logger.info({
@@ -867,7 +867,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
       // Extract session details from the API response
       sessionDetails = response?.data;
-      sessionDetails.eventId = matchDetail.eventId;
+      sessionDetails.eventId = matchDetail?.eventId;
     } catch (err) {
       // Handle API call error and return an error response
       return ErrorResponse(err?.response?.data, req, res);
@@ -1775,7 +1775,7 @@ exports.deleteMultipleBet = async (req, res) => {
 
 
       try {
-        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBettingType.tournament;
+        let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament;
         apiResponse = await apiCall(apiMethod.get, url);
       } catch (error) {
         logger.info({
@@ -1877,7 +1877,7 @@ exports.deleteMultipleBetForOther = async (req, res) => {
     matchDetails = match;
 
     try {
-      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "/?type=" + matchBettingType.tournament;
+      let url = expertDomain + allApiRoutes.MATCHES.tournamentBettingDetail + matchId + "?type=" + matchBettingType.tournament;
       apiResponse = await apiCall(apiMethod.get, url);
     } catch (error) {
       logger.info({

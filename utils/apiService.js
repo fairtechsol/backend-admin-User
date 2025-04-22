@@ -1,7 +1,6 @@
 const axios = require('axios');
-const { gameType } = require('../config/contants');
-const { encryptWithAES, encryptAESKeyWithRSA, decryptAESKeyWithRSA, decryptWithAES } = require('./encryptDecrypt');
-const crypto = require("crypto");
+const { gameType, expertDomain } = require('../config/contants');
+const { getTournamentBettingDetailsFromCache, getSessionsFromCache } = require('../services/matchCacheService');
 // create common api call function using axios to call external server http call for whole project GET <POST< PUT< DELETE
 exports.apiMethod = {
   get: "get",
@@ -12,18 +11,23 @@ exports.apiMethod = {
 
 exports.apiCall = async (method, url, data, headers, ReqQuery) => {
   try {
-    // if (ReqQuery) {
-    //   const aesKey = crypto.randomBytes(32); // Generate AES key
-    //   const encryptedData = encryptWithAES(ReqQuery, aesKey);
-    //   const encryptedKey = encryptAESKeyWithRSA(aesKey, true);
-    //   ReqQuery = { encryptedData, encryptedKey }
-    // }
-    // if (data) {
-    //   const aesKey = crypto.randomBytes(32); // Generate AES key
-    //   const encryptedData = encryptWithAES(data, aesKey);
-    //   const encryptedKey = encryptAESKeyWithRSA(aesKey, true);
-    //   data = { encryptedData, encryptedKey }
-    // }
+
+    if (url?.startsWith(`${expertDomain}${this.allApiRoutes.MATCHES.tournamentBettingDetail}`)) {
+      const parsedUrl = new URL(url);
+      const queryParams = Object.fromEntries(parsedUrl.searchParams.entries());
+      const data = await getTournamentBettingDetailsFromCache(queryParams?.id, url?.split("/")?.pop()?.split("?")?.[0]);
+      if (data) {
+        return data;
+      }
+    }
+
+    else if (url?.startsWith(`${expertDomain}${this.allApiRoutes.MATCHES.sessionDetail}`)) {
+      const data = await getSessionsFromCache(ReqQuery?.id, url?.split("/")?.pop()?.split("?")?.[0]);
+      if (data) {
+        return data;
+      }
+    }
+
     let response = await axios({
       method: method,
       url: url,
@@ -32,10 +36,7 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
       params: ReqQuery
     });
     let resData = response.data;
-    // if (resData?.encryptedData && resData?.encryptedKey) {
-    //   const aesKey = decryptAESKeyWithRSA(resData.encryptedKey, true);
-    //   resData = decryptWithAES(resData.encryptedData, aesKey);
-    // }
+
     return resData;
   } catch (error) {
     throw error;
@@ -45,48 +46,48 @@ exports.apiCall = async (method, url, data, headers, ReqQuery) => {
 exports.allApiRoutes = {
   notification: "/general/notification",
   blinkingTabs: "/superAdmin/blinkingTabs",
-  getCompetitionList:"/match/competitionList",
-  getDatesByCompetition:"/match/competition/dates",
-  getMatchByCompetitionAndDate:"/match/competition/getMatch",
+  getCompetitionList: "/match/competitionList",
+  getDatesByCompetition: "/match/competition/dates",
+  getMatchByCompetitionAndDate: "/match/competition/getMatch",
   MATCHES: {
     matchDetails: "/superAdmin/match/",
     raceDetails: "/superAdmin/match/racing/",
-    matchDetailsForFootball:"/superadmin/otherMatch/",
+    matchDetailsForFootball: "/superadmin/otherMatch/",
     matchList: "/superAdmin/match/list",
     racingMatchList: "/superAdmin/match/racing/list",
     racingMatchCountryCodeList: "/superAdmin/match/racing/countryCode",
-    MatchBettingDetail : "/superAdmin/matchBetting/",
-    raceBettingDetail : "/superAdmin/raceBetting/",
-    tournamentBettingDetail : "/superAdmin/tournamentBetting/",
+    MatchBettingDetail: "/superAdmin/matchBetting/",
+    raceBettingDetail: "/superAdmin/raceBetting/",
+    tournamentBettingDetail: "/superAdmin/tournamentBetting/",
     sessionDetail: "/superAdmin/session/"
   },
-  WALLET:{
-    updateBalance:"/superAdmin/update/balance/SA",
-    autoLockUnlockUser:"/superAdmin/auto/lockUnlockUser",
-    cardResultList:"/superadmin/cards/result/",
-    cardResultDetail:"/superadmin/cards/result/detail/",
-    virtualCasinoResult:"/superadmin/virtual/casino/result"
+  WALLET: {
+    updateBalance: "/superAdmin/update/balance/SA",
+    autoLockUnlockUser: "/superAdmin/auto/lockUnlockUser",
+    cardResultList: "/superadmin/cards/result/",
+    cardResultDetail: "/superadmin/cards/result/detail/",
+    virtualCasinoResult: "/superadmin/virtual/casino/result"
   },
-  EXPERT:{
-    partnershipId:"/superAdmin/partnershipId/"
+  EXPERT: {
+    partnershipId: "/superAdmin/partnershipId/"
   },
-  MICROSERVICE : {
-    matchOdd : "/matchOdds/",
-    bookmaker : "/bookmaker/",
-    session : "/session/",
+  MICROSERVICE: {
+    matchOdd: "/matchOdds/",
+    bookmaker: "/bookmaker/",
+    session: "/session/",
     casinoData: "/getdata/",
     cardResultDetail: "/getdetailresult/",
     cardTopTenResultDetail: "/getresult/",
     getAllRateCricket: "/getAllRateCricket/",
-    getAllRates:{
+    getAllRates: {
       [gameType.cricket]: "/getAllRateCricket/",
       [gameType.politics]: "/getAllRateCricket/",
-      [gameType.football]:"/getAllRateFootBallTennis/",
+      [gameType.football]: "/getAllRateFootBallTennis/",
       [gameType.tennis]: "/getAllRateFootBallTennis/"
     }
   },
-  MAC88:{
-    login:"/operator/login",
-    gameList:"/operator/get-games-list"
+  MAC88: {
+    login: "/operator/login",
+    gameList: "/operator/get-games-list"
   }
 }
