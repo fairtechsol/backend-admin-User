@@ -35,11 +35,11 @@ const validateUser = async (userName, password) => {
   // Check if the user is found
   if (user) {
     // Check if the provided password matches the hashed password in the database
-    // if (bcrypt.compareSync(password, user.password)) {
+    if (bcrypt.compareSync(password, user.password)) {
       // If the passwords match, create a result object without the password field
       const { password, ...result } = user;
       return result;
-    // }
+    }
 
     // If the passwords don't match, return an error object
     return {
