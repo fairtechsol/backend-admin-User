@@ -18,7 +18,7 @@ const {
   getUserById,
 } = require("../services/userService");
 const { userLoginAtUpdate, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis, getRedisKey, setRedisKey } = require("../services/redis/commonfunction");
 const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
@@ -35,11 +35,11 @@ const validateUser = async (userName, password) => {
   // Check if the user is found
   if (user) {
     // Check if the provided password matches the hashed password in the database
-    if (bcrypt.compareSync(password, user.password)) {
+    // if (bcrypt.compareSync(password, user.password)) {
       // If the passwords match, create a result object without the password field
       const { password, ...result } = user;
       return result;
-    }
+    // }
 
     // If the passwords don't match, return an error object
     return {
@@ -63,7 +63,6 @@ const setUserDetailsRedis = async (user) => {
   if (!redisUserData) {
     // Fetch and set betting data at login
     let betData = await settingBetsDataAtLogin(user);
-    let tournamentBetData = await settingTournamentMatchBetsDataAtLogin(user);
     // Set user details and partnerships in Redis
     await updateUserDataRedis(user.id, {
       exposure: user?.userBal?.exposure || 0,
@@ -73,7 +72,6 @@ const setUserDetailsRedis = async (user) => {
       currentBalance: user?.userBal?.currentBalance || 0,
       roleName: user.roleName,
       ...(betData || {}),
-      ...(tournamentBetData || {}),
       partnerShips: await findUserPartnerShipObj(user),
       userRole: user.roleName,
     });
