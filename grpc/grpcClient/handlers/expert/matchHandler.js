@@ -46,7 +46,7 @@ exports.getMatchDetailsHandler = async (requestData) => {
         if (redisMatch?.data) {
             return redisMatch;
         }
-        response = await grpcReq.expert.callMethod(
+        let response = await grpcReq.expert.callMethod(
             "MatchProvider",
             "MatchDetail",
             requestData

@@ -1,4 +1,4 @@
-const { redisKeys, marketBettingTypeByBettingType } = require("../../config/contants");
+const { redisKeys, matchBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const externalRedis = require("../../config/externalRedisConnection");
 
@@ -148,8 +148,9 @@ exports.getMatchFromCache = async (matchId) => {
     if (matchData?.sessionMaxBets) {
       matchData.sessionMaxBets = JSON.parse(matchData.sessionMaxBets)
     }
+    
 
-    Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+    Object.values(matchBettingType)?.forEach((item) => {
       if (matchData?.[item]) {
         matchData[item] = JSON.parse(matchData[item]);
       }

@@ -19,7 +19,7 @@ exports.getNotification = async (req, res) => {
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response,
+        data: notification,
       },
       req,
       res
@@ -42,7 +42,7 @@ exports.getBlinkingTabs = async (req, res) => {
     return SuccessResponse(
       {
         statusCode: 200,
-        data: response,
+        data: blinkingTabs,
       },
       req,
       res

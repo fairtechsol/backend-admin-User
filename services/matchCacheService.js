@@ -1,3 +1,5 @@
+const { matchBettingType } = require("../config/contants");
+const grpcReq = require("../grpc/grpcClient");
 const { getMatchFromCache, getSessionFromRedis, hasMatchInCache, getMultipleMatchKey, getAllSessionRedis } = require("./redis/commonfunction");
 
 exports.getTournamentBettingDetailsFromCache = async (id, matchId) => {
@@ -101,7 +103,7 @@ exports.commonGetMatchDetailsFromRedis = async (matchId) => {
             "MatchDetail",
             { matchId: matchNotPresent?.join(",") }
         );
-        apiResponse= { data: JSON.parse(response?.data || "{}") };
+        apiResponse= { data: JSON.parse(apiResponse?.data || "{}") };
         result.push(...((Array.isArray(apiResponse?.data) ? apiResponse?.data : [apiResponse?.data]) || []));
       } catch (err) {
         throw err;
