@@ -1,5 +1,5 @@
 const { In, Not } = require("typeorm");
-const { walletDomain, casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
+const { casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
 const { childIdquery, profitLossPercentCol } = require("../services/commonService");
 const { getAllUsers, getUsersByWallet, getChildsWithOnlyUserRole } = require("../services/userService");
 const { getTotalProfitLossLiveCasino, getAllLiveCasinoMatchTotalProfitLoss, getLiveCasinoBetsProfitLoss, getUserWiseProfitLossLiveCasino } = require("../services/virtualCasinoBetPlacedsService");

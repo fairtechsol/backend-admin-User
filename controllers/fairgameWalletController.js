@@ -6,7 +6,7 @@ const {
   matchOddName,
 } = require("../config/contants");
 const { logger } = require("../config/logger");
-const {     getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getBetsWithMatchId,  getUserWiseProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getBetCountData } = require("../services/betPlacedService");
+const {     getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss,  getUserWiseProfitLoss, getTotalProfitLossRacing, getAllRacinMatchTotalProfitLoss, getBetCountData } = require("../services/betPlacedService");
 const {
   profitLossPercentCol,
   childIdquery,

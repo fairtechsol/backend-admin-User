@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, expertDomain, partnershipPrefixByRole, microServiceDomain, casinoMicroServiceDomain, cardGameType, sessionBettingType, oldBetFairDomain } = require("../config/contants");
+const { betStatusType, teamStatus, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, partnershipPrefixByRole, microServiceDomain, casinoMicroServiceDomain, cardGameType, sessionBettingType, oldBetFairDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, getUserRedisKey, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");

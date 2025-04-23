@@ -12,7 +12,7 @@ const { getUserBalanceDataByUserId, getAllChildProfitLossSum,  addInitialUserBal
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
-const { hasUserInCache, updateUserDataRedis, getUserRedisKeys, getUserRedisKey } = require('../services/redis/commonfunction');
+const { hasUserInCache, updateUserDataRedis, getUserRedisKey } = require('../services/redis/commonfunction');
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 const bot = require('../config/telegramBot');

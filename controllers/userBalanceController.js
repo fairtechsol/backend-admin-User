@@ -1,4 +1,4 @@
-const { transType, socketData, matchComissionTypeConstant, walletDomain, userRoleConstant } = require("../config/contants");
+const { transType, socketData, matchComissionTypeConstant, userRoleConstant } = require("../config/contants");
 const { getUser, getUserDataWithUserBalance } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
@@ -13,7 +13,6 @@ const {
 } = require("../services/redis/commonfunction");
 const { logger } = require("../config/logger");
 const { settleCommission, insertCommissions } = require("../services/commissionService");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { transactionType: transactionTypeConstant } = require("../config/contants");
 const { updateBalanceAPICallHandler } = require("../grpc/grpcClient/handlers/wallet/userHandler");
 exports.updateUserBalance = async (req, res) => {
