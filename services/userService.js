@@ -558,3 +558,16 @@ exports.getUserDataWithUserBalanceDeclare = async (where) => {
 exports.deleteUser = async (where) => {
   await user.delete(where);
 }
+
+exports.getUserListProcedure=async (userId, partnerShip, roleName, limit=10000000, offset=1,keyword='') => {
+  
+  return await user.query(`SELECT *
+    FROM fetchUserList(
+      '${userId}',                    
+      '${roleName}',               
+      ARRAY['${partnerShip?.join("','")}'], 
+      ${(parseInt(offset) - 1) * parseInt(limit)},                     
+      ${parseInt(limit)},
+      '${keyword}'         
+    );`)
+}

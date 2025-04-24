@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType, matchOddName } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole,  getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket,  insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole,  getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket,  insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, getUserListProcedure, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -708,116 +708,19 @@ exports.setExposureLimit = async (req, res, next) => {
 exports.userList = async (req, res, next) => {
   try {
     let reqUser = req.user;
-    // let loginUser = await getUserById(reqUser.id)
     const { type, userId, roleName, ...apiQuery } = req.query;
     let userRole = roleName || reqUser?.roleName;
     let where = {
       createBy: userId || reqUser.id,
-      roleName: Not(userRole)
+      roleName: userRole
     };
-
-    let users = await getUsersWithUsersBalanceData(where, apiQuery);
-
-    let response = {
-      count: 0,
-      list: [],
-    };
-    if (!users[1]) {
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "user.userList" },
-          data: response,
-        },
-        req,
-        res
-      );
-    }
-    response.count = users[1];
-    let partnershipCol = [];
-    if (userRole == userRoleConstant.agent) {
-      partnershipCol = [
-        "agPartnership",
-        "mPartnership",
-        "smPartnership",
-        "aPartnership",
-        "saPartnership",
-        "faPartnership",
-        "fwPartnership",
-      ];
-    }
-    if (userRole == userRoleConstant.master) {
-      partnershipCol = [
-        "mPartnership",
-        "smPartnership",
-        "aPartnership",
-        "saPartnership",
-        "faPartnership",
-        "fwPartnership",
-      ];
-    }
-    if (userRole == userRoleConstant.superMaster) {
-      partnershipCol = [
-        "smPartnership",
-        "aPartnership",
-        "saPartnership",
-        "faPartnership",
-        "fwPartnership",
-      ];
-    }
-    if (userRole == userRoleConstant.admin) {
-      partnershipCol = [
-        "aPartnership",
-        "saPartnership",
-        "faPartnership",
-        "fwPartnership",
-      ];
-    }
-    if (userRole == userRoleConstant.superAdmin) {
-      partnershipCol = ["saPartnership", "faPartnership", "fwPartnership"];
-    }
-    if (userRole == userRoleConstant.fairGameAdmin) {
-      partnershipCol = ["faPartnership", "fwPartnership"];
-    }
-    if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
-      partnershipCol = ["fwPartnership"];
-    }
-    const domainUrl = `${req.protocol}://${req.get("host")}`;
-
-    let data = await Promise.all(
-      users[0].map(async (element) => {
-        element['percentProfitLoss'] = element.userBal['myProfitLoss'];
-        let partner_ships = 100;
-        if (partnershipCol && partnershipCol.length) {
-          partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
-          element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partner_ships).toFixed(2);
-        }
-        if (element.roleName != userRoleConstant.user) {
-          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2))
-          // - Number(parseFloat(element.userBal["exposure"]).toFixed(2));
-          let childUsersBalances = await getChildUserBalanceSum(element.id);
-
-          let balanceSum = childUsersBalances?.[0]?.balance;
-          element['balance'] = Number((parseFloat(balanceSum || 0)).toFixed(2));
-        } else {
-          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
-          element['balance'] = element.userBal['currentBalance'];
-        }
-        element['percentProfitLoss'] = element.userBal['myProfitLoss'];
-        element['commission'] = element.userBal['totalCommission']
-        if (partnershipCol && partnershipCol.length) {
-          let partnerShips = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
-          element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partnerShips).toFixed(2);
-          element['commission'] = (element.userBal['totalCommission']).toFixed(2) + '(' + partnerShips + '%)';
-          element['upLinePartnership'] = partnerShips;
-        }
-
-        // if (element?.roleName != userRoleConstant.user && domainUrl != oldBetFairDomain) {
-        //   element.exposureLimit="NA";
-        // }
-        return element;
-      })
-    );
+    
+    let partnershipCol = [...uplinePartnerShipForAllUsers[userRole],partnershipPrefixByRole[userRole]].map((item) => {
+      return item + "Partnership";
+    });
+    let data = (await getUserListProcedure(where.createBy, partnershipCol, where.roleName, apiQuery?.limit, apiQuery?.page, apiQuery?.keyword))?.[0]?.fetchuserlist || [];
+  
+    const domainUrl = process.env.GRPC_URL;
 
     if (type) {
       const header = [
@@ -860,7 +763,7 @@ exports.userList = async (req, res, next) => {
           ]
           : []),
       ];
-      const total = data?.reduce((prev, curr) => {
+      const total = data?.list?.reduce((prev, curr) => {
         prev["creditRefrence"] = (prev["creditRefrence"] || 0) + (curr["creditRefrence"] || 0);
         prev["balance"] = (prev["balance"] || 0) + (curr["balance"] || 0);
         prev["availableBalance"] = (prev["availableBalance"] || 0) + (curr["availableBalance"] || 0);
@@ -879,10 +782,10 @@ exports.userList = async (req, res, next) => {
         }
         return prev
       }, {});
-      data?.unshift(total);
+      data?.list?.unshift(total);
 
       const fileGenerate = new FileGenerate(type);
-      const file = await fileGenerate.generateReport(data, header, "Client List Report");
+      const file = await fileGenerate.generateReport(data?.list, header, "Client List Report");
       const fileName = `accountList_${new Date()}`
 
       return SuccessResponse(
@@ -896,14 +799,12 @@ exports.userList = async (req, res, next) => {
       );
     }
 
-    response.list = data;
-
 
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "user.userList" },
-        data: response,
+        data: data,
       },
       req,
       res
