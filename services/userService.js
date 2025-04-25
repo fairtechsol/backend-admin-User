@@ -571,3 +571,15 @@ exports.getUserListProcedure=async (userId, partnerShip, roleName, limit=1000000
       '${keyword}'         
     );`)
 }
+
+exports.getUserTotalBalanceProcedure=async (userId, roleName, userBlock=null, betBlock=null,orVal) => {
+  
+  return await user.query(`SELECT *
+    FROM getUserTotalBalance(
+      '${userId}',                    
+      '${roleName}',               
+      ${userBlock},    
+      ${betBlock},    
+      ${orVal}    
+    );`)
+}

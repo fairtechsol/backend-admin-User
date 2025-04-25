@@ -20,16 +20,17 @@ DECLARE
   total_count bigint;
   result json;
 BEGIN
-  -- Get total count of matching users
+  PERFORM set_config('enable_nestloop', 'off', false);
+
+  -- Get total count using efficient index scan
   SELECT COUNT(*) INTO total_count
   FROM users u
   WHERE u."createBy" = createBy
     AND u."roleName" <> excludeRole
     AND u."deletedAt" IS NULL;
 
-  -- Main data query returning array of rows as JSON
-  WITH RECURSIVE
-  filtered AS (
+  -- Main optimized query
+  WITH RECURSIVE filtered AS (
     SELECT
       u.id,
       u."userName",
@@ -57,93 +58,97 @@ BEGIN
       COALESCE(u."saPartnership", 0) AS "saPartnership",
       COALESCE(u."faPartnership", 0) AS "faPartnership",
       COALESCE(u."fwPartnership", 0) AS "fwPartnership",
-      row_to_json(ub) AS "userBal"
+      ub AS "userBal",  -- Store entire balance record
+      -- Precompute partnership sum once
+      (
+        SELECT COALESCE(SUM(
+          CASE p
+            WHEN 'agPartnership' THEN u."agPartnership"
+            WHEN 'mPartnership' THEN u."mPartnership"
+            WHEN 'smPartnership' THEN u."smPartnership"
+            WHEN 'aPartnership' THEN u."aPartnership"
+            WHEN 'saPartnership' THEN u."saPartnership"
+            WHEN 'faPartnership' THEN u."faPartnership"
+            WHEN 'fwPartnership' THEN u."fwPartnership"
+            ELSE 0
+          END
+        ), 0)
+        FROM unnest(partnership) p
+      ) AS partnership_sum
     FROM users u
     LEFT JOIN "userBalances" ub ON ub."userId" = u.id
     WHERE u."createBy" = createBy
       AND u."roleName" <> excludeRole
       AND u."deletedAt" IS NULL
-	  AND u."userName" ILIKE '%'||keyword||'%'
-    ORDER BY u."betBlock" ASC, u."userBlock" ASC, u."userName" ASC
+      AND u."userName" ILIKE '%' || keyword || '%'
+    ORDER BY u."betBlock", u."userBlock", u."userName"
     OFFSET offsetVal
     LIMIT limitVal
   ),
   rec AS (
     SELECT f.id, f.id AS root_id FROM filtered f
     UNION ALL
-    SELECT u2.id, rec.root_id
-    FROM users u2
-    JOIN rec ON u2."createBy" = rec.id AND rec.root_id <> createBy
+    SELECT u.id, r.root_id
+    FROM users u
+    JOIN rec r ON u."createBy" = r.id AND r.root_id <> createBy
+    WHERE u."createBy" <> createBy  -- Prevent infinite recursion
   ),
   child_sums AS (
     SELECT
-      rec.root_id AS id,
-      SUM(ub2."currentBalance") AS total_child_balance
-    FROM rec
-    JOIN "userBalances" ub2 ON ub2."userId" = rec.id
-    GROUP BY rec.root_id
-  ),
-  user_data AS (
-    SELECT
-      f.id,
-      f."betBlock",
-      f."createdAt",
-      f."creditRefrence",
-      f."exposureLimit",
-      f."fullName",
-      f."matchComissionType",
-      f."matchCommission",
-      f."userName",
-      f."roleName",
-      f."sessionCommission",
-      f."userBlock",
-      CASE
-        WHEN array_length(partnership, 1) = 0 THEN f.my_pl
-        ELSE (
-          (f.raw_pl::numeric / 100) *
-          (SELECT COALESCE(SUM((to_jsonb(f)->>col)::numeric), 0)
-           FROM unnest(partnership) AS col)
-        )::numeric(12, 2)
-      END AS "percentProfitLoss",
-      CASE
-        WHEN f."roleName" <> 'user' THEN f."currentBalance"
-        ELSE (f."currentBalance" - f.exposure)
-      END AS "availableBalance",
-      COALESCE(cb.total_child_balance, 0) AS balance,
-      CASE
-        WHEN array_length(partnership, 1) = 0 THEN f.raw_comm::text
-        ELSE
-          (f.raw_comm::numeric)::text || ' (' ||
-          (SELECT COALESCE(SUM((to_jsonb(f)->>col)::numeric), 0)
-           FROM unnest(partnership) AS col)::text || '%)'
-      END AS commission,
-      (
-        SELECT COALESCE(SUM((to_jsonb(f)->>col)::numeric), 0)
-        FROM unnest(partnership) AS col
-      ) AS "upLinePartnership",
-      f."userBal",
-      f."fwPartnership",
-      f."faPartnership",
-      f."saPartnership",
-      f."aPartnership",
-      f."smPartnership",
-      f."mPartnership",
-      f."agPartnership",
-      f.city,
-      f."phoneNumber"
-    FROM filtered f
-    LEFT JOIN child_sums cb ON cb.id = f.id ORDER BY f."betBlock" ASC, f."userBlock" ASC, f."userName" ASC
-  ),
-  data_json AS (
-    SELECT json_agg(row_to_json(user_data)) AS data FROM user_data
+      r.root_id AS id,
+      SUM(ub."currentBalance") AS total_child_balance
+    FROM rec r
+    JOIN "userBalances" ub ON ub."userId" = r.id
+    GROUP BY r.root_id
   )
   SELECT json_build_object(
     'count', total_count,
-    'list', data_json.data
-  )
-  INTO result
-  FROM data_json;
-  PERFORM set_config('enable_nestloop', 'off', false);
+    'list', COALESCE(json_agg(
+      json_build_object(
+        'id', f.id,
+        'betBlock', f."betBlock",
+        'createdAt', f."createdAt",
+        'creditRefrence', f."creditRefrence",
+        'exposureLimit', f."exposureLimit",
+        'fullName', f."fullName",
+        'matchComissionType', f."matchComissionType",
+        'matchCommission', f."matchCommission",
+        'userName', f."userName",
+        'roleName', f."roleName",
+        'sessionCommission', f."sessionCommission",
+        'userBlock', f."userBlock",
+        'percentProfitLoss', CASE
+          WHEN partnership = '{}' THEN f.my_pl
+          ELSE (f.raw_pl::numeric / 100) * f.partnership_sum
+        END,
+        'availableBalance', CASE
+          WHEN f."roleName" <> 'user' THEN f."currentBalance"
+          ELSE (f."currentBalance" - f.exposure)
+        END,
+        'balance', COALESCE(c.total_child_balance, 0),
+        'commission', CASE
+          WHEN partnership = '{}' THEN f.raw_comm::text
+          ELSE f.raw_comm::text || ' (' || f.partnership_sum::text || '%)'
+        END,
+        'upLinePartnership', f.partnership_sum,
+        'userBal', row_to_json(f."userBal"),
+        'fwPartnership', f."fwPartnership",
+        'faPartnership', f."faPartnership",
+        'saPartnership', f."saPartnership",
+        'aPartnership', f."aPartnership",
+        'smPartnership', f."smPartnership",
+        'mPartnership', f."mPartnership",
+        'agPartnership', f."agPartnership",
+        'city', f.city,
+        'phoneNumber', f."phoneNumber"
+      )
+	  ORDER BY f."betBlock" ASC, f."userBlock" ASC, f."userName" ASC  -- Add this line
+
+    ), '[]')
+  ) INTO result
+  FROM filtered f
+  LEFT JOIN child_sums c ON f.id = c.id ;
+
   RETURN result;
 END;
 $$;

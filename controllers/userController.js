@@ -1,5 +1,5 @@
 const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType, matchOddName } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole,  getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket,  insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, getUserListProcedure, } = require('../services/userService');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket, insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, getUserListProcedure, getUserTotalBalanceProcedure, } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
@@ -8,7 +8,7 @@ const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
 const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
-const { getUserBalanceDataByUserId, getAllChildProfitLossSum,  addInitialUserBalance, updateUserBalanceData } = require('../services/userBalanceService');
+const { getUserBalanceDataByUserId, getAllChildProfitLossSum, addInitialUserBalance, updateUserBalanceData } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
 const { sendMessageToUser } = require('../sockets/socketManager');
@@ -714,12 +714,12 @@ exports.userList = async (req, res, next) => {
       createBy: userId || reqUser.id,
       roleName: userRole
     };
-    
-    let partnershipCol = [...uplinePartnerShipForAllUsers[userRole],partnershipPrefixByRole[userRole]].map((item) => {
+
+    let partnershipCol = [...uplinePartnerShipForAllUsers[userRole], partnershipPrefixByRole[userRole]].map((item) => {
       return item + "Partnership";
     });
     let data = (await getUserListProcedure(where.createBy, partnershipCol, where.roleName, apiQuery?.limit, apiQuery?.page, apiQuery?.keyword))?.[0]?.fetchuserlist || [];
-  
+
     const domainUrl = process.env.GRPC_URL;
 
     if (type) {
@@ -827,65 +827,15 @@ exports.getTotalUserListBalance = async (req, res, next) => {
     let userRole = roleName || reqUser?.roleName;
     let where = {
       createBy: userId || reqUser.id,
-      roleName: Not(userRole)
+      roleName: userRole
     };
 
-    let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum,SUM(UB.downLevelBalance) as "downLevelBalance", SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure",SUM(CASE WHEN user.roleName = 'user' THEN UB.exposure ELSE 0 END) AS "totalExposureOnlyUser",SUM(UB.totalCommission) as totalCommission`;
-
-    switch (userRole) {
-      case (userRoleConstant.fairGameWallet):
-      case (userRoleConstant.expert): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.fwPartnership)), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.fairGameAdmin): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.faPartnership + user.fwPartnership)), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.superAdmin): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.admin): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.superMaster): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.master): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.agent): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.agPartnership + user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-    }
-    let childUserBalanceWhere = "";
-
-    if (apiQuery.userBlock) {
-      childUserBalanceWhere = ` "p"."userBlock" = ${apiQuery?.userBlock?.slice(2)}`
-    }
-    if (apiQuery.betBlock) {
-      childUserBalanceWhere = `"p"."betBlock" = ${apiQuery?.betBlock?.slice(2)}`
-    }
-    if (apiQuery.orVal) {
-      childUserBalanceWhere = `("p"."betBlock" = true or  "p"."userBlock" = true)`
-    }
-
-    const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
-
-    let childUsersBalances = await getChildUserBalanceSum(userId || reqUser.id, true, childUserBalanceWhere);
-
-    totalBalance.currBalance = childUsersBalances?.[0]?.balance;
-    totalBalance.availableBalance = parseFloat(totalBalance.availableBalance || 0) - parseFloat(totalBalance.totalExposureOnlyUser || 0);
+    const totalBalance = await getUserTotalBalanceProcedure(where.createBy, where.roleName, apiQuery?.userBlock?.slice(2), apiQuery?.betBlock?.slice(2), apiQuery.orVal ? true : null)
 
     return SuccessResponse(
       {
         statusCode: 200,
-        data: totalBalance,
+        data: totalBalance?.[0]?.getusertotalbalance,
       },
       req,
       res
