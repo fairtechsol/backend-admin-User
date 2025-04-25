@@ -559,7 +559,7 @@ exports.deleteUser = async (where) => {
   await user.delete(where);
 }
 
-exports.getUserListProcedure = async (userId, partnerShip, roleName, limit = 10000000, offset = 1, keyword = '', userBlock = null, betBlock = null) => {
+exports.getUserListProcedure = async (userId, partnerShip, roleName, limit = 10000000, offset = 1, keyword = '', userBlock = null, betBlock = null,orVal) => {
 
   return await user.query(`SELECT *
     FROM fetchUserList(
@@ -570,7 +570,8 @@ exports.getUserListProcedure = async (userId, partnerShip, roleName, limit = 100
       ${parseInt(limit)},
       '${keyword}',
       ${userBlock},    
-      ${betBlock}
+      ${betBlock},
+      ${orVal}
     );`)
 }
 

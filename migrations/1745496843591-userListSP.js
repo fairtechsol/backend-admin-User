@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class UserListSP1745496843593 {
-    name = 'UserListSP1745496843593'
+module.exports = class UserListSP1745496843594 {
+    name = 'UserListSP1745496843594'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -13,7 +13,8 @@ CREATE OR REPLACE FUNCTION fetchUserList(
   limitVal integer DEFAULT 10,
   keyword text DEFAULT '',
   userBlock boolean DEFAULT NULL,
-  betBlock boolean DEFAULT NULL
+  betBlock boolean DEFAULT NULL,
+  orVal boolean DEFAULT NULL
 )
 RETURNS json
 LANGUAGE plpgsql
@@ -31,6 +32,7 @@ BEGIN
     AND u."roleName" <> excludeRole
 	AND (userBlock IS NULL OR u."userBlock" = userBlock)
     AND (betBlock IS NULL OR u."betBlock" = betBlock)
+    AND (orVal IS NULL OR u."betBlock" = true OR u."userBlock" = true)
     AND u."deletedAt" IS NULL;
 
   -- Main optimized query
@@ -85,6 +87,7 @@ BEGIN
       AND u."roleName" <> excludeRole
 	  AND (userBlock IS NULL OR u."userBlock" = userBlock)
       AND (betBlock IS NULL OR u."betBlock" = betBlock)
+	  AND (orVal IS NULL OR u."betBlock" = true OR u."userBlock" = true)
       AND u."deletedAt" IS NULL
       AND u."userName" ILIKE '%' || keyword || '%'
     ORDER BY u."betBlock", u."userBlock", u."userName"
