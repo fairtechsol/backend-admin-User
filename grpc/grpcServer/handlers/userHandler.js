@@ -592,15 +592,7 @@ exports.userList = async (call) => {
             const file = await fileGenerate.generateReport(data?.list, header, "Client List Report");
             const fileName = `accountList_${new Date()}`
 
-            return SuccessResponse(
-                {
-                    statusCode: 200,
-                    message: { msg: "user.userList" },
-                    data: { file: file, fileName: fileName },
-                },
-                req,
-                res
-            );
+            return { data: JSON.stringify({file: file, fileName: fileName}) } 
         }
 
         return { data: JSON.stringify(data) };
