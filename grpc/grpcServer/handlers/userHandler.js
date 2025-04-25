@@ -523,7 +523,7 @@ exports.userList = async (call) => {
         let partnershipCol = [...uplinePartnerShipForAllUsers[userRole], partnershipPrefixByRole[userRole]].map((item) => {
             return item + "Partnership";
         });
-        let data = (await getUserListProcedure(where.createBy, partnershipCol, where.roleName, apiQuery?.limit, apiQuery?.page, apiQuery?.keyword, apiQuery?.userBlock?.slice(2), apiQuery?.betBlock?.slice(2)))?.[0]?.fetchuserlist || [];
+        let data = (await getUserListProcedure(where.createBy, partnershipCol, where.roleName, apiQuery?.limit, apiQuery?.page, apiQuery?.keyword, apiQuery?.userBlock?.slice(2), apiQuery?.betBlock?.slice(2), apiQuery.orVal ? true : null))?.[0]?.fetchuserlist || [];
 
         const domainUrl = process.env.GRPC_URL;
         if (type) {

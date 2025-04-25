@@ -165,6 +165,6 @@ $$;
     }
 
     async down(queryRunner) {
-        await queryRunner.query(`DROP FUNCTION IF EXISTS fetchUserList(uuid, users_rolename_enum, text[], integer, integer,text,boolean,boolean);`);
+        await queryRunner.query(`DROP FUNCTION IF EXISTS fetchUserList(uuid, users_rolename_enum, text[], integer, integer,text,boolean,boolean,boolean);`);
     }
 }
