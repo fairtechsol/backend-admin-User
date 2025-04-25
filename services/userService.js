@@ -281,9 +281,9 @@ exports.getChildsWithMergedUser = async (id, ids) => {
       UNION
       SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
     )
-    SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND ("roleName" = $2 or "createBy" = $1) AND "id" != $1 ${ids?.length?"AND id != ANY($3)":""};
+    SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND ("roleName" = $2 or "createBy" = $1) AND "id" != $1 ${ids?.length ? "AND id != ANY($3)" : ""};
   `;
-  const results = await user.query(query, [id, userRoleConstant.user, ...(ids?.length?[ids]:[])]); // Avoid passing a blank array; include `ids` only if it has elements.
+  const results = await user.query(query, [id, userRoleConstant.user, ...(ids?.length ? [ids] : [])]); // Avoid passing a blank array; include `ids` only if it has elements.
   return results;
 }
 exports.getFirstLevelChildUserWithPartnership = async (id, partnership) => {
@@ -420,7 +420,7 @@ exports.deleteUserMarketLock = async (where) => {
   return deleted;
 };
 exports.getMarketLockAllChild = async (where, select) => {
-  let { matchId, betId, sessionType, createBy, ...whereData } = where; 
+  let { matchId, betId, sessionType, createBy, ...whereData } = where;
   whereData.createBy = createBy;
   let joinParameter = { matchId, createBy };
   let joinCondition = `
@@ -437,11 +437,11 @@ exports.getMarketLockAllChild = async (where, select) => {
   }
 
   const usersWithLockStatus = await user.createQueryBuilder('user')
-  .leftJoin('userMarketLock', 'userMarketLock', joinCondition, joinParameter)
-  .where(whereData) 
-  .select(select)
-  .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS "isLock"`)
-  .getRawMany();
+    .leftJoin('userMarketLock', 'userMarketLock', joinCondition, joinParameter)
+    .where(whereData)
+    .select(select)
+    .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS "isLock"`)
+    .getRawMany();
 
   return usersWithLockStatus;
 };
@@ -559,8 +559,8 @@ exports.deleteUser = async (where) => {
   await user.delete(where);
 }
 
-exports.getUserListProcedure=async (userId, partnerShip, roleName, limit=10000000, offset=1,keyword='',userBlock=null, betBlock=null) => {
-  
+exports.getUserListProcedure = async (userId, partnerShip, roleName, limit = 10000000, offset = 1, keyword = '', userBlock = null, betBlock = null) => {
+
   return await user.query(`SELECT *
     FROM fetchUserList(
       '${userId}',                    
@@ -574,8 +574,8 @@ exports.getUserListProcedure=async (userId, partnerShip, roleName, limit=1000000
     );`)
 }
 
-exports.getUserTotalBalanceProcedure=async (userId, roleName, userBlock=null, betBlock=null,orVal) => {
-  
+exports.getUserTotalBalanceProcedure = async (userId, roleName, userBlock = null, betBlock = null, orVal) => {
+
   return await user.query(`SELECT *
     FROM getUserTotalBalance(
       '${userId}',                    

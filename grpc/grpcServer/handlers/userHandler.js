@@ -1,7 +1,7 @@
 const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
-const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData, getAllUsers, getAllUsersBalanceSumByFgId, updateUserExposureLimit, deleteUserByDirectParent, softDeleteAllUsers, getMultipleUsersWithUserBalances, getUserDataWithUserBalance, getChildUserBalanceAndData, getUserListProcedure } = require("../../../services/userService");
+const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData, getAllUsers, getAllUsersBalanceSumByFgId, updateUserExposureLimit, deleteUserByDirectParent, softDeleteAllUsers, getMultipleUsersWithUserBalances, getUserDataWithUserBalance, getChildUserBalanceAndData, getUserListProcedure } = require("../../../services/userService");
 const { getDomainDataByDomain, addDomainData, getDomainDataByUserId, updateDomainData } = require("../../../services/domainDataService");
 const { insertTransactions } = require("../../../services/transactionService");
 const { addInitialUserBalance, getUserBalanceDataByUserId, updateUserBalanceData, getAllUsersBalanceSum } = require("../../../services/userBalanceService");
@@ -523,7 +523,7 @@ exports.userList = async (call) => {
         let partnershipCol = [...uplinePartnerShipForAllUsers[userRole], partnershipPrefixByRole[userRole]].map((item) => {
             return item + "Partnership";
         });
-        let data = (await getUserListProcedure(where.createBy, partnershipCol, where.roleName, apiQuery?.limit, apiQuery?.page, apiQuery?.keyword))?.[0]?.fetchuserlist || [];
+        let data = (await getUserListProcedure(where.createBy, partnershipCol, where.roleName, apiQuery?.limit, apiQuery?.page, apiQuery?.keyword, apiQuery?.userBlock?.slice(2), apiQuery?.betBlock?.slice(2)))?.[0]?.fetchuserlist || [];
 
         const domainUrl = process.env.GRPC_URL;
         if (type) {
