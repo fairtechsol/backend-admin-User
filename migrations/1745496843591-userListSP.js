@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class UserListSP1745496843590 {
-    name = 'UserListSP1745496843590'
+module.exports = class UserListSP1745496843591 {
+    name = 'UserListSP1745496843591'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -23,7 +23,7 @@ BEGIN
   PERFORM set_config('enable_nestloop', 'off', false);
 
   -- Get total count using efficient index scan
-  SELECT COUNT(*) INTO total_count
+  SELECT COUNT(u.id) INTO total_count
   FROM users u
   WHERE u."createBy" = createBy
     AND u."roleName" <> excludeRole
