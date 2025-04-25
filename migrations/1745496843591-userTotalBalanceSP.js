@@ -109,6 +109,6 @@ $$;
     }
 
     async down(queryRunner) {
-        await queryRunner.query(`DROP FUNCTION IF EXISTS getUserTotalBalance(uuid, users_rolename_enum, boolean, boolean, boolean);"`);
+        await queryRunner.query(`DROP FUNCTION IF EXISTS getUserTotalBalance(uuid, users_rolename_enum, boolean, boolean, boolean);`);
     }
 }

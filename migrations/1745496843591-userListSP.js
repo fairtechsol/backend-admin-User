@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class UserListSP1745496843591 {
-    name = 'UserListSP1745496843591'
+module.exports = class UserListSP1745496843593 {
+    name = 'UserListSP1745496843593'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -11,7 +11,9 @@ CREATE OR REPLACE FUNCTION fetchUserList(
   partnership text[] DEFAULT ARRAY[]::text[],
   offsetVal integer DEFAULT 0,
   limitVal integer DEFAULT 10,
-  keyword text DEFAULT ''
+  keyword text DEFAULT '',
+  userBlock boolean DEFAULT NULL,
+  betBlock boolean DEFAULT NULL
 )
 RETURNS json
 LANGUAGE plpgsql
@@ -27,6 +29,8 @@ BEGIN
   FROM users u
   WHERE u."createBy" = createBy
     AND u."roleName" <> excludeRole
+	AND (userBlock IS NULL OR u."userBlock" = userBlock)
+    AND (betBlock IS NULL OR u."betBlock" = betBlock)
     AND u."deletedAt" IS NULL;
 
   -- Main optimized query
@@ -79,6 +83,8 @@ BEGIN
     LEFT JOIN "userBalances" ub ON ub."userId" = u.id
     WHERE u."createBy" = createBy
       AND u."roleName" <> excludeRole
+	  AND (userBlock IS NULL OR u."userBlock" = userBlock)
+      AND (betBlock IS NULL OR u."betBlock" = betBlock)
       AND u."deletedAt" IS NULL
       AND u."userName" ILIKE '%' || keyword || '%'
     ORDER BY u."betBlock", u."userBlock", u."userName"
@@ -156,6 +162,6 @@ $$;
     }
 
     async down(queryRunner) {
-        await queryRunner.query(`DROP FUNCTION IF EXISTS fetchUserList(uuid, users_rolename_enum, text[], integer, integer,text);"`);
+        await queryRunner.query(`DROP FUNCTION IF EXISTS fetchUserList(uuid, users_rolename_enum, text[], integer, integer,text,boolean,boolean);`);
     }
 }
