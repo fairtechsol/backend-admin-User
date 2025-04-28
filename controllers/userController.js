@@ -3,7 +3,7 @@ const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUs
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
-const { getTotalProfitLoss, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
+const {  getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
@@ -1221,57 +1221,6 @@ exports.generalReport = async (req, res) => {
     );
   }
 
-}
-
-exports.totalProfitLoss = async (req, res) => {
-  try {
-    let { userId, startDate, endDate, matchId } = req.body;
-    let user, totalLoss
-    let queryColumns = ``;
-    let where = {}
-
-    if (!userId) {
-      userId = req.user.id
-    }
-    if (matchId) {
-      where.matchId = matchId
-    }
-
-    user = await getUserById(userId);
-    if (!user)
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "invalidData" } },
-        req,
-        res
-      );
-    queryColumns = profitLossPercentCol(user, queryColumns);
-    totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-
-    if (user && user.roleName == userRoleConstant.user) {
-      where.createBy = In([userId])
-      totalLoss = `(Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-    }
-
-    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.bettingName = '${matchOddName}' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
-    let subQuery = await childIdquery(user)
-    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, subQuery)
-    return SuccessResponse(
-      {
-        statusCode: 200, data: { result },
-      },
-      req,
-      res
-    );
-  } catch (error) {
-    return ErrorResponse(
-      {
-        statusCode: 500,
-        message: error.message,
-      },
-      req,
-      res
-    );
-  }
 }
 
 exports.getMatchLockAllChild = async (req, res) => {

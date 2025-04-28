@@ -1,7 +1,7 @@
 const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
-const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData, getAllUsers, getAllUsersBalanceSumByFgId, updateUserExposureLimit, deleteUserByDirectParent, softDeleteAllUsers, getMultipleUsersWithUserBalances, getUserDataWithUserBalance, getChildUserBalanceAndData, getUserListProcedure } = require("../../../services/userService");
+const { getUserByUserName, addUser, updateUser, getUserById, getUser, getChildUser, userBlockUnblock, betBlockUnblock, getChildUserBalanceSum, getUsersWithTotalUsersBalanceData, getAllUsers, getAllUsersBalanceSumByFgId, updateUserExposureLimit, deleteUserByDirectParent, softDeleteAllUsers, getMultipleUsersWithUserBalances, getUserDataWithUserBalance, getChildUserBalanceAndData, getUserListProcedure, getUserTotalBalanceProcedure } = require("../../../services/userService");
 const { getDomainDataByDomain, addDomainData, getDomainDataByUserId, updateDomainData } = require("../../../services/domainDataService");
 const { insertTransactions } = require("../../../services/transactionService");
 const { addInitialUserBalance, getUserBalanceDataByUserId, updateUserBalanceData, getAllUsersBalanceSum } = require("../../../services/userBalanceService");
@@ -616,62 +616,12 @@ exports.getTotalUserListBalance = async (call) => {
         let userRole = roleName;
         let where = {
             createBy: userId,
-            roleName: Not(userRole)
+            roleName: userRole
         };
 
-        let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum,SUM(UB.downLevelBalance) as "downLevelBalance", SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure",SUM(CASE WHEN user.roleName = 'user' THEN UB.exposure ELSE 0 END) AS "totalExposureOnlyUser",SUM(UB.totalCommission) as totalCommission`;
+        const totalBalance = await getUserTotalBalanceProcedure(where.createBy, where.roleName, apiQuery?.userBlock?.slice(2), apiQuery?.betBlock?.slice(2), apiQuery.orVal ? true : null)
 
-        switch (userRole) {
-            case (userRoleConstant.fairGameWallet):
-            case (userRoleConstant.expert): {
-                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.fwPartnership)), 2) as percentProfitLoss`;
-                break;
-            }
-            case (userRoleConstant.fairGameAdmin): {
-                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.faPartnership + user.fwPartnership)), 2) as percentProfitLoss`;
-                break;
-            }
-            case (userRoleConstant.superAdmin): {
-                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-                break;
-            }
-            case (userRoleConstant.admin): {
-                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-                break;
-            }
-            case (userRoleConstant.superMaster): {
-                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-                break;
-            }
-            case (userRoleConstant.master): {
-                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-                break;
-            }
-            case (userRoleConstant.agent): {
-                queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.agPartnership + user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-                break;
-            }
-        }
-        let childUserBalanceWhere = "";
-
-        if (apiQuery.userBlock) {
-            childUserBalanceWhere = ` "p"."userBlock" = ${apiQuery?.userBlock?.slice(2)}`
-        }
-        if (apiQuery.betBlock) {
-            childUserBalanceWhere = `"p"."betBlock" = ${apiQuery?.betBlock?.slice(2)}`
-        }
-        if (apiQuery.orVal) {
-            childUserBalanceWhere = `("p"."betBlock" = true or  "p"."userBlock" = true)`
-        }
-
-        const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
-
-        let childUsersBalances = await getChildUserBalanceSum(userId, true, childUserBalanceWhere);
-
-        totalBalance.currBalance = childUsersBalances?.[0]?.balance;
-        totalBalance.availableBalance = parseFloat(totalBalance.availableBalance || 0) - parseFloat(totalBalance.totalExposureOnlyUser || 0);
-
-        return { data: JSON.stringify(totalBalance) }
+        return { data: JSON.stringify(totalBalance?.[0]?.getusertotalbalance) }
     } catch (error) {
         logger.error({
             message: "Error in user list total balance.",
