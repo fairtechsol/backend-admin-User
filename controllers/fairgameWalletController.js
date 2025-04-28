@@ -8,7 +8,6 @@ const { logger } = require("../config/logger");
 const { getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getUserWiseProfitLoss, getBetCountData } = require("../services/betPlacedService");
 const {
   profitLossPercentCol,
-  childIdquery,
 } = require("../services/commonService");
 
 const {
@@ -23,7 +22,7 @@ exports.totalProfitLossWallet = async (req, res) => {
     let { user, startDate, endDate, matchId, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
-    
+
     if (!user) {
       return ErrorResponse(
         { statusCode: 400, message: { msg: "invalidData" } },
@@ -71,9 +70,8 @@ exports.totalProfitLossByMatch = async (req, res) => {
         res
       );
     }
-    
-      const data = (await getAllMatchTotalProfitLoss(user.id, searchId, startDate, endDate, partnerShipRoleName, type, (parseInt(page) - 1) * parseInt(limit),limit))?.[0]?.getMatchWiseProfitLoss || {count:0, result: []};
-     
+
+    const data = (await getAllMatchTotalProfitLoss(user.id, searchId, startDate, endDate, partnerShipRoleName, type, (parseInt(page) - 1) * parseInt(limit), limit))?.[0]?.getMatchWiseProfitLoss || { count: 0, result: [] };
 
     return SuccessResponse(
       {
@@ -99,22 +97,12 @@ exports.totalProfitLossByMatch = async (req, res) => {
   }
 }
 
-
 exports.getResultBetProfitLoss = async (req, res) => {
   try {
     let { user, matchId, betId, isSession, searchId, partnerShipRoleName } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
-    let queryColumns = ``;
-    let where = { marketBetType: isSession ? marketBetType.SESSION : In([marketBetType.MATCHBETTING, marketBetType.RACING]) };
-
-    if (matchId) {
-      where.matchId = matchId;
-    }
-    if (betId) {
-      where.betId = betId;
-    }
 
     if (!user) {
       return ErrorResponse(
@@ -123,16 +111,10 @@ exports.getResultBetProfitLoss = async (req, res) => {
         res
       );
     }
-    queryColumns = await getQueryColumns(user, partnerShipRoleName);
-    let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
 
-    if (req?.user?.roleName == userRoleConstant.user) {
-      totalLoss = '-' + totalLoss;
-    }
-    let subQuery = await childIdquery(user, searchId);
     const domainUrl = `${process.env.GRPC_URL}`;
 
-    const result = await getBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
+    const result = await getBetsProfitLoss(user.id, matchId || null, betId || null, searchId || null, partnerShipRoleName, domainUrl, isSession);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -163,10 +145,6 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
-    let queryColumns = ``;
-    let where = { marketBetType: marketBetType.SESSION, matchId: matchId };
-
-
     if (!user) {
       return ErrorResponse(
         { statusCode: 400, message: { msg: "invalidData" } },
@@ -174,14 +152,8 @@ exports.getSessionBetProfitLoss = async (req, res) => {
         res
       );
     }
-    queryColumns = await getQueryColumns(user, partnerShipRoleName);
-    let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
 
-    if (req?.user?.roleName == userRoleConstant.user) {
-      totalLoss = '-' + totalLoss;
-    }
-    let subQuery = await childIdquery(user, searchId);
-    const result = await getSessionsProfitLoss(where, totalLoss, subQuery);
+    const result = await getSessionsProfitLoss(user.id, matchId, searchId || null, partnerShipRoleName || null);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -205,11 +177,6 @@ exports.getSessionBetProfitLoss = async (req, res) => {
     );
   }
 }
-const getQueryColumns = async (user, partnerShipRoleName) => {
-  return partnerShipRoleName ? await profitLossPercentCol({ roleName: partnerShipRoleName }) : await profitLossPercentCol(user);
-}
-
-exports.getQueryColumns = getQueryColumns;
 
 exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {

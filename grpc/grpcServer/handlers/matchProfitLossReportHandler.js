@@ -2,9 +2,8 @@ const { __mf } = require("i18n");
 const grpc = require("@grpc/grpc-js");
 const { userRoleConstant, betResultStatus, marketBetType } = require("../../../config/contants");
 const { logger } = require("../../../config/logger");
-const { getQueryColumns } = require("../../../controllers/fairgameWalletController");
 const { getTotalProfitLoss, getAllMatchTotalProfitLoss, getUserWiseProfitLoss, getSessionsProfitLoss } = require("../../../services/betPlacedService");
-const { childIdquery, profitLossPercentCol } = require("../../../services/commonService");
+const { profitLossPercentCol } = require("../../../services/commonService");
 const { getAllUsers, getUsersByWallet, getChildsWithOnlyUserRole } = require("../../../services/userService");
 const { Not, In } = require("typeorm");
 
@@ -148,10 +147,7 @@ exports.getSessionBetProfitLoss = async (call) => {
     try {
         let { user, matchId, searchId, partnerShipRoleName } = call.request;
         user = JSON.parse(user);
-
-        let queryColumns = ``;
-        let where = { marketBetType: marketBetType.SESSION, matchId: matchId };
-
+        const role=partnerShipRoleName || user.roleName;
 
         if (!user) {
             throw {
@@ -159,14 +155,7 @@ exports.getSessionBetProfitLoss = async (call) => {
                 message: __mf("invalidArgument"),
             };
         }
-        queryColumns = await getQueryColumns(user, partnerShipRoleName);
-        let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-
-        if (user?.roleName == userRoleConstant.user) {
-            totalLoss = '-' + totalLoss;
-        }
-        let subQuery = await childIdquery(user, searchId);
-        const result = await getSessionsProfitLoss(where, totalLoss, subQuery);
+        const result = await getSessionsProfitLoss(user.id,matchId, searchId || null, role || null);
 
         return { data: JSON.stringify(result) };
     } catch (error) {
