@@ -555,59 +555,71 @@ exports.declareSessionNoResult = async (call) => {
       data: { upperUserObj, betId }
     });
 
-    for (let [key, value] of Object.entries(upperUserObj)) {
-      let parentUser = await getUserBalanceDataByUserId(key);
+    const userEntries = Object.entries(upperUserObj);
+    if (!userEntries.length) return;
 
-      let parentUserRedisData = await getUserRedisData(parentUser.userId);
+    // 1️⃣ Fetch all current balances in one Redis pipeline
+    const balanceResponses = await internalRedis.pipeline(
+      userEntries.map(([userId]) =>
+        ['hmget', userId, 'exposure']
+      )
+    ).exec();
 
-      let parentExposure = parentUser?.exposure || 0;
-      if (parentUserRedisData?.exposure) {
-        parentExposure = parseFloat(parentUserRedisData?.exposure);
-      }
+    // 2️⃣ Compute deltas, queue Redis updates, and send socket messages
+    const updatePipeline = internalRedis.pipeline();
+    const redisSessionExposureName = redisKeys.userSessionExposure + matchId;
 
-      parentUser.exposure = parentExposure - value["exposure"];
-      if (parentUser.exposure < 0) {
+    userEntries.forEach(([userId, updateData], idx) => {
+      upperUserObj[userId].exposure = -upperUserObj[userId].exposure;
+
+      if (balanceResponses[idx][1]?.filter((items) => items != null).length) {
+        const [expStr] = balanceResponses[idx][1];
+        const currentExposure = +expStr || 0;
+
+
+        const rawExposureDelta = -(+updateData.exposure) || 0;
+
+        // clamp exposure and adjust leftover
+        let newExposure = currentExposure + rawExposureDelta;
+        let adjustedExposure = rawExposureDelta;
+        if (newExposure < 0) {
+          logger.info({
+            message: 'Exposure went negative',
+            data: {
+              betId: betId,
+              matchId, userId, before: currentExposure, delta: rawExposureDelta
+            }
+          });
+          adjustedExposure += newExposure;  // fold leftover back
+          newExposure = 0;
+        }
+
+        // queue Redis increments & key deletion
+        updatePipeline
+          .hincrbyfloat(userId, 'exposure', adjustedExposure)
+          .hincrbyfloat(userId, [redisSessionExposureName], adjustedExposure)
+          .hdel(userId, `${betId}${redisKeys.profitLoss}`);
+
         logger.info({
-          message: "Exposure in negative for user: ",
+          message: "Declare result session db update for parent ",
           data: {
-            betId,
-            matchId,
-            parentUser,
+            parentUser: {
+              exposure: newExposure,
+            },
+            betId: marketDetail?.id
           },
         });
 
-        value["exposure"] += parentUser.exposure;
-        parentUser.exposure = 0;
-      }
-      await updateUserExposure(key, -value["exposure"]);
-
-      logger.info({
-        message: "Declare result db update for parent ",
-        data: {
-          betId,
-          parentUser,
-        },
-      });
-
-      const redisSessionExposureName = redisKeys.userSessionExposure + matchId;
-
-      if (
-        parentUserRedisData?.exposure
-      ) {
-        await incrementValuesRedis(key, {
-          [redisSessionExposureName]: -value["exposure"],
-          exposure: -value["exposure"]
+        // fire-and-forget socket notification
+        sendMessageToUser(userId, socketData.matchResult, {
+          exposure: newExposure,
+          betId: betId,
+          matchId
         });
-        await deleteKeyFromUserRedis(key, betId + "_profitLoss");
       }
-      sendMessageToUser(key, socketData.sessionResult, {
-        ...parentUser,
-        betId,
-        matchId,
-        sessionExposure: parentUserRedisData?.[redisSessionExposureName] - value["exposure"],
-      });
-    }
+    });
 
+    await Promise.all([updatePipeline.exec(), updateUserDeclareBalanceData(upperUserObj)]);
 
     return { data: profitLossData }
 
