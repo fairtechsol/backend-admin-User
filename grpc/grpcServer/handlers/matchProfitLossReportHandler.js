@@ -73,7 +73,7 @@ exports.getUserWiseTotalProfitLoss = async (call) => {
             };
         }
 
-        const userData = await getUserWiseProfitLoss(user?.id, matchId || null, runnerId || null, userIds || null, searchId || null, partnerShipRoleName || null);
+        const userData = await getUserWiseProfitLoss(user?.id, matchId || null, runnerId || null, userIds!=''&&userIds?.split(",")?.length?userIds?.split(",") : null, searchId || null, partnerShipRoleName || null);
 
         return { data: JSON.stringify(userData) };
     } catch (error) {
