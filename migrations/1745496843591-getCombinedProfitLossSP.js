@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class GetCombinedProfitLossSP1745496843591 {
-    name = 'GetCombinedProfitLossSP1745496843591'
+module.exports = class GetCombinedProfitLossSP1745496843592 {
+    name = 'GetCombinedProfitLossSP1745496843592'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -101,8 +101,8 @@ JOIN user_tree ut ON ut.id = b."createBy"
 JOIN users u     ON u.id = ut.id
 WHERE b.result IN ('WIN','LOSS') AND  u."deletedAt" IS NULL AND u."roleName" = 'user'
   AND b."deleteReason" IS NULL
-  AND ($1 IS NULL OR m."startAt" >= $1)
-  AND ($2 IS NULL OR m."startAt" <= $2)
+  AND ($1 IS NULL OR DATE(m."startAt") >= $1)
+  AND ($2 IS NULL OR DATE(m."startAt") <= $2)
   AND ($3 IS NULL OR b."eventType" = $3)
   AND ($4 IS NULL OR b."matchId" = $4)
 

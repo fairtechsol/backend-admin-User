@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class GetMatchWiseProfitLossSP1745496843591 {
-    name = 'GetMatchWiseProfitLossSP1745496843591'
+module.exports = class GetMatchWiseProfitLossSP1745496843592 {
+    name = 'GetMatchWiseProfitLossSP1745496843592'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -155,8 +155,8 @@ WITH RECURSIVE user_tree AS (%s),
          AND u."deletedAt" IS NULL
          AND u."roleName" = 'user'
          AND b."deleteReason" IS NULL
-         AND ($1 IS NULL OR m."startAt" >= $1)
-         AND ($2 IS NULL OR m."startAt" <= $2)
+         AND ($1 IS NULL OR DATE(m."startAt") >= $1)
+         AND ($2 IS NULL OR DATE(m."startAt") <= $2)
          AND ($3 IS NULL OR b."eventType" = $3)
        GROUP BY
          b."matchId", m.id, b."eventType"
