@@ -119,32 +119,17 @@ exports.getSessionBetProfitLossExpert = async (call) => {
 exports.getResultBetProfitLoss = async (call) => {
   try {
     let { user, matchId, betId, isSession, searchId, partnerShipRoleName } = call.request;
-    user = user;
-    partnerShipRoleName = partnerShipRoleName;
-
-    let queryColumns = ``;
-    let where = { marketBetType: isSession ? marketBetType.SESSION : In([marketBetType.MATCHBETTING, marketBetType.RACING]) };
-
-    if (matchId) {
-      where.matchId = matchId;
-    }
-    if (betId) {
-      where.betId = betId;
-    }
-
+   
     if (!user) {
       throw {
         code: grpc.status.INVALID_ARGUMENT,
         message: __mf("invalidData"),
       };
     }
-    queryColumns = await getQueryColumns(user, partnerShipRoleName);
-    let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-
-    let subQuery = await childIdquery(user, searchId);
+   
     const domainUrl = `${call?.call?.host}`;
 
-    const result = await getBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
+    const result = await getBetsProfitLoss(user.id, matchId || null, betId || null, searchId || null, partnerShipRoleName, domainUrl, isSession);
     return { data: JSON.stringify(result) };
   } catch (error) {
     logger.error({
