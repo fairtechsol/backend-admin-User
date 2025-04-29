@@ -26,8 +26,8 @@ const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { getUserRedisData, deleteKeyFromUserRedis, incrementValuesRedis } = require("../../../services/redis/commonfunction");
 const {
-    getUserBalanceDataByUserId,
     updateUserBalanceData,
+    updateUserDeclareBalanceData,
 } = require("../../../services/userBalanceService");
 const {
     getParentsWithBalance,
@@ -36,6 +36,7 @@ const {
 const { sendMessageToUser, broadcastEvent } = require("../../../sockets/socketManager");
 const { deleteCommission, getCombinedCommission } = require("../../../services/commissionService");
 const { updateMatchData } = require("../../../services/matchService");
+const internalRedis = require("../../../config/internalRedisConnection");
 
 exports.declareTournamentMatchResult = async (call) => {
     try {
@@ -138,73 +139,87 @@ exports.declareTournamentMatchResult = async (call) => {
             data: { upperUserObj, betId: marketDetail?.id },
         });
 
-        for (let [key, value] of Object.entries(upperUserObj)) {
-            let parentUser = await getUserBalanceDataByUserId(key);
+        const userEntries = Object.entries(upperUserObj);
+        if (!userEntries.length) return;
 
-            let parentUserRedisData = await getUserRedisData(parentUser.userId);
+        // 1️⃣ Fetch all current balances in one Redis pipeline
+        const balanceResponses = await internalRedis.pipeline(
+            userEntries.map(([userId]) =>
+                ['hmget', userId, 'profitLoss', 'myProfitLoss', 'exposure', 'totalCommission']
+            )
+        ).exec();
 
-            let parentProfitLoss = parentUser?.profitLoss || 0;
-            if (parentUserRedisData?.profitLoss) {
-                parentProfitLoss = parseFloat(parentUserRedisData.profitLoss);
-            }
-            let parentMyProfitLoss = parentUser?.myProfitLoss || 0;
-            if (parentUserRedisData?.myProfitLoss) {
-                parentMyProfitLoss = parseFloat(parentUserRedisData.myProfitLoss);
-            }
-            let parentExposure = parentUser?.exposure || 0;
-            if (parentUserRedisData?.exposure) {
-                parentExposure = parseFloat(parentUserRedisData?.exposure);
-            }
+        // 2️⃣ Compute deltas, queue Redis updates, and send socket messages
+        const updatePipeline = internalRedis.pipeline();
 
-            parentUser.profitLoss = parentProfitLoss + value?.["profitLoss"];
-            parentUser.myProfitLoss = parentMyProfitLoss - value["myProfitLoss"];
-            parentUser.exposure = parentExposure - value["exposure"];
-            parentUser.totalCommission = parentUser.totalCommission + (value["totalCommission"] || 0)
-            if (parentUser.exposure < 0) {
+        userEntries.forEach(([userId, updateData], idx) => {
+            upperUserObj[userId].exposure = -upperUserObj[userId].exposure;
+            upperUserObj[userId].myProfitLoss = -upperUserObj[userId].myProfitLoss;
+
+            if (balanceResponses[idx][1]?.filter((items) => !!items).length) {
+                const [plStr, mplStr, expStr, comStr] = balanceResponses[idx][1];
+                const currentProfitLoss = +plStr || 0;
+                const currentMyProfitLoss = +mplStr || 0;
+                const currentExposure = +expStr || 0;
+                const currentTotalCommission = +comStr || 0;
+
+
+                const profitLossDelta = +updateData.profitLoss || 0;
+                const myProfitLossDelta = -(+updateData.myProfitLoss) || 0;
+                const rawExposureDelta = -(+updateData.exposure) || 0;
+                const commissionDelta = +updateData.totalCommission || 0;
+
+                // clamp exposure and adjust leftover
+                let newExposure = currentExposure + rawExposureDelta;
+                let adjustedExposure = rawExposureDelta;
+                if (newExposure < 0) {
+                    logger.info({
+                        message: 'Exposure went negative',
+                        data: {
+                            betId: marketDetail?.id,
+                            matchId, userId, before: currentExposure, delta: rawExposureDelta
+                        }
+                    });
+                    adjustedExposure += newExposure;  // fold leftover back
+                    newExposure = 0;
+                }
+
+                // queue Redis increments & key deletion
+                updatePipeline
+                    .hincrbyfloat(userId, 'profitLoss', profitLossDelta)
+                    .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
+                    .hincrbyfloat(userId, 'exposure', adjustedExposure)
+                    .hincrbyfloat(userId, 'totalCommission', commissionDelta)
+                    .hdel(userId, `${marketDetail.id}${redisKeys.profitLoss}_${matchId}`);
+
                 logger.info({
-                    message: "Exposure in negative for user: ",
+                    message: "Declare result db update for parent ",
                     data: {
-                        betId: marketDetail?.id,
-                        matchId,
-                        parentUser,
+                        parentUser: {
+                            profitLoss: currentProfitLoss + profitLossDelta,
+                            myProfitLoss: currentMyProfitLoss + myProfitLossDelta,
+                            exposure: newExposure,
+                            totalCommission: currentTotalCommission + commissionDelta,
+                        },
+                        betId: marketDetail?.id
                     },
                 });
-                value["exposure"] += parentUser.exposure;
-                parentUser.exposure = 0;
-            }
 
-
-            await updateUserBalanceData(key, {
-                balance: 0,
-                profitLoss: value?.["profitLoss"],
-                myProfitLoss: -value["myProfitLoss"],
-                exposure: -value["exposure"],
-                totalCommission: parseFloat(parseFloat(value["totalCommission"] || 0).toFixed(2))
-            });
-
-            logger.info({
-                message: "Declare result db update for parent ",
-                data: {
-                    betId: marketDetail?.id,
-                    parentUser,
-                },
-            });
-            if (parentUserRedisData?.exposure) {
-                await incrementValuesRedis(key, {
-                    profitLoss: value?.["profitLoss"],
-                    myProfitLoss: -value["myProfitLoss"],
-                    exposure: -value["exposure"],
+                // fire-and-forget socket notification
+                sendMessageToUser(userId, socketData.matchResult, {
+                    profitLoss: currentProfitLoss + profitLossDelta,
+                    myProfitLoss: currentMyProfitLoss + myProfitLossDelta,
+                    exposure: newExposure,
+                    totalCommission: currentTotalCommission + commissionDelta,
+                    betId: marketDetail.id,
+                    matchId,
+                    betType: matchBettingType.tournament
                 });
-                await deleteKeyFromUserRedis(key, `${marketDetail?.id}${redisKeys.profitLoss}_${matchId}`);
             }
+        });
 
-            sendMessageToUser(key, socketData.matchResult, {
-                ...parentUser,
-                betId: marketDetail?.id,
-                matchId,
-                betType: matchBettingType.tournament,
-            });
-        }
+        await Promise.all([updatePipeline.exec(), updateUserDeclareBalanceData(upperUserObj)]);
+
         insertBulkCommissions(commissionReport);
         broadcastEvent(socketData.declaredMatchResultAllUser, { matchId, gameType: match?.matchType, betId: marketDetail?.id, betType: matchBettingType.tournament });
 
@@ -488,7 +503,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
                         upperUserObj[patentUser.id].totalCommission += parentCommission;
                     }
                 } else {
-                    upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss, ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) };
+                    upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, balance: 0, exposure: maxLoss, ...(patentUser?.matchCommission && parseFloat(patentUser?.matchCommission) != 0 ? { totalCommission: parentCommission } : {}) };
                 }
 
                 if (patentUser.createBy === patentUser.id) {
@@ -577,7 +592,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
         }
 
     };
-    return { fwProfitLoss, faAdminCal:JSON.stringify(faAdminCal), superAdminData:JSON.stringify(superAdminData), bulkCommission:JSON.stringify(bulkCommission) };
+    return { fwProfitLoss, faAdminCal: JSON.stringify(faAdminCal), superAdminData: JSON.stringify(superAdminData), bulkCommission: JSON.stringify(bulkCommission) };
 }
 
 
@@ -627,79 +642,91 @@ exports.unDeclareTournamentMatchResult = async (call) => {
             data: { upperUserObj, betId: matchBetting?.id }
         });
 
+        const userEntries = Object.entries(upperUserObj);
+        if (!userEntries.length) return;
 
-        for (let [key, value] of Object.entries(upperUserObj)) {
-            let parentUser = await getUserBalanceDataByUserId(key);
+        // 1️⃣ Fetch all current balances in one Redis pipeline
+        const balanceResponses = await internalRedis.pipeline(
+            userEntries.map(([userId]) =>
+                ['hmget', userId, 'profitLoss', 'myProfitLoss', 'exposure', 'totalCommission']
+            )
+        ).exec();
 
-            let parentUserRedisData = await getUserRedisData(parentUser.userId);
+        // 2️⃣ Compute deltas, queue Redis updates, and send socket messages
+        const updatePipeline = internalRedis.pipeline();
 
-            let parentProfitLoss = parentUser?.profitLoss || 0;
-            if (parentUserRedisData?.profitLoss) {
-                parentProfitLoss = parseFloat(parentUserRedisData.profitLoss);
-            }
-            let parentMyProfitLoss = parentUser?.myProfitLoss || 0;
-            if (parentUserRedisData?.myProfitLoss) {
-                parentMyProfitLoss = parseFloat(parentUserRedisData.myProfitLoss);
-            }
-            let parentExposure = parentUser?.exposure || 0;
-            if (parentUserRedisData?.exposure) {
-                parentExposure = parseFloat(parentUserRedisData?.exposure);
-            }
+        userEntries.forEach(([userId, updateData], idx) => {
+            upperUserObj[userId].profitLoss = -upperUserObj[userId].profitLoss;
+            upperUserObj[userId].totalCommission = -upperUserObj[userId].totalCommission;
+
+            if (balanceResponses[idx][1]?.filter((items) => !!items).length) {
+                const [plStr, mplStr, expStr, comStr] = balanceResponses[idx][1];
+                const currentProfitLoss = +plStr || 0;
+                const currentMyProfitLoss = +mplStr || 0;
+                const currentExposure = +expStr || 0;
+                const currentTotalCommission = +comStr || 0;
 
 
-            parentUser.profitLoss = parentProfitLoss - value?.["profitLoss"];
-            parentUser.myProfitLoss = parentMyProfitLoss + value["myProfitLoss"];
-            parentUser.exposure = parentExposure + value["exposure"];
-            parentUser.totalCommission = parseFloat(parentUser.totalCommission || 0) - parseFloat(value["totalCommission"] || 0);
-            if (parentUser.exposure < 0) {
-                logger.info({
-                    message: "Exposure in negative for user: ",
-                    data: {
-                        matchId,
-                        parentUser,
-                    },
-                });
-                value["exposure"] += parentUser.exposure;
-                parentUser.exposure = 0;
-            }
+                const profitLossDelta = -(+updateData.profitLoss) || 0;
+                const myProfitLossDelta = (+updateData.myProfitLoss) || 0;
+                const rawExposureDelta = (+updateData.exposure) || 0;
+                const commissionDelta = -(+updateData.totalCommission) || 0;
 
-            await updateUserBalanceData(parentUser.userId, {
-                balance: 0,
-                profitLoss: -value?.["profitLoss"],
-                myProfitLoss: value["myProfitLoss"],
-                exposure: value["exposure"],
-                totalCommission: -parseFloat(parseFloat(value["totalCommission"] || 0).toFixed(2))
-            });
+                // clamp exposure and adjust leftover
+                let newExposure = currentExposure + rawExposureDelta;
+                let adjustedExposure = rawExposureDelta;
+                if (newExposure < 0) {
+                    logger.info({
+                        message: 'Exposure went negative',
+                        data: { matchId, userId, before: currentExposure, delta: rawExposureDelta }
+                    });
+                    adjustedExposure += newExposure;  // fold leftover back
+                    newExposure = 0;
+                }
 
-            logger.info({
-                message: "Declare result db update for parent ",
-                data: {
-                    parentUser,
-                    betId: matchBetting?.id
-                },
-            });
-
-            if (parentUserRedisData?.exposure) {
-                let { exposure, profitLoss, myProfitLoss, ...parentRedisUpdateObj } = value;
+                let { exposure, profitLoss, myProfitLoss, ...parentRedisUpdateObj } = updateData;
                 Object.keys(parentRedisUpdateObj)?.forEach((plKey) => {
                     parentRedisUpdateObj[plKey] = JSON.stringify(parentRedisUpdateObj[plKey]);
                 });
-                await incrementValuesRedis(parentUser.userId, {
-                    profitLoss: -value?.["profitLoss"],
-                    myProfitLoss: value["myProfitLoss"],
-                    exposure: value["exposure"],
-                    [redisKeys.userMatchExposure + matchId]: value["exposure"]
-                }, parentRedisUpdateObj);
-            }
 
-            sendMessageToUser(key, socketData.matchResultUnDeclare, {
-                ...parentUser,
-                matchId,
-                betId: matchBetting?.id,
-                profitLossData: value,
-                betType: matchBettingType.tournament,
-            });
-        }
+                // queue Redis increments & key deletion
+                updatePipeline
+                    .hincrbyfloat(userId, 'profitLoss', profitLossDelta)
+                    .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
+                    .hincrbyfloat(userId, 'exposure', adjustedExposure)
+                    .hincrbyfloat(userId, 'totalCommission', commissionDelta)
+                    .hmset(userId, parentRedisUpdateObj);
+
+                logger.info({
+                    message: "Un Declare result db update for parent ",
+                    data: {
+                        parentUser: {
+                            profitLoss: currentProfitLoss + profitLossDelta,
+                            myProfitLoss: currentMyProfitLoss + myProfitLossDelta,
+                            exposure: newExposure,
+                            totalCommission: currentTotalCommission + commissionDelta,
+                        },
+                        betId: matchBetting?.id
+                    },
+                });
+
+                // fire-and-forget socket notification
+                sendMessageToUser(userId, socketData.matchResultUnDeclare, {
+                    profitLoss: currentProfitLoss + profitLossDelta,
+                    myProfitLoss: currentMyProfitLoss + myProfitLossDelta,
+                    exposure: newExposure,
+                    totalCommission: currentTotalCommission + commissionDelta,
+                    betId: matchBetting.id,
+                    profitLossData: updateData,
+
+                    matchId,
+                    betType: matchBettingType.tournament
+                });
+            }
+        });
+
+        await Promise.all([updatePipeline.exec(), updateUserDeclareBalanceData(upperUserObj)]);
+
 
         let userIds = users.map(user => user.createBy);
         await updatePlaceBet(
@@ -954,7 +981,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
                     });
 
                 } else {
-                    upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, exposure: maxLoss };
+                    upperUserObj[patentUser.id] = { profitLoss: profitLoss, myProfitLoss: myProfitLoss, balance: 0, exposure: maxLoss };
 
                     if (!parentCommissionIds.has(patentUser.id)) {
                         parentCommissionIds.add(patentUser.id);
