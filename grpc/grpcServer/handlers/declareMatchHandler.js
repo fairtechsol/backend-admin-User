@@ -156,7 +156,7 @@ exports.declareTournamentMatchResult = async (call) => {
             upperUserObj[userId].exposure = -upperUserObj[userId].exposure;
             upperUserObj[userId].myProfitLoss = -upperUserObj[userId].myProfitLoss;
 
-            if (balanceResponses[idx][1]?.filter((items) => !!items).length) {
+            if (balanceResponses[idx][1]?.filter((items) => items != null).length) {
                 const [plStr, mplStr, expStr, comStr] = balanceResponses[idx][1];
                 const currentProfitLoss = +plStr || 0;
                 const currentMyProfitLoss = +mplStr || 0;
@@ -189,7 +189,6 @@ exports.declareTournamentMatchResult = async (call) => {
                     .hincrbyfloat(userId, 'profitLoss', profitLossDelta)
                     .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
                     .hincrbyfloat(userId, 'exposure', adjustedExposure)
-                    .hincrbyfloat(userId, 'totalCommission', commissionDelta)
                     .hdel(userId, `${marketDetail.id}${redisKeys.profitLoss}_${matchId}`);
 
                 logger.info({
@@ -659,7 +658,7 @@ exports.unDeclareTournamentMatchResult = async (call) => {
             upperUserObj[userId].profitLoss = -upperUserObj[userId].profitLoss;
             upperUserObj[userId].totalCommission = -upperUserObj[userId].totalCommission;
 
-            if (balanceResponses[idx][1]?.filter((items) => !!items).length) {
+            if (balanceResponses[idx][1]?.filter((items) => items != null).length) {
                 const [plStr, mplStr, expStr, comStr] = balanceResponses[idx][1];
                 const currentProfitLoss = +plStr || 0;
                 const currentMyProfitLoss = +mplStr || 0;
@@ -694,7 +693,6 @@ exports.unDeclareTournamentMatchResult = async (call) => {
                     .hincrbyfloat(userId, 'profitLoss', profitLossDelta)
                     .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
                     .hincrbyfloat(userId, 'exposure', adjustedExposure)
-                    .hincrbyfloat(userId, 'totalCommission', commissionDelta)
                     .hmset(userId, parentRedisUpdateObj);
 
                 logger.info({
@@ -718,7 +716,6 @@ exports.unDeclareTournamentMatchResult = async (call) => {
                     totalCommission: currentTotalCommission + commissionDelta,
                     betId: matchBetting.id,
                     profitLossData: updateData,
-
                     matchId,
                     betType: matchBettingType.tournament
                 });
