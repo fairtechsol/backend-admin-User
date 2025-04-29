@@ -7,8 +7,7 @@ const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss, fi
 const { getChildsWithOnlyUserRole, getAllUsers, getUserById } = require("../../../services/userService");
 const { profitLossPercentCol, childIdquery, findUserPartnerShipObj, calculatePLAllBet, mergeProfitLoss, forceLogoutUser, calculateProfitLossForRacingMatchToResult, calculateRacingRate, parseRedisData } = require("../../../services/commonService");
 const { In, IsNull, Not } = require("typeorm");
-const { getQueryColumns } = require("../../../controllers/fairgameWalletController");
-const { allApiRoutes, apiCall, apiMethod } = require("../../../utils/apiService");
+const { getQueryColumns } = require("../../../services/commonService");
 const { getUserRedisData, incrementValuesRedis } = require("../../../services/redis/commonfunction");
 const { getMatchData } = require("../../../services/matchService");
 const { getUserBalanceDataByUserId, updateUserExposure } = require("../../../services/userBalanceService");

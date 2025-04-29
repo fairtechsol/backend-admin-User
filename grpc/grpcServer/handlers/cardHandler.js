@@ -32,7 +32,7 @@ const { sendMessageToUser, broadcastEvent } = require("../../../sockets/socketMa
 const { CardWinOrLose } = require("../../../services/cardService/cardWinAccordingToBet");
 const { CardResultTypeWin } = require("../../../services/cardService/winCardAccordingToTransaction");
 const { childIdquery } = require("../../../services/commonService");
-const { getQueryColumns } = require("../../../controllers/fairgameWalletController");
+const { getQueryColumns } = require("../../../services/commonService");
 const { getTotalProfitLossCard } = require("../../../services/betPlacedService");
 
 

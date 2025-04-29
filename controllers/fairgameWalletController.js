@@ -1,20 +1,8 @@
-const { IsNull, In, Not } = require("typeorm");
-const {
-  userRoleConstant,
-  betResultStatus,
-  marketBetType,
-} = require("../config/contants");
+const { IsNull } = require("typeorm");
+
 const { logger } = require("../config/logger");
 const { getTotalProfitLoss, getAllMatchTotalProfitLoss, getBetsProfitLoss, getSessionsProfitLoss, getUserWiseProfitLoss, getBetCountData } = require("../services/betPlacedService");
-const {
-  profitLossPercentCol,
-} = require("../services/commonService");
 
-const {
-  getChildsWithOnlyUserRole,
-  getAllUsers,
-  getUsersByWallet,
-} = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 
 exports.totalProfitLossWallet = async (req, res) => {
@@ -182,16 +170,8 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
   try {
     let { user, matchId, searchId, userIds, partnerShipRoleName, runnerId } = req.body;
     user = user || req.user;
+    partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
 
-    let queryColumns = ``;
-    let where = {};
-
-    if (matchId) {
-      where.matchId = matchId;
-    }
-    if (runnerId) {
-      where.runnerId = runnerId;
-    }
 
     if (!user) {
       return ErrorResponse(
@@ -200,53 +180,13 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
         res
       );
     }
-    queryColumns = await profitLossPercentCol(partnerShipRoleName ? { roleName: partnerShipRoleName } : user, queryColumns);
-    let totalLoss = `(-Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) + Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-    let rateProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.marketBetType = '${marketBetType.MATCHBETTING}' or placeBet.marketBetType = '${marketBetType.RACING}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.marketBetType = '${marketBetType.MATCHBETTING}' or placeBet.marketBetType = '${marketBetType.RACING}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "rateProfitLoss"`;
-    let sessionProfitLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' and (placeBet.marketBetType = '${marketBetType.SESSION}') then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' and (placeBet.marketBetType = '${marketBetType.SESSION}') then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "sessionProfitLoss"`;
 
-    if (req?.user?.roleName == userRoleConstant.user) {
-      rateProfitLoss = "-" + rateProfitLoss;
-      sessionProfitLoss = "-" + sessionProfitLoss;
-    }
+    const userData = await getUserWiseProfitLoss(user?.id, matchId || null, runnerId || null, userIds || null, searchId || null, partnerShipRoleName || null);
 
-    const getAllDirectUsers = searchId ?
-      await getAllUsers({
-        id: searchId,
-      })
-      : userIds ?
-        await getAllUsers({
-          id: In(userIds?.split(",")),
-        })
-        : (user.roleName == userRoleConstant.fairGameWallet || user.roleName == userRoleConstant.fairGameAdmin) ?
-          await getUsersByWallet({
-            superParentId: user.id,
-            isDemo: false
-          })
-          :
-          await getAllUsers({
-            createBy: user.id,
-            id: Not(user.id)
-          });
-    let result = [];
-    for (let directUser of getAllDirectUsers) {
-      let childrenId = await getChildsWithOnlyUserRole(directUser.id);
-
-      childrenId = childrenId.map(item => item.id);
-      if (!childrenId.length) {
-        continue;
-      }
-      where.createBy = In(childrenId);
-
-      const userData = await getUserWiseProfitLoss(where, [totalLoss, rateProfitLoss, sessionProfitLoss]);
-      if (userData.totalLoss != null && userData.totalLoss != undefined) {
-        result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, matchId: matchId, userName: directUser.userName });
-      }
-    }
 
     return SuccessResponse(
       {
-        statusCode: 200, data: result
+        statusCode: 200, data: userData
       },
       req,
       res

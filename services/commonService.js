@@ -1744,3 +1744,7 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
     return { session: sessionResult, match: matchResult };
   }
 }
+
+exports.getQueryColumns = async (user, partnerShipRoleName) => {
+  return partnerShipRoleName ? await this.profitLossPercentCol({ roleName: partnerShipRoleName }) : await this.profitLossPercentCol(user);
+}

@@ -6,7 +6,7 @@ const { getTotalProfitLossLiveCasino, getAllLiveCasinoMatchTotalProfitLoss, getL
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { getBetsCondition } = require("./betPlacedController");
-const { getQueryColumns } = require("./fairgameWalletController");
+const { getQueryColumns } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { getCardResultHandler, getCardResultDetailHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
 
