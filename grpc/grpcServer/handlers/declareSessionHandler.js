@@ -463,7 +463,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
 
 
     if (!user.user.isDemo) {
-      const parentUsers = multiUserParentData[user.user.id];
+      const parentUsers = multiUserParentData[user.user.id] || [];
       for (const patentUser of parentUsers) {
         let upLinePartnership = getUpLinePartnerShipCalc(patentUser.roleName, user.user) ?? 100;
         let myProfitLoss = (profitLoss * upLinePartnership) / 100;
@@ -740,7 +740,7 @@ const calculateMaxLossSessionForUserNoResult = async (
     });
 
     if (!user.user.isDemo) {
-      const parentUsers = multiUserParentData[user.user.id];
+      const parentUsers = multiUserParentData[user.user.id] || [];
 
       for (const patentUser of parentUsers) {
         if (upperUserObj[patentUser.id]) {
@@ -1057,7 +1057,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
 
 
     if (!user.user.isDemo) {
-      const parentUsers = await multiUserParentData[user.user.id];
+      const parentUsers = await multiUserParentData[user.user.id] || [];
 
       for (const patentUser of parentUsers) {
         const upLinePartnership = getUpLinePartnerShipCalc(patentUser.roleName, user.user) ?? 100;
