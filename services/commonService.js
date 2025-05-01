@@ -1674,7 +1674,7 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
 
     const bets = await getBetsWithUserRole(users?.map((item) => item.id), { matchId: matchId });
 
-    const matchDetail = (await getMatchList({ id: In(Array.from(new Set(bets?.map((item) => item.matchId)))) }, ["id", "teamC"]))?.reduce((acc, key) => {
+    const matchIdDetail = (await getMatchList({ id: In(Array.from(new Set(bets?.map((item) => item.matchId)))) }, ["id", "teamC"]))?.reduce((acc, key) => {
       acc[key?.id] = key;
       return acc;
     }, {})
