@@ -270,6 +270,59 @@ exports.getParentsWithBalance = async (userId) => {
   return results;
 };
 
+exports.getMultiUserParentsWithBalance = async (userIds) => {
+  const query = `WITH RECURSIVE
+  tree AS (
+    SELECT
+      id,
+      id  AS root_id,
+	  "createBy"
+    FROM "users"
+    WHERE id = ANY($1::UUID[])
+    UNION ALL
+    SELECT
+      u.id,
+      t.root_id,
+	  u."createBy"
+    FROM "users" u
+    JOIN tree t
+      ON u.id = t."createBy" and t.id!=t."createBy"
+  ),
+
+  json_per_root AS (
+    SELECT
+      t.root_id,
+      jsonb_agg(
+        jsonb_build_object(
+          'id',                u.id,
+          'userName',          u."userName",
+          'roleName',          u."roleName",
+          'sessionCommission', u."sessionCommission",
+          'matchCommission',   u."matchCommission",
+          'matchComissionType',u."matchComissionType",
+          'createBy',          u."createBy",
+          'userBlock',         u."userBlock",
+          'betBlock',          u."betBlock"
+        )
+        ORDER BY u.id         -- deterministic ordering
+      ) AS descendants
+    FROM tree t
+    JOIN "users" u
+      ON u.id = t.id
+    WHERE t.id <> t.root_id   -- drop the root itself
+    GROUP BY t.root_id
+  )
+
+SELECT
+  jsonb_object_agg(
+    root_id::text,
+    descendants
+  ) AS result
+FROM json_per_root;`;
+  const results = await user.query(query, [userIds]);
+  return results?.[0]?.result || {};
+};
+
 exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, userName: true, roleName: true } });
 }

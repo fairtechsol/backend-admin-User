@@ -166,9 +166,36 @@ exports.getMatchBetPlaceWithUserCard = async (where, select) => {
   return betPlaced;
 };
 
-exports.getMultipleAccountProfitLoss = async (betId, userId) => {
-  let betPlaced = await BetPlaced.query(`SELECT Sum(CASE result WHEN '${betResultStatus.WIN}' then "winAmount" ELSE 0 END) AS winAmount, Sum(CASE result WHEN '${betResultStatus.LOSS}' then "lossAmount" ELSE 0 END) AS lossAmount, Sum(amount) AS "totalStack" from "betPlaceds" where "betId" ='${betId}' AND "userId"='${userId}' AND "deleteReason" IS NULL`)
-  return betPlaced;
+exports.getMultipleAccountProfitLoss = async (betId, userIds) => {
+  const sql = `
+    SELECT
+      COALESCE(jsonb_object_agg(r.user_id, r.stats), '{}'::jsonb) AS "profitLossData"
+    FROM (
+      SELECT
+        u.user_id::text AS user_id,
+        jsonb_build_object(
+          'winAmount',
+            COALESCE(
+              SUM(bp."winAmount") FILTER (WHERE bp."result" = 'WIN'),
+              0
+            ),
+          'lossAmount',
+            COALESCE(
+              SUM(bp."lossAmount") FILTER (WHERE bp."result" = 'LOSS'),
+              0
+            )
+        ) AS stats
+      FROM unnest($1::uuid[]) AS u(user_id)
+      LEFT JOIN "betPlaceds" bp
+        ON bp."betId"        = $2
+       AND bp."userId"       = u.user_id
+       AND bp."deleteReason" IS NULL
+      GROUP BY u.user_id
+    ) AS r;
+  `;
+
+  const result = await BetPlaced.query(sql, [userIds, betId]);
+  return result?.[0]?.profitLossData || {};
 };
 
 exports.getMultipleAccountOtherMatchProfitLoss = async (betId, userId) => {
@@ -466,7 +493,7 @@ exports.getSessionsProfitLoss = async (userId, matchId, searchId = null, roleNam
     );`, [userId, matchId, searchId, roleName])
 }
 
-exports.getUserWiseProfitLoss = async (userId, matchId,runnerId,userIds, searchId = null, roleName = null) => {
+exports.getUserWiseProfitLoss = async (userId, matchId, runnerId, userIds, searchId = null, roleName = null) => {
   return await BetPlaced.query(`SELECT *
     FROM "getUserWiseBetProfitLoss" (
             $1,
@@ -475,7 +502,7 @@ exports.getUserWiseProfitLoss = async (userId, matchId,runnerId,userIds, searchI
             $4,
             $5,
             $6
-    );`, [userId, matchId,runnerId, userIds,searchId, roleName])
+    );`, [userId, matchId, runnerId, userIds, searchId, roleName])
 }
 
 exports.getUserSessionsProfitLoss = async (where, select) => {

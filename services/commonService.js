@@ -1,5 +1,5 @@
 const { In, IsNull, LessThanOrEqual } = require("typeorm");
-const { socketData, betType, userRoleConstant, partnershipPrefixByRole, matchBettingType, redisKeys, marketBetType, gameType, betResultStatus, cardGameType, sessionBettingType, jwtSecret, demoRedisTimeOut, authenticatorType } = require("../config/contants");
+const { socketData, betType, userRoleConstant, partnershipPrefixByRole, matchBettingType, redisKeys, marketBetType, gameType, betResultStatus, cardGameType, sessionBettingType, jwtSecret, demoRedisTimeOut, authenticatorType, uplinePartnerShipForAllUsers } = require("../config/contants");
 const internalRedis = require("../config/internalRedisConnection");
 const { sendMessageToUser } = require("../sockets/socketManager");
 const { findAllPlacedBetWithUserIdAndBetId, getUserDistinctBets, getBetsWithUserRole, findAllPlacedBet, getMatchBetPlaceWithUserCard, getBetCountData, deleteBet } = require("./betPlacedService");
@@ -1747,4 +1747,10 @@ exports.getUserProfitLossMatch = async (user, matchId) => {
 
 exports.getQueryColumns = async (user, partnerShipRoleName) => {
   return partnerShipRoleName ? await this.profitLossPercentCol({ roleName: partnerShipRoleName }) : await this.profitLossPercentCol(user);
+}
+
+
+exports.getUpLinePartnerShipCalc=(roleName,user)=>{
+  return uplinePartnerShipForAllUsers[roleName]?.reduce((sum, field) => sum + (user[`${field}Partnership`] || 0), 0) ?? null;
+
 }
