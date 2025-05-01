@@ -49,7 +49,7 @@ exports.declareSessionResult = async (call) => {
   try {
     const { betId, score, matchId, sessionDetails, userId, match } = call.request;
 
-    const betPlaced = await getMatchBetPlaceWithUser([betId], ['"betPlaced".*', "user.id", "user.sessionCommission", "user.superParentId", "user.userName"]);
+    const betPlaced = await getMatchBetPlaceWithUser([betId]);
 
     logger.info({
       message: "Session result declared.",
