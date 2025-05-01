@@ -1427,7 +1427,9 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
 
     };
 
-    await PromiseLimit.map(users, user => processUser(user), { concurrency: 20 });
+    for (let user of users) {
+      await processUser(user);
+    }
     await Promise.all([updateUserPipeline.exec(), updateUserDeclareBalanceData(userUpdateDBData)]);
   }
   return { fwProfitLoss, faAdminCal: JSON.stringify(faAdminCal), superAdminData: JSON.stringify(superAdminData) };
