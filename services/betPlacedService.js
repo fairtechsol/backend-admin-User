@@ -198,23 +198,47 @@ exports.getMultipleAccountProfitLoss = async (betId, userIds) => {
   return result?.[0]?.profitLossData || {};
 };
 
-exports.getMultipleAccountOtherMatchProfitLoss = async (betId, userId) => {
 
-  const betPlaced = await BetPlaced.createQueryBuilder().select([
-    'SUM(CASE WHEN result = :winStatus THEN "winAmount" ELSE 0 END) AS "winAmount"',
-    'SUM(CASE WHEN result = :lossStatus THEN "lossAmount" ELSE 0 END) AS "lossAmount"',
-    'SUM(CASE WHEN result = :lossStatus AND "isCommissionActive"= true THEN "lossAmount" ELSE 0 END) AS "lossAmountCommission"',
-    'SUM(CASE WHEN result = :winStatus AND "isCommissionActive"= true THEN "winAmount" ELSE 0 END) AS "winAmountCommission"',
+exports.getMultipleAccountProfitLossTournament = async (betId, userIds) => {
+  const sql = `
+    SELECT
+      COALESCE(jsonb_object_agg(r.user_id, r.stats), '{}'::jsonb) AS "profitLossData"
+    FROM (
+      SELECT
+        u.user_id::text AS user_id,
+        jsonb_build_object(
+          'winAmount',
+            COALESCE(
+              SUM(bp."winAmount") FILTER (WHERE bp."result" = 'WIN'),
+              0
+            ),
+          'lossAmount',
+            COALESCE(
+              SUM(bp."lossAmount") FILTER (WHERE bp."result" = 'LOSS'),
+              0
+            ),
+            'lossAmountCommission',
+            COALESCE(
+              SUM(bp."lossAmount") FILTER (WHERE bp."result" = 'LOSS' AND bp."isCommissionActive"= true),
+              0
+            ),
+          'winAmountCommission',
+            COALESCE(
+              SUM(bp."winAmount") FILTER (WHERE bp."result" = 'WIN' AND bp."isCommissionActive"= true),
+              0
+            )
+        ) AS stats
+      FROM unnest($1::uuid[]) AS u(user_id)
+      LEFT JOIN "betPlaceds" bp
+        ON bp."betId"        = $2
+       AND bp."userId"       = u.user_id
+       AND bp."deleteReason" IS NULL
+      GROUP BY u.user_id
+    ) AS r;
+  `;
 
-  ])
-    .setParameter('winStatus', betResultStatus.WIN)
-    .setParameter('lossStatus', betResultStatus.LOSS)
-    .andWhere('"betId" IN (:...betIds)', { betIds: betId })
-    .andWhere('"userId" = :userId', { userId: userId })
-    .andWhere('"deleteReason" IS NULL')
-    .getRawOne();
-
-  return betPlaced;
+  const result = await BetPlaced.query(sql, [userIds, betId]);
+  return result?.[0]?.profitLossData || {};
 };
 
 exports.getMultipleAccountCardMatchProfitLoss = async (runnerId, userId) => {

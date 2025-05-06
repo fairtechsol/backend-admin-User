@@ -165,7 +165,7 @@ exports.declareSessionResult = async (call) => {
         marketType: item.marketType,
         marketBetType: item.marketBetType,
         eventName: item.eventName,
-      })
+      });
     }
 
     await addNewBet(updateRecords);
@@ -463,7 +463,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
       if (!user.user.isDemo) {
         const parentUsers = multiUserParentData[user.user.id] || [];
         for (const patentUser of parentUsers) {
-          let upLinePartnership = getUpLinePartnerShipCalc(patentUser.roleName, user.user) ?? 100;
+          const upLinePartnership = getUpLinePartnerShipCalc(patentUser.roleName, user.user) ?? 100;
           let myProfitLoss = (profitLoss * upLinePartnership) / 100;
 
           let parentCommission = roundToTwoDecimals(((parseFloat(patentUser?.sessionCommission) * parseFloat(bulkCommission?.[user.user.id]?.reduce((prev, curr) => prev + curr.amount, 0) || 0)) / 10000) * parseFloat(upLinePartnership));
