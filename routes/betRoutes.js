@@ -11,7 +11,7 @@ const delayMatchOddBet = require('../middleware/delayMatchOdd');
 router.get('/', isAuthenticate, getBet);
 router.get('/accountStatement', isAuthenticate, getAccountStatementBet);
 router.get('/session/profitLoss/:betId', isAuthenticate, getSessionProfitLoss);
-router.post('/session', apiLimiter, isAuthenticate, validator(SessionBetPlacedValidator), sessionBetPlace);
+router.post('/session', isAuthenticate, validator(SessionBetPlacedValidator), sessionBetPlace);
 router.post('/tournament', apiLimiter, isAuthenticate, delayMatchOddBet, validator(TournamentBetPlacedValidator), tournamentBettingBetPlaced);
 
 router.post('/cardBetting', apiLimiter, isAuthenticate, validator(CardBetPlacedValidator), cardBettingBetPlaced);
