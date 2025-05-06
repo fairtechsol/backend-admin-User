@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class GetSessionBetProfitLossSP1745496843591 {
-    name = 'GetSessionBetProfitLossSP1745496843591'
+module.exports = class GetSessionBetProfitLossSP1745496843593 {
+    name = 'GetSessionBetProfitLossSP1745496843594'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -36,7 +36,7 @@ BEGIN
     -- 1) build partnership expression once
     idx := array_position(role_hierarchy, p_role_name);
     IF idx IS NULL THEN
-        partnership_sql := '1';
+        partnership_sql := '100';
     ELSE
         FOR i IN 1..idx LOOP
             partnership_sql := partnership_sql || format(
@@ -86,7 +86,7 @@ $usql$, COALESCE(p_search_id, p_user_id))
 WITH RECURSIVE user_tree AS (%s)
 SELECT
    b."betId" as "betId",
- (Sum(CASE WHEN b.result = 'LOSS' then ROUND(b."lossAmount" / 100 * (%s), 2) ELSE 0 END) - Sum(CASE WHEN b.result = 'WIN' then ROUND(b."winAmount" / 100 * (%s), 2) ELSE 0 END)) as "totalLoss",
+  (CASE WHEN $2 = 'user' THEN -1 ELSE 1 END) * (Sum(CASE WHEN b.result = 'LOSS' then ROUND(b."lossAmount" / 100 * (%s), 2) ELSE 0 END) - Sum(CASE WHEN b.result = 'WIN' then ROUND(b."winAmount" / 100 * (%s), 2) ELSE 0 END)) as "totalLoss",
       b."eventName" as "eventName"
 FROM "betPlaceds" b
 JOIN user_tree ut ON ut.id = b."createBy"
@@ -101,7 +101,7 @@ $q$, user_tree_sql, partnership_sql, partnership_sql);
 
  -- Execute with optimized settings
     RETURN QUERY EXECUTE final_sql
-      USING  P_MATCH_ID;
+      USING  P_MATCH_ID, P_ROLE_NAME;
 END;
 $body$ LANGUAGE PLPGSQL STABLE;
 `);

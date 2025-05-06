@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class GetCombinedProfitLossSP1745496843592 {
-    name = 'GetCombinedProfitLossSP1745496843592'
+module.exports = class GetCombinedProfitLossSP1745496843593 {
+    name = 'GetCombinedProfitLossSP1745496843593'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -37,7 +37,7 @@ BEGIN
     -- 1) build partnership expression once
     idx := array_position(role_hierarchy, p_role_name);
     IF idx IS NULL THEN
-        partnership_sql := '1';
+        partnership_sql := '100';
     ELSE
         FOR i IN 1..idx LOOP
             partnership_sql := partnership_sql || format(
@@ -89,7 +89,7 @@ SELECT
   b."eventType",
     SUM(CASE WHEN b.result = 'WIN' AND b."bettingName" = 'MATCH_ODDS'
            THEN ROUND(b."winAmount"/100,2) ELSE 0 END)      AS total_deduction,
-  SUM(CASE WHEN b.result = 'LOSS'                
+ (CASE WHEN $5 = 'user' THEN -1 ELSE 1 END) * SUM(CASE WHEN b.result = 'LOSS'                
            THEN ROUND(b."lossAmount"/100 * (%s),2)
            WHEN b.result = 'WIN'
            THEN -ROUND(b."winAmount"/100 * (%s),2)
@@ -112,7 +112,7 @@ $q$, user_tree_sql, partnership_sql, partnership_sql);
  -- Execute with optimized settings
     PERFORM set_config('enable_nestloop', 'off', false);
     RETURN QUERY EXECUTE final_sql
-      USING p_start_date, p_end_date, p_event_type_filter, P_MATCH_ID;
+      USING p_start_date, p_end_date, p_event_type_filter, P_MATCH_ID, P_ROLE_NAME;
 END;
 $body$ LANGUAGE PLPGSQL STABLE;
 `);

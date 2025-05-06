@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class GetMatchWiseProfitLossSP1745496843592 {
-    name = 'GetMatchWiseProfitLossSP1745496843592'
+module.exports = class GetMatchWiseProfitLossSP1745496843595 {
+    name = 'GetMatchWiseProfitLossSP1745496843595'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -37,7 +37,7 @@ BEGIN
     -- Build partnership expression
     idx := array_position(role_hierarchy, P_ROLE_NAME);
     IF idx IS NULL THEN
-      partnership_expr := '1';
+      partnership_expr := '100';
     ELSE
       FOR i IN 1..idx LOOP
         partnership_expr := partnership_expr
@@ -98,7 +98,7 @@ WITH RECURSIVE user_tree AS (%s),
          b."matchId",
 
          -- rateProfitLoss
-         ( SUM(
+          (CASE WHEN $4 = 'user' THEN -1 ELSE 1 END) * ( SUM(
              CASE
                WHEN b.result = 'LOSS'
                     AND b."marketBetType" IN ('MATCHBETTING','RACING')
@@ -117,7 +117,7 @@ WITH RECURSIVE user_tree AS (%s),
          ) AS "rateProfitLoss",
 
          -- sessionProfitLoss
-         ( SUM(
+          (CASE WHEN $4 = 'user' THEN -1 ELSE 1 END) * ( SUM(
              CASE
                WHEN b.result = 'LOSS'
                     AND b."marketBetType" = 'SESSION'
@@ -188,7 +188,7 @@ $f$,
 
     -- Execute with the three filter parameters in order
     EXECUTE final_sql
-      USING P_START_DATE, P_END_DATE, P_EVENT_TYPE_FILTER
+      USING P_START_DATE, P_END_DATE, P_EVENT_TYPE_FILTER,P_ROLE_NAME
     INTO result_json;
 
     RETURN result_json;

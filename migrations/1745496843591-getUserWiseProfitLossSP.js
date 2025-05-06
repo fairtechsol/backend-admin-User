@@ -1,7 +1,7 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
-module.exports = class GetUserWiseProfitLossSP1745496843591 {
-    name = 'GetUserWiseProfitLossSP1745496843591'
+module.exports = class GetUserWiseProfitLossSP1745496843593 {
+    name = 'GetUserWiseProfitLossSP1745496843593'
 
     async up(queryRunner) {
         await queryRunner.query(`
@@ -41,7 +41,7 @@ BEGIN
     -- 1) build partnership expression once
     idx := array_position(role_hierarchy, p_role_name);
     IF idx IS NULL THEN
-        partnership_sql := '1';
+        partnership_sql := '100';
     ELSE
         FOR i IN 1..idx LOOP
             partnership_sql := partnership_sql || format(
