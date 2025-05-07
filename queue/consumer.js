@@ -1,7 +1,7 @@
 const Queue = require('bee-queue');
 const lodash = require('lodash');
 const { getUserRedisData, incrementValuesRedis } = require('../services/redis/commonfunction');
-const { redisKeys, userRoleConstant, socketData, partnershipPrefixByRole, sessionBettingType } = require('../config/contants');
+const { redisKeys, userRoleConstant, socketData, partnershipPrefixByRole, sessionBettingType, jobQueueConcurrent } = require('../config/contants');
 const { logger } = require('../config/logger');
 const { updateUserExposure } = require('../services/userBalanceService');
 const { calculateProfitLossSession, parseRedisData, calculateRacingExpertRate, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
@@ -42,7 +42,7 @@ const ExpertMatchTournamentBetQueue = new Queue('expertMatchTournamentBetQueue',
 const expertSessionBetDeleteQueue = new Queue('expertSessionBetDeleteQueue', externalRedisOption);
 const expertTournamentMatchBetDeleteQueue = new Queue('expertTournamentMatchBetDeleteQueue', externalRedisOption);
 
-SessionMatchBetQueue.process(async function (job, done) {
+SessionMatchBetQueue.process(jobQueueConcurrent, async function (job, done) {
   let jobData = job.data;
   let userId = jobData.userId;
   let userRedisData = await getUserRedisData(userId);
@@ -95,7 +95,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
     await updateUserExposure(userId, partnerSessionExposure);
     // updating redis
     await incrementValuesRedis(userId, { [redisKeys.userAllExposure]: partnerSessionExposure }, redisObj);
-  
+
     logger.info({
       message: "User exposure for session",
       data: {
@@ -230,7 +230,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
 };
 
 // calculate tournament bet place
-MatchTournamentBetQueue.process(async function (job, done) {
+MatchTournamentBetQueue.process(jobQueueConcurrent, async function (job, done) {
 
   let jobData = job.data;
   let userId = jobData.userId;
@@ -264,7 +264,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
   let userCurrentExposure = jobData.newUserExposure;
   let partnershipObj = JSON.parse(userRedisData.partnerShips || "{}");
 
-  let teamData = {...jobData?.newTeamRateData};
+  let teamData = { ...jobData?.newTeamRateData };
 
   let obj = {
     runners: jobData.runners,
@@ -302,7 +302,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
       (item) =>
         item != userRoleConstant.fairGameAdmin &&
         item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
-  )
+    )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
       // Check if partnershipId exists in partnershipObj
@@ -323,14 +323,14 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
             if (teamRates) {
               teamRates = JSON.parse(teamRates);
             }
-        
-            if(!teamRates){
+
+            if (!teamRates) {
               teamRates = jobData?.runners?.reduce((acc, key) => {
                 acc[key?.id] = 0;
                 return acc;
               }, {});
             }
-        
+
             teamRates = Object.keys(teamRates).reduce((acc, key) => {
               acc[key] = parseRedisData(key, teamRates);
               return acc;
@@ -340,8 +340,8 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
             let userRedisObj = {
               [`${jobData?.betId}${redisKeys.profitLoss}_${jobData?.matchId}`]: JSON.stringify(teamData)
             }
-            
-             // updating redis
+
+            // updating redis
             await incrementValuesRedis(partnershipId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure }, userRedisObj);
 
             jobData.myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
@@ -366,7 +366,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
     });
 }
 
-CardMatchBetQueue.process(async function (job, done) {
+CardMatchBetQueue.process(jobQueueConcurrent, async function (job, done) {
 
   let jobData = job.data;
   let userId = jobData.userId;
@@ -431,7 +431,7 @@ let calculateCardMatchRateAmount = async (userRedisData, jobData, userId) => {
       (item) =>
         item != userRoleConstant.fairGameAdmin &&
         item != userRoleConstant.fairGameWallet && item != userRoleConstant.expert
-  )
+    )
     ?.map(async (item) => {
       let partnerShipKey = `${partnershipPrefixByRole[item]}`;
       // Check if partnershipId exists in partnershipObj
@@ -450,13 +450,13 @@ let calculateCardMatchRateAmount = async (userRedisData, jobData, userId) => {
             let teamRates = masterRedisData?.[`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`];
 
             let cardProfitLossAndExposure = new CardProfitLoss(jobData?.matchType, teamRates, { bettingType: jobData?.bettingType, winAmount: jobData?.winAmount, lossAmount: jobData?.lossAmount, playerName: jobData?.betOnTeam, partnership: partnership, sid: jobData?.selectionId }, userOldExposure).getCardGameProfitLoss()
-          
+
             let teamData = cardProfitLossAndExposure.profitLoss;
             let userRedisObj = {
               [`${jobData?.mid}_${jobData?.selectionId}${redisKeys.card}`]: teamData
             }
-            
-             // updating redis
+
+            // updating redis
             await incrementValuesRedis(partnershipId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure }, userRedisObj);
 
             jobData.myStake = Number(((jobData.stake / 100) * partnership).toFixed(2));
@@ -487,6 +487,6 @@ module.exports = {
   ExpertSessionBetQueue: ExpertSessionBetQueue,
   CardMatchBetQueue: CardMatchBetQueue,
   WalletCardMatchBetQueue: WalletCardMatchBetQueue,
-  walletSessionBetDeleteQueue, expertSessionBetDeleteQueue,  
+  walletSessionBetDeleteQueue, expertSessionBetDeleteQueue,
   ExpertMatchTournamentBetQueue, WalletMatchTournamentBetQueue, MatchTournamentBetQueue, walletTournamentMatchBetDeleteQueue, expertTournamentMatchBetDeleteQueue
 };
