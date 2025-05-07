@@ -11,7 +11,8 @@ CREATE OR REPLACE FUNCTION "getUserWiseBetProfitLoss" (
 	P_RUNNER_ID          UUID,
 	P_USER_IDS          UUID[]         DEFAULT NULL,
     P_SEARCH_ID         UUID           DEFAULT NULL,
-    P_ROLE_NAME         TEXT           DEFAULT NULL
+    P_ROLE_NAME         TEXT           DEFAULT NULL,
+    P_USER_ROLE_NAME         TEXT           DEFAULT NULL
 ) RETURNS TABLE (
 "matchId" UUID, 
 "rateProfitLoss"  NUMERIC,
@@ -145,13 +146,13 @@ $q$, user_tree_sql, partnership_sql, partnership_sql,partnership_sql,partnership
 
  -- Execute with optimized settings
     RETURN QUERY EXECUTE final_sql
-      USING  P_MATCH_ID,P_USER_IDS,P_USER_ID,P_SEARCH_ID,P_ROLE_NAME;
+      USING  P_MATCH_ID,P_USER_IDS,P_USER_ID,P_SEARCH_ID,P_USER_ROLE_NAME;
 END;
 $body$ LANGUAGE PLPGSQL STABLE;
 `);
     }
 
     async down(queryRunner) {
-        await queryRunner.query(`DROP FUNCTION IF EXISTS "getUserWiseBetProfitLoss" (UUID, UUID, UUID, UUID[], UUID, TEXT);`);
+        await queryRunner.query(`DROP FUNCTION IF EXISTS "getUserWiseBetProfitLoss" (UUID, UUID, UUID, UUID[], UUID, TEXT,TEXT);`);
     }
 }

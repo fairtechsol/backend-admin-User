@@ -517,7 +517,7 @@ exports.getSessionsProfitLoss = async (userId, matchId, searchId = null, roleNam
     );`, [userId, matchId, searchId, roleName])
 }
 
-exports.getUserWiseProfitLoss = async (userId, matchId, runnerId, userIds, searchId = null, roleName = null) => {
+exports.getUserWiseProfitLoss = async (userId, matchId, runnerId, userIds, searchId = null, roleName = null, userRole = null) => {
   return await BetPlaced.query(`SELECT *
     FROM "getUserWiseBetProfitLoss" (
             $1,
@@ -525,8 +525,9 @@ exports.getUserWiseProfitLoss = async (userId, matchId, runnerId, userIds, searc
             $3,
             $4,
             $5,
-            $6
-    );`, [userId, matchId, runnerId, userIds, searchId, roleName])
+            $6,
+            $7
+    );`, [userId, matchId, runnerId, userIds, searchId, roleName, userRole])
 }
 
 exports.getUserSessionsProfitLoss = async (where, select) => {
