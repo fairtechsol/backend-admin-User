@@ -1031,7 +1031,7 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
       match: {}
     };
 
-    
+
 
     const bets = await getBetsWithUserRole(users?.map((item) => item.id), { eventType: (matchGametype || In([gameType.cricket, gameType.politics, gameType.football, gameType.tennis])) });
 
@@ -1750,7 +1750,12 @@ exports.getQueryColumns = async (user, partnerShipRoleName) => {
 }
 
 
-exports.getUpLinePartnerShipCalc=(roleName,user)=>{
+exports.getUpLinePartnerShipCalc = (roleName, user) => {
   return uplinePartnerShipForAllUsers[roleName]?.reduce((sum, field) => sum + (user[`${field}Partnership`] || 0), 0) ?? null;
 
 }
+
+exports.convertToBatches = (n, obj) => Array.from(
+  { length: Math.ceil(Object.keys(obj).length / n) },
+  (_, i) => Object.fromEntries(Object.entries(obj).slice(i * n, i * n + n))
+);

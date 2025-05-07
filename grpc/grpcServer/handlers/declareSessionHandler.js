@@ -28,6 +28,7 @@ const {
   calculateProfitLossSessionCasinoCricket,
   calculateProfitLossSessionFancy1,
   getUpLinePartnerShipCalc,
+  convertToBatches,
 } = require("../../../services/commonService");
 
 const { getUserRedisMultiKeyData } = require("../../../services/redis/commonfunction");
@@ -272,7 +273,11 @@ exports.declareSessionResult = async (call) => {
         }
       });
 
-      await Promise.all([updatePipeline.exec(), updateUserDeclareBalanceData(upperUserObj)]);
+      await updatePipeline.exec();
+      const updateUserBatch = convertToBatches(500, upperUserObj);
+      for (let i = 0; i < updateUserBatch.length; i++) {
+        await updateUserDeclareBalanceData(updateUserBatch[i]);
+      }
     }
 
     insertBulkCommissions(commissionReport);
@@ -537,7 +542,12 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
     }
 
     await PromiseLimit.map(users, user => processUser(user), { concurrency: 20 });
-    await Promise.all([updateUserPipeline.exec(), updateUserDeclareBalanceData(userUpdateDBData)]);
+
+    await updateUserPipeline.exec();
+    const updateUserBatch = convertToBatches(500, userUpdateDBData);
+    for (let i = 0; i < updateUserBatch.length; i++) {
+      await updateUserDeclareBalanceData(updateUserBatch[i]);
+    }
   }
 
   return { fwProfitLoss, faAdminCal: JSON.stringify(faAdminCal), superAdminData: JSON.stringify(superAdminData), bulkCommission: JSON.stringify(bulkCommission) };
@@ -633,7 +643,11 @@ exports.declareSessionNoResult = async (call) => {
         }
       });
 
-      await Promise.all([updatePipeline.exec(), updateUserDeclareBalanceData(upperUserObj)]);
+      await updatePipeline.exec();
+      const updateUserBatch = convertToBatches(500, upperUserObj);
+      for (let i = 0; i < updateUserBatch.length; i++) {
+        await updateUserDeclareBalanceData(updateUserBatch[i]);
+      }
     }
     return { data: profitLossData }
 
@@ -761,7 +775,12 @@ const calculateMaxLossSessionForUserNoResult = async (
     }
 
     await PromiseLimit.map(users, user => processUser(user), { concurrency: 20 });
-    await Promise.all([updateUserPipeline.exec(), updateUserDeclareBalanceData(userUpdateDBData)]);
+
+    await updateUserPipeline.exec();
+    const updateUserBatch = convertToBatches(500, userUpdateDBData);
+    for (let i = 0; i < updateUserBatch.length; i++) {
+      await updateUserDeclareBalanceData(updateUserBatch[i]);
+    }
   }
   return { faAdminCal: JSON.stringify(faAdminCal), superAdminData: JSON.stringify(superAdminData) };
 };
@@ -880,7 +899,11 @@ exports.unDeclareSessionResult = async (call) => {
         }
       });
 
-      await Promise.all([updatePipeline.exec(), updateUserDeclareBalanceData(upperUserObj)]);
+      await updatePipeline.exec();
+      const updateUserBatch = convertToBatches(500, upperUserObj);
+      for (let i = 0; i < updateUserBatch.length; i++) {
+        await updateUserDeclareBalanceData(updateUserBatch[i]);
+      }
     }
     let userIds = users.map(user => user.createBy);
     await updatePlaceBet(
@@ -1430,7 +1453,11 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
     for (let user of users) {
       await processUser(user);
     }
-    await Promise.all([updateUserPipeline.exec(), updateUserDeclareBalanceData(userUpdateDBData)]);
+    await updateUserPipeline.exec();
+    const updateUserBatch = convertToBatches(500, userUpdateDBData);
+    for (let i = 0; i < updateUserBatch.length; i++) {
+      await updateUserDeclareBalanceData(updateUserBatch[i]);
+    }
   }
   return { fwProfitLoss, faAdminCal: JSON.stringify(faAdminCal), superAdminData: JSON.stringify(superAdminData) };
 }
