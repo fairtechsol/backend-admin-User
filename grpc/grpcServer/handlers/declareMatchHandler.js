@@ -271,7 +271,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
     let superAdminData = {};
 
     let fwProfitLoss = 0;
-    const userIds = users?.map((item) => item?.id);
+    const userIds = users?.map((item) => item?.user?.id);
 
     const [
         userRedisData,
@@ -644,11 +644,11 @@ exports.unDeclareTournamentMatchResult = async (call) => {
         let bulkWalletRecord = [];
         const commissionData = await getCombinedCommission(matchBetting?.id);
 
-        let matchOddsWinBets = await findAllPlacedBet({
+        let matchOddsWinBets = (await findAllPlacedBet({
             bettingName: matchOddName,
             result: betResultStatus.WIN,
             matchId: matchId,
-        })?.reduce((prev, curr) => {
+        }))?.reduce((prev, curr) => {
             if (!prev[curr.createBy]) {
                 prev[curr.createBy] = []
             }
@@ -804,7 +804,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
     let parentCommissionIds = new Set();
     let fwProfitLoss = 0;
 
-    const userIds = users?.map((item) => item?.id);
+    const userIds = users?.map((item) => item?.user?.id);
 
     const [
         userRedisData,
