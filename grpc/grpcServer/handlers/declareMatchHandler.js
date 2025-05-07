@@ -271,7 +271,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
     let superAdminData = {};
 
     let fwProfitLoss = 0;
-    const userIds = users?.map((item) => item?.user?.id);
+    const userIds = users?.map((item) => item?.id);
 
     const [
         userRedisData,
