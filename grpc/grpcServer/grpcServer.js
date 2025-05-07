@@ -76,7 +76,10 @@ class Server {
    */
   constructor(port = GRPC_PORT, protoOptionsArray = []) {
     this.port = port; // Port to bind the server
-    this.server = new GrpcServer(); // Initialize the gRPC server
+    this.server = new GrpcServer({
+      'grpc.max_receive_message_length': -1,
+      'grpc.max_send_message_length': -1
+    }); // Initialize the gRPC server
     this.impl = {}; // Store service implementations
     this.services = this.loadProtoServices(protoOptionsArray); // Load proto services
     this.refServices = this.loadReflectionProtoServices(protoOptionsArray); // Load proto services

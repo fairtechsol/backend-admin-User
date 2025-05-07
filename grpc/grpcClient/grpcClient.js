@@ -37,8 +37,27 @@ class GrpcClient {
         options
       );
       const grpcObject = grpc.loadPackageDefinition(packageDefinition);
-      let grpcObj = lodash.get(grpcObject, `${protoOptions.package}.${protoOptions.service}`);
-      clients[protoOptions.service] = new grpcObj(this.serverAddress, ...(process.env.NODE_ENV == "production" || process.env.NODE_ENV == "dev" ? [grpc.credentials.createSsl()] : [grpc.credentials.createInsecure()]));
+      const ServiceCtor = lodash.get(
+        grpcObject,
+        `${protoOptions.package}.${protoOptions.service}`
+      );
+
+      // set unlimited message size on both send and receive
+      const channelOptions = {
+        "grpc.max_receive_message_length": -1, // unlimited inbound
+        "grpc.max_send_message_length":    -1  // unlimited outbound
+      };
+
+      const creds =
+        process.env.NODE_ENV === "production" || process.env.NODE_ENV === "dev"
+          ? grpc.credentials.createSsl()
+          : grpc.credentials.createInsecure();
+
+      clients[protoOptions.service] = new ServiceCtor(
+        this.serverAddress,
+        creds,
+        channelOptions
+      );
     });
     return clients;
   }
