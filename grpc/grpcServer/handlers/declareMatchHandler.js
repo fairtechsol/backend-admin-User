@@ -888,7 +888,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
 
         // deducting 1% from match odd win amount 
         if (getWinAmount > 0 && isMatchOdd) {
-            profitLoss -= getWinAmount;
+            profitLoss -= roundToTwoDecimals(getWinAmount / 100);
         }
 
         const userCurrBalance = roundToTwoDecimals(user.user.userBalance.currentBalance - profitLoss);
