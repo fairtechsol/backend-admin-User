@@ -123,7 +123,7 @@ exports.getAccountStatBet = async (where, query, select) => {
               END`, `betPlaced_teamName`)
     .setParameter("bettingType", [...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `overUnder${index}.5`)), ...(Array.from({ length: 20 }, (_, index) => index).map((_, index) => `firstHalfGoal${index}.5`))])
     .select(select).orderBy("betPlaced.createdAt", 'DESC');
-  const [ data, count ] = await new ApiFeature(
+  const [data, count] = await new ApiFeature(
     pgQuery,
     query
   )
@@ -249,14 +249,14 @@ exports.getMultipleAccountCardMatchProfitLoss = async (runnerId, userId) => {
   return betPlaced;
 };
 
-exports.findAllPlacedBet = async (whereObj,select) => {
+exports.findAllPlacedBet = async (whereObj, select) => {
   return await BetPlaced.find({
     where: whereObj,
     select: select
   });
 }
 
-exports.findAllPlacedBetWithUserIdAndBetId = async (userId, betId,where) => {
+exports.findAllPlacedBetWithUserIdAndBetId = async (userId, betId, where) => {
   return await BetPlaced.find({
     where: {
       betId: betId,
@@ -273,24 +273,24 @@ exports.updatePlaceBet = async (conditionObj, updateColumsObj) => {
 
 exports.getDistinctUserBetPlaced = async (betId) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
-  .where({ betId: betId, deleteReason: IsNull() })
-  .innerJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
-  .leftJoinAndMapOne("user.userBalance", "userBalance", 'userBalance', 'user.id = userBalance.userId')
-  .distinctOn(['user.id'])
-  .getMany()
+    .where({ betId: betId, deleteReason: IsNull() })
+    .innerJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
+    .leftJoinAndMapOne("user.userBalance", "userBalance", 'userBalance', 'user.id = userBalance.userId')
+    .distinctOn(['user.id'])
+    .getMany()
   return betPlaced;
 }
 
-exports.getUserDistinctBets = async (userId,where) => {
+exports.getUserDistinctBets = async (userId, where) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
     .where({ createBy: userId, result: In([betResultStatus.PENDING]), deleteReason: IsNull(), ...(where || {}) })
-    .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType","betPlaced.marketType","betPlaced.eventType"])
+    .select(["betPlaced.betId", "betPlaced.matchId", "betPlaced.marketBetType", "betPlaced.marketType", "betPlaced.eventType"])
     .distinctOn(['betPlaced.betId'])
     .getMany()
   return betPlaced;
 }
 
-exports.getBetsWithUserRole = async (ids,where) => {
+exports.getBetsWithUserRole = async (ids, where) => {
   let betPlaced = await BetPlaced.createQueryBuilder()
     .leftJoinAndMapOne("betPlaced.user", "user", 'user', 'betPlaced.createBy = user.id')
     .where({ createBy: In(ids), result: betResultStatus.PENDING, deleteReason: IsNull(), ...(where || {}) })
@@ -308,7 +308,7 @@ exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, key
   if (endDate) {
     profitLoss.andWhere(`"betPlaced"."createdAt" <= :endDate`, { endDate: endDate });
   }
-  if(keyword){
+  if (keyword) {
     profitLoss.andWhere(`betPlaced.eventType ILIKE :search`, { search: `%${keyword}%` });
   }
   const count = await profitLoss.select("COUNT(DISTINCT(betPlaced.marketType, betPlaced.eventType))", "count").getRawOne();
@@ -322,9 +322,9 @@ exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, key
       `"eventType"`,
     ]).orderBy('betPlaced.eventType', 'ASC');
 
-    if (page) {
-      profitLoss = profitLoss.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
-    }
+  if (page) {
+    profitLoss = profitLoss.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
+  }
   let profitLossData = await profitLoss.getRawMany();
   return { profitLossData, count }
 }
@@ -492,7 +492,7 @@ exports.getAllRacinMatchTotalProfitLoss = async (where, startDate, endDate, sele
   return { result, count };
 }
 
-exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selectArray,subQuery) => {
+exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, subQuery) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.match", "cardMatch", 'match', 'placeBet.matchId = match.id')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
@@ -525,7 +525,7 @@ exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selec
   return { result };
 }
 
-exports.getBetsProfitLoss = async (where, totalLoss, subQuery,domain) => {
+exports.getBetsProfitLoss = async (where, totalLoss, subQuery, domain) => {
   let query = BetPlaced.createQueryBuilder('placeBet')
     .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
     // .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
@@ -678,7 +678,9 @@ exports.getChildUsersPlaceBets = (id, matchId) => {
     SELECT ur.id, ur."roleName", ur."createBy"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId"  where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' ${matchId ? 'and "matchId"=$2' : ""}`, [id, ...(matchId ? [matchId] : [])]);
+  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId" 
+  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" 
+  where "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' ${matchId ? 'and "matchId"=$2' : ""}`, [id, ...(matchId ? [matchId] : [])]);
 }
 
 exports.pendingCasinoResult = () => {
@@ -706,25 +708,27 @@ exports.deleteBet = async (where) => {
 exports.getChildUsersPlaceBetsByBetId = (id, betIds) => {
 
   return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
-    SELECT id, "roleName", "createBy"
+    SELECT id, "roleName", "createBy", "userName"
     FROM public.users
     WHERE id = $1
     UNION
-    SELECT ur.id, ur."roleName", ur."createBy"
+    SELECT ur.id, ur."roleName", ur."createBy", ur."userName"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' and "betPlaceds"."betId" In ('${betIds.join("','")}')`, [id]);
+  ) select "betPlaceds".* , rh.id , rh."userName" from "betPlaceds" 
+  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" where "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' and "betPlaceds"."betId" In ('${betIds.join("','")}')`, [id]);
 }
 
 exports.getChildUsersAllPlaceBets = (id) => {
 
   return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
-    SELECT id, "roleName", "createBy"
+    SELECT id, "roleName", "createBy", "userName"
     FROM public.users
     WHERE id = $1
     UNION
-    SELECT ur.id, ur."roleName", ur."createBy"
+    SELECT ur.id, ur."roleName", ur."createBy", ur."userName"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' ${matchId ? 'and "matchId"=$2' : ""}`, [id, matchId]);
+  ) select "betPlaceds".* , rh.id , rh."userName" from "betPlaceds" 
+  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" where "betPlaceds".result = 'PENDING' ${matchId ? 'and "matchId"=$2' : ""}`, [id, matchId]);
 }
