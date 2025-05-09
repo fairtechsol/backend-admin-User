@@ -419,7 +419,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
               odds: item?.odds,
               betType: item?.betType,
               stake: item?.stake,
-              commissionAmount: parseFloat((parseFloat(item?.amount) * parseFloat(user?.user?.sessionCommission) / 100).toFixed(2)),
+              commissionAmount: roundToTwoDecimals(parseFloat(item?.amount) * parseFloat(user?.user?.sessionCommission) / 100),
               partnerShip: 100,
               matchName: match?.title,
               matchStartDate: new Date(match?.startAt),
