@@ -45,7 +45,6 @@ const { IsNull, In } = require("typeorm");
 const internalRedis = require("../../../config/internalRedisConnection");
 const { roundToTwoDecimals } = require("../../../utils/mathUtils");
 
-
 exports.declareSessionResult = async (call) => {
   try {
     const { betId, score, matchId, sessionDetails, userId, match } = call.request;
@@ -552,7 +551,6 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
 
   return { fwProfitLoss, faAdminCal: JSON.stringify(faAdminCal), superAdminData: JSON.stringify(superAdminData), bulkCommission: JSON.stringify(bulkCommission) };
 }
-
 
 exports.declareSessionNoResult = async (call) => {
   try {

@@ -12,6 +12,8 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const mac88Games = require("../config/mac88.json");
 const moment = require("moment/moment");
+const { roundToTwoDecimals } = require("../utils/mathUtils");
+const { declareVirtualCasinoResultHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
 
 exports.loginMac88Casino = async (req, res) => {
     try {
@@ -82,7 +84,8 @@ exports.getBalanceMac88 = async (req, res) => {
 
 exports.getBetsMac88 = async (req, res) => {
     try {
-        const { userId, betType, debitAmount, gameId, operatorId, reqId, roundId, runnerName, token, transactionId } = req.body;
+        const { userId, betType, gameId, operatorId, reqId, roundId, runnerName, token, transactionId } = req.body;
+        const debitAmount = roundToTwoDecimals(req.body.debitAmount || 0);
 
         if (!gameId || gameId == "" || !transactionId || transactionId == "" || reqId == "" || !reqId) {
             return res.status(400).json({
@@ -182,7 +185,8 @@ exports.getBetsMac88 = async (req, res) => {
 
 exports.resultRequestMac88 = async (req, res) => {
     try {
-        const { userId, creditAmount, gameId, reqId, transactionId } = req.body;
+        const { userId, gameId, reqId, transactionId } = req.body;
+        const creditAmount = roundToTwoDecimals(req.body.creditAmount || 0);
 
         if (!gameId || gameId == "" || !transactionId || transactionId == "" || reqId == "" || !reqId) {
             return res.status(400).json({
@@ -364,7 +368,7 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
             message: `wallet data for virtual casino result declare: `,
             data: walletData
         });
-        apiCall(apiMethod.post, walletDomain + allApiRoutes.WALLET.virtualCasinoResult, walletData);
+        declareVirtualCasinoResultHandler({ data: JSON.stringify(walletData) });
     }
     catch (error) {
         logger.error({
@@ -378,8 +382,9 @@ const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, 
 
 exports.rollBackRequestMac88 = async (req, res) => {
     try {
-        const { userId, rollbackAmount: creditAmount, transactionId, gameId, reqId } = req.body;
-
+        const { userId, transactionId, gameId, reqId } = req.body;
+        const creditAmount = roundToTwoDecimals(req.body.rollbackAmount || 0);
+        
         if (!gameId || gameId == "" || !transactionId || transactionId == "" || reqId == "" || !reqId) {
             return res.status(400).json({
                 "status": "OP_INVALID_PARAMS"
