@@ -14,6 +14,10 @@ router.post('/balance', verifyRSA, getBalanceMac88);
 router.post('/betrequest', verifyRSA, getBetsMac88);
 router.post('/resultrequest', verifyRSA, resultRequestMac88);
 router.post('/rollbackrequest', verifyRSA, rollBackRequestMac88);
+
+router.post('/resultrequestTest', resultRequestMac88);
+router.post('/rollbackrequestTest', rollBackRequestMac88);
+
 router.get('/mac88/bets/:userId',isAuthenticate, getBetVirtualGames);
 router.get('/mac88/providers', isAuthenticate, getProviderList);
 
