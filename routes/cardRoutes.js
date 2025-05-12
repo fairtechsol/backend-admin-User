@@ -6,4 +6,5 @@ const router = express.Router();
 router.get("/result/:type", isAuthenticate, getCardResultByFGWallet);
 router.get("/result/detail/:id", isAuthenticate, getCardResultDetailByFGWallet);
 
+
 module.exports = router;

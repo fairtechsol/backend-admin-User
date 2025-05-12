@@ -76,7 +76,7 @@ exports.updateUserBalance = async (req, res) => {
 
       let updateMyProfitLoss = parseFloat(amount);
       if (parseFloat(insertUserBalanceData.myProfitLoss) + parseFloat(amount) > 0) {
-        updateMyProfitLoss = insertUserBalanceData.myProfitLoss
+        updateMyProfitLoss = -insertUserBalanceData.myProfitLoss
         updatedUpdateUserBalanceData.myProfitLoss = 0;
       }
       else {
@@ -87,12 +87,13 @@ exports.updateUserBalance = async (req, res) => {
       //   user.id,
       //   updatedUpdateUserBalanceData
       // );
-      await updateUserBalanceData(user.id, { 
-        profitLoss: parseFloat(amount), 
-        myProfitLoss: updateMyProfitLoss, 
-        exposure: 0, 
-        totalCommission: 0, 
-        balance: parseFloat(amount)});
+      await updateUserBalanceData(user.id, {
+        profitLoss: parseFloat(amount),
+        myProfitLoss: updateMyProfitLoss,
+        exposure: 0,
+        totalCommission: 0,
+        balance: parseFloat(amount)
+      });
 
       if (userExistRedis) {
         await updateUserDataRedis(userId, updatedUpdateUserBalanceData);
@@ -100,7 +101,7 @@ exports.updateUserBalance = async (req, res) => {
 
       updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
       loginUserBalanceChagne = -parseFloat(amount);
-     
+
     } else if (transactionType == transType.withDraw) {
       insertUserBalanceData = usersBalanceData[1];
       if (amount > insertUserBalanceData.currentBalance - (user.roleName == userRoleConstant.user ? insertUserBalanceData.exposure : 0))
@@ -112,10 +113,8 @@ exports.updateUserBalance = async (req, res) => {
           req,
           res
         );
-      updatedUpdateUserBalanceData.currentBalance =
-        parseFloat(insertUserBalanceData.currentBalance) - parseFloat(amount);
-      updatedUpdateUserBalanceData.profitLoss =
-        parseFloat(insertUserBalanceData.profitLoss) - parseFloat(amount);
+      updatedUpdateUserBalanceData.currentBalance = parseFloat(insertUserBalanceData.currentBalance) - parseFloat(amount);
+      updatedUpdateUserBalanceData.profitLoss = parseFloat(insertUserBalanceData.profitLoss) - parseFloat(amount);
 
       let updateMyProfitLoss = -parseFloat(amount);
       if (parseFloat(insertUserBalanceData.myProfitLoss) - parseFloat(amount) < 0) {
@@ -129,12 +128,13 @@ exports.updateUserBalance = async (req, res) => {
       //   user.id,
       //   updatedUpdateUserBalanceData
       // );
-      await updateUserBalanceData(user.id, { 
-        profitLoss: -parseFloat(amount), 
-        myProfitLoss: updateMyProfitLoss, 
-        exposure: 0, 
-        totalCommission: 0, 
-        balance: -parseFloat(amount)});
+      await updateUserBalanceData(user.id, {
+        profitLoss: -parseFloat(amount),
+        myProfitLoss: updateMyProfitLoss,
+        exposure: 0,
+        totalCommission: 0,
+        balance: -parseFloat(amount)
+      });
 
       if (userExistRedis) {
         await updateUserDataRedis(userId, updatedUpdateUserBalanceData);
@@ -153,12 +153,13 @@ exports.updateUserBalance = async (req, res) => {
       );
     }
 
-    await updateUserBalanceData(reqUser.id, { 
-      profitLoss: 0, 
-      myProfitLoss: 0, 
-      exposure: 0, 
-      totalCommission: 0, 
-      balance: loginUserBalanceChagne});
+    await updateUserBalanceData(reqUser.id, {
+      profitLoss: 0,
+      myProfitLoss: 0,
+      exposure: 0,
+      totalCommission: 0,
+      balance: loginUserBalanceChagne
+    });
     // let newLoginUserBalanceData = await updateUserBalanceByUserId(
     //   reqUser.id,
     //   updatedLoginUserBalanceData
