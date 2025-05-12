@@ -1068,7 +1068,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
             amount: -profitLoss,
             transType: -profitLoss < 0 ? transType.loss : transType.win,
             closingBalance: userCurrBalance,
-            description: `Revert ${user?.eventType}/${user?.eventName}/session`,
+            description: `Revert ${user?.eventType}/${user?.eventName}/${resultDeclare.type}`,
             betId: [betId],
             type: transactionType.sports
           }
