@@ -67,7 +67,7 @@ message UnDeclareSessionRequest {
 
 message UnDeclareSessionResponse {
   message Data{
-   int64 fwProfitLoss=1;
+   float fwProfitLoss=1;
    string faAdminCal=2;
    string superAdminData=3;
   }
