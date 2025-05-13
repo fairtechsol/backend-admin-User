@@ -797,6 +797,9 @@ $body$ LANGUAGE PLPGSQL STABLE;
                         FROM users u
                         JOIN rec r ON u."createBy" = r.id AND r.root_id <> createBy
                         WHERE u."createBy" <> createBy  -- Prevent infinite recursion
+                          AND (userBlock IS NULL OR u."userBlock" = userBlock)
+                          AND (betBlock IS NULL OR u."betBlock" = betBlock)
+                          AND (orVal IS NULL OR u."betBlock" = true OR u."userBlock" = true)
                       ),
                       child_sums AS (
                         SELECT
@@ -885,8 +888,8 @@ $body$ LANGUAGE PLPGSQL STABLE;
                         
                          -- Build WHERE conditions using parameterized format
                           where_conditions := CONCAT(
-                            CASE WHEN p_user_block IS NOT NULL THEN ' AND p."userBlock" = ' || p_user_block::TEXT END,
-                            CASE WHEN p_bet_block IS NOT NULL THEN ' AND p."betBlock" = ' || p_bet_block::TEXT END,
+                            CASE WHEN p_user_block IS NOT NULL THEN ' AND p."userBlock" = ' || p_user_block::BOOLEAN END,
+                            CASE WHEN p_bet_block IS NOT NULL THEN ' AND p."betBlock" = ' || p_bet_block::BOOLEAN END,
                             CASE WHEN p_or_val THEN ' AND (p."betBlock" OR p."userBlock")' END
                           );
                         
@@ -906,24 +909,23 @@ $body$ LANGUAGE PLPGSQL STABLE;
                           query_text := format(
                            'WITH user_balances AS (
                               SELECT
-                                SUM(u."creditRefrence") as "totalCreditReference",
+                                SUM(p."creditRefrence") as "totalCreditReference",
                                 SUM(UB."profitLoss") as "profitsum",
                                 SUM(UB."downLevelBalance") as "downLevelBalance",
                                 SUM(UB."currentBalance") as "availableBalance",
                                 SUM(UB.exposure) as "totalExposure",
-                                SUM(ub.exposure) FILTER (WHERE u."roleName" = ''user'') AS "totalExposureOnlyUser",
+                                SUM(ub.exposure) FILTER (WHERE p."roleName" = ''user'') AS "totalExposureOnlyUser",
                                 SUM(UB."totalCommission") as "totalcommission",
                                 ROUND(SUM(ub."profitLoss" / 100 * (%s)), 2)  as "percentprofitloss"
-                              FROM users u
-                              LEFT JOIN "userBalances" UB ON u.id = UB."userId"
-                              WHERE u."createBy" = $1
-                                AND u."roleName" <> $2
-                                AND u."deletedAt" IS NULL
+                              FROM users p
+                              LEFT JOIN "userBalances" UB ON p.id = UB."userId"
+                              WHERE p."createBy" = $1 %s
+                                AND p."roleName" <> $2
+                                AND p."deletedAt" IS NULL
                             )
                             SELECT row_to_json(user_balances) FROM user_balances',
-                            partnership_columns
+                            partnership_columns, where_conditions
                           );
-                        
                           EXECUTE query_text INTO total_balance USING p_user_id, p_role_name;
                         
                           -- Child balance calculation
@@ -940,7 +942,7 @@ $body$ LANGUAGE PLPGSQL STABLE;
                             WHERE p.id <> $1 %s AND "p"."deletedAt" IS NULL',
                             where_conditions
                           );
-                        
+                          
                           EXECUTE query_text INTO child_balance USING p_user_id;
                         
                           -- Final result construction
