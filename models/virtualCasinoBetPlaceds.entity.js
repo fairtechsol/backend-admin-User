@@ -67,7 +67,11 @@ const virtualCasinoBetPlacedSchema = new EntitySchema({
   indices: [
     {
       name: 'user_userId',   // index name should be start with the table name
-      columns: ['id', 'userId'],
+      columns: ['createdAt', 'userId'],
+    },
+    {
+      name: 'user_transactionId',   // index name should be start with the table name
+      columns: ['transactionId'],
     }
   ],
 });

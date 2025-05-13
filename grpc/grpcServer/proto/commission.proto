@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package grpc.commissionProvider;
+
+message CommissionReportRequest {
+  string userId = 1;
+  string query = 2;  // JSON stringified query parameters
+}
+
+message CommissionBetRequest {
+  string userId = 1;
+  string matchId = 2;  // JSON stringified query parameters 
+}
+
+message CommissionReportResponse {
+  string data = 1;
+}
+
+message CommissionBetResponse {
+  string data = 1;
+}
+
+message SettleCommissionRequest {
+  string userId = 1;
+}
+
+message SettleCommissionResponse {
+}
+
+service CommissionProvider {
+  rpc GetCommissionReport(CommissionReportRequest) returns (CommissionReportResponse);
+  rpc GetCommissionBetReport(CommissionBetRequest) returns (CommissionBetResponse);
+  rpc SettleCommission(SettleCommissionRequest) returns (SettleCommissionResponse);
+}

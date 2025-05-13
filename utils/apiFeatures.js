@@ -137,6 +137,7 @@ class ApiFeature {
   parseFilterValue(value) {
     // Parse the filter value to extract operator and actual value
     const operators = ["eq", "gte", "lte", "gt", "lt", "ne", "between", "inArr", "isNull", "notNull", "like"]; // Add more operators as needed
+    value=value?.toString();
     const [operator] = operators.filter((op) => value?.startsWith(`${op}`));
 
     if (operator) {

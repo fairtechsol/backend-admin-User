@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package grpc.userProvider;
+
+// Message for creating a new user
+message CreateSuperAdminRequest {
+    string data = 1;
+  }
+  
+  // Response after creating a user
+  message CreateSuperAdminResponse {}
+
+message UpdateSuperAdminRequest {
+    string data = 1;
+  }
+  
+  // Response after creating a user
+message UpdateSuperAdminResponse {}
+
+message ChangePasswordRequest {
+    string password = 1;
+    string userId = 2;
+  }
+  
+  // Response after creating a user
+message ChangePasswordResponse {}
+
+
+// Message for setting exposure limit
+message SetExposureLimitRequest {
+    string userId = 1;
+    float exposureLimit = 2;
+  }
+  
+message SetExposureLimitResponse {}
+  
+// Message for setting credit reference
+message SetCreditReferenceRequest {
+    string userId = 1;
+    float amount = 2;
+    string remark = 3;
+  }
+  
+message SetCreditReferenceResponse {}
+
+// Message for updating user balance
+message UpdateUserBalanceRequest {
+    string userId = 1;
+    float amount = 2;
+    string transactionType = 3;
+    string remark = 4;
+}
+
+message UpdateUserBalanceResponse {}
+
+// Message for locking/unlocking a super admin
+message LockUnlockSuperAdminRequest {
+    string userId = 1;
+    string loginId = 2;
+    bool betBlock = 3;
+    bool userBlock = 4;
+}
+
+message LockUnlockSuperAdminResponse {}
+
+// Message for getting user list
+message GetUserListRequest {
+    string query = 1;
+}
+
+message GetUserListResponse {
+    string data = 1;
+}
+
+// Message for getting total user list balance
+message GetTotalUserListBalanceRequest {
+    string query = 1;
+}
+
+message GetTotalUserListBalanceResponse {
+    string data = 1;
+}
+
+// Message for getting user balance sum
+message UserBalanceSumRequest {
+    string roleName = 1;
+    string userId = 2;
+}
+
+message UserBalanceSumResponse {
+    string data = 1;
+}
+
+// Message for getting user profit loss
+message GetUserProfitLossRequest {
+    string userIds = 1;
+    string matchId = 2;
+}
+
+message GetUserProfitLossResponse {
+    string data = 1;
+}
+
+// Message for deleting a user
+message DeleteUserRequest {
+    string roleName = 1;
+    string userId = 2;
+}
+
+message DeleteUserResponse {}
+
+// Message for checking user balance before deletion  
+message CheckUserBalanceRequest {
+    string roleName = 1;
+    string userId = 2;
+}
+
+message CheckUserBalanceResponse {}
+
+// Message for user search
+message UserSearchRequest {
+    string id = 1;
+    string roleName = 2;
+    string userName = 3;
+    bool isUser = 4;
+}
+
+message UserSearchResponse {
+    string data = 1;
+}
+
+// Service for user management
+service UserService {
+  rpc CreateSuperAdmin(CreateSuperAdminRequest) returns (CreateSuperAdminResponse);
+  rpc UpdateSuperAdmin(UpdateSuperAdminRequest) returns (UpdateSuperAdminResponse);
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  rpc SetExposureLimit(SetExposureLimitRequest) returns (SetExposureLimitResponse);
+  rpc SetCreditReference(SetCreditReferenceRequest) returns (SetCreditReferenceResponse);
+  rpc UpdateUserBalance(UpdateUserBalanceRequest) returns (UpdateUserBalanceResponse);
+  rpc LockUnlockSuperAdmin(LockUnlockSuperAdminRequest) returns (LockUnlockSuperAdminResponse);
+  rpc GetUserList(GetUserListRequest) returns (GetUserListResponse);
+  rpc GetTotalUserListBalance(GetTotalUserListBalanceRequest) returns (GetTotalUserListBalanceResponse);
+  rpc UserBalanceSum(UserBalanceSumRequest) returns (UserBalanceSumResponse);
+  rpc GetUserProfitLoss(GetUserProfitLossRequest) returns (GetUserProfitLossResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  rpc CheckUserBalance(CheckUserBalanceRequest) returns (CheckUserBalanceResponse);
+  rpc UserSearch(UserSearchRequest) returns (UserSearchResponse);
+}

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package grpc.cardProvider;
+
+message DeclareCardResultRequest {
+  string  result=1;
+  string matchDetails=2;
+  string type=3;
+}
+
+message DeclareCardResultResponse {
+  string data = 1; 
+}
+
+message GetCardTotalProfitLossRequest {
+  string user = 1;
+  string startDate = 2;
+  string endDate = 3;
+  string searchId = 4;
+  string partnerShipRoleName=5;
+}
+
+message GetCardTotalProfitLossResponse {
+  string data = 1;
+}
+
+message GetCardDomainProfitLossRequest {
+  string user = 1;
+  string startDate = 2;
+  string endDate = 3;
+  string searchId = 4;
+  string matchId = 5;
+}
+
+message GetCardDomainProfitLossResponse {
+  string data = 1;
+}
+
+message GetCardResultBetProfitLossRequest {
+  string user = 1;
+  string runnerId = 2;
+  string searchId = 3;
+  string partnerShipRoleName = 4;
+}
+
+message GetCardResultBetProfitLossResponse {
+  string data = 1;
+}
+
+service CardService {
+  rpc DeclareCard(DeclareCardResultRequest) returns (DeclareCardResultResponse);
+  rpc GetCardTotalProfitLoss(GetCardTotalProfitLossRequest) returns (GetCardTotalProfitLossResponse);
+  rpc GetCardDomainProfitLoss(GetCardDomainProfitLossRequest) returns (GetCardDomainProfitLossResponse);
+  rpc GetCardResultBetProfitLoss(GetCardResultBetProfitLossRequest) returns (GetCardResultBetProfitLossResponse);
+}

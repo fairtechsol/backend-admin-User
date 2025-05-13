@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package grpc.userProvider;
+
+// Message for notifications
+message NotificationRequest {
+  string query = 1;
+}
+
+message NotificationResponse {
+  string data = 1;
+}
+// Request message for updating balance via API call
+message UpdateBalanceAPICallRequest {
+    string userId = 1;
+    float balance = 2;
+}
+  
+  // Response message for updating balance
+message UpdateBalanceAPICallResponse {}
+
+
+// Get partnership IDs (parents)
+message GetPartnershipIdRequest {
+    string userId = 1;
+  }
+  
+  message GetPartnershipIdResponse {
+    string data = 1;
+  }
+  
+  // Lock/Unlock user from user panel
+  message LockUnlockUserByUserPanelRequest {
+    string userId = 1;
+    bool userBlock = 2;
+    string parentId = 3;
+    bool autoBlock = 4;
+  }
+  
+  message LockUnlockUserByUserPanelResponse {}
+  
+
+// Service for user management
+service UserService {
+  rpc GetNotification(NotificationRequest) returns (NotificationResponse);
+  rpc UpdateBalanceAPICall(UpdateBalanceAPICallRequest) returns (UpdateBalanceAPICallResponse);
+  rpc GetPartnershipId(GetPartnershipIdRequest) returns (GetPartnershipIdResponse);
+  rpc LockUnlockUserByUserPanel(LockUnlockUserByUserPanelRequest) returns (LockUnlockUserByUserPanelResponse);
+}

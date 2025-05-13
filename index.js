@@ -19,6 +19,7 @@ const path = require("path");
 require('./config/telegramBot.js');
 // const encryptDecryptData = require("./middleware/encryptDecryptData.js");
 const compression = require('compression');
+require("./grpc/index");
 
 // Create Express app
 const app = express();

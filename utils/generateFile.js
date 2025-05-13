@@ -41,7 +41,7 @@ class FileGenerate {
    * @returns {Promise<string>} - The generated PDF file name.
    */
   async generatePdf(formattedData, headers, heading) {
-    pdfMake.vfs = pdfFonts.pdfMake.vfs;
+    pdfMake.vfs = pdfFonts;
     const pdfHeaders = headers.map((item) => {
       return { text: item.excelHeader, color: "#ffffff", fillColor: '#2d4154' };
     });
