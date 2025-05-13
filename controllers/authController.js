@@ -169,7 +169,7 @@ exports.login = async (req, res) => {
     // force logout user if already login on another device
     await forceLogoutIfLogin(user.id);
 
-    setUserDetailsRedis(user);
+    await setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, roleName: user.roleName, userName: user.userName, isAuthenticatorEnable: user.isAuthenticatorEnable },
