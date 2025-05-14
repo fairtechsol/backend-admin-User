@@ -1,10 +1,10 @@
 const { MigrationInterface, QueryRunner } = require("typeorm");
 
 module.exports = class GetCombinedProfitLossSP1745496843593 {
-    name = 'GetCombinedProfitLossSP1745496843593'
+  name = 'GetCombinedProfitLossSP1745496843593'
 
-    async up(queryRunner) {
-        await queryRunner.query(`
+  async up(queryRunner) {
+    await queryRunner.query(`
 CREATE OR REPLACE FUNCTION "getCombinedProfitLoss" (
     P_USER_ID UUID,
     P_SEARCH_ID UUID DEFAULT NULL,
@@ -117,8 +117,8 @@ END;
 $body$ LANGUAGE PLPGSQL STABLE;
 `);
 
-        //get match wise profitloss
-        await queryRunner.query(`
+    //get match wise profitloss
+    await queryRunner.query(`
     CREATE OR REPLACE FUNCTION "getMatchWiseProfitLoss" (
         P_USER_ID           UUID,
         P_SEARCH_ID         UUID           DEFAULT NULL,
@@ -310,8 +310,8 @@ $body$ LANGUAGE PLPGSQL STABLE;
     $$;
     `);
 
-        //get result bet profitloss
-        await queryRunner.query(`
+    //get result bet profitloss
+    await queryRunner.query(`
         CREATE OR REPLACE FUNCTION "getResultBetProfitLoss" (
             P_USER_ID           UUID,
             P_MATCH_ID          UUID,
@@ -448,8 +448,8 @@ $body$ LANGUAGE PLPGSQL STABLE;
         $body$ LANGUAGE PLPGSQL STABLE;
         `);
 
-        //get session bet profitloss
-        await queryRunner.query(`
+    //get session bet profitloss
+    await queryRunner.query(`
             CREATE OR REPLACE FUNCTION "getSessionBetProfitLoss" (
                 P_USER_ID           UUID,
                 P_MATCH_ID          UUID,
@@ -551,8 +551,8 @@ $body$ LANGUAGE PLPGSQL STABLE;
             $body$ LANGUAGE PLPGSQL STABLE;
             `);
 
-        //get userwise profitloss
-        await queryRunner.query(`
+    //get userwise profitloss
+    await queryRunner.query(`
                 CREATE OR REPLACE FUNCTION "getUserWiseBetProfitLoss" (
                     P_USER_ID           UUID,
                     P_MATCH_ID          UUID,
@@ -699,8 +699,8 @@ $body$ LANGUAGE PLPGSQL STABLE;
                 $body$ LANGUAGE PLPGSQL STABLE;
                 `);
 
-        //get user list
-        await queryRunner.query(`
+    //get user list
+    await queryRunner.query(`
                     CREATE OR REPLACE FUNCTION fetchUserList(
                       createBy uuid,
                       excludeRole users_rolename_enum,
@@ -862,110 +862,104 @@ $body$ LANGUAGE PLPGSQL STABLE;
                     $$;
                     `);
 
-        //user total balance
-        await queryRunner.query(`
-                        CREATE OR REPLACE FUNCTION getUserTotalBalance(
-                          p_user_id UUID,
-                          p_role_name users_rolename_enum,
-                          p_user_block BOOLEAN DEFAULT NULL,
-                          p_bet_block BOOLEAN DEFAULT NULL,
-                          p_or_val BOOLEAN DEFAULT NULL
-                        )
-                        RETURNS JSON
-                        LANGUAGE plpgsql
-                        PARALLEL SAFE  -- Enable parallel execution
-                        AS $$
-                        DECLARE
-                          total_balance JSON;
-                          child_balance NUMERIC;
-                          query_text TEXT;
-                          where_conditions TEXT := '';
-                          partnership_columns TEXT;
-                        BEGIN
-                         -- Set parallel-friendly settings
-                          PERFORM set_config('enable_nestloop', 'off', true);
-                          PERFORM set_config('enable_parallel_hash', 'on', true);
-                        
-                         -- Build WHERE conditions using parameterized format
-                          where_conditions := CONCAT(
-                            CASE WHEN p_user_block IS NOT NULL THEN ' AND p."userBlock" = ' || p_user_block::BOOLEAN END,
-                            CASE WHEN p_bet_block IS NOT NULL THEN ' AND p."betBlock" = ' || p_bet_block::BOOLEAN END,
-                            CASE WHEN p_or_val THEN ' AND (p."betBlock" OR p."userBlock")' END
-                          );
-                        
-                          -- Determine percentage calculation based on role
-                         partnership_columns := CASE p_role_name
-                            WHEN 'fairGameWallet' THEN '"fwPartnership"'
-                            WHEN 'fairGameAdmin' THEN '"faPartnership" + "fwPartnership"'
-                            WHEN 'superAdmin' THEN '"saPartnership" + "faPartnership" + "fwPartnership"'
-                            WHEN 'admin' THEN '"aPartnership" + "saPartnership" + "faPartnership" + "fwPartnership"'
-                            WHEN 'superMaster' THEN '"smPartnership" + "aPartnership" + "saPartnership" + "faPartnership" + "fwPartnership"'
-                            WHEN 'master' THEN '"mPartnership" + "smPartnership" + "aPartnership" + "saPartnership" + "faPartnership" + "fwPartnership"'
-                            WHEN 'agent' THEN '"agPartnership" + "mPartnership" + "smPartnership" + "aPartnership" + "saPartnership" + "faPartnership" + "fwPartnership"'
-                            ELSE '0'
-                          END;
-                        
-                          -- Main balance query
-                          query_text := format(
-                           'WITH user_balances AS (
-                              SELECT
-                                SUM(p."creditRefrence") as "totalCreditReference",
-                                SUM(UB."profitLoss") as "profitsum",
-                                SUM(UB."downLevelBalance") as "downLevelBalance",
-                                SUM(UB."currentBalance") as "availableBalance",
-                                SUM(UB.exposure) as "totalExposure",
-                                SUM(ub.exposure) FILTER (WHERE p."roleName" = ''user'') AS "totalExposureOnlyUser",
-                                SUM(UB."totalCommission") as "totalcommission",
-                                ROUND(SUM(ub."profitLoss" / 100 * (%s)), 2)  as "percentprofitloss"
-                              FROM users p
-                              LEFT JOIN "userBalances" UB ON p.id = UB."userId"
-                              WHERE p."createBy" = $1 %s
-                                AND p."roleName" <> $2
-                                AND p."deletedAt" IS NULL
-                            )
-                            SELECT row_to_json(user_balances) FROM user_balances',
-                            partnership_columns, where_conditions
-                          );
-                          EXECUTE query_text INTO total_balance USING p_user_id, p_role_name;
-                        
-                          -- Child balance calculation
-                          query_text := format(
-                           'WITH RECURSIVE p AS (
-                              SELECT * FROM users WHERE users.id = $1
-                              UNION
-                              SELECT lowerU.* FROM users lowerU
-                              JOIN p ON lowerU."createBy" = p.id
-                            )
-                            SELECT SUM(UB."currentBalance")
-                            FROM p
-                            JOIN "userBalances" UB ON UB."userId" = p.id
-                            WHERE p.id <> $1 %s AND "p"."deletedAt" IS NULL',
-                            where_conditions
-                          );
-                          
-                          EXECUTE query_text INTO child_balance USING p_user_id;
-                        
-                          -- Final result construction
-                          total_balance := jsonb_set(
-                            total_balance::jsonb,
-                            '{availableBalance}',
-                            to_jsonb(
-                              (total_balance->>'availableBalance')::numeric - 
-                              (total_balance->>'totalExposureOnlyUser')::numeric
-                            )
-                          );
-                        
-                          total_balance := jsonb_set(
-                            total_balance::jsonb,
-                            '{currBalance}',
-                            to_jsonb(child_balance)
-                          );
-                          RETURN total_balance;
+    //user total balance
+    await queryRunner.query(`
+                        CREATE OR REPLACE FUNCTION getUserTotalBalance(p_user_id UUID, p_role_name users_rolename_enum, p_user_block BOOLEAN DEFAULT NULL, p_bet_block BOOLEAN DEFAULT NULL, p_or_val BOOLEAN DEFAULT NULL)
+                      RETURNS JSON
+                      LANGUAGE plpgsql
+                      PARALLEL SAFE  -- Enable parallel execution
+                      AS $$
+                      DECLARE
+                        total_balance JSON;
+                        child_balance NUMERIC;
+                        query_text TEXT;
+                        where_conditions TEXT := '';
+                        partnership_columns TEXT;
+                      BEGIN
+                      -- Set parallel-friendly settings
+                        PERFORM set_config('enable_nestloop', 'off', true);
+                        PERFORM set_config('enable_parallel_hash', 'on', true);
+
+                      -- Build WHERE conditions using parameterized format
+                        where_conditions := CONCAT(
+                        CASE WHEN p_user_block IS NOT NULL THEN ' AND p."userBlock" = ' || p_user_block::BOOLEAN END,
+                        CASE WHEN p_bet_block IS NOT NULL THEN ' AND p."betBlock" = ' || p_bet_block::BOOLEAN END,
+                        CASE WHEN p_or_val THEN ' AND (p."betBlock" OR p."userBlock")' END
+                        );
+
+                        -- Determine percentage calculation based on role
+                      partnership_columns := CASE p_role_name
+                        WHEN 'fairGameWallet' THEN '"fwPartnership"'
+                        WHEN 'fairGameAdmin' THEN '"faPartnership" + "fwPartnership"'
+                        WHEN 'superAdmin' THEN '"saPartnership" + "faPartnership" + "fwPartnership"'
+                        WHEN 'admin' THEN '"aPartnership" + "saPartnership" + "faPartnership" + "fwPartnership"'
+                        WHEN 'superMaster' THEN '"smPartnership" + "aPartnership" + "saPartnership" + "faPartnership" + "fwPartnership"'
+                        WHEN 'master' THEN '"mPartnership" + "smPartnership" + "aPartnership" + "saPartnership" + "faPartnership" + "fwPartnership"'
+                        WHEN 'agent' THEN '"agPartnership" + "mPartnership" + "smPartnership" + "aPartnership" + "saPartnership" + "faPartnership" + "fwPartnership"'
+                        ELSE '0'
                         END;
-                        $$;
+
+                        -- Main balance query
+                        query_text := format(
+                        'WITH user_balances AS (
+                          SELECT
+                          SUM(p."creditRefrence") as "totalCreditReference",
+                          SUM(UB."profitLoss") as "profitsum",
+                          SUM(UB."downLevelBalance") as "downLevelBalance",
+                          SUM(UB."currentBalance") as "availableBalance",
+                          SUM(UB.exposure) as "totalExposure",
+                          COALESCE(SUM(ub.exposure) FILTER (WHERE p."roleName" = ''user''), 0) AS "totalExposureOnlyUser",
+                          SUM(UB."totalCommission") as "totalcommission",
+                          ROUND(SUM(ub."profitLoss" / 100 * (%s)), 2)  as "percentprofitloss"
+                          FROM users p
+                          LEFT JOIN "userBalances" UB ON p.id = UB."userId"
+                          WHERE p."createBy" = $1 %s
+                          AND p."roleName" <> $2
+                          AND p."deletedAt" IS NULL
+                        )
+                        SELECT row_to_json(user_balances) FROM user_balances',
+                        partnership_columns, where_conditions
+                        );
+                        EXECUTE query_text INTO total_balance USING p_user_id, p_role_name;
+
+                        -- Child balance calculation
+                        query_text := format(
+                        'WITH RECURSIVE p AS (
+                          SELECT * FROM users WHERE users.id = $1
+                          UNION
+                          SELECT lowerU.* FROM users lowerU
+                          JOIN p ON lowerU."createBy" = p.id
+                        )
+                        SELECT SUM(UB."currentBalance")
+                        FROM p
+                        JOIN "userBalances" UB ON UB."userId" = p.id
+                        WHERE p.id <> $1 %s AND "p"."deletedAt" IS NULL',
+                        where_conditions
+                        );
+                        
+                        EXECUTE query_text INTO child_balance USING p_user_id;
+
+                        -- Final result construction
+                        total_balance := jsonb_set(
+                        total_balance::jsonb,
+                        '{availableBalance}',
+                        to_jsonb(
+                          (total_balance->>'availableBalance')::numeric - 
+                          (total_balance->>'totalExposureOnlyUser')::numeric
+                        )
+                        );
+
+                        total_balance := jsonb_set(
+                        total_balance::jsonb,
+                        '{currBalance}',
+                        to_jsonb(child_balance)
+                        );
+                        RETURN total_balance;
+                      END;
+                      $$;
                         `);
-        //declare balance update
-        await queryRunner.query(`
+    //declare balance update
+    await queryRunner.query(`
                             CREATE OR REPLACE FUNCTION "updateUserBalancesBatch"(pUpdates JSONB)
                             RETURNS VOID
                             LANGUAGE SQL
@@ -990,16 +984,16 @@ $body$ LANGUAGE PLPGSQL STABLE;
                               WHERE ub."userId" = d.userId;
                             $$;
                             `);
-    }
+  }
 
-    async down(queryRunner) {
-        await queryRunner.query(`DROP FUNCTION IF EXISTS "getCombinedProfitLoss" (UUID, UUID, TIMESTAMP, TIMESTAMP, TEXT, TEXT, UUID);`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS "getMatchWiseProfitLoss" (UUID, UUID, TIMESTAMP, TIMESTAMP, TEXT, TEXT, UUID,NUMERIC,NUMERIC);`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS "getResultBetProfitLoss" (UUID, UUID,UUID, TEXT, BOOLEAN, UUID, TEXT);`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS "getSessionBetProfitLoss" (UUID, UUID,UUID, TEXT);`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS "getUserWiseBetProfitLoss" (UUID, UUID, UUID, UUID[], UUID, TEXT,TEXT);`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS fetchUserList(uuid, users_rolename_enum, text[], integer, integer,text,boolean,boolean,boolean);`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS getUserTotalBalance(uuid, users_rolename_enum, boolean, boolean, boolean);`);
-        await queryRunner.query(`DROP FUNCTION IF EXISTS "updateUserBalancesBatch"(JSONB);`);
-    }
+  async down(queryRunner) {
+    await queryRunner.query(`DROP FUNCTION IF EXISTS "getCombinedProfitLoss" (UUID, UUID, TIMESTAMP, TIMESTAMP, TEXT, TEXT, UUID);`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS "getMatchWiseProfitLoss" (UUID, UUID, TIMESTAMP, TIMESTAMP, TEXT, TEXT, UUID,NUMERIC,NUMERIC);`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS "getResultBetProfitLoss" (UUID, UUID,UUID, TEXT, BOOLEAN, UUID, TEXT);`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS "getSessionBetProfitLoss" (UUID, UUID,UUID, TEXT);`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS "getUserWiseBetProfitLoss" (UUID, UUID, UUID, UUID[], UUID, TEXT,TEXT);`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS fetchUserList(uuid, users_rolename_enum, text[], integer, integer,text,boolean,boolean,boolean);`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS getUserTotalBalance(uuid, users_rolename_enum, boolean, boolean, boolean);`);
+    await queryRunner.query(`DROP FUNCTION IF EXISTS "updateUserBalancesBatch"(JSONB);`);
+  }
 }
