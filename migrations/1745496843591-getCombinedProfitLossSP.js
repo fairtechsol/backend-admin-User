@@ -797,9 +797,6 @@ $body$ LANGUAGE PLPGSQL STABLE;
                         FROM users u
                         JOIN rec r ON u."createBy" = r.id AND r.root_id <> createBy
                         WHERE u."createBy" <> createBy  -- Prevent infinite recursion
-                          AND (userBlock IS NULL OR u."userBlock" = userBlock)
-                          AND (betBlock IS NULL OR u."betBlock" = betBlock)
-                          AND (orVal IS NULL OR u."betBlock" = true OR u."userBlock" = true)
                       ),
                       child_sums AS (
                         SELECT
@@ -924,16 +921,15 @@ $body$ LANGUAGE PLPGSQL STABLE;
 
                         -- Child balance calculation
                         query_text := format(
-                        'WITH RECURSIVE p AS (
-                          SELECT * FROM users WHERE users.id = $1
+                        'WITH RECURSIVE child AS (
+                          SELECT id, "deletedAt", "createBy", "userBlock", "betBlock"  FROM users WHERE users.id = $1
                           UNION
-                          SELECT lowerU.* FROM users lowerU
-                          JOIN p ON lowerU."createBy" = p.id
-                        )
+                          SELECT p.id, p."deletedAt", p."createBy", p."userBlock", p."betBlock" FROM users p
+                          JOIN child ON p."createBy" = child.id and ( (p."createBy" = $1 %s) or p."createBy" <> $1) )
                         SELECT SUM(UB."currentBalance")
-                        FROM p
-                        JOIN "userBalances" UB ON UB."userId" = p.id
-                        WHERE p.id <> $1 %s AND "p"."deletedAt" IS NULL',
+                        FROM child
+                        JOIN "userBalances" UB ON UB."userId" = child.id
+                        WHERE child.id <> $1 AND "child"."deletedAt" IS NULL',
                         where_conditions
                         );
                         
