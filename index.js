@@ -67,7 +67,7 @@ app.use((req, res, next) => {
   const body = JSON.stringify(req.body);
   const query = JSON.stringify(req.query);
   const params = JSON.stringify(req.params);
-  logger.debug(`Request [From:${ip}] ${req.path} || ${req.method} || query: ${query} || params: ${params} || body: ${body}`);
+  logger.debug(`Request [From:${ip}] ${req.path} || ${req.method} || query: ${query} || params: ${params} || body: ${body} || token : ${req.headers?.authorization}`);
   next();
 });
 

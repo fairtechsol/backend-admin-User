@@ -1,5 +1,6 @@
 const grpc = require("@grpc/grpc-js");
 const protoLoader = require("@grpc/proto-loader");
+const lodash = require("lodash");
 
 /**
  * GrpcClient class for managing gRPC clients and making RPC calls.
@@ -36,9 +37,27 @@ class GrpcClient {
         options
       );
       const grpcObject = grpc.loadPackageDefinition(packageDefinition);
-      clients[protoOptions.service] = new grpcObject[protoOptions.package][
-        protoOptions.service
-      ](this.serverAddress, grpc.credentials.createInsecure());
+      const ServiceCtor = lodash.get(
+        grpcObject,
+        `${protoOptions.package}.${protoOptions.service}`
+      );
+
+      // set unlimited message size on both send and receive
+      const channelOptions = {
+        "grpc.max_receive_message_length": -1, // unlimited inbound
+        "grpc.max_send_message_length":    -1  // unlimited outbound
+      };
+
+      const creds =
+        process.env.NODE_ENV === "production" || process.env.NODE_ENV === "dev"
+          ? grpc.credentials.createSsl()
+          : grpc.credentials.createInsecure();
+
+      clients[protoOptions.service] = new ServiceCtor(
+        this.serverAddress,
+        creds,
+        channelOptions
+      );
     });
     return clients;
   }

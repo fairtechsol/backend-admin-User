@@ -1,5 +1,5 @@
-const { In } = require("typeorm");
-const { expertDomain, redisKeys, userRoleConstant, oldBetFairDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, matchBettingType, cardGames } = require("../config/contants");
+const { In, IsNull } = require("typeorm");
+const { redisKeys, userRoleConstant, oldBetFairDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, matchBettingType, cardGames, betResultStatus } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId } = require("../services/betPlacedService");
 const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKeyData } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getChildUser, getUser } = require("../services/userService");
@@ -8,7 +8,7 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const { listMatch, getMatchList } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
-const { calculateProfitLossForCardMatchToResult, calculateRatesRacingMatch, getUserExposuresGameWise, getUserExposuresTournament, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getUserProfitLossTournament, getVirtualCasinoExposure } = require("../services/commonService");
+const { calculateProfitLossForCardMatchToResult, calculateRatesRacingMatch, getUserExposuresGameWise, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getVirtualCasinoExposure } = require("../services/commonService");
 const { getMatchDetailsHandler, getRaceDetailsHandler, getMatchListHandler, getRaceListHandler, getRaceCountryCodeListHandler, getTournamentBettingHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 
 exports.matchDetails = async (req, res) => {
@@ -272,7 +272,7 @@ exports.listMatch = async (req, res) => {
     if (user.roleName != userRoleConstant.user && oldBetFairDomain == domainUrl) {
       const users = await getChildsWithOnlyUserRole(user.id);
 
-      const betPlaced = await findAllPlacedBet({ createBy: In(users?.map((item) => item.id)) });
+      const betPlaced = await findAllPlacedBet({ createBy: In(users?.map((item) => item.id)), result: betResultStatus.PENDING });
 
       for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
         let matchDetail = apiResponse.data?.matches[i];
@@ -395,7 +395,7 @@ exports.marketAnalysis = async (req, res) => {
         for (let item of matchesBetsByUsers) {
           const currMatchDetail = result.findIndex((items) => items?.matchId == item?.matchId);
           if (item?.marketBetType == marketBetType.SESSION) {
-            const currRedisData = JSON.parse(redisData?.[item?.betId + redisKeys.profitLoss]);
+            const currRedisData = JSON.parse(redisData?.[item?.betId + redisKeys.profitLoss]||"{}");
             if (currMatchDetail == -1) {
               result.push({
                 title: item?.title,
@@ -430,7 +430,7 @@ exports.marketAnalysis = async (req, res) => {
 
             if (item?.marketType == matchBettingType.tournament) {
               currRedisData = {};
-              let currBetPL = JSON.parse(redisData[item?.betId + redisKeys.profitLoss + "_" + item?.matchId]);
+              let currBetPL = JSON.parse(redisData[item?.betId + redisKeys.profitLoss + "_" + item?.matchId]||"{}");
               teams = currMatchData?.tournament?.find((items) => items?.id == item?.betId)?.runners?.sort((a, b) => a.sortPriority - b.sortPriority)?.map((items, i) => {
                 currRedisData[String.fromCharCode(97 + i)] = currBetPL[items?.id];
                 return items?.runnerName
@@ -475,7 +475,7 @@ exports.marketAnalysis = async (req, res) => {
     }
     else {
       const user = await getUser({ id: userId });
-      const [matchData, tournamentData] = await Promise.all([getUserProfitLossMatch(user, matchId), getUserProfitLossTournament(user, matchId)]);
+      const matchData = await getUserProfitLossMatch(user, matchId);
       let matchDetails;
 
       try {
@@ -506,7 +506,7 @@ exports.marketAnalysis = async (req, res) => {
         }
       }
 
-      for (let item of Object.values(tournamentData)) {
+      for (let item of Object.values(matchData?.match)) {
         let { betDetails, data } = item;
         let currRedisData = {}, teams;
         let currBetPL = data[betDetails?.betId + redisKeys.profitLoss + "_" + betDetails?.matchId];
@@ -630,25 +630,17 @@ exports.userEventWiseExposure = async (req, res) => {
     const user = await getUser({ id: userId });
 
     const eventNameByMatchId = {};
-    const matchList = await getMatchList({ stopAt: null }, ["id", "matchType", "title"]);
+    const matchList = await getMatchList({ stopAt: IsNull() }, ["id", "matchType", "title"]);
 
     for (let item of matchList) {
       eventNameByMatchId[item.id] = { type: item.matchType, name: item.title };
     }
 
     const result = {};
-    let gamesExposure = await getUserExposuresGameWise(user);
-    let tournamentExposure = await getUserExposuresTournament(user);
+    let gamesExposure = await getUserExposuresGameWise(user, {...eventNameByMatchId});
 
-    const allMatchBetData = { ...(gamesExposure || {}) };
-    Object.keys(tournamentExposure).forEach((item) => {
-      if (allMatchBetData[item]) {
-        allMatchBetData[item] += tournamentExposure[item];
-      }
-      else {
-        allMatchBetData[item] = tournamentExposure[item];
-      }
-    });
+    const allMatchBetData = gamesExposure || {};
+  
     if (Object.keys(allMatchBetData || {}).length) {
       for (let item of Object.keys(allMatchBetData)) {
         if (eventNameByMatchId[item]) {
@@ -679,7 +671,7 @@ exports.userEventWiseExposure = async (req, res) => {
       match: virtualCasinoData?.list?.map((item) => {
         return { name: item.gameName, type: item.providerName, exposure: Math.abs(item.totalAmount) }
       })
-    }
+    };
 
     return SuccessResponse(
       {

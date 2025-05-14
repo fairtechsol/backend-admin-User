@@ -1,7 +1,7 @@
 const mac88Games = require("./mac88.json");
 
 
-module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "127.0.0.1:60600";
+module.exports.expertDomain = process.env.EXPERT_DOMAIN_URL || "localhost:60600";
 module.exports.walletDomain = process.env.WALLET_DOMAIN_URL || "127.0.0.1:50500";
 module.exports.microServiceDomain = process.env.MICROSERVICEURL || "http://localhost:3200";
 module.exports.casinoMicroServiceDomain = process.env.CASINOMICROSERVICEURL || "http://localhost:3201";
@@ -12,7 +12,7 @@ module.exports.mac88Domain = process.env.MAC_88_DOMAIN || "https://dev-api.dream
 module.exports.mac88CasinoPPK = process.env.MAC88_PRIVATE_KEY;
 module.exports.mac88CasinoOperatorId = process.env.MAC88_OPERATOR_ID;
 module.exports.maxAmount = 999999999;
-
+module.exports.jobQueueConcurrent = process.env.JOB_QUEUE_CONCURRENT || 5;
 
 module.exports.resultType = {
   tie: "Tie",
@@ -227,7 +227,10 @@ module.exports.redisKeys = {
   authenticatorToken: "authenticatorToken",
   telegramToken: "telegramToken",
   profitLoss: "_profitLoss",
-  card: "_card"
+  card: "_card",
+  notification:"notification",
+  banner:"banner",
+  blinkingTabs:"blinkingTabs"
 }
 
 module.exports.betResultStatus = {

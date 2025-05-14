@@ -1,7 +1,7 @@
 const betPlacedService = require('../services/betPlacedService');
 const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
-const { betStatusType, teamStatus, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, expertDomain, partnershipPrefixByRole, microServiceDomain, casinoMicroServiceDomain, cardGameType, sessionBettingType, oldBetFairDomain } = require("../config/contants");
+const { betStatusType, teamStatus, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, partnershipPrefixByRole, microServiceDomain, casinoMicroServiceDomain, cardGameType, sessionBettingType, oldBetFairDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
 const { getUserRedisData, getUserRedisKey, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
@@ -13,7 +13,7 @@ let lodash = require("lodash");
 const { getCardMatch } = require('../services/cardMatchService');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 const { getMatchData } = require('../services/matchService');
-const { getTournamentBettingHandler, getSessionDetailsHandler } = require('../grpc/grpcClient/handlers/expert/matchHandler');
+const { getSessionDetailsHandler, getTournamentBettingHandler } = require('../grpc/grpcClient/handlers/expert/matchHandler');
 
 exports.getBet = async (req, res) => {
   try {
@@ -545,7 +545,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
       // Extract session details from the API response
       sessionDetails = response?.data;
-      sessionDetails.eventId = matchDetail.eventId;
+      sessionDetails.eventId = matchDetail?.eventId;
     } catch (err) {
       // Handle API call error and return an error response
       return ErrorResponse(err, req, res);

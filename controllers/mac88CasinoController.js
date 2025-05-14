@@ -12,7 +12,9 @@ const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
 const mac88Games = require("../config/mac88.json");
 const moment = require("moment/moment");
+const { roundToTwoDecimals } = require("../utils/mathUtils");
 const { declareVirtualCasinoResultHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
+
 exports.loginMac88Casino = async (req, res) => {
     try {
         const { gameId, platformId, providerName } = req.body;
@@ -36,11 +38,6 @@ exports.loginMac88Casino = async (req, res) => {
             "redirectUrl": domainUrl
         }
         let result = await apiCall(apiMethod.post, mac88Domain + allApiRoutes.MAC88.login, casinoData, { Signature: generateRSASignature(JSON.stringify(casinoData)) });
-
-        const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: userId, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
-        if (!userTransaction) {
-            await addTransaction({ searchId: userId, type: transactionType.virtualCasino, userId: userId, actionBy: userId, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
-        }
 
         return SuccessResponse(
             {
@@ -87,7 +84,8 @@ exports.getBalanceMac88 = async (req, res) => {
 
 exports.getBetsMac88 = async (req, res) => {
     try {
-        const { userId, betType, debitAmount, gameId, operatorId, reqId, roundId, runnerName, token, transactionId } = req.body;
+        const { userId, betType, gameId, operatorId, reqId, roundId, runnerName, token, transactionId } = req.body;
+        const debitAmount = roundToTwoDecimals(req.body.debitAmount || 0);
 
         if (!gameId || gameId == "" || !transactionId || transactionId == "" || reqId == "" || !reqId) {
             return res.status(400).json({
@@ -187,7 +185,8 @@ exports.getBetsMac88 = async (req, res) => {
 
 exports.resultRequestMac88 = async (req, res) => {
     try {
-        const { userId, creditAmount, gameId, reqId, transactionId } = req.body;
+        const { userId, gameId, reqId, transactionId } = req.body;
+        const creditAmount = roundToTwoDecimals(req.body.creditAmount || 0);
 
         if (!gameId || gameId == "" || !transactionId || transactionId == "" || reqId == "" || !reqId) {
             return res.status(400).json({
@@ -196,7 +195,7 @@ exports.resultRequestMac88 = async (req, res) => {
         }
 
         const userRedisData = await getUserRedisData(userId);
-        if (!userRedisData[transactionId]) {
+        if (!userRedisData || !userRedisData[transactionId]) {
             const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId }, ["id", "settled", "isRollback"]);
             if (!userPrevBetPlaced) {
                 return res.status(400).json({ status: "OP_TRANSACTION_NOT_FOUND" })
@@ -221,7 +220,7 @@ exports.resultRequestMac88 = async (req, res) => {
         else {
             userBalance = await incrementRedisBalance(userId, "currentBalance", parseFloat(creditAmount));
         }
-        const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData.exposure ?? currUserData?.exposure);
+        const balance = parseFloat(userBalance ?? currUserData?.currentBalance) - parseFloat(userRedisData?.exposure ?? currUserData?.exposure);
         calculateMac88ResultDeclare(userId, creditAmount, transactionId, userRedisData);
         return res.status(200).json({
             "balance": balance,
@@ -231,7 +230,8 @@ exports.resultRequestMac88 = async (req, res) => {
     catch (error) {
         logger.error({
             message: `Error in result request of virtual casino for user ${req.body.transactionId}: `,
-            error: error
+            error: error?.message,
+            stack: error?.stack
         });
         return res.status(500).json({
             "status": "OP_GENERAL_ERROR"
@@ -240,140 +240,151 @@ exports.resultRequestMac88 = async (req, res) => {
 }
 
 const calculateMac88ResultDeclare = async (userId, creditAmount, transactionId, userRedisData) => {
-
-    let superAdminData = {};
-    const user = await getUserDataWithUserBalance({ id: userId });
-    if (!user) {
-        return res.status(400).json({
-            "status": "OP_USER_NOT_FOUND"
-        });
-    }
-
-    const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId });
-    const userCurrProfitLoss = parseFloat(creditAmount) + parseFloat(userPrevBetPlaced.amount);
-    const userCurrBalance = parseFloat(user.userBal?.currentBalance) + parseFloat(creditAmount)
-    //getting wallet profitloss
-    const fwProfitLoss = parseFloat(((-userCurrProfitLoss * user.fwPartnership) / 100).toString());
-    logger.info({
-        message: `User balance and profit loss during declare of virtual casino for user ${userId}: `,
-        data: {
-            profitloss: userCurrProfitLoss,
-            userBalance: userCurrBalance,
-            fwProfitLoss: fwProfitLoss
+    try {
+        let superAdminData = {};
+        const user = await getUserDataWithUserBalance({ id: userId });
+        if (!user) {
+            logger.error({
+                message: `user not found for while getting user and balanace ${userId}, ${transactionId}: `,
+            });
+            throw new Error("user not found");
         }
-    });
 
-    await updateUserBalanceData(user.id, {
-        profitLoss: userCurrProfitLoss,
-        myProfitLoss: userCurrProfitLoss,
-        balance: parseFloat(creditAmount)
-    });
+        const userPrevBetPlaced = await getVirtualCasinoBetPlaced({ transactionId: transactionId });
+        const userCurrProfitLoss = parseFloat(creditAmount) + parseFloat(userPrevBetPlaced.amount);
+        const userCurrBalance = parseFloat(user.userBal?.currentBalance) + parseFloat(creditAmount)
+        //getting wallet profitloss
+        const fwProfitLoss = parseFloat(((-userCurrProfitLoss * user.fwPartnership) / 100).toString());
+        logger.info({
+            message: `User balance and profit loss during declare of virtual casino for user ${userId}: `,
+            data: {
+                profitloss: userCurrProfitLoss,
+                userBalance: userCurrBalance,
+                fwProfitLoss: fwProfitLoss
+            }
+        });
 
-    if (userRedisData) {
-        await incrementValuesRedis(user.id, {
+        await updateUserBalanceData(user.id, {
             profitLoss: userCurrProfitLoss,
             myProfitLoss: userCurrProfitLoss,
-        });
-    }
-
-    sendMessageToUser(
-        userId,
-        socketData.userBalanceUpdateEvent,
-        { currentBalance: userCurrBalance }
-    );
-
-    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true });
-
-    const userTransaction = await getTransaction({ type: transactionType.virtualCasino, searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) });
-    if (!userTransaction) {
-        await addTransaction({ searchId: user.id, type: transactionType.virtualCasino, userId: user.id, actionBy: user.id, amount: 0, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
-    } else {
-        await updateTransactionData(userTransaction?.id, { amount: userCurrProfitLoss });
-    }
-
-    if (user.createBy === user.id) {
-        superAdminData[user.id] = {
-            role: user.roleName,
-            balance: userCurrBalance,
-            profitLoss: userCurrProfitLoss,
-            myProfitLoss: userCurrProfitLoss,
-        };
-    }
-
-    let parentUsers = await getParentsWithBalance(user.id);
-    for (const patentUser of parentUsers) {
-        let upLinePartnership = 100;
-        if (patentUser.roleName === userRoleConstant.superAdmin) {
-            upLinePartnership = user.fwPartnership + user.faPartnership;
-        } else if (patentUser.roleName === userRoleConstant.admin) {
-            upLinePartnership = user.fwPartnership + user.faPartnership + user.saPartnership;
-        } else if (patentUser.roleName === userRoleConstant.superMaster) {
-            upLinePartnership = user.fwPartnership + user.faPartnership + user.saPartnership + user.aPartnership;
-        } else if (patentUser.roleName === userRoleConstant.master) {
-            upLinePartnership = user.fwPartnership + user.faPartnership + user.saPartnership + user.aPartnership + user.smPartnership;
-        }
-        else if (patentUser.roleName === userRoleConstant.agent) {
-            upLinePartnership = user.fwPartnership + user.faPartnership + user.saPartnership + user.aPartnership + user.smPartnership + user.mPartnership;
-        }
-
-        let myProfitLoss = parseFloat(
-            (((userCurrProfitLoss) * upLinePartnership) / 100).toString()
-        );
-
-        await updateUserBalanceData(patentUser.id, {
-            profitLoss: userCurrProfitLoss,
-            myProfitLoss: -myProfitLoss,
-            balance: 0
+            balance: parseFloat(creditAmount)
         });
 
-        let parentUserRedisData = await getUserRedisData(patentUser.id);
-        if (parentUserRedisData) {
-
-            await incrementValuesRedis(patentUser.id, {
+        if (userRedisData) {
+            await incrementValuesRedis(user.id, {
                 profitLoss: userCurrProfitLoss,
-                myProfitLoss: -myProfitLoss,
+                myProfitLoss: userCurrProfitLoss,
             });
         }
 
-        logger.info({
-            message: `User balance and profit loss during declare of virtual casino for parent ${patentUser.id}: `,
-            data: {
-                profitloss: userCurrProfitLoss,
-                myProfitLoss: -myProfitLoss,
-            }
-        });
-        if (patentUser.createBy === patentUser.id) {
-            superAdminData[patentUser.id] = {
-                balance: 0,
+        sendMessageToUser(
+            userId,
+            socketData.userBalanceUpdateEvent,
+            { currentBalance: userCurrBalance }
+        );
+
+        updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true });
+
+        const userTransaction = await getTransaction({ searchId: user.id, createdAt: Between(new Date(new Date().setHours(0, 0, 0, 0)), new Date(new Date().setHours(23, 59, 59, 99))) }, null, { createdAt: "DESC" });
+        if (userTransaction?.type != transactionType.virtualCasino) {
+            await addTransaction({ searchId: user.id, type: transactionType.virtualCasino, userId: user.id, actionBy: user.id, amount: userCurrProfitLoss, closingBalance: userCurrBalance, transType: transType.win, description: `${moment().format("MMM DD YYYY hh:mm a")}` });
+        } else {
+            await updateTransactionData(userTransaction?.id, { amount: userCurrProfitLoss });
+        }
+
+        if (user.createBy === user.id) {
+            superAdminData[user.id] = {
+                role: user.roleName,
+                balance: userCurrBalance,
                 profitLoss: userCurrProfitLoss,
-                myProfitLoss: -myProfitLoss,
-                role: patentUser.roleName,
+                myProfitLoss: userCurrProfitLoss,
             };
         }
-    }
 
-    let walletData = {
-        profitLoss: userCurrProfitLoss,
-        fairgameAdminPL: user.superParentType == userRoleConstant.fairGameAdmin ? {
-            id: user.superParentId,
-            myProfitLoss: -parseFloat(
-                (((userCurrProfitLoss) * user.faPartnership) / 100).toString()
-            )
-        } : null,
-        fairgameWalletPL: fwProfitLoss,
-        superAdminData: superAdminData
+        let parentUsers = await getParentsWithBalance(user.id);
+        for (const patentUser of parentUsers) {
+            let upLinePartnership = 100;
+            if (patentUser.roleName === userRoleConstant.superAdmin) {
+                upLinePartnership = user.fwPartnership + user.faPartnership;
+            } else if (patentUser.roleName === userRoleConstant.admin) {
+                upLinePartnership = user.fwPartnership + user.faPartnership + user.saPartnership;
+            } else if (patentUser.roleName === userRoleConstant.superMaster) {
+                upLinePartnership = user.fwPartnership + user.faPartnership + user.saPartnership + user.aPartnership;
+            } else if (patentUser.roleName === userRoleConstant.master) {
+                upLinePartnership = user.fwPartnership + user.faPartnership + user.saPartnership + user.aPartnership + user.smPartnership;
+            }
+            else if (patentUser.roleName === userRoleConstant.agent) {
+                upLinePartnership = user.fwPartnership + user.faPartnership + user.saPartnership + user.aPartnership + user.smPartnership + user.mPartnership;
+            }
+
+            let myProfitLoss = parseFloat(
+                (((userCurrProfitLoss) * upLinePartnership) / 100).toString()
+            );
+
+            await updateUserBalanceData(patentUser.id, {
+                profitLoss: userCurrProfitLoss,
+                myProfitLoss: -myProfitLoss,
+                balance: 0
+            });
+
+            let parentUserRedisData = await getUserRedisData(patentUser.id);
+            if (parentUserRedisData) {
+
+                await incrementValuesRedis(patentUser.id, {
+                    profitLoss: userCurrProfitLoss,
+                    myProfitLoss: -myProfitLoss,
+                });
+            }
+
+            logger.info({
+                message: `User balance and profit loss during declare of virtual casino for parent ${patentUser.id}: `,
+                data: {
+                    profitloss: userCurrProfitLoss,
+                    myProfitLoss: -myProfitLoss,
+                }
+            });
+            if (patentUser.createBy === patentUser.id) {
+                superAdminData[patentUser.id] = {
+                    balance: 0,
+                    profitLoss: userCurrProfitLoss,
+                    myProfitLoss: -myProfitLoss,
+                    role: patentUser.roleName,
+                };
+            }
+        }
+
+        let walletData = {
+            profitLoss: userCurrProfitLoss,
+            fairgameAdminPL: user.superParentType == userRoleConstant.fairGameAdmin ? {
+                id: user.superParentId,
+                myProfitLoss: -parseFloat(
+                    (((userCurrProfitLoss) * user.faPartnership) / 100).toString()
+                )
+            } : null,
+            fairgameWalletPL: fwProfitLoss,
+            superAdminData: superAdminData
+        }
+        logger.info({
+            message: `wallet data for virtual casino result declare: `,
+            data: walletData
+        });
+        declareVirtualCasinoResultHandler({ data: JSON.stringify(walletData) });
     }
-    logger.info({
-        message: `wallet data for virtual casino result declare: `,
-        data: walletData
-    });
-    declareVirtualCasinoResultHandler({ data: JSON.stringify(walletData) });
+    catch (error) {
+        logger.error({
+            message: `Error in result declare of virtual casino inner function ${userId}: `,
+            error: error?.message,
+            stack: error?.stack
+        });
+        throw error;
+    }
 }
 
 exports.rollBackRequestMac88 = async (req, res) => {
     try {
-        const { userId, rollbackAmount: creditAmount, transactionId, gameId, reqId } = req.body;
-
+        const { userId, transactionId, gameId, reqId } = req.body;
+        const creditAmount = roundToTwoDecimals(req.body.rollbackAmount || 0);
+        
         if (!gameId || gameId == "" || !transactionId || transactionId == "" || reqId == "" || !reqId) {
             return res.status(400).json({
                 "status": "OP_INVALID_PARAMS"
@@ -412,7 +423,8 @@ exports.rollBackRequestMac88 = async (req, res) => {
     catch (error) {
         logger.error({
             message: `Error in rollback request of virtual casino for user ${req.body.transactionId}: `,
-            error: error
+            error: error?.message,
+            stack: error?.stack
         });
         return res.status(500).json({
             "status": "OP_GENERAL_ERROR"

@@ -16,8 +16,12 @@ router.post('/balance', verifyRSA, getBalanceMac88);
 router.post('/betrequest', verifyRSA, getBetsMac88);
 router.post('/resultrequest', verifyRSA, resultRequestMac88);
 router.post('/rollbackrequest', verifyRSA, rollBackRequestMac88);
-router.get('/mac88/bets/:userId', isAuthenticate, checkAuthorize(permissions.liveCasinoResult), getBetVirtualGames);
-router.get('/mac88/providers', isAuthenticate, checkAuthorize(permissions.liveCasinoResult), getProviderList);
+
+router.post('/resultrequestTest', resultRequestMac88);
+router.post('/rollbackrequestTest', rollBackRequestMac88);
+
+router.get('/mac88/bets/:userId',isAuthenticate,checkAuthorize(permissions.liveCasinoResult), getBetVirtualGames);
+router.get('/mac88/providers', isAuthenticate,checkAuthorize(permissions.liveCasinoResult), getProviderList);
 
 
 router.post("/virtual/total/profitLoss", isAuthenticate, totalProfitLossLiveCasinoWallet);

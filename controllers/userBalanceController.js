@@ -1,4 +1,4 @@
-const { transType, socketData, matchComissionTypeConstant, walletDomain, userRoleConstant, permissions } = require("../config/contants");
+const { transType, socketData, matchComissionTypeConstant, userRoleConstant, permissions } = require("../config/contants");
 const { getUser, getUserDataWithUserBalance } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
@@ -14,7 +14,7 @@ const {
 const { logger } = require("../config/logger");
 const { settleCommission, insertCommissions } = require("../services/commissionService");
 const { transactionType: transactionTypeConstant } = require("../config/contants");
-const { updateBalanceAPICallHandler } = require("../grpc/grpcClient/handlers/expert/userHandler");
+const { updateBalanceAPICallHandler } = require("../grpc/grpcClient/handlers/wallet/userHandler");
 exports.updateUserBalance = async (req, res) => {
   try {
     let { userId, transactionType, amount, transactionPassword, remark } =
@@ -100,7 +100,7 @@ exports.updateUserBalance = async (req, res) => {
 
       let updateMyProfitLoss = parseFloat(amount);
       if (parseFloat(insertUserBalanceData.myProfitLoss) + parseFloat(amount) > 0) {
-        updateMyProfitLoss = insertUserBalanceData.myProfitLoss
+        updateMyProfitLoss = -insertUserBalanceData.myProfitLoss
         updatedUpdateUserBalanceData.myProfitLoss = 0;
       }
       else {
@@ -125,7 +125,7 @@ exports.updateUserBalance = async (req, res) => {
 
       updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
       loginUserBalanceChagne = -parseFloat(amount);
-
+     
     } else if (transactionType == transType.withDraw) {
       insertUserBalanceData = usersBalanceData[1];
       if (amount > insertUserBalanceData.currentBalance - (user.roleName == userRoleConstant.user ? insertUserBalanceData.exposure : 0))
@@ -137,10 +137,8 @@ exports.updateUserBalance = async (req, res) => {
           req,
           res
         );
-      updatedUpdateUserBalanceData.currentBalance =
-        parseFloat(insertUserBalanceData.currentBalance) - parseFloat(amount);
-      updatedUpdateUserBalanceData.profitLoss =
-        parseFloat(insertUserBalanceData.profitLoss) - parseFloat(amount);
+      updatedUpdateUserBalanceData.currentBalance = parseFloat(insertUserBalanceData.currentBalance) - parseFloat(amount);
+      updatedUpdateUserBalanceData.profitLoss = parseFloat(insertUserBalanceData.profitLoss) - parseFloat(amount);
 
       let updateMyProfitLoss = -parseFloat(amount);
       if (parseFloat(insertUserBalanceData.myProfitLoss) - parseFloat(amount) < 0) {

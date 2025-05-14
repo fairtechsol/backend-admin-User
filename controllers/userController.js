@@ -1,9 +1,9 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType, matchOddName, permissions } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket, insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, } = require('../services/userService');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType, permissions } = require('../config/contants');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, userBlockUnblock, betBlockUnblock, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket, insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, getUserListProcedure, getUserTotalBalanceProcedure } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
-const { getTotalProfitLoss, getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
+const {  getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
@@ -17,6 +17,7 @@ const { commissionReport, commissionMatchReport } = require('../services/commiss
 const { logger } = require('../config/logger');
 const bot = require('../config/telegramBot');
 const { getAccessUserByUserName, getAccessUserWithPermission, getAccessUserById, updateAccessUser } = require('../services/accessUserService');
+const { deleteAuthenticator } = require('../services/authService');
 
 exports.getProfile = async (req, res) => {
   let reqUser = req.user || {};
@@ -182,9 +183,9 @@ exports.updateUser = async (req, res) => {
     updateUser.fullName = fullName ?? updateUser.fullName;
     updateUser.phoneNumber = phoneNumber ?? updateUser.phoneNumber;
     updateUser.city = city || updateUser.city;
-    updateUser.sessionCommission = sessionCommission || updateUser.sessionCommission;
-    updateUser.matchComissionType = matchComissionType || updateUser.matchComissionType;
-    updateUser.matchCommission = matchCommission || updateUser.matchCommission;
+    updateUser.sessionCommission = sessionCommission ?? updateUser.sessionCommission;
+    updateUser.matchComissionType = matchComissionType;
+    updateUser.matchCommission = matchCommission ?? updateUser.matchCommission;
     updateUser.remark = remark || updateUser.remark;
     updateUser = await addUser(updateUser);
 
@@ -562,15 +563,12 @@ exports.changePassword = async (req, res, next) => {
       const userId = isAccessUser ? req.user.childId : req.user.id;
       const isPasswordMatch = await checkOldPassword(userId, oldPassword, isAccessUser);
 
-
       if (!isPasswordMatch) {
         return ErrorResponse(
           {
             statusCode: 403,
             message: { msg: "auth.invalidPass", keys: { type: "old" } },
-          },
-          req,
-          res
+          }, req, res
         );
       }
 
@@ -663,12 +661,11 @@ exports.changePassword = async (req, res, next) => {
       });
       await forceLogoutUser(req.user.id);
     } else {
-      // Update loginAt, password, and reset transactionPassword
+      // Update loginAt, password, and reset transactionPassword, remvoe auth when change password by parent
       await updateUser(userId, {
-        loginAt: null,
-        password,
-        transPassword: null,
+        loginAt: null, password, transPassword: null, isAuthenticatorEnable: false
       });
+      deleteAuthenticator({ userId: userId });
       await forceLogoutUser(userId);
     }
     return SuccessResponse(
@@ -742,116 +739,19 @@ exports.setExposureLimit = async (req, res, next) => {
 exports.userList = async (req, res, next) => {
   try {
     let reqUser = req.user;
-    // let loginUser = await getUserById(reqUser.id)
     const { type, userId, roleName, ...apiQuery } = req.query;
     let userRole = roleName || reqUser?.roleName;
     let where = {
       createBy: reqUser?.isAccessUser ? reqUser.id : (userId || reqUser.id),
-      roleName: Not(userRole)
+      roleName: userRole
     };
 
-    let users = await getUsersWithUsersBalanceData(where, apiQuery);
+    let partnershipCol = [...uplinePartnerShipForAllUsers[userRole], partnershipPrefixByRole[userRole]].map((item) => {
+      return item + "Partnership";
+    });
+    let data = (await getUserListProcedure(where.createBy, partnershipCol, where.roleName, apiQuery?.limit, apiQuery?.page, apiQuery?.keyword, apiQuery?.userBlock?.slice(2), apiQuery?.betBlock?.slice(2), apiQuery.orVal ? true : null))?.[0]?.fetchuserlist || [];
 
-    let response = {
-      count: 0,
-      list: [],
-    };
-    if (!users[1]) {
-      return SuccessResponse(
-        {
-          statusCode: 200,
-          message: { msg: "user.userList" },
-          data: response,
-        },
-        req,
-        res
-      );
-    }
-    response.count = users[1];
-    let partnershipCol = [];
-    if (userRole == userRoleConstant.agent) {
-      partnershipCol = [
-        "agPartnership",
-        "mPartnership",
-        "smPartnership",
-        "aPartnership",
-        "saPartnership",
-        "faPartnership",
-        "fwPartnership",
-      ];
-    }
-    if (userRole == userRoleConstant.master) {
-      partnershipCol = [
-        "mPartnership",
-        "smPartnership",
-        "aPartnership",
-        "saPartnership",
-        "faPartnership",
-        "fwPartnership",
-      ];
-    }
-    if (userRole == userRoleConstant.superMaster) {
-      partnershipCol = [
-        "smPartnership",
-        "aPartnership",
-        "saPartnership",
-        "faPartnership",
-        "fwPartnership",
-      ];
-    }
-    if (userRole == userRoleConstant.admin) {
-      partnershipCol = [
-        "aPartnership",
-        "saPartnership",
-        "faPartnership",
-        "fwPartnership",
-      ];
-    }
-    if (userRole == userRoleConstant.superAdmin) {
-      partnershipCol = ["saPartnership", "faPartnership", "fwPartnership"];
-    }
-    if (userRole == userRoleConstant.fairGameAdmin) {
-      partnershipCol = ["faPartnership", "fwPartnership"];
-    }
-    if (userRole == userRoleConstant.fairGameWallet || userRole == userRoleConstant.expert) {
-      partnershipCol = ["fwPartnership"];
-    }
-    const domainUrl = `${req.protocol}://${req.get("host")}`;
-
-    let data = await Promise.all(
-      users[0].map(async (element) => {
-        element['percentProfitLoss'] = element.userBal['myProfitLoss'];
-        let partner_ships = 100;
-        if (partnershipCol && partnershipCol.length) {
-          partner_ships = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
-          element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partner_ships).toFixed(2);
-        }
-        if (element.roleName != userRoleConstant.user) {
-          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance'])).toFixed(2))
-          // - Number(parseFloat(element.userBal["exposure"]).toFixed(2));
-          let childUsersBalances = await getChildUserBalanceSum(element.id);
-
-          let balanceSum = childUsersBalances?.[0]?.balance;
-          element['balance'] = Number((parseFloat(balanceSum || 0)).toFixed(2));
-        } else {
-          element['availableBalance'] = Number((parseFloat(element.userBal['currentBalance']) - element.userBal['exposure']).toFixed(2));
-          element['balance'] = element.userBal['currentBalance'];
-        }
-        element['percentProfitLoss'] = element.userBal['myProfitLoss'];
-        element['commission'] = element.userBal['totalCommission']
-        if (partnershipCol && partnershipCol.length) {
-          let partnerShips = partnershipCol.reduce((partialSum, a) => partialSum + element[a], 0);
-          element['percentProfitLoss'] = ((element.userBal['profitLoss'] / 100) * partnerShips).toFixed(2);
-          element['commission'] = (element.userBal['totalCommission']).toFixed(2) + '(' + partnerShips + '%)';
-          element['upLinePartnership'] = partnerShips;
-        }
-
-        // if (element?.roleName != userRoleConstant.user && domainUrl != oldBetFairDomain) {
-        //   element.exposureLimit="NA";
-        // }
-        return element;
-      })
-    );
+    const domainUrl = process.env.GRPC_URL;
 
     if (type) {
       const header = [
@@ -894,7 +794,7 @@ exports.userList = async (req, res, next) => {
           ]
           : []),
       ];
-      const total = data?.reduce((prev, curr) => {
+      const total = data?.list?.reduce((prev, curr) => {
         prev["creditRefrence"] = (prev["creditRefrence"] || 0) + (curr["creditRefrence"] || 0);
         prev["balance"] = (prev["balance"] || 0) + (curr["balance"] || 0);
         prev["availableBalance"] = (prev["availableBalance"] || 0) + (curr["availableBalance"] || 0);
@@ -913,10 +813,10 @@ exports.userList = async (req, res, next) => {
         }
         return prev
       }, {});
-      data?.unshift(total);
+      data?.list?.unshift(total);
 
       const fileGenerate = new FileGenerate(type);
-      const file = await fileGenerate.generateReport(data, header, "Client List Report");
+      const file = await fileGenerate.generateReport(data?.list, header, "Client List Report");
       const fileName = `accountList_${new Date()}`
 
       return SuccessResponse(
@@ -930,14 +830,12 @@ exports.userList = async (req, res, next) => {
       );
     }
 
-    response.list = data;
-
 
     return SuccessResponse(
       {
         statusCode: 200,
         message: { msg: "user.userList" },
-        data: response,
+        data: data,
       },
       req,
       res
@@ -960,65 +858,15 @@ exports.getTotalUserListBalance = async (req, res, next) => {
     let userRole = roleName || reqUser?.roleName;
     let where = {
       createBy: reqUser?.isAccessUser ? reqUser.id : (userId || reqUser.id),
-      roleName: Not(userRole)
+      roleName: userRole
     };
 
-    let queryColumns = `SUM(user.creditRefrence) as "totalCreditReference", SUM(UB.profitLoss) as profitSum,SUM(UB.downLevelBalance) as "downLevelBalance", SUM(UB.currentBalance) as "availableBalance",SUM(UB.exposure) as "totalExposure",SUM(CASE WHEN user.roleName = 'user' THEN UB.exposure ELSE 0 END) AS "totalExposureOnlyUser",SUM(UB.totalCommission) as totalCommission`;
-
-    switch (userRole) {
-      case (userRoleConstant.fairGameWallet):
-      case (userRoleConstant.expert): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.fwPartnership)), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.fairGameAdmin): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.faPartnership + user.fwPartnership)), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.superAdmin): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.admin): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.superMaster): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.master): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-      case (userRoleConstant.agent): {
-        queryColumns = queryColumns + `, ROUND(SUM(UB.profitLoss / 100 * (user.agPartnership + user.mPartnership + user.smPartnership + user.aPartnership + user.saPartnership + user.faPartnership + user.fwPartnership )), 2) as percentProfitLoss`;
-        break;
-      }
-    }
-    let childUserBalanceWhere = "";
-
-    if (apiQuery.userBlock) {
-      childUserBalanceWhere = ` "p"."userBlock" = ${apiQuery?.userBlock?.slice(2)}`
-    }
-    if (apiQuery.betBlock) {
-      childUserBalanceWhere = `"p"."betBlock" = ${apiQuery?.betBlock?.slice(2)}`
-    }
-    if (apiQuery.orVal) {
-      childUserBalanceWhere = `("p"."betBlock" = true or  "p"."userBlock" = true)`
-    }
-
-    const totalBalance = await getUsersWithTotalUsersBalanceData(where, apiQuery, queryColumns);
-
-    let childUsersBalances = await getChildUserBalanceSum(userId || reqUser.id, true, childUserBalanceWhere);
-
-    totalBalance.currBalance = childUsersBalances?.[0]?.balance;
-    totalBalance.availableBalance = parseFloat(totalBalance.availableBalance || 0) - parseFloat(totalBalance.totalExposureOnlyUser || 0);
+    const totalBalance = await getUserTotalBalanceProcedure(where.createBy, where.roleName, apiQuery?.userBlock?.slice(2), apiQuery?.betBlock?.slice(2), apiQuery.orVal ? true : null)
 
     return SuccessResponse(
       {
         statusCode: 200,
-        data: totalBalance,
+        data: totalBalance?.[0]?.getusertotalbalance,
       },
       req,
       res
@@ -1404,57 +1252,6 @@ exports.generalReport = async (req, res) => {
     );
   }
 
-}
-
-exports.totalProfitLoss = async (req, res) => {
-  try {
-    let { userId, startDate, endDate, matchId } = req.body;
-    let user, totalLoss
-    let queryColumns = ``;
-    let where = {}
-
-    if (!userId) {
-      userId = req.user.id
-    }
-    if (matchId) {
-      where.matchId = matchId
-    }
-
-    user = await getUserById(userId);
-    if (!user)
-      return ErrorResponse(
-        { statusCode: 400, message: { msg: "invalidData" } },
-        req,
-        res
-      );
-    queryColumns = profitLossPercentCol(user, queryColumns);
-    totalLoss = `(Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-
-    if (user && user.roleName == userRoleConstant.user) {
-      where.createBy = In([userId])
-      totalLoss = `(Sum(CASE WHEN placeBet.result = 'WIN' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = 'LOSS' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-    }
-
-    totalLoss = `SUM(CASE WHEN placeBet.result = 'WIN' AND placeBet.bettingName = '${matchOddName}' THEN ROUND(placeBet.winAmount / 100, 2) ELSE 0 END) as "totalDeduction", ` + totalLoss;
-    let subQuery = await childIdquery(user)
-    const result = await getTotalProfitLoss(where, startDate, endDate, totalLoss, subQuery)
-    return SuccessResponse(
-      {
-        statusCode: 200, data: { result },
-      },
-      req,
-      res
-    );
-  } catch (error) {
-    return ErrorResponse(
-      {
-        statusCode: 500,
-        message: error.message,
-      },
-      req,
-      res
-    );
-  }
 }
 
 exports.getMatchLockAllChild = async (req, res) => {

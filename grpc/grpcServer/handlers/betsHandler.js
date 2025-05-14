@@ -4,15 +4,12 @@ const { logger } = require("../../../config/logger");
 const lodash = require("lodash");
 const { userRoleConstant, partnershipPrefixByRole, betResultStatus, marketBetType, matchBettingType, expertDomain, socketData, redisKeys, sessionBettingType, walletDomain } = require("../../../config/contants");
 const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss, findAllPlacedBet, deleteBet, getBetsWithMatchId } = require("../../../services/betPlacedService");
-const { getChildsWithOnlyUserRole, getAllUsers, getUserById } = require("../../../services/userService");
+const { getChildsWithOnlyUserRole, getAllUsers, getUserById, updateUser } = require("../../../services/userService");
 const { profitLossPercentCol, childIdquery, findUserPartnerShipObj, calculatePLAllBet, mergeProfitLoss, forceLogoutUser, calculateProfitLossForRacingMatchToResult, calculateRacingRate, parseRedisData } = require("../../../services/commonService");
 const { In, IsNull, Not } = require("typeorm");
-const { getQueryColumns } = require("../../../controllers/fairgameWalletController");
-const { allApiRoutes, apiCall, apiMethod } = require("../../../utils/apiService");
 const { getUserRedisData, incrementValuesRedis } = require("../../../services/redis/commonfunction");
 const { getMatchData } = require("../../../services/matchService");
 const { getUserBalanceDataByUserId, updateUserExposure } = require("../../../services/userBalanceService");
-const { updateUser } = require("../../../controllers/userController");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
 const { walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletTournamentMatchBetDeleteQueue, expertTournamentMatchBetDeleteQueue } = require("../../../queue/consumer");
 const { getTournamentBettingHandler } = require("../../grpcClient/handlers/expert/matchHandler");
@@ -120,32 +117,17 @@ exports.getSessionBetProfitLossExpert = async (call) => {
 exports.getResultBetProfitLoss = async (call) => {
   try {
     let { user, matchId, betId, isSession, searchId, partnerShipRoleName } = call.request;
-    user = user;
-    partnerShipRoleName = partnerShipRoleName;
-
-    let queryColumns = ``;
-    let where = { marketBetType: isSession ? marketBetType.SESSION : In([marketBetType.MATCHBETTING, marketBetType.RACING]) };
-
-    if (matchId) {
-      where.matchId = matchId;
-    }
-    if (betId) {
-      where.betId = betId;
-    }
-
+   
     if (!user) {
       throw {
         code: grpc.status.INVALID_ARGUMENT,
         message: __mf("invalidData"),
       };
     }
-    queryColumns = await getQueryColumns(user, partnerShipRoleName);
-    let totalLoss = `(Sum(CASE WHEN placeBet.result = '${betResultStatus.LOSS}' then ROUND(placeBet.lossAmount / 100 * ${queryColumns}, 2) ELSE 0 END) - Sum(CASE WHEN placeBet.result = '${betResultStatus.WIN}' then ROUND(placeBet.winAmount / 100 * ${queryColumns}, 2) ELSE 0 END)) as "totalLoss"`;
-
-    let subQuery = await childIdquery(user, searchId);
+   
     const domainUrl = `${call?.call?.host}`;
 
-    const result = await getBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
+    const result = await getBetsProfitLoss(user.id, matchId || null, betId || null, searchId || null, partnerShipRoleName, domainUrl, isSession);
     return { data: JSON.stringify(result) };
   } catch (error) {
     logger.error({

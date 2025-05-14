@@ -1,12 +1,12 @@
 const { In, Not } = require("typeorm");
-const { walletDomain, casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
+const { casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
 const { childIdquery, profitLossPercentCol } = require("../services/commonService");
 const { getAllUsers, getUsersByWallet, getChildsWithOnlyUserRole } = require("../services/userService");
 const { getTotalProfitLossLiveCasino, getAllLiveCasinoMatchTotalProfitLoss, getLiveCasinoBetsProfitLoss, getUserWiseProfitLossLiveCasino } = require("../services/virtualCasinoBetPlacedsService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { getBetsCondition } = require("./betPlacedController");
-const { getQueryColumns } = require("./fairgameWalletController");
+const { getQueryColumns } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { getCardResultHandler, getCardResultDetailHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
 

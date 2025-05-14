@@ -10,8 +10,8 @@ exports.getTransactionById = async (id) => {
   return await Transaction.findOne({ id });
 };
 
-exports.getTransaction = async (where,select) => {
-  return await Transaction.findOne({ where: where, select: select });
+exports.getTransaction = async (where, select, orderBy) => {
+  return await Transaction.findOne({ where: where, select: select, order: orderBy });
 };
 
 exports.addTransaction = async (body) => {
@@ -31,7 +31,7 @@ exports.insertTransactions = async (transactions) => {
 };
 
 exports.deleteTransactions = async (where) => {
-   await Transaction.delete(where);
+  await Transaction.delete(where);
 };
 
 /**
@@ -59,15 +59,15 @@ exports.getTransactions = async (
         .andWhere(
           query?.statementType == accountStatementType.game
             ? [
-                {
-                  transType: transType.loss,
-                },
-                {
-                  transType: transType.win,
-                },
-              ]
+              {
+                transType: transType.loss,
+              },
+              {
+                transType: transType.win,
+              },
+            ]
             : query?.statementType == accountStatementType.addWithdraw
-            ? [
+              ? [
                 {
                   transType: transType.add,
                 },
@@ -78,7 +78,7 @@ exports.getTransactions = async (
                   transType: transType.creditRefer,
                 },
               ]
-            : []
+              : []
         )
         .leftJoinAndMapOne(
           "transaction.user",
@@ -101,7 +101,7 @@ exports.getTransactions = async (
       .paginate()
       .getResult();
 
-    
+
 
     // Execute the query and get the result along with count
     const [transactions, count] = await transactionQuery;

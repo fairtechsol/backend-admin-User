@@ -166,28 +166,79 @@ exports.getMatchBetPlaceWithUserCard = async (where, select) => {
   return betPlaced;
 };
 
-exports.getMultipleAccountProfitLoss = async (betId, userId) => {
-  let betPlaced = await BetPlaced.query(`SELECT Sum(CASE result WHEN '${betResultStatus.WIN}' then "winAmount" ELSE 0 END) AS winAmount, Sum(CASE result WHEN '${betResultStatus.LOSS}' then "lossAmount" ELSE 0 END) AS lossAmount, Sum(amount) AS "totalStack" from "betPlaceds" where "betId" ='${betId}' AND "userId"='${userId}' AND "deleteReason" IS NULL`)
-  return betPlaced;
+exports.getMultipleAccountProfitLoss = async (betId, userIds) => {
+  const sql = `
+    SELECT
+      COALESCE(jsonb_object_agg(r.user_id, r.stats), '{}'::jsonb) AS "profitLossData"
+    FROM (
+      SELECT
+        u.user_id::text AS user_id,
+        jsonb_build_object(
+          'winAmount',
+            COALESCE(
+              SUM(bp."winAmount") FILTER (WHERE bp."result" = 'WIN'),
+              0
+            ),
+          'lossAmount',
+            COALESCE(
+              SUM(bp."lossAmount") FILTER (WHERE bp."result" = 'LOSS'),
+              0
+            )
+        ) AS stats
+      FROM unnest($1::uuid[]) AS u(user_id)
+      LEFT JOIN "betPlaceds" bp
+        ON bp."betId"        = $2
+       AND bp."userId"       = u.user_id
+       AND bp."deleteReason" IS NULL
+      GROUP BY u.user_id
+    ) AS r;
+  `;
+
+  const result = await BetPlaced.query(sql, [userIds, betId]);
+  return result?.[0]?.profitLossData || {};
 };
 
-exports.getMultipleAccountOtherMatchProfitLoss = async (betId, userId) => {
 
-  const betPlaced = await BetPlaced.createQueryBuilder().select([
-    'SUM(CASE WHEN result = :winStatus THEN "winAmount" ELSE 0 END) AS "winAmount"',
-    'SUM(CASE WHEN result = :lossStatus THEN "lossAmount" ELSE 0 END) AS "lossAmount"',
-    'SUM(CASE WHEN result = :lossStatus AND "isCommissionActive"= true THEN "lossAmount" ELSE 0 END) AS "lossAmountCommission"',
-    'SUM(CASE WHEN result = :winStatus AND "isCommissionActive"= true THEN "winAmount" ELSE 0 END) AS "winAmountCommission"',
+exports.getMultipleAccountProfitLossTournament = async (betId, userIds) => {
+  const sql = `
+    SELECT
+      COALESCE(jsonb_object_agg(r.user_id, r.stats), '{}'::jsonb) AS "profitLossData"
+    FROM (
+      SELECT
+        u.user_id::text AS user_id,
+        jsonb_build_object(
+          'winAmount',
+            COALESCE(
+              SUM(bp."winAmount") FILTER (WHERE bp."result" = 'WIN'),
+              0
+            ),
+          'lossAmount',
+            COALESCE(
+              SUM(bp."lossAmount") FILTER (WHERE bp."result" = 'LOSS'),
+              0
+            ),
+            'lossAmountCommission',
+            COALESCE(
+              SUM(bp."lossAmount") FILTER (WHERE bp."result" = 'LOSS' AND bp."isCommissionActive"= true),
+              0
+            ),
+          'winAmountCommission',
+            COALESCE(
+              SUM(bp."winAmount") FILTER (WHERE bp."result" = 'WIN' AND bp."isCommissionActive"= true),
+              0
+            )
+        ) AS stats
+      FROM unnest($1::uuid[]) AS u(user_id)
+      LEFT JOIN "betPlaceds" bp
+        ON bp."betId"        = $2
+       AND bp."userId"       = u.user_id
+       AND bp."deleteReason" IS NULL
+      GROUP BY u.user_id
+    ) AS r;
+  `;
 
-  ])
-    .setParameter('winStatus', betResultStatus.WIN)
-    .setParameter('lossStatus', betResultStatus.LOSS)
-    .andWhere('"betId" IN (:...betIds)', { betIds: betId })
-    .andWhere('"userId" = :userId', { userId: userId })
-    .andWhere('"deleteReason" IS NULL')
-    .getRawOne();
-
-  return betPlaced;
+  const result = await BetPlaced.query(sql, [userIds, betId]);
+  return result?.[0]?.profitLossData || {};
 };
 
 exports.getMultipleAccountCardMatchProfitLoss = async (runnerId, userId) => {
@@ -286,32 +337,18 @@ exports.allChildsProfitLoss = async (where, startDate, endDate, page, limit, key
   return { profitLossData, count }
 }
 
-exports.getTotalProfitLoss = async (where, startDate, endDate, totalLoss, subQuery) => {
-  let query = BetPlaced.createQueryBuilder('placeBet')
-    .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
-    .innerJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
-    .where(where)
-    .andWhere({
-      result: In([betResultStatus.WIN, betResultStatus.LOSS]),
-      deleteReason: IsNull(),
-    });
-  if (startDate) {
-    query = query.andWhere('match.startAt >= :from', { from: new Date(startDate) })
-  }
-  if (endDate) {
-    let newDate = new Date(endDate);
-    newDate.setHours(23, 59, 59, 999);
-    query = query.andWhere('match.startAt <= :to', { to: newDate })
-  }
-  query = query
-    .select([
-      totalLoss,
-      'placeBet.eventType as "eventType"',
-      'COUNT(placeBet.id) as "totalBet"'
-    ])
-    .groupBy('placeBet.eventType')
-  let result = await query.getRawMany();
-  return result
+exports.getTotalProfitLoss = async (userId, searchId = null, startDate = null, endDate = null, roleName = null, eventTypeFilter = null, matchId = null) => {
+
+  return await BetPlaced.query(`SELECT *
+	    FROM "getCombinedProfitLoss" (
+	            $1,
+	            $2,
+	            $3,
+	            $4,
+	            $5,
+	            $6,
+	            $7
+	    );`, [userId, searchId, startDate, endDate, roleName, eventTypeFilter, matchId])
 }
 
 exports.getTotalProfitLossRacing = async (where, startDate, endDate, totalLoss, subQuery) => {
@@ -373,42 +410,17 @@ exports.getTotalProfitLossCard = async (where, startDate, endDate, totalLoss, su
   return result;
 }
 
-exports.getAllMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, page, limit, subQuery) => {
-  let query = BetPlaced.createQueryBuilder('placeBet')
-    .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
-    .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
-    .where(where)
-    .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
-
-  if (startDate) {
-    query = query.andWhere('match.startAt >= :from', { from: new Date(startDate) })
-  }
-  if (endDate) {
-    let newDate = new Date(endDate);
-    newDate.setHours(23, 59, 59, 999);
-    query = query.andWhere('match.startAt <= :to', { to: newDate })
-  }
-
-  const count = (await query.select(["match.id"]).groupBy("match.id").getRawMany())?.length;
-
-  query = query
-    .select([
-      ...selectArray,
-      'placeBet.eventType as "eventType"',
-      'COUNT(placeBet.id) as "totalBet"',
-      'match.startAt as "startAt"',
-      'match.title as title',
-      'match.id as "matchId"'
-    ])
-    .groupBy('placeBet.matchId, match.id, placeBet.eventType').orderBy('match.startAt', 'DESC');
-
-  if (page) {
-    query.offset((parseInt(page) - 1) * parseInt(limit || 10)).limit(parseInt(limit || 10));
-  }
-
-  let result = await query.getRawMany();
-
-  return { result, count };
+exports.getAllMatchTotalProfitLoss = async (userId, searchId = null, startDate = null, endDate = null, roleName = null, eventTypeFilter = null, page = null, limit = null) => {
+  return await BetPlaced.query(`SELECT *
+    FROM "getMatchWiseProfitLoss" (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6
+            ${page != null && limit != null ? ",$7,$8" : ""}
+    );`, [userId, searchId, startDate, endDate, roleName, eventTypeFilter, ...(page != null && limit != null ? [page, limit] : [])])
 }
 
 exports.getAllRacinMatchTotalProfitLoss = async (where, startDate, endDate, selectArray, page, limit, subQuery) => {
@@ -482,69 +494,40 @@ exports.getAllCardMatchTotalProfitLoss = async (where, startDate, endDate, selec
   return { result };
 }
 
-exports.getBetsProfitLoss = async (where, totalLoss, subQuery, domain) => {
-  let query = BetPlaced.createQueryBuilder('placeBet')
-    .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
-    // .leftJoinAndMapOne("placeBet.match", "match", 'match', 'placeBet.matchId = match.id')
-    .where(where)
-    .andWhere({ result: Not(betResultStatus.PENDING) })
-
-
-  query = query
-    .select([
-      totalLoss,
-      'placeBet.id as "id"',
-      'placeBet.createBy as "userId"',
-      'placeBet.matchId as "matchId"',
-      'placeBet.result  as "result"',
-      'placeBet.teamName  as "teamName"',
-      'placeBet.betType  as "betType"',
-      'placeBet.marketType  as "marketType"',
-      'placeBet.marketBetType  as "marketBetType"',
-      'placeBet.rate  as "rate"',
-      'placeBet.amount as "amount"',
-      'placeBet.odds as "odds"',
-      'placeBet.createdAt as "createdAt"',
-      'user.userName as userName',
-      'placeBet.deleteReason as "deleteReason"',
-      'placeBet.bettingName  as "bettingName"',
-      'placeBet.isCommissionActive  as "isCommissionActive"',
-    ])
-    .addSelect(`'${domain}'`, `domain`)
-    .groupBy('placeBet.id, user.userName').orderBy('placeBet.createdAt', 'DESC');
-  let result = await query.getRawMany();
-
-  return result;
+exports.getBetsProfitLoss = async (userId, matchId = null, betId = null, searchId = null, roleName = null, domain, isSession = false) => {
+  return await BetPlaced.query(`SELECT *
+    FROM "getResultBetProfitLoss" (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7
+    );`, [userId, matchId, betId, domain, isSession, searchId, roleName])
 }
 
-exports.getSessionsProfitLoss = async (where, totalLoss, subQuery) => {
-  let query = BetPlaced.createQueryBuilder('placeBet')
-    .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.createBy = user.id and placeBet.createBy in (${subQuery})`)
-    .where(where)
-    .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
-
-  query = query
-    .select([
-      totalLoss,
-      'placeBet.betId as "betId"',
-      'placeBet.eventName  as "eventName"'
-    ])
-    .groupBy('placeBet.betId, placeBet.eventName');
-  let result = await query.getRawMany();
-  return result;
+exports.getSessionsProfitLoss = async (userId, matchId, searchId = null, roleName = null) => {
+  return await BetPlaced.query(`SELECT *
+    FROM "getSessionBetProfitLoss" (
+            $1,
+            $2,
+            $3,
+            $4
+    );`, [userId, matchId, searchId, roleName])
 }
 
-exports.getUserWiseProfitLoss = async (where, select) => {
-  let query = BetPlaced.createQueryBuilder('placeBet')
-    .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.createBy = user.id')
-    .where(where)
-    .andWhere({ result: In([betResultStatus.WIN, betResultStatus.LOSS]), deleteReason: IsNull() })
-
-  query = query
-    .select(select);
-
-  let result = await query.getRawOne();
-  return result;
+exports.getUserWiseProfitLoss = async (userId, matchId, runnerId, userIds, searchId = null, roleName = null, userRole = null) => {
+  return await BetPlaced.query(`SELECT *
+    FROM "getUserWiseBetProfitLoss" (
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7
+    );`, [userId, matchId, runnerId, userIds, searchId, roleName, userRole])
 }
 
 exports.getUserSessionsProfitLoss = async (where, select) => {
@@ -635,7 +618,9 @@ exports.getChildUsersPlaceBets = (id, matchId) => {
     SELECT ur.id, ur."roleName", ur."createBy"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId"  where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' ${matchId ? 'and "matchId"=$2' : ""}`, [id, ...(matchId ? [matchId] : [])]);
+  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId" 
+  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" 
+  where "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' ${matchId ? 'and "matchId"=$2' : ""}`, [id, ...(matchId ? [matchId] : [])]);
 }
 
 exports.pendingCasinoResult = () => {
@@ -663,25 +648,27 @@ exports.deleteBet = async (where) => {
 exports.getChildUsersPlaceBetsByBetId = (id, betIds) => {
 
   return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
-    SELECT id, "roleName", "createBy"
+    SELECT id, "roleName", "createBy", "userName"
     FROM public.users
     WHERE id = $1
     UNION
-    SELECT ur.id, ur."roleName", ur."createBy"
+    SELECT ur.id, ur."roleName", ur."createBy", ur."userName"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' and "betPlaceds"."betId" In ('${betIds.join("','")}')`, [id]);
+  ) select "betPlaceds".* , rh.id , rh."userName" from "betPlaceds" 
+  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" where "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' and "betPlaceds"."betId" In ('${betIds.join("','")}')`, [id]);
 }
 
 exports.getChildUsersAllPlaceBets = (id) => {
 
   return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
-    SELECT id, "roleName", "createBy"
+    SELECT id, "roleName", "createBy", "userName"
     FROM public.users
     WHERE id = $1
     UNION
-    SELECT ur.id, ur."roleName", ur."createBy"
+    SELECT ur.id, ur."roleName", ur."createBy", ur."userName"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select "betPlaceds".* , "users".id , "users"."userName" from "betPlaceds" join "users" on "users".id = "betPlaceds"."createBy" where "betPlaceds"."createBy" IN (SELECT id FROM RoleHierarchy) and "betPlaceds".result = 'PENDING' ${matchId ? 'and "matchId"=$2' : ""}`, [id, matchId]);
+  ) select "betPlaceds".* , rh.id , rh."userName" from "betPlaceds" 
+  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" where "betPlaceds".result = 'PENDING' ${matchId ? 'and "matchId"=$2' : ""}`, [id, matchId]);
 }

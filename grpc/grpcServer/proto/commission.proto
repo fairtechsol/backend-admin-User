@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package commissionProvider;
+package grpc.commissionProvider;
 
 message CommissionReportRequest {
   string userId = 1;

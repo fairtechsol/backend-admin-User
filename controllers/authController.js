@@ -19,7 +19,7 @@ const {
   getUserDataWithUserBalance,
 } = require("../services/userService");
 const { userLoginAtUpdate, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
-const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, settingTournamentMatchBetsDataAtLogin, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
+const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
 const { logger } = require("../config/logger");
 const { updateUserDataRedis, getRedisKey, setRedisKey } = require("../services/redis/commonfunction");
 const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
@@ -70,7 +70,6 @@ const setUserDetailsRedis = async (user) => {
 
     const setDefaultUserData = async (userObj) => {
       const betData = await settingBetsDataAtLogin(userObj);
-      const tournamentBetData = await settingTournamentMatchBetsDataAtLogin(userObj);
       const partnerShips = await findUserPartnerShipObj(userObj);
 
       return {
@@ -81,11 +80,10 @@ const setUserDetailsRedis = async (user) => {
         currentBalance: userObj?.userBal?.currentBalance || 0,
         roleName: userObj.roleName,
         ...(betData || {}),
-        ...(tournamentBetData || {}),
         partnerShips,
       };
-    };
-
+    }
+    
     if (user.isAccessUser) {
       const userData = await getUserDataWithUserBalance({ id: user.mainParentId });
       const redisUserData = await internalRedis.hget(userData.id, "userName");
@@ -213,7 +211,7 @@ exports.login = async (req, res) => {
     // force logout user if already login on another device
     await forceLogoutIfLogin(user.id);
 
-    setUserDetailsRedis(user);
+    await setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
       { id: user.id, roleName: roleName, userName: user.userName, isAuthenticatorEnable: user.isAuthenticatorEnable, ...(user.isAccessUser ? { mainParentId: user.mainParentId, isAccessUser: true } : {}) },
@@ -292,7 +290,7 @@ exports.logout = async (req, res) => {
 
     if (!user.isAccessUser) {
       const userAccessData = await internalRedis.hget(user.id, "accessUser");
-      if (!userAccessData || !JSON.parse(userAccessData||"[]").length) {
+      if (!userAccessData || !JSON.parse(userAccessData || "[]").length) {
         await internalRedis.del(user.id);
       }
       else {

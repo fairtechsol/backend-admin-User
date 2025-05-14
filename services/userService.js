@@ -270,6 +270,59 @@ exports.getParentsWithBalance = async (userId) => {
   return results;
 };
 
+exports.getMultiUserParentsWithBalance = async (userIds) => {
+  const query = `WITH RECURSIVE
+  tree AS (
+    SELECT
+      id,
+      id  AS root_id,
+	  "createBy"
+    FROM "users"
+    WHERE id = ANY($1::UUID[])
+    UNION ALL
+    SELECT
+      u.id,
+      t.root_id,
+	  u."createBy"
+    FROM "users" u
+    JOIN tree t
+      ON u.id = t."createBy" and t.id!=t."createBy"
+  ),
+
+  json_per_root AS (
+    SELECT
+      t.root_id,
+      jsonb_agg(
+        jsonb_build_object(
+          'id',                u.id,
+          'userName',          u."userName",
+          'roleName',          u."roleName",
+          'sessionCommission', u."sessionCommission",
+          'matchCommission',   u."matchCommission",
+          'matchComissionType',u."matchComissionType",
+          'createBy',          u."createBy",
+          'userBlock',         u."userBlock",
+          'betBlock',          u."betBlock"
+        )
+        ORDER BY u.id         -- deterministic ordering
+      ) AS descendants
+    FROM tree t
+    JOIN "users" u
+      ON u.id = t.id
+    WHERE t.id <> t.root_id   -- drop the root itself
+    GROUP BY t.root_id
+  )
+
+SELECT
+  jsonb_object_agg(
+    root_id::text,
+    descendants
+  ) AS result
+FROM json_per_root;`;
+  const results = await user.query(query, [userIds]);
+  return results?.[0]?.result || {};
+};
+
 exports.getFirstLevelChildUser = async (id) => {
   return await user.find({ where: { createBy: id, id: Not(id) }, select: { id: true, userName: true, roleName: true } });
 }
@@ -281,9 +334,9 @@ exports.getChildsWithMergedUser = async (id, ids) => {
       UNION
       SELECT "lowerU".* FROM "users" AS "lowerU" JOIN p ON "lowerU"."createBy" = p."id"
     )
-    SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND ("roleName" = $2 or "createBy" = $1) AND "id" != $1 ${ids?.length?"AND id != ANY($3)":""};
+    SELECT "id", "userName" FROM p WHERE "deletedAt" IS NULL AND ("roleName" = $2 or "createBy" = $1) AND "id" != $1 ${ids?.length ? "AND id != ANY($3)" : ""};
   `;
-  const results = await user.query(query, [id, userRoleConstant.user, ...(ids?.length?[ids]:[])]); // Avoid passing a blank array; include `ids` only if it has elements.
+  const results = await user.query(query, [id, userRoleConstant.user, ...(ids?.length ? [ids] : [])]); // Avoid passing a blank array; include `ids` only if it has elements.
   return results;
 }
 exports.getFirstLevelChildUserWithPartnership = async (id, partnership) => {
@@ -420,7 +473,7 @@ exports.deleteUserMarketLock = async (where) => {
   return deleted;
 };
 exports.getMarketLockAllChild = async (where, select) => {
-  let { matchId, betId, sessionType, createBy, ...whereData } = where; 
+  let { matchId, betId, sessionType, createBy, ...whereData } = where;
   whereData.createBy = createBy;
   let joinParameter = { matchId, createBy };
   let joinCondition = `
@@ -437,11 +490,11 @@ exports.getMarketLockAllChild = async (where, select) => {
   }
 
   const usersWithLockStatus = await user.createQueryBuilder('user')
-  .leftJoin('userMarketLock', 'userMarketLock', joinCondition, joinParameter)
-  .where(whereData) 
-  .select(select)
-  .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS "isLock"`)
-  .getRawMany();
+    .leftJoin('userMarketLock', 'userMarketLock', joinCondition, joinParameter)
+    .where(whereData)
+    .select(select)
+    .addSelect(`CASE WHEN userMarketLock.userId IS NOT NULL THEN true ELSE false END AS "isLock"`)
+    .getRawMany();
 
   return usersWithLockStatus;
 };
@@ -557,4 +610,32 @@ exports.getUserDataWithUserBalanceDeclare = async (where) => {
 
 exports.deleteUser = async (where) => {
   await user.delete(where);
+}
+
+exports.getUserListProcedure = async (userId, partnerShip, roleName, limit = 10000000, offset = 1, keyword = '', userBlock = null, betBlock = null,orVal) => {
+
+  return await user.query(`SELECT *
+    FROM fetchUserList(
+      '${userId}',                    
+      '${roleName}',               
+      ARRAY['${partnerShip?.join("','")}'], 
+      ${(parseInt(offset) - 1) * parseInt(limit)},                     
+      ${parseInt(limit)},
+      '${keyword}',
+      ${userBlock},    
+      ${betBlock},
+      ${orVal}
+    );`)
+}
+
+exports.getUserTotalBalanceProcedure = async (userId, roleName, userBlock = null, betBlock = null, orVal) => {
+
+  return await user.query(`SELECT *
+    FROM getUserTotalBalance(
+      '${userId}',                    
+      '${roleName}',               
+      ${userBlock},    
+      ${betBlock},    
+      ${orVal}    
+    );`)
 }
