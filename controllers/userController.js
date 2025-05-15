@@ -3,7 +3,7 @@ const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUs
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
-const {  getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
+const { getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
@@ -31,9 +31,11 @@ exports.getProfile = async (req, res) => {
   let user;
   if (reqUser?.isAccessUser) {
     const mainUser = await getUser({ id: req.user.id }, ["roleName"])
+    const userBal = await getUserBalance({ userId: req.user.id })
     user = await getAccessUserWithPermission({ id: reqUser?.childId });
     if (user) {
       user.roleName = mainUser?.roleName;
+      user.userBal = userBal;
     }
   }
   else {
