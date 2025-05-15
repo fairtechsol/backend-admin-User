@@ -22,7 +22,7 @@ exports.updateUserBalance = async (req, res) => {
     let reqUser = req.user;
 
     if (reqUser?.isAccessUser) {
-      if (transactionType == transType.add && reqUser.permission != permissions.deposit) {
+      if (transactionType == transType.add && !reqUser.permission?.[permissions.deposit]) {
         return ErrorResponse(
           {
             statusCode: 403,
@@ -34,7 +34,7 @@ exports.updateUserBalance = async (req, res) => {
           res
         );
       }
-      else if (transactionType == transType.withDraw && reqUser.permission != permissions.withdraw) {
+      else if (transactionType == transType.withDraw && !reqUser.permission?.[permissions.withdraw]) {
         return ErrorResponse(
           {
             statusCode: 403,
