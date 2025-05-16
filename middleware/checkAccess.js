@@ -1,3 +1,4 @@
+const { permissions } = require("../config/contants");
 const { getUserPermissionFromRedis } = require("../utils/authUtils");
 const { ErrorResponse } = require("../utils/response");
 
@@ -12,7 +13,7 @@ exports.checkAuthorize = (...permissionKey) => {
 
       const userPermission = JSON.parse((await getUserPermissionFromRedis(childId)) || "{}");
       for(let items of permissionKey){
-        if (userPermission[items]) {
+        if (userPermission[items] || items == permissions.userPasswordChange) {
           req.user.permission=userPermission;
           next();
           return;

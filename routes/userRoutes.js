@@ -13,7 +13,7 @@ router.get('/profile', isAuthenticate, getProfile);
 router.get('/exist', isAuthenticate, isUserExist);
 router.post('/updateUser', isAuthenticate, checkAuthorize(permissions.insertUser), checkTransactionPassword, validator(updateUserValid), updateUser);
 router.post('/lockUnlockUser', isAuthenticate, checkAuthorize(permissions.betLock, permissions.userLock), checkTransactionPassword, validator(LockUnlockUser), lockUnlockUser);
-router.post('/changePassword', isAuthenticate,  validator(ChangePassword), changePassword);
+router.post('/changePassword', isAuthenticate,  checkAuthorize(permissions.userPasswordChange),validator(ChangePassword), changePassword);
 router.post("/update/exposurelimit", isAuthenticate, checkTransactionPassword, validator(setExposureLimitValid), setExposureLimit);
 
 router.get("/list", isAuthenticate, checkAuthorize(permissions.userList), userList);
