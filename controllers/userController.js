@@ -31,7 +31,7 @@ exports.getProfile = async (req, res) => {
   let user;
   if (reqUser?.isAccessUser) {
     const mainUser = await getUser({ id: req.user.id }, ["roleName"])
-    const userBal = await getUserBalanceDataByUserId(req.user.id )
+    const userBal = await getUserBalanceDataByUserId(req.user.id)
     user = await getAccessUserWithPermission({ id: reqUser?.childId });
     if (user) {
       user.roleName = mainUser?.roleName;
@@ -526,9 +526,9 @@ const checkOldPassword = async (userId, oldPassword, isAccessUser = false) => {
 };
 
 // Check old transaction password against the stored transaction password
-const checkTransactionPassword = async (userId, oldTransactionPass) => {
+const checkTransactionPassword = async (userId, oldTransactionPass, isAccessUser) => {
   // Retrieve user's transaction password from the database
-  const user = await getUserById(userId, ["transPassword", "id"]);
+  const user = isAccessUser ? (await getAccessUserById(userId, ["transPassword", "id"])) : (await getUserById(userId, ["transPassword", "id"]));
   if (!user) {
     // User not found, return error response
     throw {
@@ -625,7 +625,7 @@ exports.changePassword = async (req, res, next) => {
       );
     }
 
-    if(isAccessUser&&!req.user.permission?.[permissions.userPasswordChange]){
+    if (isAccessUser && !req.user.permission?.[permissions.userPasswordChange]) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -639,11 +639,12 @@ exports.changePassword = async (req, res, next) => {
     const userId = req.body.userId;
     const loginUserId = isAccessUser ? req.user.childId : req.user.id;
 
-    const user = await getUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
+    const user = isAccessUser ? (await getAccessUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"])) : await getUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
 
     const isPasswordMatch = await checkTransactionPassword(
       user?.id,
-      transactionPassword
+      transactionPassword,
+      isAccessUser
     );
 
     if (!isPasswordMatch) {
