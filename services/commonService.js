@@ -19,6 +19,7 @@ const { verifyAuthToken } = require("../utils/generateAuthToken");
 const { getVirtualCasinoExposureSum } = require("./virtualCasinoBetPlacedsService");
 const { getTournamentBettingHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
 const { lockUnlockUserByUserPanelHandler, getPartnershipIdHandler } = require("../grpc/grpcClient/handlers/wallet/userHandler");
+const { updateAccessUser, accessUserPasswordAttempts } = require("./accessUserService");
 
 exports.forceLogoutIfLogin = async (userId) => {
   let token = await internalRedis.hget(userId, "token");
@@ -1264,10 +1265,14 @@ exports.profitLossPercentCol = (body, queryColumns) => {
   return queryColumns;
 }
 
-exports.transactionPasswordAttempts = async (user) => {
+exports.transactionPasswordAttempts = async (user, isAccessUser) => {
   if (user?.transactionPasswordAttempts + 1 >= 11) {
-    await userBlockUnblock(user.id, user.createBy == user.id ? user.superParentId : user.createBy, true);
-
+    if (isAccessUser) {
+      await updateAccessUser({ id: user.id }, { userBlock: true, userBlockedBy: user.mainParentId })
+    }
+    else {
+      await userBlockUnblock(user.id, user.createBy == user.id ? user.superParentId : user.createBy, true);
+    }
     if (user?.createBy == user.id) {
       await lockUnlockUserByUserPanelHandler(
         {
@@ -1282,11 +1287,22 @@ exports.transactionPasswordAttempts = async (user) => {
         throw error
       });
     }
-    this.forceLogoutUser(user.id);
-    await updateUser(user.id, { transactionPasswordAttempts: 0 });
+    this.forceLogoutUser(user.id, false, isAccessUser, isAccessUser ? user?.mainParentId : null);
+
+    if (isAccessUser) {
+      await updateAccessUser({ id: user.id }, { transactionPasswordAttempts: 0 })
+    }
+    else {
+      await updateUser(user.id, { transactionPasswordAttempts: 0 });
+    }
   }
   else {
-    await userPasswordAttempts(user.id);
+    if (isAccessUser) {
+      await accessUserPasswordAttempts(user.id);
+    }
+    else {
+      await userPasswordAttempts(user.id);
+    }
   }
 }
 exports.insertBulkTransactions = async (bulkWalletRecord) => {

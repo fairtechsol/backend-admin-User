@@ -47,7 +47,12 @@ const accessUserSchema = new EntitySchema({
         permission: {
             type: "uuid",
             nullable: false
-        }
+        },
+        transactionPasswordAttempts: {
+            type: "int",
+            nullable: false,
+            default: 0,
+        },
     },
     orderBy: {
         "userBlock": "ASC",

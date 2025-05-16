@@ -639,7 +639,7 @@ exports.changePassword = async (req, res, next) => {
     const userId = req.body.userId;
     const loginUserId = isAccessUser ? req.user.childId : req.user.id;
 
-    const user = isAccessUser ? (await getAccessUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"])) : await getUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
+    const user = isAccessUser ? (await getAccessUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "mainParentId", "parentId"])) : await getUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
 
     const isPasswordMatch = await checkTransactionPassword(
       user?.id,
@@ -652,7 +652,7 @@ exports.changePassword = async (req, res, next) => {
       const currDomain = `${process.env.GRPC_URL}`;
 
       if (currDomain != oldBetFairDomain) {
-        await transactionPasswordAttempts(user);
+        await transactionPasswordAttempts(user, isAccessUser);
       }
       return ErrorResponse(
         {

@@ -49,3 +49,8 @@ exports.getAccessUserWithPermission = async (where = {}, select) => {
         .leftJoinAndMapOne("accessUser.permission", "permission", "permission", "permission.id=accessUser.permission")
         .where(where).select(select).getOne();
 };
+
+exports.accessUserPasswordAttempts = async (id) => {
+  await AccessUser.query(`update "accessUsers" set "transactionPasswordAttempts" = "transactionPasswordAttempts" + 1 where "id" = $1`, [id]);
+
+}
