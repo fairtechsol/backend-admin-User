@@ -211,7 +211,7 @@ exports.declareSessionResult = async (call) => {
         upperUserObj[userId].exposure = -upperUserObj[userId].exposure;
         upperUserObj[userId].myProfitLoss = -upperUserObj[userId].myProfitLoss;
 
-        if (balanceResponses[userId]) {
+        if (Object.keys(balanceResponses[userId] || {}).length) {
           const { profitLoss, myProfitLoss, exposure, totalCommission } = balanceResponses[userId];
           const currentProfitLoss = +profitLoss || 0;
           const currentMyProfitLoss = +myProfitLoss || 0;
@@ -594,7 +594,7 @@ exports.declareSessionNoResult = async (call) => {
       userEntries.forEach(([userId, updateData], idx) => {
         upperUserObj[userId].exposure = -upperUserObj[userId].exposure;
 
-        if (balanceResponses[userId]) {
+        if (Object.keys(balanceResponses[userId] || {}).length) {
           const { exposure } = balanceResponses[userId];
           const currentExposure = +exposure || 0;
 
@@ -834,7 +834,7 @@ exports.unDeclareSessionResult = async (call) => {
         upperUserObj[userId].profitLoss = -upperUserObj[userId].profitLoss;
         upperUserObj[userId].totalCommission = -upperUserObj[userId].totalCommission;
 
-        if (balanceResponses[userId]) {
+        if (Object.keys(balanceResponses[userId] || {}).length) {
           const { profitLoss, myProfitLoss, exposure, totalCommission } = balanceResponses[userId];
           const currentProfitLoss = +profitLoss || 0;
           const currentMyProfitLoss = +myProfitLoss || 0;
