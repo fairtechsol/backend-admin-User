@@ -666,14 +666,22 @@ exports.changePassword = async (req, res, next) => {
     }
 
     if (user?.transactionPasswordAttempts > 0) {
-      await updateUser(user.id, { transactionPasswordAttempts: 0 });
+      if (isAccessUser) {
+        await updateAccessUser({ id: loginUserId }, { transactionPasswordAttempts: 0 });
+      } else {
+        await updateUser(user.id, { transactionPasswordAttempts: 0 });
+      }
     }
 
     if (!userId) {
-      // Update loginAt, password, and reset transactionPassword
-      await updateUser(loginUserId, {
-        password,
-      });
+      if (isAccessUser) {
+        await updateAccessUser({ id: loginUserId }, { password });
+      }
+      else {
+        await updateUser(loginUserId, {
+          password,
+        });
+      }
       await forceLogoutUser(loginUserId, false, isAccessUser, isAccessUser ? req.user.id : null);
     } else {
       // Update loginAt, password, and reset transactionPassword, remvoe auth when change password by parent
