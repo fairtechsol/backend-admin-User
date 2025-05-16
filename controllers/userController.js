@@ -7,7 +7,7 @@ const { getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
-const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
+const { forceLogoutUser, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildProfitLossSum, addInitialUserBalance, updateUserBalanceData } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
@@ -624,13 +624,25 @@ exports.changePassword = async (req, res, next) => {
         res
       );
     }
+
+    if(isAccessUser&&!req.user.permission?.[permissions.userPasswordChange]){
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "auth.unauthorizeRole" },
+        },
+        req,
+        res
+      );
+    }
     // if password is changed by parent of users
     const userId = req.body.userId;
+    const loginUserId = isAccessUser ? req.user.childId : req.user.id;
 
-    const user = await getUserById(req.user.id, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
+    const user = await getUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
 
     const isPasswordMatch = await checkTransactionPassword(
-      req.user.id,
+      user?.id,
       transactionPassword
     );
 
@@ -658,10 +670,10 @@ exports.changePassword = async (req, res, next) => {
 
     if (!userId) {
       // Update loginAt, password, and reset transactionPassword
-      await updateUser(req.user.id, {
+      await updateUser(loginUserId, {
         password,
       });
-      await forceLogoutUser(req.user.id);
+      await forceLogoutUser(loginUserId, false, isAccessUser, isAccessUser ? req.user.id : null);
     } else {
       // Update loginAt, password, and reset transactionPassword, remvoe auth when change password by parent
       await updateUser(userId, {
