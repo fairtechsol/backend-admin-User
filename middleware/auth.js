@@ -1,10 +1,10 @@
 const { oldBetFairDomain } = require("../config/contants");
 const { getAccessUserById } = require("../services/accessUserService");
-const {  transactionPasswordAttempts } = require("../services/commonService");
+const { transactionPasswordAttempts } = require("../services/commonService");
 const { getUserById, updateUser } = require("../services/userService");
 const { verifyToken, getUserTokenFromRedis } = require("../utils/authUtils");
 const { ErrorResponse } = require("../utils/response");
-const bcrypt=require("bcryptjs");
+const bcrypt = require("bcryptjs");
 exports.isAuthenticate = async (req, res, next) => {
   try {
     const { authorization } = req.headers;
@@ -75,58 +75,58 @@ exports.isAuthenticate = async (req, res, next) => {
 
 
 exports.checkTransactionPassword = async (req, res, next) => {
-  let {transactionPassword} = req.body
+  let { transactionPassword } = req.body
   let { id, isAccessUser, childId } = req.user
-  if(!transactionPassword) 
-  return ErrorResponse(
-    {
-      statusCode: 400,
-      message: {
-        msg: "required",
-        keys: { name: "Transaction password" },
+  if (!transactionPassword)
+    return ErrorResponse(
+      {
+        statusCode: 400,
+        message: {
+          msg: "required",
+          keys: { name: "Transaction password" },
+        },
       },
-    },
-    req,
-    res
-  );
+      req,
+      res
+    );
 
   let user;
-  if(isAccessUser){
-    user = await getAccessUserById(childId, ["transPassword", "id"]);
+  if (isAccessUser) {
+    user = await getAccessUserById(childId, ["transPassword", "id", "transactionPasswordAttempts", "mainParentId", "parentId"]);
   }
   else {
     user = await getUserById(id, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
   }
-  if(!user)
-  return ErrorResponse(
-    {
-      statusCode: 400,
-      message: {
-        msg: "notFound",
-        keys: { name: "User" },
+  if (!user)
+    return ErrorResponse(
+      {
+        statusCode: 400,
+        message: {
+          msg: "notFound",
+          keys: { name: "User" },
+        },
       },
-    },
-    req,
-    res
-  );
-  if(!user.transPassword)
-  return ErrorResponse(
-    {
-      statusCode: 400,
-      message: { msg: "auth.invalidPass", keys: { type: "transaction" }},
-    },
-    req,
-    res
-  );
-  
+      req,
+      res
+    );
+  if (!user.transPassword)
+    return ErrorResponse(
+      {
+        statusCode: 400,
+        message: { msg: "auth.invalidPass", keys: { type: "transaction" } },
+      },
+      req,
+      res
+    );
+
   // Compare old transaction password with the stored transaction password
   let check = bcrypt.compareSync(transactionPassword, user.transPassword);
-  if(!check){
+  if (!check) {
 
     const currDomain = `${process.env.GRPC_URL}`;
 
-    if (currDomain != oldBetFairDomain && !isAccessUser) {
-      await transactionPasswordAttempts(user);
+    if (currDomain != oldBetFairDomain) {
+      await transactionPasswordAttempts(user, isAccessUser);
     }
     return ErrorResponse(
       {
