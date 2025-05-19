@@ -610,17 +610,19 @@ exports.getBetsWithMatchId = (where, betCondition = {}) => {
 
 exports.getChildUsersPlaceBets = (id, matchId) => {
 
-  return BetPlaced.query(`WITH RECURSIVE RoleHierarchy AS (
+  return BetPlaced.query(`WITH RECURSIVE UserHierarchy AS (
     SELECT id, "roleName", "createBy"
-    FROM public.users
-    WHERE id = $1
+    FROM public.users WHERE id = $1
     UNION
     SELECT ur.id, ur."roleName", ur."createBy"
     FROM public.users ur
-    JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId" 
-  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" 
-  where "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' ${matchId ? 'and "matchId"=$2' : ""}`, [id, ...(matchId ? [matchId] : [])]);
+  ),
+  RoleHierarchy AS MATERIALIZED (
+      SELECT id FROM UserHierarchy where "roleName" = 'user'
+  )
+  SELECT DISTINCT bp."betId", bp."marketBetType", bp."eventType", bp."matchId", bp."eventName", m."title", m."startAt", bp."bettingName", bp."marketType" FROM RoleHierarchy rh
+  JOIN "betPlaceds" bp ON bp."createBy" = rh.id AND bp.result = 'PENDING' AND bp."marketBetType" <> 'CARD'
+  JOIN matchs m ON m.id = bp."matchId" AND m."stopAt" IS NULL ${matchId ? 'where "matchId"=$2' : ""}`, [id, ...(matchId ? [matchId] : [])]);
 }
 
 exports.pendingCasinoResult = () => {
