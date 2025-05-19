@@ -28,7 +28,7 @@ exports.getButton = async (req, res) => {
     return SuccessResponse(
       {
         statusCode: 200,
-        message: { msg: "fetched", keys: { name: "Button" } },
+        message: { msg: "fetched", keys: { type: "Button" } },
         data: button,
       },
       req,
