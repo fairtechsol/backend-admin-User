@@ -616,6 +616,7 @@ exports.getChildUsersPlaceBets = (id, matchId) => {
     UNION
     SELECT ur.id, ur."roleName", ur."createBy"
     FROM public.users ur
+    JOIN UserHierarchy uh ON ur."createBy" = uh.id
   ),
   RoleHierarchy AS MATERIALIZED (
       SELECT id FROM UserHierarchy where "roleName" = 'user'
