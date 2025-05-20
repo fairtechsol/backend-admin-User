@@ -618,8 +618,8 @@ exports.getChildUsersPlaceBets = (id, matchId) => {
     SELECT ur.id, ur."roleName", ur."createBy"
     FROM public.users ur
     JOIN RoleHierarchy rh ON ur."createBy" = rh.id
-  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId" AND match."stopAt" IS NULL
-  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" AND rh."roleName" = 'user'
+  ) select distinct "betId","marketBetType","eventType", "matchId","eventName",match."title",match."startAt","bettingName","marketType" from "betPlaceds" join matchs as match on match.id = "betPlaceds"."matchId" 
+  join RoleHierarchy rh on rh.id = "betPlaceds"."createBy" 
   where "betPlaceds".result = 'PENDING' and "marketBetType" != 'CARD' ${matchId ? 'and "matchId"=$2' : ""}`, [id, ...(matchId ? [matchId] : [])]);
 }
 
