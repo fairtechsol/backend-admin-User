@@ -1005,10 +1005,16 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
     for (let currBets of bets) {
       if (currBets.marketBetType == marketBetType.SESSION) {
         let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id, matchDetails?.[currBets.matchId]);
-        sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:profitLoss`] = result.betData?.reduce((acc, key) => {
+         if ([sessionBettingType.ballByBall, sessionBettingType.overByOver, sessionBettingType.session, sessionBettingType.khado, sessionBettingType.meter].includes(currBets?.marketType)) {
+         sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:profitLoss`] = result.betData?.reduce((acc, key) => {
           acc[key.odds] = key.profitLoss;
           return acc;
         }, {});
+        }
+        else {
+          sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:profitLoss`] = result.betData
+        }
+        
         sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:maxLoss`] = result.maxLoss;
         sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:totalBet`] = result.total_bet;
 
@@ -1046,9 +1052,7 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
         matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] || 0) + maxLoss).toFixed(2));
       }
     }
-    Object.keys(sessionResult)?.forEach((item) => {
-      sessionResult[item] = JSON.stringify(sessionResult[item]);
-    });
+   
     return { plResult: { ...sessionResult, ...matchResult }, expResult: { ...sessionExp, ...matchExposure } }
 
   }

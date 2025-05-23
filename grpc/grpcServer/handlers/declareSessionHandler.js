@@ -246,7 +246,7 @@ exports.declareSessionResult = async (call) => {
             .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
             .hincrbyfloat(userId, 'exposure', adjustedExposure)
             .hincrbyfloat(userId, [redisSessionExposureName], adjustedExposure)
-            .del(`${baseKey}:profitLoss`, `${baseKey}:lowerLimit`, `${baseKey}:upperLimit`, `${baseKey}:totalBet`, `${baseKey}:maxLoss`);
+            .del(`${baseKey}:profitLoss`, `${baseKey}:lowerLimitOdds`, `${baseKey}:upperLimitOdds`, `${baseKey}:totalBet`, `${baseKey}:maxLoss`);
 
           logger.info({
             message: "Declare result session db update for parent ",
@@ -386,7 +386,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
           .hincrbyfloat(user.user.id, 'exposure', exposure)
           .hincrbyfloat(user.user.id, 'currentBalance', profitLoss)
           .hincrbyfloat(user.user.id, redisSessionExposureName, exposure)
-          .del(`${baseKey}:profitLoss`, `${baseKey}:lowerLimit`, `${baseKey}:upperLimit`, `${baseKey}:totalBet`, `${baseKey}:maxLoss`);
+          .del(`${baseKey}:profitLoss`, `${baseKey}:lowerLimitOdds`, `${baseKey}:upperLimitOdds`, `${baseKey}:totalBet`, `${baseKey}:maxLoss`);
       }
 
       if (user?.user?.sessionCommission) {
@@ -619,7 +619,7 @@ exports.declareSessionNoResult = async (call) => {
           updatePipeline
             .hincrbyfloat(userId, 'exposure', adjustedExposure)
             .hincrbyfloat(userId, [redisSessionExposureName], adjustedExposure)
-            .del(`${baseKey}:profitLoss`, `${baseKey}:lowerLimit`, `${baseKey}:upperLimit`, `${baseKey}:totalBet`, `${baseKey}:maxLoss`);
+            .del(`${baseKey}:profitLoss`, `${baseKey}:lowerLimitOdds`, `${baseKey}:upperLimitOdds`, `${baseKey}:totalBet`, `${baseKey}:maxLoss`);
 
           logger.info({
             message: "Declare result session db update for parent ",
@@ -733,7 +733,7 @@ const calculateMaxLossSessionForUserNoResult = async (
         updateUserPipeline
           .hincrbyfloat(user.user.id, 'exposure', -maxLoss)
           .hincrbyfloat(user.user.id, [redisSessionExposureName], -maxLoss)
-          .del(`${baseKey}:profitLoss`, `${baseKey}:lowerLimit`, `${baseKey}:upperLimit`, `${baseKey}:totalBet`, `${baseKey}:maxLoss`);
+          .del(`${baseKey}:profitLoss`, `${baseKey}:lowerLimitOdds`, `${baseKey}:upperLimitOdds`, `${baseKey}:totalBet`, `${baseKey}:maxLoss`);
       }
 
       if (user.user.createBy === user.user.id && !user.user.isDemo) {
@@ -867,8 +867,8 @@ exports.unDeclareSessionResult = async (call) => {
               acc[item?.odds] = item?.profitLoss
               return acc
             }, {}))
-            .set(`${baseKey}:lowerLimit`, parentRedisUpdateObj?.lowerLimitOdds)
-            .set(`${baseKey}:upperLimit`, parentRedisUpdateObj?.upperLimitOdds)
+            .set(`${baseKey}:lowerLimitOdds`, parentRedisUpdateObj?.lowerLimitOdds)
+            .set(`${baseKey}:upperLimitOdds`, parentRedisUpdateObj?.upperLimitOdds)
             .set(`${baseKey}:totalBet`, parentRedisUpdateObj?.totalBet)
             .set(`${baseKey}:maxLoss`, parentRedisUpdateObj?.maxLoss);
 
@@ -1041,8 +1041,8 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
             acc[item?.odds] = item?.profitLoss
             return acc
           }, {}))
-          .set(`${baseKey}:lowerLimit`, profitLossRedisData?.lowerLimitOdds)
-          .set(`${baseKey}:upperLimit`, profitLossRedisData?.upperLimitOdds)
+          .set(`${baseKey}:lowerLimitOdds`, profitLossRedisData?.lowerLimitOdds)
+          .set(`${baseKey}:upperLimitOdds`, profitLossRedisData?.upperLimitOdds)
           .set(`${baseKey}:totalBet`, profitLossRedisData?.totalBet)
           .set(`${baseKey}:maxLoss`, profitLossRedisData?.maxLoss);
       }

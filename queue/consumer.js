@@ -92,6 +92,10 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
       profitLossData: jobData?.redisData,
       betPlaced: jobData
     });
+    jobData.redisData.betPlaced = jobData?.redisData?.betPlaced?.reduce((acc, curr) => {
+      acc[curr.odds] = curr.profitLoss;
+      return acc;
+    }, {})
     await setProfitLossData(userId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, jobData?.redisData);
     //update db
     await updateUserExposure(userId, partnerSessionExposure);
@@ -178,7 +182,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
               await setUserPLSession(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, redisData?.betPlaced?.map((item) => ([item?.odds?.toString(), item?.profitLoss?.toString()]))?.flat(2));
             }
             else if ([sessionBettingType.oddEven, sessionBettingType.cricketCasino, sessionBettingType.fancy1].includes(jobData?.placedBet?.marketType)) {
-              let r=await setUserPLSessionOddEven(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, Object.entries(redisData?.betPlaced)?.flat(2)?.map((item) => item.toString()));
+              let r = await setUserPLSessionOddEven(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, Object.entries(redisData?.betPlaced)?.flat(2)?.map((item) => item.toString()));
               console.log(r);
             }
             await updateUserExposure(partnershipId, partnerSessionExposure);

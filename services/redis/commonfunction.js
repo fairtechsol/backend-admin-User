@@ -151,8 +151,8 @@ exports.getUserRedisSingleKey = async (userId, key) => {
 exports.getUserSessionPL = async (userId, matchId, betId) => {
   const pipeline = internalRedis.pipeline();
 
-  const upperKey = `session:${userId}:${matchId}:${betId}:upperLimit`;
-  const lowerKey = `session:${userId}:${matchId}:${betId}:lowerLimit`;
+  const upperKey = `session:${userId}:${matchId}:${betId}:upperLimitOdds`;
+  const lowerKey = `session:${userId}:${matchId}:${betId}:lowerLimitOdds`;
 
   // Queue commands
   pipeline.get(upperKey);
@@ -176,8 +176,8 @@ exports.getUserSessionPL = async (userId, matchId, betId) => {
 exports.getUserSessionAllPL = async (userId, matchId, betId, type = sessionBettingType.session) => {
   const pipeline = internalRedis.pipeline();
 
-  const upperKey = `session:${userId}:${matchId}:${betId}:upperLimit`;
-  const lowerKey = `session:${userId}:${matchId}:${betId}:lowerLimit`;
+  const upperKey = `session:${userId}:${matchId}:${betId}:upperLimitOdds`;
+  const lowerKey = `session:${userId}:${matchId}:${betId}:lowerLimitOdds`;
   const totalBetKey = `session:${userId}:${matchId}:${betId}:totalBet`;
   const profitLossKey = `session:${userId}:${matchId}:${betId}:profitLoss`;
   const maxLossKey = `session:${userId}:${matchId}:${betId}:maxLoss`;
@@ -363,8 +363,8 @@ exports.setUserPLSession = async (userId, matchId, betId, redisData) => {
                 redis.call('SET', KEYS[5], math.abs(maxLoss))
                 `, 5,
     base + 'profitLoss',
-    base + 'lowerLimit',
-    base + 'upperLimit',
+    base + 'lowerLimitOdds',
+    base + 'upperLimitOdds',
     base + 'totalBet',
     base + 'maxLoss',
     ...redisData);
@@ -446,7 +446,7 @@ exports.getAllSessions = async (userId, matchId) => {
       [matchId]: Object.entries(sessions).reduce((prev, [key, val]) => {
         prev[key] = {
           totalBet: val.totalBet, "maxLoss": val.maxLoss, "betId": key,
-          "upperLimitOdds": val.upperLimit, "lowerLimitOdds": val.lowerLimit, "betPlaced": Object.entries(val?.profitLoss || {})?.map(([odds, pl]) => ({ odds: odds, profitLoss: pl })) || [],
+          "upperLimitOdds": val.upperLimitOdds, "lowerLimitOdds": val.lowerLimitOdds, "betPlaced": Object.entries(val?.profitLoss || {})?.map(([odds, pl]) => ({ odds: odds, profitLoss: pl })) || [],
         }
         return prev;
       }, {})
@@ -498,7 +498,7 @@ return cjson.encode(sessions)
       prev[key] = Object.entries(val)?.reduce((prev, [betKey, betVal]) => {
         prev[betKey] = {
           "totalBet": betVal.totalBet, "maxLoss": betVal.maxLoss, "betId": betKey,
-          "upperLimitOdds": betVal.upperLimit, "lowerLimitOdds": betVal.lowerLimit, "betPlaced": Object.entries(betVal?.profitLoss || {})?.map(([odds, pl]) => ({ odds: odds, profitLoss: pl })) || [],
+          "upperLimitOdds": betVal.upperLimitOdds, "lowerLimitOdds": betVal.lowerLimitOdds, "betPlaced": Object.entries(betVal?.profitLoss || {})?.map(([odds, pl]) => ({ odds: odds, profitLoss: pl })) || [],
         }
         return prev;
       }, {})
@@ -514,10 +514,10 @@ exports.setProfitLossData = async (userId, matchId, betId, redisData) => {
   pipeline.hset(base + 'profitLoss', redisData.betPlaced);
   pipeline.set(base + 'totalBet', redisData.totalBet);
   if (redisData.upperLimitOdds != null) {
-    pipeline.set(base + 'upperLimit', redisData.upperLimitOdds);
+    pipeline.set(base + 'upperLimitOdds', redisData.upperLimitOdds);
   }
   if (redisData.lowerLimitOdds != null) {
-    pipeline.set(base + 'lowerLimit', redisData.lowerLimitOdds);
+    pipeline.set(base + 'lowerLimitOdds', redisData.lowerLimitOdds);
   }
   pipeline.set(base + 'maxLoss', redisData.maxLoss);
   await pipeline.exec();
