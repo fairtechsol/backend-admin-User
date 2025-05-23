@@ -5,9 +5,9 @@ const lodash = require("lodash");
 const { userRoleConstant, partnershipPrefixByRole, betResultStatus, marketBetType, matchBettingType, expertDomain, socketData, redisKeys, sessionBettingType, walletDomain } = require("../../../config/contants");
 const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss, findAllPlacedBet, deleteBet, getBetsWithMatchId } = require("../../../services/betPlacedService");
 const { getChildsWithOnlyUserRole, getAllUsers, getUserById, updateUser } = require("../../../services/userService");
-const { profitLossPercentCol, childIdquery, findUserPartnerShipObj, calculatePLAllBet, mergeProfitLoss, forceLogoutUser, calculateProfitLossForRacingMatchToResult, calculateRacingRate, parseRedisData } = require("../../../services/commonService");
+const { profitLossPercentCol, findUserPartnerShipObj, calculatePLAllBet, mergeProfitLoss, forceLogoutUser, calculateProfitLossForRacingMatchToResult, calculateRacingRate, parseRedisData } = require("../../../services/commonService");
 const { In, IsNull, Not } = require("typeorm");
-const { getUserRedisData, incrementValuesRedis } = require("../../../services/redis/commonfunction");
+const { getUserRedisData, incrementValuesRedis, getUserSessionAllPL, setProfitLossData } = require("../../../services/redis/commonfunction");
 const { getMatchData } = require("../../../services/matchService");
 const { getUserBalanceDataByUserId, updateUserExposure } = require("../../../services/userBalanceService");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
@@ -117,14 +117,14 @@ exports.getSessionBetProfitLossExpert = async (call) => {
 exports.getResultBetProfitLoss = async (call) => {
   try {
     let { user, matchId, betId, isSession, searchId, partnerShipRoleName } = call.request;
-   
+
     if (!user) {
       throw {
         code: grpc.status.INVALID_ARGUMENT,
         message: __mf("invalidData"),
       };
     }
-   
+
     const domainUrl = `${call?.call?.host}`;
 
     const result = await getBetsProfitLoss(user.id, matchId || null, betId || null, searchId || null, partnerShipRoleName, domainUrl, isSession);
@@ -231,12 +231,12 @@ exports.deleteMultipleBet = async (call) => {
 
 const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, domainUrl, isPermanentDelete) => {
   let userRedisData = await getUserRedisData(userId);
+  let userPLRedisData = await getUserSessionAllPL(userId, matchId, betId, bets[0]?.marketType);
   let isUserLogin = userRedisData ? true : false;
   let userOldExposure = 0;
   let betPlacedId = bets.map(bet => bet.id);
   let partnershipObj = {};
   let oldSessionExposure = 0, oldMaxLoss = 0;
-  let redisName = `${betId}_profitLoss`;
   let socketSessionEvent = socketData.sessionDeleteBet;
   let redisSesionExposureName = redisKeys.userSessionExposure + matchId;
   let oldProfitLoss;
@@ -247,7 +247,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     userOldExposure = parseFloat(userRedisData.exposure);
     partnershipObj = JSON.parse(userRedisData.partnerShips);
     oldSessionExposure = userRedisData[redisSesionExposureName];
-    oldProfitLoss = userRedisData[redisName];
+    oldProfitLoss = userPLRedisData;
     currUserBalance = parseFloat(userRedisData.currentBalance);
   } else {
     let user = await getUserById(userId);
@@ -267,11 +267,9 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       betPlaced: userAllBetProfitLoss.betData,
       totalBet: userAllBetProfitLoss.total_bet
     }
-    oldProfitLoss = JSON.stringify(oldProfitLoss);
   }
 
   if (oldProfitLoss) {
-    oldProfitLoss = JSON.parse(oldProfitLoss);
     oldMaxLoss = parseFloat(oldProfitLoss.maxLoss);
   }
   let oldLowerLimitOdds = parseFloat(oldProfitLoss.lowerLimitOdds);
@@ -369,9 +367,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
     await incrementValuesRedis(userId, {
       exposure: -exposureDiff,
       [redisSesionExposureName]: -exposureDiff
-    }, {
-      [redisName]: JSON.stringify(oldProfitLoss)
     });
+    await setProfitLossData(userId, matchId, betId, oldProfitLoss);
     sendMessageToUser(userId, socketSessionEvent, {
       currentBalance: userRedisData?.currentBalance,
       exposure: redisObject?.exposure,
@@ -405,6 +402,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
         try {
           // Get user data from Redis or balance data by userId
           let masterRedisData = await getUserRedisData(partnershipId);
+          const masterRedisDataPL = await getUserSessionAllPL(partnershipId, matchId, betId, bets[0]?.marketType);
 
           if (lodash.isEmpty(masterRedisData)) {
             // If masterRedisData is empty, update partner exposure
@@ -416,7 +414,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
 
             await updateUserExposure(partnershipId, (-exposureDiff));
 
-            let oldProfitLossParent = JSON.parse(masterRedisData[redisName]);
+            let oldProfitLossParent = masterRedisDataPL;
             let parentPLbetPlaced = oldProfitLossParent?.betPlaced || [];
             let newMaxLossParent = 0;
             let oldMaxLossParent = oldProfitLossParent?.maxLoss;
@@ -457,7 +455,8 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
               exposure: partnerExposure
             };
 
-            await incrementValuesRedis(partnershipId, { exposure: -exposureDiff, [redisSesionExposureName]: -exposureDiff }, { [redisName]: JSON.stringify(oldProfitLossParent), });
+            await incrementValuesRedis(partnershipId, { exposure: -exposureDiff, [redisSesionExposureName]: -exposureDiff });
+            await setProfitLossData(partnershipId, matchId, betId, oldProfitLossParent);
 
             // Send data to socket for session bet placement
             sendMessageToUser(partnershipId, socketSessionEvent, {

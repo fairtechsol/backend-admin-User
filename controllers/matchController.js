@@ -1,7 +1,7 @@
 const { In, IsNull } = require("typeorm");
-const { redisKeys, userRoleConstant, oldBetFairDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, matchBettingType, cardGames, betResultStatus } = require("../config/contants");
+const { redisKeys, userRoleConstant, oldBetFairDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, matchBettingType, cardGames, betResultStatus, oddsSessionBetType } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId } = require("../services/betPlacedService");
-const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKeyData } = require("../services/redis/commonfunction");
+const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKeyData, getAllSessions } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getChildUser, getUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
@@ -26,23 +26,28 @@ exports.matchDetails = async (req, res) => {
       if (Array.isArray(apiResponse?.data)) {
         for (let i = 0; i < apiResponse?.data?.length; i++) {
           const matchId = apiResponse?.data?.[i]?.id;
-          const redisIds = apiResponse?.data?.[i]?.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
           let redisData = [];
-          if (redisIds?.length > 0) {
-            redisData = await getUserRedisKeys(userId, redisIds);
+          const marketTypes = apiResponse?.data?.[i]?.sessionBettings?.reduce((prev, curr) => {
+            const currData = JSON.parse(curr?.betData || "{}");
+            prev[currData?.id] = currData?.marketType;
+            return prev;
+          }, {})
+          if (apiResponse?.data?.[i]?.sessionBettings?.length > 0) {
+            redisData = await getAllSessions(userId, matchId);
           }
           let sessionResult = [];
           let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);
-          redisData?.forEach((item, index) => {
-            if (item) {
-
+          Object.entries(redisData?.[matchId] || {})?.forEach(([betIdItem, betData], index) => {
+            if (betIdItem) {
               sessionResult.push({
-                betId: redisIds?.[index]?.split("_")[0],
-                maxLoss: JSON.parse(item)?.maxLoss,
-                totalBet: JSON.parse(item)?.totalBet,
-                profitLoss: JSON.parse(item)?.betPlaced,
+                betId: betIdItem,
+                maxLoss: betData?.maxLoss,
+                totalBet: betData?.totalBet,
+                profitLoss: oddsSessionBetType.includes(marketTypes?.[betIdItem]) ? betData?.betPlaced : betData?.betPlaced?.reduce((prev, curr) => {
+                  prev[curr.odds] = curr?.profitLoss;
+                  return prev;
+                }, {})
               });
-
             }
           });
           apiResponse.data[i].profitLossDataSession = sessionResult;
@@ -50,23 +55,29 @@ exports.matchDetails = async (req, res) => {
         }
       }
       else {
-        const redisIds = apiResponse?.data?.sessionBettings?.map((item) => JSON.parse(item)?.id + redisKeys.profitLoss);
         let redisData = [];
-        if (redisIds?.length > 0) {
-          redisData = await getUserRedisKeys(userId, redisIds);
+        if (apiResponse?.data?.sessionBettings?.length > 0) {
+          redisData = await getAllSessions(userId, matchId);
         }
+        const marketTypes = apiResponse?.data?.sessionBettings?.reduce((prev, curr) => {
+          const currData = JSON.parse(curr?.betData || "{}");
+          prev[currData?.id] = currData?.marketType;
+          return prev;
+        }, {})
         let sessionResult = [];
         let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);;
-        redisData?.forEach((item, index) => {
-          if (item) {
+        Object.entries(redisData[matchId] || {})?.forEach(([betIdItem, betData], index) => {
+          if (betIdItem) {
             sessionResult.push({
-              betId: redisIds?.[index]?.split("_")[0],
-              maxLoss: JSON.parse(item)?.maxLoss,
-              totalBet: JSON.parse(item)?.totalBet,
-              profitLoss: JSON.parse(item)?.betPlaced,
+              betId: betIdItem,
+              maxLoss: parseFloat(betData?.maxLoss),
+              totalBet: betData?.totalBet,
+              profitLoss: oddsSessionBetType.includes(marketTypes?.[betIdItem]) ? betData?.betPlaced : betData?.betPlaced?.reduce((prev, curr) => {
+                prev[curr.odds] = curr?.profitLoss;
+                return prev;
+              }, {})
             });
           }
-
         });
         apiResponse.data.profitLossDataSession = sessionResult;
         apiResponse.data.profitLossDataMatch = matchResult;
@@ -261,7 +272,7 @@ exports.listMatch = async (req, res) => {
     let user = req.user;
     let apiResponse = {};
     try {
-      apiResponse = await getMatchListHandler({query:JSON.stringify(req.query)});
+      apiResponse = await getMatchListHandler({ query: JSON.stringify(req.query) });
     } catch (error) {
       throw error?.response?.data;
     }
@@ -375,6 +386,7 @@ exports.marketAnalysis = async (req, res) => {
 
     if (redisData) {
       const matchesBetsByUsers = await getChildUsersPlaceBets(userId, matchId);
+      const currRedisData = await getAllSessions(userId, matchId);
 
       let matchIds = new Set();
 
@@ -395,7 +407,7 @@ exports.marketAnalysis = async (req, res) => {
         for (let item of matchesBetsByUsers) {
           const currMatchDetail = result.findIndex((items) => items?.matchId == item?.matchId);
           if (item?.marketBetType == marketBetType.SESSION) {
-            const currRedisData = JSON.parse(redisData?.[item?.betId + redisKeys.profitLoss]||"{}");
+
             if (currMatchDetail == -1) {
               result.push({
                 title: item?.title,
@@ -407,7 +419,7 @@ exports.marketAnalysis = async (req, res) => {
                     betId: item?.betId,
                     type: item?.marketType,
                     eventName: item?.eventName,
-                    profitLoss: currRedisData
+                    profitLoss: currRedisData?.[item?.matchId]?.[item?.betId]
                   }]
                 }
               })
@@ -419,7 +431,7 @@ exports.marketAnalysis = async (req, res) => {
               result[currMatchDetail].betType["session"].push({
                 betId: item?.betId,
                 eventName: item?.eventName,
-                profitLoss: currRedisData,
+                profitLoss: currRedisData?.[item?.matchId]?.[item?.betId],
                 type: item?.marketType,
               });
             }
@@ -430,7 +442,7 @@ exports.marketAnalysis = async (req, res) => {
 
             if (item?.marketType == matchBettingType.tournament) {
               currRedisData = {};
-              let currBetPL = JSON.parse(redisData[item?.betId + redisKeys.profitLoss + "_" + item?.matchId]||"{}");
+              let currBetPL = JSON.parse(redisData[item?.betId + redisKeys.profitLoss + "_" + item?.matchId] || "{}");
               teams = currMatchData?.tournament?.find((items) => items?.id == item?.betId)?.runners?.sort((a, b) => a.sortPriority - b.sortPriority)?.map((items, i) => {
                 currRedisData[String.fromCharCode(97 + i)] = currBetPL[items?.id];
                 return items?.runnerName
@@ -637,10 +649,10 @@ exports.userEventWiseExposure = async (req, res) => {
     }
 
     const result = {};
-    let gamesExposure = await getUserExposuresGameWise(user, {...eventNameByMatchId});
+    let gamesExposure = await getUserExposuresGameWise(user, { ...eventNameByMatchId });
 
     const allMatchBetData = gamesExposure || {};
-  
+
     if (Object.keys(allMatchBetData || {}).length) {
       for (let item of Object.keys(allMatchBetData)) {
         if (eventNameByMatchId[item]) {

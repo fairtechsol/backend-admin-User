@@ -6,7 +6,7 @@ const { addRaceData } = require("../../../services/racingServices");
 const { userRoleConstant, matchWiseBlockType, expertDomain, marketBetType, redisKeys, matchBettingType } = require("../../../config/contants");
 const { getAllUsers, getChildUser, isAllChildDeactive, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getUser, getChildsWithOnlyMultiUserRole } = require("../../../services/userService");
 const { getUserExposuresGameWise, getCasinoMatchDetailsExposure, getVirtualCasinoExposure, getUserProfitLossMatch } = require("../../../services/commonService");
-const { getUserRedisData } = require("../../../services/redis/commonfunction");
+const { getUserRedisData, getAllSessions } = require("../../../services/redis/commonfunction");
 const { getChildUsersPlaceBets } = require("../../../services/betPlacedService");
 const { getVirtualCasinoExposureSum } = require("../../../services/virtualCasinoBetPlacedsService");
 const { In, IsNull } = require("typeorm");
@@ -195,6 +195,7 @@ exports.marketAnalysis = async (call) => {
 
     if (redisData) {
       const matchesBetsByUsers = await getChildUsersPlaceBets(userId, matchId);
+      const currRedisData = await getAllSessions(userId, matchId);
 
       let matchIds = new Set();
 
@@ -219,7 +220,6 @@ exports.marketAnalysis = async (call) => {
         for (let item of matchesBetsByUsers) {
           const currMatchDetail = result.findIndex((items) => items?.matchId == item?.matchId);
           if (item?.marketBetType == marketBetType.SESSION) {
-            const currRedisData = JSON.parse(redisData?.[item?.betId + redisKeys.profitLoss]);
             if (currMatchDetail == -1) {
               result.push({
                 title: item?.title,
@@ -231,7 +231,7 @@ exports.marketAnalysis = async (call) => {
                     betId: item?.betId,
                     type: item?.marketType,
                     eventName: item?.eventName,
-                    profitLoss: currRedisData
+                    profitLoss: currRedisData?.[item?.matchId]?.[item?.betId]
                   }]
                 }
               })
@@ -243,7 +243,7 @@ exports.marketAnalysis = async (call) => {
               result[currMatchDetail].betType["session"].push({
                 betId: item?.betId,
                 eventName: item?.eventName,
-                profitLoss: currRedisData,
+                profitLoss: currRedisData?.[item?.matchId]?.[item?.betId],
                 type: item?.marketType,
               });
             }

@@ -20,7 +20,7 @@ const {
 const { userLoginAtUpdate, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
 const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
 const { logger } = require("../config/logger");
-const { updateUserDataRedis, getRedisKey, setRedisKey } = require("../services/redis/commonfunction");
+const { updateUserDataRedis, getRedisKey, setRedisKey, setLoginVal, deleteProfitLossData } = require("../services/redis/commonfunction");
 const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
 const { generateAuthToken, verifyAuthToken } = require("../utils/generateAuthToken");
 const bot = require("../config/telegramBot");
@@ -54,36 +54,38 @@ const validateUser = async (userName, password) => {
 };
 
 const setUserDetailsRedis = async (user) => {
-  try{
-  logger.info({ message: "Setting exposure at login time.", data: user });
+  try {
+    logger.info({ message: "Setting exposure at login time.", data: user });
 
-  // Fetch user details from Redis
-  const redisUserData = await internalRedis.hget(user.id, "userName");
+    // Fetch user details from Redis
+    const redisUserData = await internalRedis.hget(user.id, "userName");
 
-  if (!redisUserData) {
-    // Fetch and set betting data at login
-    let betData = await settingBetsDataAtLogin(user);
-    // Set user details and partnerships in Redis
-    await updateUserDataRedis(user.id, {
-      exposure: user?.userBal?.exposure || 0,
-      profitLoss: user?.userBal?.profitLoss || 0,
-      myProfitLoss: user?.userBal?.myProfitLoss || 0,
-      userName: user.userName,
-      currentBalance: user?.userBal?.currentBalance || 0,
-      roleName: user.roleName,
-      ...(betData || {}),
-      partnerShips: await findUserPartnerShipObj(user),
-      userRole: user.roleName,
-    });
+    if (!redisUserData) {
+      // Fetch and set betting data at login
+      const betData = await settingBetsDataAtLogin(user);
+      await setLoginVal(betData?.plResult)
+      // Set user details and partnerships in Redis
+      await updateUserDataRedis(user.id, {
+        exposure: user?.userBal?.exposure || 0,
+        profitLoss: user?.userBal?.profitLoss || 0,
+        myProfitLoss: user?.userBal?.myProfitLoss || 0,
+        userName: user.userName,
+        currentBalance: user?.userBal?.currentBalance || 0,
+        roleName: user.roleName,
+        ...(betData?.expResult || {}),
+        partnerShips: await findUserPartnerShipObj(user),
+        userRole: user.roleName,
+      });
 
-    // Expire user data in Redis
-    await internalRedis.expire(user.id, redisTimeOut);
+      // Expire user data in Redis
+      await internalRedis.expire(user.id, redisTimeOut);
+    }
+    else {
+      // Expire user data in Redis
+      await internalRedis.expire(user.id, redisTimeOut);
+    }
   }
-  else{
-     // Expire user data in Redis
-     await internalRedis.expire(user.id, redisTimeOut);
-  }}
-  catch(err){
+  catch (err) {
     throw err;
   }
 };
@@ -240,8 +242,9 @@ exports.logout = async (req, res) => {
 
     // Remove the user's token from Redis using their ID as the key
     await internalRedis.del(user.id);
+    await deleteProfitLossData(user.id);
 
-    if(user.isDemo){
+    if (user.isDemo) {
       deleteDemoUser(user.id);
     }
 
@@ -285,7 +288,7 @@ exports.generateUserAuthToken = async (req, res) => {
 
     const isDeviceExist = await getAuthenticator({ userId: user.id }, ["id"]);
 
-    if(isDeviceExist){
+    if (isDeviceExist) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -381,7 +384,7 @@ exports.connectUserAuthToken = async (req, res) => {
         req,
         res
       );
-    }  
+    }
 
     await connectAppWithToken(authToken, deviceId, user);
 
@@ -405,11 +408,11 @@ exports.connectUserAuthToken = async (req, res) => {
   }
 };
 
-exports.getAuthenticatorRefreshToken=async (req,res)=>{
+exports.getAuthenticatorRefreshToken = async (req, res) => {
   try {
     const { deviceId } = req.params;
 
-    const authDevice = await getAuthenticator({ deviceId: deviceId }, [ "id","type"]);
+    const authDevice = await getAuthenticator({ deviceId: deviceId }, ["id", "type"]);
     if (!authDevice) {
       return ErrorResponse(
         {
@@ -452,7 +455,7 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
     const { authToken } = req.body;
     const user = req.user;
 
-    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id","type"]);
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id", "type"]);
     if (!authDevice) {
       return ErrorResponse(
         {
@@ -557,7 +560,7 @@ exports.removeAuthenticator = async (req, res) => {
     const { id } = req.user;
     const { authToken } = req.body;
 
-    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id","type"]);
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id", "type"]);
     if (!authDevice) {
       return ErrorResponse(
         {
@@ -600,7 +603,7 @@ exports.removeAuthenticator = async (req, res) => {
         );
       }
     }
-    else{
+    else {
       const redisAuthToken = await getRedisKey(`${redisKeys.telegramToken}_${id}`);
       if (!redisAuthToken) {
         return ErrorResponse(
@@ -628,7 +631,7 @@ exports.removeAuthenticator = async (req, res) => {
           res
         );
       }
-    bot.sendMessage(authDevice.deviceId, __mf("telegramBot.disabled"))
+      bot.sendMessage(authDevice.deviceId, __mf("telegramBot.disabled"))
 
     }
 
@@ -659,8 +662,8 @@ exports.removeAuthenticator = async (req, res) => {
 exports.getAuthenticatorUsersList = async (req, res) => {
   try {
     const { deviceId } = req.params;
-    
-    const users = await getAuthenticators({ deviceId: deviceId, type: authenticatorType.app }, ["user.userName","userAuthenticator.id","user.id"])
+
+    const users = await getAuthenticators({ deviceId: deviceId, type: authenticatorType.app }, ["user.userName", "userAuthenticator.id", "user.id"])
 
     return SuccessResponse(
       {
@@ -685,8 +688,8 @@ exports.getAuthenticatorUsersList = async (req, res) => {
 exports.getAuthenticatorUser = async (req, res) => {
   try {
     const { id } = req.user;
-    
-    const userAuth = await getAuthenticator({ userId:id })
+
+    const userAuth = await getAuthenticator({ userId: id })
 
     return SuccessResponse(
       {
