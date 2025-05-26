@@ -384,7 +384,7 @@ exports.rollBackRequestMac88 = async (req, res) => {
     try {
         const { userId, transactionId, gameId, reqId } = req.body;
         const creditAmount = roundToTwoDecimals(req.body.rollbackAmount || 0);
-        
+
         if (!gameId || gameId == "" || !transactionId || transactionId == "" || reqId == "" || !reqId) {
             return res.status(400).json({
                 "status": "OP_INVALID_PARAMS"
@@ -433,23 +433,28 @@ exports.rollBackRequestMac88 = async (req, res) => {
 }
 
 const calculateMac88ResultUnDeclare = async (userId, creditAmount, transactionId) => {
-    const user = await getUserDataWithUserBalance({ id: userId });
-    if (!user) {
-        return res.status(400).json({
-            "status": "OP_USER_NOT_FOUND"
+    try {
+        const user = await getUserDataWithUserBalance({ id: userId });
+        if (!user) {
+            return res.status(400).json({
+                "status": "OP_USER_NOT_FOUND"
+            });
+        }
+        const userCurrProfitLoss = 0;
+        const userCurrBalance = parseFloat(user?.userBal?.currentBalance) + parseFloat(creditAmount);
+        await updateUserBalanceData(user.id, {
+            balance: parseFloat(creditAmount)
+        });
+        sendMessageToUser(userId, socketData.userBalanceUpdateEvent, { currentBalance: userCurrBalance }
+        );
+        updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true, isRollback: true });
+    } catch (error) {
+        logger.error({
+            message: `Error in rollback request of virtual casino for user calculateMac88ResultUnDeclare ${userId}: ${creditAmount}, ${transactionId}: `,
+            error: error?.message,
+            stack: error?.stack
         });
     }
-    const userCurrProfitLoss = 0;
-    const userCurrBalance = parseFloat(user?.userBal?.currentBalance) + parseFloat(creditAmount);
-    await updateUserBalanceData(user.id, {
-        balance: parseFloat(creditAmount)
-    });
-    sendMessageToUser(
-        userId,
-        socketData.userBalanceUpdateEvent,
-        { currentBalance: userCurrBalance }
-    );
-    updateVirtualCasinoBetPlaced({ transactionId: transactionId }, { amount: userCurrProfitLoss, settled: true, isRollback: true });
 }
 
 exports.getMac88GameList = async (req, res) => {

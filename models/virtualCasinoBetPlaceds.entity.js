@@ -1,5 +1,6 @@
 const { EntitySchema } = require('typeorm');
 const {  baseColumnsSchemaPart } = require("../config/contants");
+const { ColumnNumericTransformer } = require('../services/dbService');
 
 const virtualCasinoBetPlacedSchema = new EntitySchema({
   name: 'virtualCasinoBetPlaced',
@@ -18,8 +19,12 @@ const virtualCasinoBetPlacedSchema = new EntitySchema({
       nullable: false,
     },
     amount: {
-      type: "float",
-      nullable: false
+      type: 'decimal',
+      nullable: false,
+      precision: 13,
+      scale: 2,
+      default: 0,
+      transformer : new ColumnNumericTransformer()
     },
     gameId: {
       type: 'varchar',
