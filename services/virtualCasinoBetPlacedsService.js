@@ -3,8 +3,14 @@ const virtualCasinoBetPlacedSchema = require("../models/virtualCasinoBetPlaceds.
 const ApiFeature = require("../utils/apiFeatures");
 const VirtualCasino = AppDataSource.getRepository(virtualCasinoBetPlacedSchema);
 
-exports.getVirtualCasinoBetPlaceds = async (where, query) => {
-    let pgQuery = VirtualCasino.createQueryBuilder().where(where);
+exports.getVirtualCasinoBetPlaceds = async (where, query, subQuery) => {
+    let pgQuery = VirtualCasino.createQueryBuilder()
+        .innerJoinAndMapOne("virtualCasinoBetPlaced.user", 'user', 'user', `virtualCasinoBetPlaced.userId = user.id and virtualCasinoBetPlaced.userId in (${subQuery})`)
+        .where(where)
+        .select([
+            'virtualCasinoBetPlaced', // Selects all columns from the main table
+            'user.userName'          // Specific column from the joined table
+        ]);
 
     pgQuery = new ApiFeature(
         pgQuery,
