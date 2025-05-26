@@ -13,6 +13,7 @@ const {
   transactionType,
   partnershipPrefixByRole,
   resultType,
+  oddsSessionBetType,
 } = require("../../../config/contants");
 
 const { logger } = require("../../../config/logger");
@@ -863,10 +864,10 @@ exports.unDeclareSessionResult = async (call) => {
             .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
             .hincrbyfloat(userId, 'exposure', adjustedExposure)
             .hincrbyfloat(userId, [redisSessionExposureName], adjustedExposure)
-            .set(`${baseKey}:profitLoss`, parentRedisUpdateObj?.betPlaced?.reduce((acc, item) => {
+            .set(`${baseKey}:profitLoss`, oddsSessionBetType.includes(sessionDetails?.type) ? parentRedisUpdateObj?.betPlaced?.reduce((acc, item) => {
               acc[item?.odds] = item?.profitLoss
               return acc
-            }, {}))
+            }, {}) : parentRedisUpdateObj?.betPlaced)
             .set(`${baseKey}:lowerLimitOdds`, parentRedisUpdateObj?.lowerLimitOdds)
             .set(`${baseKey}:upperLimitOdds`, parentRedisUpdateObj?.upperLimitOdds)
             .set(`${baseKey}:totalBet`, parentRedisUpdateObj?.totalBet)
@@ -1037,10 +1038,10 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
           .hincrbyfloat(user.user.id, 'exposure', exposure)
           .hincrbyfloat(user.user.id, 'currentBalance', profitLoss)
           .hincrbyfloat(user.user.id, [redisSessionExposureName], exposure)
-          .set(`${baseKey}:profitLoss`, profitLossRedisData?.betPlaced?.reduce((acc, item) => {
+          .set(`${baseKey}:profitLoss`, oddsSessionBetType.includes(betPlace[user.user.id]?.[0]?.marketType) ? profitLossRedisData?.betPlaced?.reduce((acc, item) => {
             acc[item?.odds] = item?.profitLoss
             return acc
-          }, {}))
+          }, {}) : profitLossRedisData?.betPlaced)
           .set(`${baseKey}:lowerLimitOdds`, profitLossRedisData?.lowerLimitOdds)
           .set(`${baseKey}:upperLimitOdds`, profitLossRedisData?.upperLimitOdds)
           .set(`${baseKey}:totalBet`, profitLossRedisData?.totalBet)
