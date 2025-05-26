@@ -14,6 +14,7 @@ const mac88Games = require("../config/mac88.json");
 const moment = require("moment/moment");
 const { roundToTwoDecimals } = require("../utils/mathUtils");
 const { declareVirtualCasinoResultHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
+const { childIdquery } = require("../services/commonService");
 
 exports.loginMac88Casino = async (req, res) => {
     try {
@@ -495,6 +496,8 @@ exports.getBetVirtualGames = async (req, res) => {
     try {
         const userId = req.params.userId || req.user.id;
         const query = req.query;
+        let roleName = req.user.roleName;
+        let user = { id: userId, roleName: roleName };
 
         if (!userId) {
             return ErrorResponse(
@@ -508,8 +511,14 @@ exports.getBetVirtualGames = async (req, res) => {
                 res
             );
         }
+        if (req.params.userId && req.params.userId != req.user.id) {
+            roleName = (await getUserById(userId, ["roleName"]))?.roleName;
+            user.roleName = roleName;
+        }
 
-        const bets = await getVirtualCasinoBetPlaceds({ userId: userId }, query);
+        let subQuery = await childIdquery(user);
+
+        const bets = await getVirtualCasinoBetPlaceds({}, query, subQuery);
         SuccessResponse(
             {
                 statusCode: 200,
