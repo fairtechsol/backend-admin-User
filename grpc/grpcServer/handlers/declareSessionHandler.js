@@ -333,7 +333,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
       logger.info({ message: "Updated users session bet", data: user.user.id });
 
       // check if data is already present in the redis or not
-      if (userRedisData?.[user?.user?.id]?.maxLoss) {
+      if (userRedisData?.[user?.user?.id]?.maxLoss != null) {
         maxLoss = parseFloat(userRedisData?.[user?.user?.id]?.maxLoss || 0);
       } else {
         // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
@@ -341,7 +341,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
         maxLoss = parseFloat(redisData.maxLoss || 0);
       }
 
-      if (userRedisData[user.user?.id]) {
+      if (userRedisData[user.user?.id]!=null) {
 
         logger.info({
           "message": "User session exposure value during declare.",
@@ -378,7 +378,7 @@ const calculateProfitLossSessionForUserDeclare = async (users, betId, matchId, r
       //adding users balance data to update in db
       userUpdateDBData[user.user.id] = { ...userBalanceData };
 
-      if (userRedisData?.[user.user.id]) {
+      if (userRedisData?.[user.user.id]!=null) {
         const baseKey = `session:${user.user.id}:${matchId}:${betId}`
         let { profitLoss, myProfitLoss, exposure } = userBalanceData;
         updateUserPipeline
@@ -708,7 +708,7 @@ const calculateMaxLossSessionForUserNoResult = async (
       });
 
       // check if data is already present in the redis or not
-      if (userRedisData?.[user.user.id]?.maxLoss) {
+      if (userRedisData?.[user.user.id]?.maxLoss != null) {
         maxLoss = parseFloat(userRedisData?.[user?.user?.id]?.maxLoss || 0);
       } else {
         // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
@@ -864,7 +864,7 @@ exports.unDeclareSessionResult = async (call) => {
             .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
             .hincrbyfloat(userId, 'exposure', adjustedExposure)
             .hincrbyfloat(userId, [redisSessionExposureName], adjustedExposure)
-            .set(`${baseKey}:profitLoss`, oddsSessionBetType.includes(sessionDetails?.type) ? parentRedisUpdateObj?.betPlaced?.reduce((acc, item) => {
+            .hset(`${baseKey}:profitLoss`, oddsSessionBetType.includes(sessionDetails?.type) ? parentRedisUpdateObj?.betPlaced?.reduce((acc, item) => {
               acc[item?.odds] = item?.profitLoss
               return acc
             }, {}) : parentRedisUpdateObj?.betPlaced)
@@ -1038,8 +1038,8 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
           .hincrbyfloat(user.user.id, 'exposure', exposure)
           .hincrbyfloat(user.user.id, 'currentBalance', profitLoss)
           .hincrbyfloat(user.user.id, [redisSessionExposureName], exposure)
-          .set(`${baseKey}:profitLoss`, oddsSessionBetType.includes(betPlace[user.user.id]?.[0]?.marketType) ? profitLossRedisData?.betPlaced?.reduce((acc, item) => {
-            acc[item?.odds] = item?.profitLoss
+          .hset(`${baseKey}:profitLoss`, oddsSessionBetType.includes(betPlace[user.user.id]?.[0]?.marketType) ? profitLossRedisData?.betPlaced?.reduce((acc, item) => {
+            acc[item?.odds] = item?.profitLoss;
             return acc
           }, {}) : profitLossRedisData?.betPlaced)
           .set(`${baseKey}:lowerLimitOdds`, profitLossRedisData?.lowerLimitOdds)

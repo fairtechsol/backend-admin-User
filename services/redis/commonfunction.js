@@ -51,7 +51,7 @@ exports.getUserRedisMultiKeyData = async (userIds, keys) => {
 
 exports.getUserRedisMultiKeyDataSession = async (userIds, matchId, betId) => {
   // Validate input to avoid unnecessary processing
-  if (!Array.isArray(userIds) || !Array.isArray(keys) || userIds.length === 0 || !matchId || !betId) {
+  if (!Array.isArray(userIds) ||  userIds.length === 0 || !matchId || !betId) {
     return {};
   }
 
@@ -67,11 +67,9 @@ exports.getUserRedisMultiKeyDataSession = async (userIds, matchId, betId) => {
 
     // Process results to extract values and handle potential individual command errors
     return results.reduce((prev, [error, data], index) => {
-      if (!error && data?.filter((item) => item !== null).length) {
+      if (!error && data != null) {
         prev[userIds[index]] = {};
-        for (let i = 0; i < data.length; i++) {
-          prev[userIds[index]].maxLoss = data[i];
-        }
+          prev[userIds[index]].maxLoss = data;
       }
       return prev;
     }, {});

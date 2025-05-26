@@ -785,7 +785,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       [`${redisKeys.userSessionExposure}${matchId}`]: redisSessionExp,
     };
 
-    let newBalance = parseFloat(userData?.currentBalance).toFixed(2) - totalExposure;
+    let newBalance = roundToTwoDecimals(userData?.currentBalance) - totalExposure;
 
     betPlaceObject.diffSessionExp = redisData.maxLoss - maxSessionLoss;
 
