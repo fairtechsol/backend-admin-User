@@ -51,7 +51,7 @@ exports.getUserRedisMultiKeyData = async (userIds, keys) => {
 
 exports.getUserRedisMultiKeyDataSession = async (userIds, matchId, betId) => {
   // Validate input to avoid unnecessary processing
-  if (!Array.isArray(userIds) ||  userIds.length === 0 || !matchId || !betId) {
+  if (!Array.isArray(userIds) || userIds.length === 0 || !matchId || !betId) {
     return {};
   }
 
@@ -69,7 +69,7 @@ exports.getUserRedisMultiKeyDataSession = async (userIds, matchId, betId) => {
     return results.reduce((prev, [error, data], index) => {
       if (!error && data != null) {
         prev[userIds[index]] = {};
-          prev[userIds[index]].maxLoss = data;
+        prev[userIds[index]].maxLoss = data;
       }
       return prev;
     }, {});
@@ -316,7 +316,7 @@ exports.getMultipleMatchKey = async (matchId) => {
 exports.setUserPLSession = async (userId, matchId, betId, redisData) => {
   const base = `session:${userId}:${matchId}:${betId}:`;
 
-  await internalRedis.eval(`local pl = KEYS[1]
+  return await internalRedis.eval(`local pl = KEYS[1]
                 local lo = tonumber(redis.call('GET', KEYS[2])) or 0
                 local hi = tonumber(redis.call('GET', KEYS[3])) or 0
 
@@ -326,6 +326,7 @@ exports.setUserPLSession = async (userId, matchId, betId, redisData) => {
                 local maxLoss=0
                 local high=hi
                 local low=tonumber(redis.call('GET', KEYS[2])) or 999
+                local updatedProfitLoss = {}
 
                 for i = 1, #ARGV, 2 do
                   local k = tonumber(ARGV[i])
@@ -353,12 +354,16 @@ exports.setUserPLSession = async (userId, matchId, betId, redisData) => {
                   if tonumber(newValue) < maxLoss then
                     maxLoss = tonumber(newValue)
                   end
-
+                  -- Collect updated profitLoss for this odds
+                  table.insert(updatedProfitLoss, ARGV[i])      -- odds
+                  table.insert(updatedProfitLoss, tostring(newValue))  -- updated profitLoss
                 end
                 redis.call('SET', KEYS[2], low)
                 redis.call('SET', KEYS[3], high)
-                redis.call('INCRBY', KEYS[4], 1)
+                local totalBet = redis.call('INCRBY', KEYS[4], 1)
                 redis.call('SET', KEYS[5], math.abs(maxLoss))
+
+                return { math.abs(maxLoss), low, high, totalBet, unpack(updatedProfitLoss) }
                 `, 5,
     base + 'profitLoss',
     base + 'lowerLimitOdds',
@@ -371,10 +376,11 @@ exports.setUserPLSession = async (userId, matchId, betId, redisData) => {
 exports.setUserPLSessionOddEven = async (userId, matchId, betId, redisData) => {
   const base = `session:${userId}:${matchId}:${betId}:`;
 
-  await internalRedis.eval(`
+  return await internalRedis.eval(`
                 local pl = KEYS[1]
 
                 local maxLoss=0
+                local updatedProfitLoss = {}
 
                 for i = 1, #ARGV, 2 do
                   local k = ARGV[i]
@@ -385,10 +391,15 @@ exports.setUserPLSessionOddEven = async (userId, matchId, betId, redisData) => {
                   if tonumber(newValue) < maxLoss then
                     maxLoss=tonumber(newValue)
                   end
-                
+                 -- Collect updated profitLoss for this odds
+                  table.insert(updatedProfitLoss, ARGV[i])      -- odds
+                  table.insert(updatedProfitLoss, tostring(newValue))  -- updated profitLoss
                 end
-                redis.call('INCRBY', KEYS[2], 1)
+                local totalBet =redis.call('INCRBY', KEYS[2], 1)
                 redis.call('SET', KEYS[3], math.abs(maxLoss))
+
+                return { math.abs(maxLoss), totalBet, unpack(updatedProfitLoss) }
+
                 `, 3,
     base + 'profitLoss',
     base + 'totalBet',
@@ -552,5 +563,4 @@ exports.setLoginVal = async (values) => {
   }
   await pipeline.exec();
 }
-
 

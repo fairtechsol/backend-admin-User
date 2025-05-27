@@ -37,7 +37,7 @@ exports.matchDetails = async (req, res) => {
           }
           let sessionResult = [];
           let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);
-          Object.entries(redisData?.[matchId] || {})?.forEach(([betIdItem, betData], index) => {
+          Object.entries(redisData?.[matchId] || {})?.forEach(([betIdItem, betData]) => {
             if (betIdItem) {
               sessionResult.push({
                 betId: betIdItem,

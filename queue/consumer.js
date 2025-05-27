@@ -178,12 +178,39 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
               default:
                 break;
             }
+            let socketRedisData = {};
             if ([sessionBettingType.session, sessionBettingType.overByOver, sessionBettingType.ballByBall, sessionBettingType.khado, sessionBettingType.meter].includes(jobData?.placedBet?.marketType)) {
-              await setUserPLSession(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, redisData?.betPlaced?.map((item) => ([item?.odds?.toString(), item?.profitLoss?.toString()]))?.flat(2));
+              const returnedPF = await setUserPLSession(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, redisData?.betPlaced?.map((item) => ([item?.odds?.toString(), item?.profitLoss?.toString()]))?.flat(2));
+              const [maxL, , , totalBet, ...pl] = returnedPF;
+              socketRedisData = {
+                betPlaced: pl.map((item, index) => {
+                  if (index % 2 === 0) {
+                    return {
+                      odds: item,
+                      profitLoss: pl[index + 1]
+                    }
+                  }
+                  return null;
+                }).filter(Boolean),
+                maxLoss: maxL,
+                totalBet: totalBet
+              }
             }
             else if ([sessionBettingType.oddEven, sessionBettingType.cricketCasino, sessionBettingType.fancy1].includes(jobData?.placedBet?.marketType)) {
-             await setUserPLSessionOddEven(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, Object.entries(redisData?.betPlaced)?.flat(2)?.map((item) => item.toString()));
+              const returnedPF = await setUserPLSessionOddEven(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, Object.entries(redisData?.betPlaced)?.flat(2)?.map((item) => item.toString()));
+              const [maxL, totalBet, ...pl] = returnedPF;
+              socketRedisData = {
+                betPlaced: pl.reduce((acc, curr, index) => {
+                  if (index % 2 === 0) {
+                    acc[curr] = pl[index + 1];
+                  }
+                  return acc;
+                }, {}),
+                maxLoss: maxL,
+                totalBet: totalBet
+              }
             }
+
             await updateUserExposure(partnershipId, partnerSessionExposure);
             await incrementValuesRedis(partnershipId, { [redisKeys.userAllExposure]: roundToTwoDecimals(partnerSessionExposure) });
 
@@ -207,7 +234,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
             sendMessageToUser(partnershipId, socketData.SessionBetPlaced, {
               userRedisData,
               jobData,
-              profitLoss: redisData
+              profitLoss: socketRedisData
             });
           }
         } catch (error) {
