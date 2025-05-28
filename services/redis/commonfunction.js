@@ -370,7 +370,7 @@ exports.setUserPLSession = async (userId, matchId, betId, redisData) => {
                    end
                  end
 
-                return { math.abs(maxLoss), low, high, totalBet, unpack(updatedProfitLoss) }
+                return { tostring(math.abs(maxLoss)), low, high, totalBet, unpack(updatedProfitLoss) }
                 `, 6,
     base + 'profitLoss',
     base + 'lowerLimitOdds',
@@ -413,7 +413,7 @@ exports.setUserPLSessionOddEven = async (userId, matchId, betId, redisData) => {
                    end
                  end
 
-                return { math.abs(maxLoss), totalBet, unpack(updatedProfitLoss) }
+                return { tostring(math.abs(maxLoss)), totalBet, unpack(updatedProfitLoss) }
 
                 `, 4,
     base + 'profitLoss',
@@ -590,3 +590,48 @@ exports.setLoginVal = async (values) => {
   await pipeline.exec();
 }
 
+exports.setUserPLTournament = async (userId, matchId, betId, redisData) => {
+  const base = `match:${userId}:${matchId}:${betId}:`;
+
+  return await internalRedis.eval(`
+                local pl = KEYS[1]
+                local updatedProfitLoss = {}
+
+                for i = 1, #ARGV, 2 do
+                  local k = ARGV[i]
+                  local v = tonumber(ARGV[i + 1])
+
+                  local incr = v
+                  local newValue =  redis.call('HINCRBYFLOAT', pl, k, tonumber(incr))
+                 
+                  table.insert(updatedProfitLoss, ARGV[i])     
+                  table.insert(updatedProfitLoss, tostring(newValue))
+                end
+
+                local ttl = redis.call('TTL', KEYS[2])
+                 if ttl > 0 then
+                   redis.call('EXPIRE', KEYS[1], ttl)
+                 end
+
+                return { unpack(updatedProfitLoss) }
+                `, 2,
+    base + 'profitLoss',
+    userId,
+    ...redisData);
+};
+
+exports.setProfitLossDataTournament = async (userId, matchId, betId, redisData) => {
+   const base = `match:${userId}:${matchId}:${betId}:`;
+  const userKeyTTL = await internalRedis.ttl(userId);
+  
+  const pipeline = internalRedis.pipeline();
+  pipeline.hset(base + 'profitLoss', redisData.betPlaced);
+  pipeline.expire(base + 'profitLoss', userKeyTTL);
+
+  await pipeline.exec();
+}
+
+exports.getProfitLossDataTournament = async (userId, matchId, betId) => {
+   const base = `match:${userId}:${matchId}:${betId}:profitLoss`;
+   return await internalRedis.hgetall(base);
+}

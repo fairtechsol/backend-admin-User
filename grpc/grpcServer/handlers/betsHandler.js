@@ -2,18 +2,19 @@ const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
 const lodash = require("lodash");
-const { userRoleConstant, partnershipPrefixByRole, betResultStatus, marketBetType, matchBettingType, expertDomain, socketData, redisKeys, sessionBettingType, walletDomain, oddsSessionBetType } = require("../../../config/contants");
+const { userRoleConstant, partnershipPrefixByRole, betResultStatus, marketBetType, matchBettingType, socketData, redisKeys, sessionBettingType, walletDomain, oddsSessionBetType } = require("../../../config/contants");
 const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss, findAllPlacedBet, deleteBet, getBetsWithMatchId } = require("../../../services/betPlacedService");
 const { getChildsWithOnlyUserRole, getAllUsers, getUserById, updateUser } = require("../../../services/userService");
 const { profitLossPercentCol, findUserPartnerShipObj, calculatePLAllBet, mergeProfitLoss, forceLogoutUser, calculateProfitLossForRacingMatchToResult, calculateRacingRate, parseRedisData } = require("../../../services/commonService");
 const { In, IsNull, Not } = require("typeorm");
-const { getUserRedisData, incrementValuesRedis, getUserSessionAllPL, setProfitLossData } = require("../../../services/redis/commonfunction");
+const { getUserRedisData, incrementValuesRedis, getUserSessionAllPL, setProfitLossData, getProfitLossDataTournament, setProfitLossDataTournament, hasUserInCache } = require("../../../services/redis/commonfunction");
 const { getMatchData } = require("../../../services/matchService");
 const { getUserBalanceDataByUserId, updateUserExposure } = require("../../../services/userBalanceService");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
 const { walletSessionBetDeleteQueue, expertSessionBetDeleteQueue, walletTournamentMatchBetDeleteQueue, expertTournamentMatchBetDeleteQueue } = require("../../../queue/consumer");
 const { getTournamentBettingHandler } = require("../../grpcClient/handlers/expert/matchHandler");
 const { lockUnlockUserByUserPanelHandler } = require("../../grpcClient/handlers/wallet/userHandler");
+const { roundToTwoDecimals } = require("../../../utils/mathUtils");
 
 exports.getPlacedBets = async (call) => {
   try {
@@ -530,7 +531,7 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
   if (isUserLogin) {
     userOldExposure = parseFloat(userRedisData.exposure);
     partnershipObj = JSON.parse(userRedisData.partnerShips);
-    teamRates = JSON.parse(userRedisData[`${betId}${redisKeys.profitLoss}_${matchId}`]);
+    teamRates = await getProfitLossDataTournament(userId, matchId, betId);
     currUserBalance = parseFloat(userRedisData.currentBalance);
   } else {
     let user = await getUserById(userId);
@@ -628,13 +629,12 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
   }
 
   if (isUserLogin) {
-    let redisObject = {
-      [`${betId}${redisKeys.profitLoss}_${matchId}`]: JSON.stringify(teamRates)
-    }
     await incrementValuesRedis(userId, {
       [redisKeys.userMatchExposure + matchId]: -exposureDiff,
       [redisKeys.userAllExposure]: -exposureDiff
-    }, redisObject);
+    });
+
+    await setProfitLossDataTournament(userId, matchId, betId, teamRates);
 
     sendMessageToUser(userId, socketSessionEvent, {
       currentBalance: userRedisData?.currentBalance,
@@ -667,39 +667,38 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
 
         try {
           // Get user data from Redis or balance data by userId
-          let masterRedisData = await getUserRedisData(partnershipId);
+          const masterRedisData = await hasUserInCache(partnershipId);
           await updateUserExposure(partnershipId, (-exposureDiff));
 
-          if (!lodash.isEmpty(masterRedisData)) {
-            // If masterRedisData exists, update partner exposure and session data
-            let masterExposure = parseFloat(masterRedisData.exposure) ?? 0;
-            let partnerExposure = masterExposure - exposureDiff;
+          if (masterRedisData) {
 
-            let masterTeamRates = JSON.parse(masterRedisData[`${betId}${redisKeys.profitLoss}_${matchId}`]);
-
-            masterTeamRates = Object.keys(masterTeamRates).reduce((acc, key) => {
-              acc[key] = parseFloat((parseRedisData(key, masterTeamRates) + ((newTeamRate[key] * partnership) / 100)).toFixed(2));
+            const masterTeamRates = Object.keys(newTeamRate).reduce((acc, key) => {
+              acc[key] = roundToTwoDecimals((newTeamRate[key] * partnership) / 100);
               return acc;
             }, {});
 
-            let redisObj = {
-              [`${betId}${redisKeys.profitLoss}_${matchId}`]: JSON.stringify(masterTeamRates)
-            }
+            const plData = await setProfitLossDataTournament(partnershipId, matchId, betId, masterTeamRates);
+            const socketRedisData = plData?.reduce((acc, curr, index) => {
+              if (index % 2 === 0) {
+                acc[curr] = plData[index + 1];
+              }
+              return acc;
+            }, {});
+
             await incrementValuesRedis(partnershipId, {
               exposure: -exposureDiff,
               [redisKeys.userMatchExposure + matchId]: -exposureDiff,
-            }, redisObj);
+            });
             // Send data to socket for session bet placement
             sendMessageToUser(partnershipId, socketSessionEvent, {
               currentBalance: userRedisData?.currentBalance,
-              exposure: partnerExposure,
               bets: bets,
               betId: betId,
               deleteReason: deleteReason,
               matchId: matchId,
               betPlacedId: betPlacedId,
               matchBetType,
-              teamRate: masterTeamRates,
+              teamRate: socketRedisData,
               isPermanentDelete: isPermanentDelete
             });
 
