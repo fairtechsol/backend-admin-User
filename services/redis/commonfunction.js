@@ -709,12 +709,11 @@ exports.getAllTournament = async (userId, matchId) => {
       }
     } while (cursor !== '0');
 
-    return {
-      [matchId]: Object.entries(sessions).reduce((prev, [key, val]) => {
-        prev[`${key}${redisKeys.profitLoss}_${matchId}`] = val.profitLoss;
-        return prev;
-      }, {})
-    };
+    return Object.entries(sessions).reduce((prev, [key, val]) => {
+      prev[`${key}${redisKeys.profitLoss}_${matchId}`] = val.profitLoss;
+      return prev;
+    }, {});
+
   }
   else {
     const data = await internalRedis.eval(`
@@ -759,10 +758,12 @@ until cursor == '0'
 return cjson.encode(tournament)
 `, 1, userId)
     return Object.entries(JSON.parse(data || "{}"))?.reduce((prev, [key, val]) => {
-      prev[key] = Object.entries(val)?.reduce((prev, [betKey, betVal]) => {
-        prev[`${betKey}${redisKeys.profitLoss}_${key}`] = betVal.profitLoss;
-        return prev;
-      }, {})
+      prev = {
+        ...prev, ...Object.entries(val)?.reduce((prev, [betKey, betVal]) => {
+          prev[`${betKey}${redisKeys.profitLoss}_${key}`] = betVal.profitLoss;
+          return prev;
+        }, {})
+      }
       return prev;
     }, {})
   }

@@ -443,7 +443,7 @@ exports.marketAnalysis = async (req, res) => {
 
             if (item?.marketType == matchBettingType.tournament) {
               currRedisData = {};
-              const currBetPL = tournamentPLs[item?.betId + redisKeys.profitLoss + "_" + item?.matchId] || {};
+              const currBetPL = tournamentPLs?.[item?.betId + redisKeys.profitLoss + "_" + item?.matchId] || {};
               teams = currMatchData?.tournament?.find((items) => items?.id == item?.betId)?.runners?.sort((a, b) => a.sortPriority - b.sortPriority)?.map((items, i) => {
                 currRedisData[String.fromCharCode(97 + i)] = currBetPL[items?.id];
                 return items?.runnerName

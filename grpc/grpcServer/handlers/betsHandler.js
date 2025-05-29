@@ -7,7 +7,7 @@ const { getBet, updatePlaceBet, getUserSessionsProfitLoss, getBetsProfitLoss, fi
 const { getChildsWithOnlyUserRole, getAllUsers, getUserById, updateUser } = require("../../../services/userService");
 const { profitLossPercentCol, findUserPartnerShipObj, calculatePLAllBet, mergeProfitLoss, forceLogoutUser, calculateProfitLossForRacingMatchToResult, calculateRacingRate, parseRedisData } = require("../../../services/commonService");
 const { In, IsNull, Not } = require("typeorm");
-const { getUserRedisData, incrementValuesRedis, getUserSessionAllPL, setProfitLossData, getProfitLossDataTournament, setProfitLossDataTournament, hasUserInCache } = require("../../../services/redis/commonfunction");
+const { getUserRedisData, incrementValuesRedis, getUserSessionAllPL, setProfitLossData, getProfitLossDataTournament, setProfitLossDataTournament, hasUserInCache, setUserPLTournament } = require("../../../services/redis/commonfunction");
 const { getMatchData } = require("../../../services/matchService");
 const { getUserBalanceDataByUserId, updateUserExposure } = require("../../../services/userBalanceService");
 const { sendMessageToUser } = require("../../../sockets/socketManager");
@@ -677,10 +677,10 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
               return acc;
             }, {});
 
-            const plData = await setProfitLossDataTournament(partnershipId, matchId, betId, masterTeamRates);
+            const plData = await setUserPLTournament(partnershipId, matchId, betId, masterTeamRates);
             const socketRedisData = plData?.reduce((acc, curr, index) => {
               if (index % 2 === 0) {
-                acc[curr] = plData[index + 1];
+                acc[curr] = roundToTwoDecimals(plData[index + 1]);
               }
               return acc;
             }, {});
