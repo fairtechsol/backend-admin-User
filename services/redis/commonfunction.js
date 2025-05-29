@@ -562,12 +562,22 @@ exports.deleteProfitLossData = async (userId) => {
   let cursor = '0';
   const keysToUnlink = [];
 
+  // Scan and collect session keys
   do {
     const [newCursor, keys] = await internalRedis.scan(cursor, 'MATCH', `session:${userId}:*`, 'COUNT', 10000);
     cursor = newCursor;
     keysToUnlink.push(...keys);
   } while (cursor !== '0');
 
+  // Reset cursor to scan match keys
+  cursor = '0';
+  do {
+    const [newCursor, keys] = await internalRedis.scan(cursor, 'MATCH', `match:${userId}:*`, 'COUNT', 10000);
+    cursor = newCursor;
+    keysToUnlink.push(...keys);
+  } while (cursor !== '0');
+
+  // Delete collected keys
   if (keysToUnlink.length > 0) {
     const pipeline = internalRedis.pipeline();
     keysToUnlink.forEach(key => pipeline.unlink(key));

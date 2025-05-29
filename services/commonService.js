@@ -1042,7 +1042,7 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
         Object.keys(redisData)?.forEach((key) => {
           maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
           const [currBetId, , currMatchId] = key.split("_");
-          const baseKey = `match:${user.id}:${currMatchId}:${currBetId}:`
+          const baseKey = `match:${user.id}:${currMatchId}:${currBetId}:profitLoss`
           redisData[baseKey] = redisData[key];
           delete redisData[key];
         });
@@ -1161,7 +1161,7 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
     }
     Object.keys(matchResult)?.forEach((key) => {
       const [currBetId, , currMatchId] = key.split("_");
-      const baseKey = `match:${user.id}:${currMatchId}:${currBetId}:`
+      const baseKey = `match:${user.id}:${currMatchId}:${currBetId}:profitLoss`
       matchResult[baseKey] = matchResult[key];
       delete matchResult[key];
     });
