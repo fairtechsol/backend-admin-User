@@ -3,7 +3,7 @@ const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { betStatusType, teamStatus, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, partnershipPrefixByRole, microServiceDomain, casinoMicroServiceDomain, cardGameType, sessionBettingType, oldBetFairDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getUserRedisData, setCardBetPlaceRedis, getUserSessionAllPL } = require("../services/redis/commonfunction");
+const { getUserRedisData, setCardBetPlaceRedis, getUserSessionAllPL, getProfitLossDataTournament } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateProfitLossSession, parseRedisData, calculateRacingRate, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, checkBetLimit, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
@@ -279,15 +279,11 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
 
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
+    let teamRates = await getProfitLossDataTournament(reqUser.id, matchId, betId);
+
     let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]) : 0.0;
 
     let userTotalExposure = matchExposure;
-
-    let teamRates = userRedisData?.[`${betId}${redisKeys.profitLoss}_${matchId}`];
-
-    if (teamRates) {
-      teamRates = JSON.parse(teamRates);
-    }
 
     if (!teamRates) {
       teamRates = runners.reduce((acc, key) => {

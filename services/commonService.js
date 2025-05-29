@@ -1005,16 +1005,16 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
     for (let currBets of bets) {
       if (currBets.marketBetType == marketBetType.SESSION) {
         let result = await this.calculateProfitLossForSessionToResult(currBets.betId, user.id, matchDetails?.[currBets.matchId]);
-         if ([sessionBettingType.ballByBall, sessionBettingType.overByOver, sessionBettingType.session, sessionBettingType.khado, sessionBettingType.meter].includes(currBets?.marketType)) {
-         sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:profitLoss`] = result.betData?.reduce((acc, key) => {
-          acc[key.odds] = key.profitLoss;
-          return acc;
-        }, {});
+        if ([sessionBettingType.ballByBall, sessionBettingType.overByOver, sessionBettingType.session, sessionBettingType.khado, sessionBettingType.meter].includes(currBets?.marketType)) {
+          sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:profitLoss`] = result.betData?.reduce((acc, key) => {
+            acc[key.odds] = key.profitLoss;
+            return acc;
+          }, {});
         }
         else {
           sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:profitLoss`] = result.betData
         }
-        
+
         sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:maxLoss`] = result.maxLoss;
         sessionResult[`session:${user.id}:${currBets.matchId}:${currBets.betId}:totalBet`] = result.total_bet;
 
@@ -1041,7 +1041,10 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
         let maxLoss = 0;
         Object.keys(redisData)?.forEach((key) => {
           maxLoss += Math.abs(Math.min(...Object.values(redisData[key] || {}), 0));
-          redisData[key] = JSON.stringify(redisData[key]);
+          const [currBetId, , currMatchId] = key.split("_");
+          const baseKey = `match:${user.id}:${currMatchId}:${currBetId}:`
+          redisData[baseKey] = redisData[key];
+          delete redisData[key];
         });
 
         matchResult = {
@@ -1052,7 +1055,7 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
         matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${currBets.matchId}`] || 0) + maxLoss).toFixed(2));
       }
     }
-   
+
     return { plResult: { ...sessionResult, ...matchResult }, expResult: { ...sessionExp, ...matchExposure } }
 
   }
@@ -1157,7 +1160,10 @@ exports.settingBetsDataAtLogin = async (user, matchGametype) => {
       matchExposure[`${redisKeys.userMatchExposure}${matchId}`] = parseFloat((parseFloat(matchExposure[`${redisKeys.userMatchExposure}${matchId}`] || 0) + maxLoss).toFixed(2));
     }
     Object.keys(matchResult)?.forEach((key) => {
-      matchResult[key] = JSON.stringify(matchResult[key]);
+      const [currBetId, , currMatchId] = key.split("_");
+      const baseKey = `match:${user.id}:${currMatchId}:${currBetId}:`
+      matchResult[baseKey] = matchResult[key];
+      delete matchResult[key];
     });
     return { plResult: { ...sessionResult, ...matchResult }, expResult: { ...sessionExp, ...matchExposure } }
   }

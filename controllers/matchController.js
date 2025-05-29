@@ -1,7 +1,7 @@
 const { In, IsNull } = require("typeorm");
 const { redisKeys, userRoleConstant, oldBetFairDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, matchBettingType, cardGames, betResultStatus, oddsSessionBetType } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId } = require("../services/betPlacedService");
-const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKeyData, getAllSessions } = require("../services/redis/commonfunction");
+const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKeyData, getAllSessions, getAllTournament } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getChildUser, getUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
@@ -35,8 +35,8 @@ exports.matchDetails = async (req, res) => {
           if (apiResponse?.data?.[i]?.sessionBettings?.length > 0) {
             redisData = await getAllSessions(userId, matchId);
           }
-          let sessionResult = [];
-          let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);
+          const sessionResult = [];
+          const matchResult = await getAllTournament(userId, matchId);
           Object.entries(redisData?.[matchId] || {})?.forEach(([betIdItem, betData]) => {
             if (betIdItem) {
               sessionResult.push({
@@ -64,8 +64,8 @@ exports.matchDetails = async (req, res) => {
           prev[currData?.id] = currData?.marketType;
           return prev;
         }, {})
-        let sessionResult = [];
-        let matchResult = await getHashKeysByPattern(userId, `*_${matchId}`);;
+        const sessionResult = [];
+        const matchResult = await getAllTournament(userId, matchId);
         Object.entries(redisData[matchId] || {})?.forEach(([betIdItem, betData], index) => {
           if (betIdItem) {
             sessionResult.push({
@@ -387,6 +387,7 @@ exports.marketAnalysis = async (req, res) => {
     if (redisData) {
       const matchesBetsByUsers = await getChildUsersPlaceBets(userId, matchId);
       const currRedisData = await getAllSessions(userId, matchId);
+      const tournamentPLs = await getAllTournament(userId, matchId);
 
       let matchIds = new Set();
 
@@ -442,7 +443,7 @@ exports.marketAnalysis = async (req, res) => {
 
             if (item?.marketType == matchBettingType.tournament) {
               currRedisData = {};
-              let currBetPL = JSON.parse(redisData[item?.betId + redisKeys.profitLoss + "_" + item?.matchId] || "{}");
+              const currBetPL = tournamentPLs[item?.betId + redisKeys.profitLoss + "_" + item?.matchId] || {};
               teams = currMatchData?.tournament?.find((items) => items?.id == item?.betId)?.runners?.sort((a, b) => a.sortPriority - b.sortPriority)?.map((items, i) => {
                 currRedisData[String.fromCharCode(97 + i)] = currBetPL[items?.id];
                 return items?.runnerName
