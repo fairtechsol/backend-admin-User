@@ -341,7 +341,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
             const plData = await setUserPLTournament(partnershipId, jobData?.matchId, jobData?.betId, teamData);
             const socketRedisData = plData?.reduce((acc, curr, index) => {
               if (index % 2 === 0) {
-                acc[curr] = plData[index + 1];
+                acc[curr] = roundToTwoDecimals(plData[index + 1]);
               }
               return acc;
             }, {})

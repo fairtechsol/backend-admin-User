@@ -534,9 +534,9 @@ return cjson.encode(sessions)
 
 
 exports.setProfitLossData = async (userId, matchId, betId, redisData) => {
-   const base = `session:${userId}:${matchId}:${betId}:`;
+  const base = `session:${userId}:${matchId}:${betId}:`;
   const userKeyTTL = await internalRedis.ttl(userId);
-  
+
   const pipeline = internalRedis.pipeline();
   pipeline.hset(base + 'profitLoss', redisData.betPlaced);
   pipeline.expire(base + 'profitLoss', userKeyTTL);
@@ -617,13 +617,13 @@ exports.setUserPLTournament = async (userId, matchId, betId, redisData) => {
                 `, 2,
     base + 'profitLoss',
     userId,
-    ...redisData);
+    ...Object.entries(redisData).flat(2));
 };
 
 exports.setProfitLossDataTournament = async (userId, matchId, betId, redisData) => {
-   const base = `match:${userId}:${matchId}:${betId}:`;
+  const base = `match:${userId}:${matchId}:${betId}:`;
   const userKeyTTL = await internalRedis.ttl(userId);
-  
+
   const pipeline = internalRedis.pipeline();
   pipeline.hset(base + 'profitLoss', redisData);
   pipeline.expire(base + 'profitLoss', userKeyTTL);
@@ -632,8 +632,8 @@ exports.setProfitLossDataTournament = async (userId, matchId, betId, redisData) 
 }
 
 exports.getProfitLossDataTournament = async (userId, matchId, betId) => {
-   const base = `match:${userId}:${matchId}:${betId}:profitLoss`;
-   return await internalRedis.hgetall(base);
+  const base = `match:${userId}:${matchId}:${betId}:profitLoss`;
+  return await internalRedis.hgetall(base);
 }
 
 exports.getUserRedisMultiKeyDataMatch = async (userIds, matchId, betId) => {
