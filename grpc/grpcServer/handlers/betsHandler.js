@@ -677,6 +677,13 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
               return acc;
             }, {});
 
+
+
+            await incrementValuesRedis(partnershipId, {
+              exposure: -exposureDiff,
+              [redisKeys.userMatchExposure + matchId]: -exposureDiff,
+            });
+
             const plData = await setUserPLTournament(partnershipId, matchId, betId, masterTeamRates);
             const socketRedisData = plData?.reduce((acc, curr, index) => {
               if (index % 2 === 0) {
@@ -684,11 +691,6 @@ const updateUserAtMatchOddsTournament = async (userId, betId, matchId, bets, del
               }
               return acc;
             }, {});
-
-            await incrementValuesRedis(partnershipId, {
-              exposure: -exposureDiff,
-              [redisKeys.userMatchExposure + matchId]: -exposureDiff,
-            });
             // Send data to socket for session bet placement
             sendMessageToUser(partnershipId, socketSessionEvent, {
               currentBalance: userRedisData?.currentBalance,

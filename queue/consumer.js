@@ -338,6 +338,7 @@ let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
             const teamData = await calculateRacingExpertRate(teamRates, obj, partnership);
             // updating redis
             await incrementValuesRedis(partnershipId, { [redisKeys.userAllExposure]: userCurrentExposure - userOldExposure });
+            
             const plData = await setUserPLTournament(partnershipId, jobData?.matchId, jobData?.betId, teamData);
             const socketRedisData = plData?.reduce((acc, curr, index) => {
               if (index % 2 === 0) {
