@@ -1,6 +1,6 @@
 const Queue = require('bee-queue');
 const lodash = require('lodash');
-const { getUserRedisData, incrementValuesRedis, getUserSessionPL, setUserPLSession, hasUserInCache, setUserPLSessionOddEven, setProfitLossData, setUserPLTournament, setProfitLossDataTournament } = require('../services/redis/commonfunction');
+const { getUserRedisData, incrementValuesRedis, getUserSessionPL, setUserPLSession, hasUserInCache, setUserPLSessionOddEven, setProfitLossData, setUserPLTournament, setProfitLossDataTournament, setUserPLMeter } = require('../services/redis/commonfunction');
 const { redisKeys, userRoleConstant, socketData, partnershipPrefixByRole, sessionBettingType, jobQueueConcurrent, oddsSessionBetType } = require('../config/contants');
 const { logger } = require('../config/logger');
 const { updateUserExposure } = require('../services/userBalanceService');
@@ -177,7 +177,7 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
                 break;
             }
             let socketRedisData = {};
-            if ([sessionBettingType.session, sessionBettingType.overByOver, sessionBettingType.ballByBall, sessionBettingType.khado, sessionBettingType.meter].includes(jobData?.placedBet?.marketType)) {
+            if ([sessionBettingType.session, sessionBettingType.overByOver, sessionBettingType.ballByBall, sessionBettingType.khado].includes(jobData?.placedBet?.marketType)) {
               const returnedPF = await setUserPLSession(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, redisData?.betPlaced?.map((item) => ([item?.odds?.toString(), item?.profitLoss?.toString()]))?.flat(2));
               const [maxL, , , totalBet, ...pl] = returnedPF;
               socketRedisData = {
@@ -204,6 +204,23 @@ const calculateSessionRateAmount = async (userRedisData, jobData, userId) => {
                   }
                   return acc;
                 }, {}),
+                maxLoss: maxL,
+                totalBet: totalBet
+              }
+            }
+            else if(sessionBettingType.meter === jobData?.placedBet?.marketType) {
+              const returnedPF = await setUserPLMeter(partnershipId, jobData?.placedBet?.matchId, jobData?.placedBet?.betId, redisData?.betPlaced?.map((item) => ([item?.odds?.toString(), item?.profitLoss?.toString()]))?.flat(2));
+              const [maxL, , , totalBet, ...pl] = returnedPF;
+              socketRedisData = {
+                betPlaced: pl.map((item, index) => {
+                  if (index % 2 === 0) {
+                    return {
+                      odds: item,
+                      profitLoss: pl[index + 1]
+                    }
+                  }
+                  return null;
+                }).filter(Boolean),
                 maxLoss: maxL,
                 totalBet: totalBet
               }

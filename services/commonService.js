@@ -480,9 +480,7 @@ exports.calculateProfitLossMeter = async (redisProfitLoss, betData, partnership)
         ) &&
         profitLossVal < 0
       ) {
-        maxLoss = Math.abs(
-          profitLossVal
-        );
+        maxLoss = Math.abs(profitLossVal);
       }
       return {
         odds: item?.odds,
