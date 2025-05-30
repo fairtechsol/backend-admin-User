@@ -6,7 +6,7 @@ const { addRaceData } = require("../../../services/racingServices");
 const { userRoleConstant, matchWiseBlockType, expertDomain, marketBetType, redisKeys, matchBettingType } = require("../../../config/contants");
 const { getAllUsers, getChildUser, isAllChildDeactive, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getUser, getChildsWithOnlyMultiUserRole } = require("../../../services/userService");
 const { getUserExposuresGameWise, getCasinoMatchDetailsExposure, getVirtualCasinoExposure, getUserProfitLossMatch } = require("../../../services/commonService");
-const { getUserRedisData, getAllSessions } = require("../../../services/redis/commonfunction");
+const { getUserRedisData, getAllSessions, getAllTournament } = require("../../../services/redis/commonfunction");
 const { getChildUsersPlaceBets } = require("../../../services/betPlacedService");
 const { getVirtualCasinoExposureSum } = require("../../../services/virtualCasinoBetPlacedsService");
 const { In, IsNull } = require("typeorm");
@@ -196,6 +196,7 @@ exports.marketAnalysis = async (call) => {
     if (redisData) {
       const matchesBetsByUsers = await getChildUsersPlaceBets(userId, matchId);
       const currRedisData = await getAllSessions(userId, matchId);
+      const tournamentPLs = await getAllTournament(userId, matchId);
 
       let matchIds = new Set();
 
@@ -254,7 +255,7 @@ exports.marketAnalysis = async (call) => {
 
             if (item?.marketType == matchBettingType.tournament) {
               currRedisData = {};
-              let currBetPL = JSON.parse(redisData[item?.betId + redisKeys.profitLoss + "_" + item?.matchId]);
+              const currBetPL = tournamentPLs?.[item?.betId + redisKeys.profitLoss + "_" + item?.matchId] || {};
               teams = currMatchData?.tournament?.find((items) => items?.id == item?.betId)?.runners?.sort((a, b) => a.sortPriority - b.sortPriority)?.map((items, i) => {
                 currRedisData[String.fromCharCode(97 + i)] = currBetPL[items?.id];
                 return items?.runnerName

@@ -1477,7 +1477,7 @@ exports.getUserExposuresGameWise = async (user, matchData) => {
     const bets = await getUserDistinctBets(user.id, { eventType: (In([gameType.cricket, gameType.politics, gameType.tennis, gameType.football])) });
     let exposures = {};
 
-    let betPlace = (await findAllPlacedBet({ createBy: user.id, eventType: (In([gameType.cricket, gameType.politics, gameType.tennis, gameType.football])), deleteReason: IsNull() })).reduce((prev, curr) => {
+    let betPlace = (await findAllPlacedBet({ result: In([betResultStatus.PENDING]), createBy: user.id, eventType: (In([gameType.cricket, gameType.politics, gameType.tennis, gameType.football])), deleteReason: IsNull() })).reduce((prev, curr) => {
       prev[curr.betId] = prev[curr.betId] || [];
       prev[curr.betId].push(curr);
       return prev;

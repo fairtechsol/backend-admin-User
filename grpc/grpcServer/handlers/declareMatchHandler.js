@@ -718,9 +718,7 @@ exports.unDeclareTournamentMatchResult = async (call) => {
                     }
 
                     let { exposure: ex, profitLoss: pl, myProfitLoss: mpl, ...parentRedisUpdateObj } = updateData;
-                    Object.keys(parentRedisUpdateObj)?.forEach((plKey) => {
-                        parentRedisUpdateObj = parentRedisUpdateObj[plKey];
-                    });
+                    parentRedisUpdateObj = parentRedisUpdateObj?.[`${matchBetting?.id}${redisKeys.profitLoss}_${matchId}`];
                     const baseKey = `match:${userId}:${matchId}:${matchBetting?.id}:profitLoss`;
 
                     // queue Redis increments & key deletion
