@@ -1,12 +1,12 @@
 const { In, IsNull } = require("typeorm");
 const { redisKeys, userRoleConstant, oldBetFairDomain, casinoMicroServiceDomain, partnershipPrefixByRole, cardGameType, marketBetType, matchBettingType, cardGames, betResultStatus, oddsSessionBetType } = require("../config/contants");
 const { findAllPlacedBet, getChildUsersPlaceBets, pendingCasinoResult, getChildUsersPlaceBetsByBetId } = require("../services/betPlacedService");
-const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKeyData, getAllSessions, getAllTournament } = require("../services/redis/commonfunction");
+const { getUserRedisKeys, getUserRedisSingleKey, updateUserDataRedis, getHashKeysByPattern, getUserRedisData, hasUserInCache, getUserRedisKeyData, getAllSessions, getAllTournament, getProfitLossDataTournament } = require("../services/redis/commonfunction");
 const { getChildsWithOnlyUserRole, getChildUser, getUser } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { logger } = require("../config/logger");
-const { listMatch, getMatchList } = require("../services/matchService");
+const { listMatch, getMatchList, getMatch } = require("../services/matchService");
 const { getCardMatch } = require("../services/cardMatchService");
 const { calculateProfitLossForCardMatchToResult, calculateRatesRacingMatch, getUserExposuresGameWise, getCasinoMatchDetailsExposure, getUserProfitLossMatch, getVirtualCasinoExposure } = require("../services/commonService");
 const { getMatchDetailsHandler, getRaceDetailsHandler, getMatchListHandler, getRaceListHandler, getRaceCountryCodeListHandler, getTournamentBettingHandler } = require("../grpc/grpcClient/handlers/expert/matchHandler");
@@ -270,12 +270,7 @@ exports.cardMatchDetails = async (req, res) => {
 exports.listMatch = async (req, res) => {
   try {
     let user = req.user;
-    let apiResponse = {};
-    try {
-      apiResponse = await getMatchListHandler({ query: JSON.stringify(req.query) });
-    } catch (error) {
-      throw error?.response?.data;
-    }
+    let apiResponse = await getMatch({stopAt:IsNull()}, null, req.query);
 
     const domainUrl = `${process.env.GRPC_URL}`;
 
@@ -285,17 +280,15 @@ exports.listMatch = async (req, res) => {
 
       const betPlaced = await findAllPlacedBet({ createBy: In(users?.map((item) => item.id)), result: betResultStatus.PENDING });
 
-      for (let i = 0; i < apiResponse.data?.matches?.length; i++) {
-        let matchDetail = apiResponse.data?.matches[i];
-        apiResponse.data.matches[i].totalBet = betPlaced?.filter((match) => match?.matchId === matchDetail?.id)?.length;
-        const redisId = `${matchDetail?.matchOddTournament?.id}_profitLoss_${matchDetail?.id}`;
+      for (let i = 0; i < apiResponse?.matches?.length; i++) {
+        let matchDetail = apiResponse?.matches[i];
+        apiResponse.matches[i].totalBet = betPlaced?.filter((match) => match?.matchId === matchDetail?.id)?.length;
 
-        let redisData = await getUserRedisKeyData(user.id, redisId);
+        let redisData = await getProfitLossDataTournament(user.id, matchDetail?.id, matchDetail?.matchOddTournament?.id);
         if (redisData) {
-          redisData = JSON.parse(redisData);
           const runners = matchDetail?.matchOddTournament?.runners?.sort((a, b) => a.sortPriority - b.sortPriority);
-          apiResponse.data.matches[i].teamARate = redisData?.[runners?.[0]?.id] || 0;
-          apiResponse.data.matches[i].teamBRate = redisData?.[runners?.[1]?.id];
+          apiResponse.matches[i].teamARate = redisData?.[runners?.[0]?.id] || 0;
+          apiResponse.matches[i].teamBRate = redisData?.[runners?.[1]?.id];
         }
       }
     }
@@ -303,7 +296,7 @@ exports.listMatch = async (req, res) => {
       {
         statusCode: 200,
         message: { msg: "match details", keys: { name: "Match" } },
-        data: apiResponse.data,
+        data: apiResponse,
       },
       req,
       res

@@ -1,5 +1,6 @@
 const { AppDataSource } = require("../config/postGresConnection");
 const matchSchema = require("../models/match.entity");
+const ApiFeature = require("../utils/apiFeatures");
 const match = AppDataSource.getRepository(matchSchema);
 
 exports.addMatchData = async (body) => {
@@ -24,4 +25,29 @@ exports.listMatch = async (keyword) => {
   UNION
   SELECT CONCAT(venue, ' | ', title) as title, "matchType", "startAt", "id" FROM "racingMatchs"  where "stopAt" is NULL AND ( title ILIKE $1 OR venue ILIKE $1) ORDER BY "startAt";`, [`%${keyword}%`]);
   return matchList;
+};
+
+exports.getMatch = async (filters, select, query) => {
+  try {
+    // Start building the query
+    let matchQuery = new ApiFeature(
+      match
+        .createQueryBuilder()
+        .where(filters)
+        .select(select)
+        .orderBy("match.startAt", "DESC"),
+      query
+    )
+      .search()
+      .filter()
+      .sort()
+      .paginate()
+      .getResult();
+    // Execute the query and get the result along with count
+    const [matches, count] = await matchQuery;
+
+    return { matches, count };
+  } catch (error) {
+    throw error;
+  }
 };
