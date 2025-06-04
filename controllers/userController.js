@@ -700,7 +700,6 @@ exports.changePassword = async (req, res, next) => {
       res
     );
   } catch (error) {
-    console.log(error);
     // Log any errors that occur
     return ErrorResponse(
       {
