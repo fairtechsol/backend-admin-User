@@ -13,6 +13,13 @@ const permissionSchema = new EntitySchema({
             return acc;
         }, {}))
     },
+     indices: [
+        {
+            name: 'permissions_createBy',
+            unique: false,
+            columns: ['createBy'],
+        }
+    ],
 });
 
 module.exports = permissionSchema;

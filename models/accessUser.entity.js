@@ -62,7 +62,7 @@ const accessUserSchema = new EntitySchema({
         {
             name: 'access_user_userName',   // index name should be start with the table name
             unique: true, // Optional: Set to true if you want a unique index
-            columns: ['id', 'userName'],
+            columns: ['userName'],
         }
     ],
 });
