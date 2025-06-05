@@ -452,12 +452,6 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
   }
 }
 
-/**
- * Handle the user's session bet placement.
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @param {Function} next - Express next function.
- */
 exports.sessionBetPlace = async (req, res, next) => {
   try {
     // Destructure relevant data from the request body and user object
@@ -1199,7 +1193,6 @@ const checkRate = async (betObj, teams, placeIndex) => {
   return false;
 
 }
-
 
 let calculateRacingUserExposure = (userOldExposure, oldTeamRate, newTeamRate) => {
 

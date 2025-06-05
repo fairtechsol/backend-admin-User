@@ -1,13 +1,13 @@
-const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType, matchOddName } = require('../config/contants');
-const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, getUsersWithUserBalance, userBlockUnblock, betBlockUnblock, getUsersWithUsersBalanceData, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket, insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, getUserListProcedure, getUserTotalBalanceProcedure, } = require('../services/userService');
+const { userRoleConstant, transType, defaultButtonValue, buttonType, walletDescription, fileType, socketData, report, matchWiseBlockType, betResultStatus, betType, sessiontButtonValue, oldBetFairDomain, partnershipPrefixByRole, uplinePartnerShipForAllUsers, casinoButtonValue, transactionType, permissions } = require('../config/contants');
+const { getUserById, addUser, getUserByUserName, updateUser, getUser, getChildUser, getUsers, getFirstLevelChildUser, getChildsWithMergedUser, userBlockUnblock, betBlockUnblock, getCreditRefrence, getUserBalance, getChildsWithOnlyUserRole, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getMatchLockAllChild, getUserMarketLock, getAllUsersMarket, insertUserMarketLock, deleteUserMarketLock, getMarketLockAllChild, getUsersWithTotalUsersBalanceData, getGameLockForDetails, isAllChildDeactive, getParentsWithBalance, getChildUserBalanceSum, getFirstLevelChildUserWithPartnership, getUserDataWithUserBalance, getChildUserBalanceAndData, softDeleteAllUsers, getAllUsers, getUserListProcedure, getUserTotalBalanceProcedure } = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response');
 const { insertTransactions } = require('../services/transactionService');
 const { insertButton } = require('../services/buttonService');
-const {  getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
+const { getPlacedBetTotalLossAmount } = require('../services/betPlacedService')
 const bcrypt = require("bcryptjs");
 const lodash = require('lodash');
 const crypto = require('crypto');
-const { forceLogoutUser, profitLossPercentCol, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
+const { forceLogoutUser, forceLogoutIfLogin, getUserProfitLossForUpperLevel, transactionPasswordAttempts, childIdquery, loginDemoUser } = require("../services/commonService");
 const { getUserBalanceDataByUserId, getAllChildProfitLossSum, addInitialUserBalance, updateUserBalanceData } = require('../services/userBalanceService');
 const { ILike, Not, In } = require('typeorm');
 const FileGenerate = require("../utils/generateFile");
@@ -16,6 +16,7 @@ const { hasUserInCache, updateUserDataRedis, getUserRedisKey } = require('../ser
 const { commissionReport, commissionMatchReport } = require('../services/commissionService');
 const { logger } = require('../config/logger');
 const bot = require('../config/telegramBot');
+const { getAccessUserByUserName, getAccessUserWithPermission, getAccessUserById, updateAccessUser } = require('../services/accessUserService');
 const { deleteAuthenticator } = require('../services/authService');
 
 exports.getProfile = async (req, res) => {
@@ -27,9 +28,21 @@ exports.getProfile = async (req, res) => {
   let where = {
     id: userId,
   };
-  let user = await getUsersWithUserBalance(where);
+  let user;
+  if (reqUser?.isAccessUser) {
+    const mainUser = await getUser({ id: req.user.id }, ["roleName"])
+    const userBal = await getUserBalanceDataByUserId(req.user.id)
+    user = await getAccessUserWithPermission({ id: reqUser?.childId });
+    if (user) {
+      user.roleName = mainUser?.roleName;
+      user.userBal = userBal;
+    }
+  }
+  else {
+    user = await getUserDataWithUserBalance(where);
+  }
   let response = lodash.omit(user, ["password", "transPassword"])
-  return SuccessResponse({ statusCode: 200, message: { msg: "user.profile" }, data: response }, req, res)
+  return SuccessResponse({ statusCode: 200, data: response }, req, res)
 }
 
 exports.isUserExist = async (req, res) => {
@@ -55,7 +68,7 @@ exports.createUser = async (req, res) => {
     creator.myPartnership = parseInt(myPartnership);
 
     const upperCaseUserName = userName?.toUpperCase();
-    const userExist = await getUserByUserName(upperCaseUserName);
+    const userExist = (!!(await getUserByUserName(upperCaseUserName)) || !!(await getAccessUserByUserName(upperCaseUserName)));
     if (userExist)
       return ErrorResponse({ statusCode: 400, message: { msg: "user.userExist" } }, req, res);
 
@@ -492,9 +505,15 @@ function generateTransactionPass() {
 }
 
 // Check old password against the stored password
-const checkOldPassword = async (userId, oldPassword) => {
-  // Retrieve user's password from the database
-  const user = await getUserById(userId, ["password"]);
+const checkOldPassword = async (userId, oldPassword, isAccessUser = false) => {
+  let user;
+  if (isAccessUser) {
+    user = await getAccessUserById(userId, ["password"]);
+  }
+  else {
+    // Retrieve user's password from the database
+    user = await getUserById(userId, ["password"]);
+  }
   if (!user) {
     // User not found, return error response
     throw {
@@ -507,9 +526,9 @@ const checkOldPassword = async (userId, oldPassword) => {
 };
 
 // Check old transaction password against the stored transaction password
-const checkTransactionPassword = async (userId, oldTransactionPass) => {
+const checkTransactionPassword = async (userId, oldTransactionPass, isAccessUser) => {
   // Retrieve user's transaction password from the database
-  const user = await getUserById(userId, ["transPassword", "id"]);
+  const user = isAccessUser ? (await getAccessUserById(userId, ["transPassword", "id"])) : (await getUserById(userId, ["transPassword", "id"]));
   if (!user) {
     // User not found, return error response
     throw {
@@ -539,12 +558,12 @@ exports.changePassword = async (req, res, next) => {
 
     // Hash the new password
     const password = bcrypt.hashSync(newPassword, 10);
-
+    const isAccessUser = req.user.isAccessUser;
     // If user is changing its password after login or logging in for the first time
     if (oldPassword && !transactionPassword) {
       // Check if the old password is correct
-      const userId = req.user.id;
-      const isPasswordMatch = await checkOldPassword(userId, oldPassword);
+      const userId = isAccessUser ? req.user.childId : req.user.id;
+      const isPasswordMatch = await checkOldPassword(userId, oldPassword, isAccessUser);
 
       if (!isPasswordMatch) {
         return ErrorResponse(
@@ -556,17 +575,26 @@ exports.changePassword = async (req, res, next) => {
       }
 
       // Retrieve additional user information
-      const user = await getUserById(userId, ["loginAt", "roleName"]);
+      const user = isAccessUser ? await getAccessUserById(userId, ["loginAt", "id"]) : await getUserById(userId, ["loginAt", "roleName"]);
 
       // Update loginAt and generate new transaction password if conditions are met
       if (user.loginAt == null && user.roleName !== userRoleConstant.user) {
         const generatedTransPass = generateTransactionPass();
-        await updateUser(userId, {
-          loginAt: new Date(),
-          transPassword: bcrypt.hashSync(generatedTransPass, 10),
-          password,
-        });
-        await forceLogoutUser(userId, true);
+        if (isAccessUser) {
+          await updateAccessUser({ id: userId }, {
+            loginAt: new Date(),
+            transPassword: bcrypt.hashSync(generatedTransPass, 10),
+            password,
+          });
+        }
+        else {
+          await updateUser(userId, {
+            loginAt: new Date(),
+            transPassword: bcrypt.hashSync(generatedTransPass, 10),
+            password,
+          });
+        }
+        await forceLogoutUser(userId, true, isAccessUser, isAccessUser ? req.user.id : null);
         return SuccessResponse(
           {
             statusCode: 200,
@@ -579,8 +607,13 @@ exports.changePassword = async (req, res, next) => {
       }
 
       // Update only the password if conditions are not met
-      await updateUser(userId, { loginAt: new Date(), password });
-      await forceLogoutUser(userId);
+      if (isAccessUser) {
+        await updateAccessUser({ id: userId }, { loginAt: new Date(), password });
+      }
+      else {
+        await updateUser(userId, { loginAt: new Date(), password });
+      }
+      await forceLogoutUser(userId, false, isAccessUser, isAccessUser ? req.user.id : null);
 
       return SuccessResponse(
         {
@@ -591,14 +624,27 @@ exports.changePassword = async (req, res, next) => {
         res
       );
     }
+
+    if (isAccessUser && !req.user.permission?.[permissions.userPasswordChange]) {
+      return ErrorResponse(
+        {
+          statusCode: 403,
+          message: { msg: "auth.unauthorizeRole" },
+        },
+        req,
+        res
+      );
+    }
     // if password is changed by parent of users
     const userId = req.body.userId;
+    const loginUserId = isAccessUser ? req.user.childId : req.user.id;
 
-    const user = await getUserById(req.user.id, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
+    const user = isAccessUser ? (await getAccessUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "mainParentId", "parentId"])) : await getUserById(loginUserId, ["transPassword", "id", "transactionPasswordAttempts", "createBy", "superParentId"]);
 
     const isPasswordMatch = await checkTransactionPassword(
-      req.user.id,
-      transactionPassword
+      user?.id,
+      transactionPassword,
+      isAccessUser
     );
 
     if (!isPasswordMatch) {
@@ -606,7 +652,7 @@ exports.changePassword = async (req, res, next) => {
       const currDomain = `${process.env.GRPC_URL}`;
 
       if (currDomain != oldBetFairDomain) {
-        await transactionPasswordAttempts(user);
+        await transactionPasswordAttempts(user, isAccessUser);
       }
       return ErrorResponse(
         {
@@ -620,15 +666,23 @@ exports.changePassword = async (req, res, next) => {
     }
 
     if (user?.transactionPasswordAttempts > 0) {
-      await updateUser(user.id, { transactionPasswordAttempts: 0 });
+      if (isAccessUser) {
+        await updateAccessUser({ id: loginUserId }, { transactionPasswordAttempts: 0 });
+      } else {
+        await updateUser(user.id, { transactionPasswordAttempts: 0 });
+      }
     }
 
     if (!userId) {
-      // Update loginAt, password, and reset transactionPassword
-      await updateUser(req.user.id, {
-        password,
-      });
-      await forceLogoutUser(req.user.id);
+      if (isAccessUser) {
+        await updateAccessUser({ id: loginUserId }, { password });
+      }
+      else {
+        await updateUser(loginUserId, {
+          password,
+        });
+      }
+      await forceLogoutUser(loginUserId, false, isAccessUser, isAccessUser ? req.user.id : null);
     } else {
       // Update loginAt, password, and reset transactionPassword, remvoe auth when change password by parent
       await updateUser(userId, {
@@ -711,7 +765,7 @@ exports.userList = async (req, res, next) => {
     const { type, userId, roleName, ...apiQuery } = req.query;
     let userRole = roleName || reqUser?.roleName;
     let where = {
-      createBy: userId || reqUser.id,
+      createBy: reqUser?.isAccessUser ? reqUser.id : (userId || reqUser.id),
       roleName: userRole
     };
 
@@ -826,7 +880,7 @@ exports.getTotalUserListBalance = async (req, res, next) => {
     const { type, userId, roleName, ...apiQuery } = req.query;
     let userRole = roleName || reqUser?.roleName;
     let where = {
-      createBy: userId || reqUser.id,
+      createBy: reqUser?.isAccessUser ? reqUser.id : (userId || reqUser.id),
       roleName: userRole
     };
 
@@ -1048,7 +1102,7 @@ exports.lockUnlockUser = async (req, res, next) => {
   try {
     // Extract relevant data from the request body and user object
     const { userId, betBlock, userBlock } = req.body;
-    const { id: loginId, roleName } = req.user;
+    const { id: loginId, roleName, isAccessUser, permission } = req.user;
 
     // Fetch user details of the current user, including block information
     const userDetails = await getUserById(loginId, ["userBlock", "betBlock"]);
@@ -1113,7 +1167,7 @@ exports.lockUnlockUser = async (req, res, next) => {
     }
 
     // Check if the user is already blocked or unblocked (prevent redundant operations)
-    if (blockingUserDetail?.userBlock != userBlock) {
+    if (blockingUserDetail?.userBlock != userBlock && (!isAccessUser || (isAccessUser && permission[permissions.userLock]))) {
       // Perform the user block/unblock operation
       const blockedUsers = await userBlockUnblock(userId, loginId, userBlock);
       //   if blocktype is user and its block then user would be logout by socket
@@ -1125,7 +1179,7 @@ exports.lockUnlockUser = async (req, res, next) => {
     }
 
     // Check if the user is already bet-blocked or unblocked (prevent redundant operations)
-    if (blockingUserDetail?.betBlock != betBlock) {
+    if (blockingUserDetail?.betBlock != betBlock && (!isAccessUser || (isAccessUser && permission[permissions.betLock]))) {
       // Perform the bet block/unblock operation
 
       const blockedBets = await betBlockUnblock(userId, loginId, betBlock);

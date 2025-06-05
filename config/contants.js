@@ -510,4 +510,29 @@ exports.teenPattiWinRatio = {
 
 // exports.casinoProvider = Array.from(new Set(mac88Games.map((item) => item?.provider_name)));
 exports.casinoProvider = Object.keys(mac88Games);
-exports.matchOddName = "MATCH_ODDS"
+exports.matchOddName="MATCH_ODDS"
+
+exports.permissions = {
+  all: 'all',
+  dashboard: 'dashboard',
+  marketAnalysis: 'marketAnalysis',
+  userList: 'userList',
+  insertUser: 'insertUser',
+  accountStatement: 'accountStatement',
+  partyWinLoss: 'partyWinLoss',
+  currentBets: 'currentBets',
+  casinoResult: 'casinoResult',
+  liveCasinoResult: 'liveCasinoResult',
+  ourCasino: 'ourCasino',
+  events: 'events',
+  marketSearchAnalysis: 'marketSearchAnalysis',
+  loginUserCreation: 'loginUserCreation',
+  withdraw: 'withdraw',
+  deposit: 'deposit',
+  creditReference: 'creditReference',
+  userInfo: 'userInfo',
+  userPasswordChange: 'userPasswordChange',
+  userLock: 'userLock',
+  betLock: 'betLock',
+  activeUser: 'activeUser',
+};

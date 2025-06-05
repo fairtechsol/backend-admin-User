@@ -294,7 +294,7 @@ MatchTournamentBetQueue.process(jobQueueConcurrent, async function (job, done) {
 });
 
 let calculateTournamentRateAmount = async (userRedisData, jobData, userId) => {
-  let roleName = userRedisData.userRole;
+  let roleName = userRedisData.roleName;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
   let partnershipObj = JSON.parse(userRedisData.partnerShips || "{}");
@@ -415,7 +415,7 @@ CardMatchBetQueue.process(jobQueueConcurrent, async function (job, done) {
 });
 
 let calculateCardMatchRateAmount = async (userRedisData, jobData, userId) => {
-  let roleName = userRedisData.userRole;
+  let roleName = userRedisData.roleName;
   let userOldExposure = jobData.userPreviousExposure
   let userCurrentExposure = jobData.newUserExposure;
   let partnershipObj = JSON.parse(userRedisData.partnerShips || "{}");
