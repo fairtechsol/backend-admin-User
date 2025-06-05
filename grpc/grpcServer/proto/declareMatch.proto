@@ -69,7 +69,7 @@ message UnDeclareTournamentRequest {
 
 message UnDeclareTournamentResponse {
   message Data{
-    float fwProfitLoss=1;
+    double fwProfitLoss=1;
     string faAdminCal=2;
     string superAdminData=3;
    }
