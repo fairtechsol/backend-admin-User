@@ -5,27 +5,29 @@ const { CreateUser, ChangePassword, generateTransactionPass, LockUnlockUser, upd
 const { createUser, lockUnlockUser, generateTransactionPassword, changePassword, updateUser, setExposureLimit, userList, userSearchList, userBalanceDetails, setCreditReferrence, getProfile, generalReport, isUserExist, userMatchLock, getMatchLockAllChild, userMarketLock, getMarketLockAllChild, getUserDetailsForParent, checkChildDeactivate, getCommissionReportsMatch, getCommissionBetPlaced, getTotalUserListBalance, getUserProfitLossForMatch, deleteUser, checkOldPasswordData, checkMatchLock, loginWithDemoUser } = require('../controllers/userController');
 const { isAuthenticate, checkTransactionPassword } = require('../middleware/auth');
 const { totalProfitLossWallet, totalProfitLossByMatch, getResultBetProfitLoss, getSessionBetProfitLoss, getUserWiseTotalProfitLoss } = require('../controllers/fairgameWalletController');
+const { permissions } = require('../config/contants');
+const { checkAuthorize } = require('../middleware/checkAccess');
 
-router.post('/add', isAuthenticate, checkTransactionPassword, validator(CreateUser), createUser);
+router.post('/add', isAuthenticate, checkAuthorize(permissions.insertUser), checkTransactionPassword, validator(CreateUser), createUser);
 router.get('/profile', isAuthenticate, getProfile);
 router.get('/exist', isAuthenticate, isUserExist);
-router.post('/updateUser', isAuthenticate, checkTransactionPassword, validator(updateUserValid), updateUser);
-router.post('/lockUnlockUser', isAuthenticate, checkTransactionPassword, validator(LockUnlockUser), lockUnlockUser);
-router.post('/changePassword', isAuthenticate, validator(ChangePassword), changePassword);
+router.post('/updateUser', isAuthenticate, checkAuthorize(permissions.insertUser), checkTransactionPassword, validator(updateUserValid), updateUser);
+router.post('/lockUnlockUser', isAuthenticate, checkAuthorize(permissions.betLock, permissions.userLock), checkTransactionPassword, validator(LockUnlockUser), lockUnlockUser);
+router.post('/changePassword', isAuthenticate,  checkAuthorize(permissions.userPasswordChange),validator(ChangePassword), changePassword);
 router.post("/update/exposurelimit", isAuthenticate, checkTransactionPassword, validator(setExposureLimitValid), setExposureLimit);
 
-router.get("/list", isAuthenticate, userList);
-router.get("/child/totalBalance", isAuthenticate, getTotalUserListBalance);
+router.get("/list", isAuthenticate, checkAuthorize(permissions.userList), userList);
+router.get("/child/totalBalance", isAuthenticate, checkAuthorize(permissions.userList), getTotalUserListBalance);
 
 router.get("/searchlist", isAuthenticate, userSearchList);
 router.get("/balance", isAuthenticate, userBalanceDetails);
-router.post("/update/creditreferrence", isAuthenticate, checkTransactionPassword, validator(setCreditRefValidate), setCreditReferrence);
+router.post("/update/creditreferrence", isAuthenticate, checkAuthorize(permissions.creditReference), checkTransactionPassword, validator(setCreditRefValidate), setCreditReferrence);
 router.post("/generateTransactionPassword", isAuthenticate, validator(generateTransactionPass), generateTransactionPassword);
 
 router.get("/generalReport", isAuthenticate, generalReport);
 router.post("/totalProfitLoss", isAuthenticate, totalProfitLossWallet);
 router.post("/userMatchLock", isAuthenticate, validator(userMatchLockValidate), userMatchLock);
-router.post("/userMarketLock", isAuthenticate, checkTransactionPassword, validator(userMarketLockValidate), userMarketLock);
+router.post("/userMarketLock", isAuthenticate,checkAuthorize(permissions.betLock), checkTransactionPassword, validator(userMarketLockValidate), userMarketLock);
 router.get("/getMarketLockAllChild", isAuthenticate, getMarketLockAllChild);
 router.post("/oldUserMatchLock", isAuthenticate, checkTransactionPassword, validator(oldUserMatchLockValidate), userMatchLock);
 router.get("/check/match/lock", isAuthenticate, checkMatchLock);

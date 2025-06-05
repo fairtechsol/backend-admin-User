@@ -13,7 +13,7 @@ message NotificationResponse {
 // Request message for updating balance via API call
 message UpdateBalanceAPICallRequest {
     string userId = 1;
-    float balance = 2;
+    double balance = 2;
 }
   
   // Response message for updating balance

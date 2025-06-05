@@ -16,6 +16,7 @@ const {
   getUserWithUserBalance,
   updateUser,
   getUserById,
+  getUserDataWithUserBalance,
 } = require("../services/userService");
 const { userLoginAtUpdate, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
 const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
@@ -25,6 +26,8 @@ const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
 const { generateAuthToken, verifyAuthToken } = require("../utils/generateAuthToken");
 const bot = require("../config/telegramBot");
 const { __mf } = require("i18n");
+const { getAccessUserWithPermission } = require("../services/accessUserService");
+const { ILike } = require("typeorm");
 
 
 
@@ -32,12 +35,16 @@ const { __mf } = require("i18n");
 const validateUser = async (userName, password) => {
   // Find user by username and select specific fields
   const user = await getUserWithUserBalance(userName);
+  const accessUser = await getAccessUserWithPermission({ userName: ILike(userName) });
   // Check if the user is found
-  if (user) {
+  if (user || accessUser) {
     // Check if the provided password matches the hashed password in the database
-    if (bcrypt.compareSync(password, user.password)) {
+    if (bcrypt.compareSync(password, user?.password || accessUser?.password)) {
       // If the passwords match, create a result object without the password field
-      const { password, ...result } = user;
+      const { password, ...result } = user || accessUser;
+      if (accessUser) {
+        result.isAccessUser = true;
+      }
       return result;
     }
 
@@ -52,38 +59,64 @@ const validateUser = async (userName, password) => {
   // If the user is not found, return null
   return null;
 };
-
 const setUserDetailsRedis = async (user) => {
-  try{
-  logger.info({ message: "Setting exposure at login time.", data: user });
+  try {
+    logger.info({ message: "Setting exposure at login time.", data: user });
 
-  // Fetch user details from Redis
-  const redisUserData = await internalRedis.hget(user.id, "userName");
+    const setAndExpireUserData = async (id, data) => {
+      await updateUserDataRedis(id, data);
+      await internalRedis.expire(id, redisTimeOut);
+    };
 
-  if (!redisUserData) {
-    // Fetch and set betting data at login
-    let betData = await settingBetsDataAtLogin(user);
-    // Set user details and partnerships in Redis
-    await updateUserDataRedis(user.id, {
-      exposure: user?.userBal?.exposure || 0,
-      profitLoss: user?.userBal?.profitLoss || 0,
-      myProfitLoss: user?.userBal?.myProfitLoss || 0,
-      userName: user.userName,
-      currentBalance: user?.userBal?.currentBalance || 0,
-      roleName: user.roleName,
-      ...(betData || {}),
-      partnerShips: await findUserPartnerShipObj(user),
-      userRole: user.roleName,
-    });
+    const setDefaultUserData = async (userObj) => {
+      const betData = await settingBetsDataAtLogin(userObj);
+      const partnerShips = await findUserPartnerShipObj(userObj);
 
-    // Expire user data in Redis
-    await internalRedis.expire(user.id, redisTimeOut);
-  }
-  else{
-     // Expire user data in Redis
-     await internalRedis.expire(user.id, redisTimeOut);
-  }}
-  catch(err){
+      return {
+        exposure: userObj?.userBal?.exposure || 0,
+        profitLoss: userObj?.userBal?.profitLoss || 0,
+        myProfitLoss: userObj?.userBal?.myProfitLoss || 0,
+        userName: userObj.userName,
+        currentBalance: userObj?.userBal?.currentBalance || 0,
+        roleName: userObj.roleName,
+        ...(betData || {}),
+        partnerShips,
+      };
+    }
+    
+    if (user.isAccessUser) {
+      const userData = await getUserDataWithUserBalance({ id: user.mainParentId });
+      const redisUserData = await internalRedis.hget(userData.id, "userName");
+
+      if (!redisUserData) {
+        const defaultData = await setDefaultUserData(userData);
+        await setAndExpireUserData(userData.id, defaultData);
+      } else {
+        await internalRedis.expire(userData.id, redisTimeOut);
+      }
+
+      const accessUserData = await internalRedis.hget(user.id, "userName");
+      if (!accessUserData) {
+        await setAndExpireUserData(user.id, {
+          userName: user.userName,
+          permission: JSON.stringify(user.permission),
+        });
+      } else {
+        await internalRedis.expire(user.id, redisTimeOut);
+      }
+
+    } else {
+      const redisUserData = await internalRedis.hget(user.id, "userName");
+
+      if (!redisUserData) {
+        const defaultData = await setDefaultUserData(user);
+        await setAndExpireUserData(user.id, defaultData);
+      } else {
+        await internalRedis.expire(user.id, redisTimeOut);
+      }
+    }
+
+  } catch (err) {
     throw err;
   }
 };
@@ -129,7 +162,8 @@ exports.login = async (req, res) => {
         res
       );
     }
-    const { roleName } = user;
+
+    let { roleName } = user;
     const throwUserNotCorrectError = () => {
       return ErrorResponse(
         {
@@ -143,36 +177,44 @@ exports.login = async (req, res) => {
       );
     };
 
-    switch (loginType) {
-      case userRoleConstant.user:
-      case userRoleConstant.expert:
-        if (roleName !== loginType) {
-          return throwUserNotCorrectError();
-        }
-        break;
+    if (!user.isAccessUser) {
+      switch (loginType) {
+        case userRoleConstant.user:
+        case userRoleConstant.expert:
+          if (roleName !== loginType) {
+            return throwUserNotCorrectError();
+          }
+          break;
 
-      case userRoleConstant.admin:
-        if (!differLoginTypeByRoles.admin.includes(roleName)) {
-          return throwUserNotCorrectError();
-        }
-        break;
+        case userRoleConstant.admin:
+          if (!differLoginTypeByRoles.admin.includes(roleName)) {
+            return throwUserNotCorrectError();
+          }
+          break;
 
-      case "wallet":
-        if (!differLoginTypeByRoles.wallet.includes(roleName)) {
+        case "wallet":
+          if (!differLoginTypeByRoles.wallet.includes(roleName)) {
+            return throwUserNotCorrectError();
+          }
+          break;
+        default:
           return throwUserNotCorrectError();
-        }
-        break;
-      default:
-        return throwUserNotCorrectError();
+      }
     }
-
+    else {
+      if (loginType != userRoleConstant.admin) {
+        return throwUserNotCorrectError();
+      }
+      const mainParent = await getUserById(user.mainParentId, ["roleName"]);
+      roleName = mainParent?.roleName;
+    }
     // force logout user if already login on another device
     await forceLogoutIfLogin(user.id);
 
     await setUserDetailsRedis(user);
     // Generate JWT token
     const token = jwt.sign(
-      { id: user.id, roleName: user.roleName, userName: user.userName, isAuthenticatorEnable: user.isAuthenticatorEnable },
+      { id: user.id, roleName: roleName, userName: user.userName, isAuthenticatorEnable: user.isAuthenticatorEnable, ...(user.isAccessUser ? { mainParentId: user.mainParentId, isAccessUser: true } : {}) },
       jwtSecret
     );
 
@@ -183,12 +225,19 @@ exports.login = async (req, res) => {
     if (!forceChangePassword) {
       userLoginAtUpdate(user.id);
     }
+
+    if (user?.isAccessUser) {
+      const mainUserData = await internalRedis.hget(user.mainParentId, "accessUser");
+
+      await internalRedis.hmset(user.mainParentId, { accessUser: JSON.stringify([...JSON.parse(mainUserData || "[]"), user.id]) });
+
+      await internalRedis.hmset(user.id, { token: token });
+    }
     // setting token in redis for checking if user already loggedin
     await internalRedis.hmset(user.id, { token: token });
     let isBetExist;
     if (user.roleName != userRoleConstant.user) {
-      isBetExist = await getChildUsersSinglePlaceBet(user.id);
-
+      isBetExist = await getChildUsersSinglePlaceBet(user.mainParentId);
     }
     let userAuthType;
     if (user.isAuthenticatorEnable) {
@@ -214,7 +263,8 @@ exports.login = async (req, res) => {
           userId: user?.id,
           isBetExist: isBetExist?.length > 0,
           isAuthenticator: user.isAuthenticatorEnable,
-          authenticatorType: userAuthType
+          authenticatorType: userAuthType,
+          permissions: user?.permission
         },
       },
       req,
@@ -238,10 +288,21 @@ exports.logout = async (req, res) => {
     // Get the user from the request object
     const user = req.user;
 
-    // Remove the user's token from Redis using their ID as the key
-    await internalRedis.del(user.id);
+    if (!user.isAccessUser) {
+      const userAccessData = await internalRedis.hget(user.id, "accessUser");
+      if (!userAccessData || !JSON.parse(userAccessData || "[]").length) {
+        await internalRedis.del(user.id);
+      }
+      else {
+        await internalRedis.hdel(user.id, "token");
+      }
+    } else {
+      await internalRedis.del(user.childId);
+      const mainUserData = await internalRedis.hget(user.id, "accessUser");
+      await internalRedis.hmset(user.id, { accessUser: JSON.stringify(JSON.parse(mainUserData || "[]")?.filter((item) => item != user.childId)) });
+    }
 
-    if(user.isDemo){
+    if (user.isDemo) {
       deleteDemoUser(user.id);
     }
 
@@ -285,7 +346,7 @@ exports.generateUserAuthToken = async (req, res) => {
 
     const isDeviceExist = await getAuthenticator({ userId: user.id }, ["id"]);
 
-    if(isDeviceExist){
+    if (isDeviceExist) {
       return ErrorResponse(
         {
           statusCode: 403,
@@ -381,7 +442,7 @@ exports.connectUserAuthToken = async (req, res) => {
         req,
         res
       );
-    }  
+    }
 
     await connectAppWithToken(authToken, deviceId, user);
 
@@ -405,11 +466,11 @@ exports.connectUserAuthToken = async (req, res) => {
   }
 };
 
-exports.getAuthenticatorRefreshToken=async (req,res)=>{
+exports.getAuthenticatorRefreshToken = async (req, res) => {
   try {
     const { deviceId } = req.params;
 
-    const authDevice = await getAuthenticator({ deviceId: deviceId }, [ "id","type"]);
+    const authDevice = await getAuthenticator({ deviceId: deviceId }, ["id", "type"]);
     if (!authDevice) {
       return ErrorResponse(
         {
@@ -452,7 +513,7 @@ exports.verifyAuthenticatorRefreshToken = async (req, res) => {
     const { authToken } = req.body;
     const user = req.user;
 
-    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id","type"]);
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id", "type"]);
     if (!authDevice) {
       return ErrorResponse(
         {
@@ -557,7 +618,7 @@ exports.removeAuthenticator = async (req, res) => {
     const { id } = req.user;
     const { authToken } = req.body;
 
-    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id","type"]);
+    const authDevice = await getAuthenticator({ userId: id }, ["deviceId", "id", "type"]);
     if (!authDevice) {
       return ErrorResponse(
         {
@@ -600,7 +661,7 @@ exports.removeAuthenticator = async (req, res) => {
         );
       }
     }
-    else{
+    else {
       const redisAuthToken = await getRedisKey(`${redisKeys.telegramToken}_${id}`);
       if (!redisAuthToken) {
         return ErrorResponse(
@@ -628,7 +689,7 @@ exports.removeAuthenticator = async (req, res) => {
           res
         );
       }
-    bot.sendMessage(authDevice.deviceId, __mf("telegramBot.disabled"))
+      bot.sendMessage(authDevice.deviceId, __mf("telegramBot.disabled"))
 
     }
 
@@ -659,8 +720,8 @@ exports.removeAuthenticator = async (req, res) => {
 exports.getAuthenticatorUsersList = async (req, res) => {
   try {
     const { deviceId } = req.params;
-    
-    const users = await getAuthenticators({ deviceId: deviceId, type: authenticatorType.app }, ["user.userName","userAuthenticator.id","user.id"])
+
+    const users = await getAuthenticators({ deviceId: deviceId, type: authenticatorType.app }, ["user.userName", "userAuthenticator.id", "user.id"])
 
     return SuccessResponse(
       {
@@ -685,8 +746,8 @@ exports.getAuthenticatorUsersList = async (req, res) => {
 exports.getAuthenticatorUser = async (req, res) => {
   try {
     const { id } = req.user;
-    
-    const userAuth = await getAuthenticator({ userId:id })
+
+    const userAuth = await getAuthenticator({ userId: id })
 
     return SuccessResponse(
       {

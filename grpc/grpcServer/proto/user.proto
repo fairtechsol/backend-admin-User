@@ -29,7 +29,7 @@ message ChangePasswordResponse {}
 // Message for setting exposure limit
 message SetExposureLimitRequest {
     string userId = 1;
-    float exposureLimit = 2;
+    double exposureLimit = 2;
   }
   
 message SetExposureLimitResponse {}
@@ -37,7 +37,7 @@ message SetExposureLimitResponse {}
 // Message for setting credit reference
 message SetCreditReferenceRequest {
     string userId = 1;
-    float amount = 2;
+    double amount = 2;
     string remark = 3;
   }
   
@@ -46,7 +46,7 @@ message SetCreditReferenceResponse {}
 // Message for updating user balance
 message UpdateUserBalanceRequest {
     string userId = 1;
-    float amount = 2;
+    double amount = 2;
     string transactionType = 3;
     string remark = 4;
 }

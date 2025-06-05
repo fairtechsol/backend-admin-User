@@ -208,8 +208,6 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
   }
 }
 
-
-
 exports.checkVerifiedBets = async (req, res) => {
   try {
     let { betId } = req.body;
