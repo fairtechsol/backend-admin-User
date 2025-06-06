@@ -368,6 +368,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       exposure: -exposureDiff,
       [redisSesionExposureName]: -exposureDiff
     });
+    const socketPl = { ...oldProfitLoss };
     if (oddsSessionBetType.includes(bets[0]?.marketType)) {
       oldProfitLoss.betPlaced = oldProfitLoss.betPlaced.reduce((acc, item) => {
         acc[item.odds] = item.profitLoss;
@@ -379,7 +380,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
       currentBalance: userRedisData?.currentBalance,
       exposure: redisObject?.exposure,
       sessionExposure: redisObject[redisSesionExposureName],
-      profitLoss: oldProfitLoss,
+      profitLoss: socketPl,
       bets: bets,
       betId: betId,
       deleteReason: deleteReason,
@@ -461,7 +462,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             };
 
             await incrementValuesRedis(partnershipId, { exposure: -exposureDiff, [redisSesionExposureName]: -exposureDiff });
-
+            const oldPl = { ...oldProfitLossParent }
             if (oddsSessionBetType.includes(bets[0]?.marketType)) {
               oldProfitLossParent.betPlaced = oldProfitLossParent.betPlaced.reduce((acc, item) => {
                 acc[item.odds] = item.profitLoss;
@@ -474,7 +475,7 @@ const updateUserAtSession = async (userId, betId, matchId, bets, deleteReason, d
             sendMessageToUser(partnershipId, socketSessionEvent, {
               exposure: redisObj?.exposure,
               sessionExposure: redisObj[redisSesionExposureName],
-              profitLoss: oldProfitLossParent,
+              profitLoss: oldPl,
               bets: bets,
               betId: betId,
               deleteReason: deleteReason,
