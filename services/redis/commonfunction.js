@@ -618,6 +618,7 @@ exports.setProfitLossData = async (userId, matchId, betId, redisData) => {
   const userKeyTTL = await internalRedis.ttl(userId);
 
   const pipeline = internalRedis.pipeline();
+  pipeline.del(base + 'profitLoss');
   pipeline.hset(base + 'profitLoss', redisData.betPlaced);
   pipeline.expire(base + 'profitLoss', userKeyTTL);
 
