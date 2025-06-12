@@ -542,8 +542,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     await validateSessionBet(sessionDetails, req.body, id);
 
-    let winAmount = 0,
-      loseAmount = 0;
+    let winAmount = 0, loseAmount = 0;
 
     if (sessionDetails?.type == sessionBettingType.fancy1) {
 

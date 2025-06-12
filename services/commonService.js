@@ -525,12 +525,12 @@ exports.calculateProfitLossSessionOddEven = async (redisProfitLoss, betData, par
   let betProfitloss = redisProfitLoss?.betPlaced ?? {};
 
   if (betData?.betPlacedData?.teamName?.toLowerCase() == "odd") {
-    betProfitloss.odd = (betProfitloss.odd || 0) + (betData?.winAmount * partnership / 100);
-    betProfitloss.even = (betProfitloss.even || 0) - (betData?.lossAmount * partnership / 100);
+    betProfitloss.odd = (parseFloat(betProfitloss.odd) || 0) + (parseFloat(betData?.winAmount) * partnership / 100);
+    betProfitloss.even = (parseFloat(betProfitloss.even) || 0) - (parseFloat(betData?.lossAmount) * partnership / 100);
   }
   else if (betData?.betPlacedData?.teamName?.toLowerCase() == "even") {
-    betProfitloss.odd = (betProfitloss.odd || 0) - (betData?.lossAmount * partnership / 100);
-    betProfitloss.even = (betProfitloss.even || 0) + (betData?.winAmount * partnership / 100);
+    betProfitloss.odd = (parseFloat(betProfitloss.odd) || 0) - (parseFloat(betData?.lossAmount) * partnership / 100);
+    betProfitloss.even = (parseFloat(betProfitloss.even) || 0) + (parseFloat(betData?.winAmount) * partnership / 100);
   }
 
   maxLoss = Number(Math.min(...Object.values(betProfitloss), 0).toFixed(2));
