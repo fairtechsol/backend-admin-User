@@ -554,12 +554,12 @@ exports.calculateProfitLossSessionFancy1 = async (redisProfitLoss, betData, part
   let betProfitloss = redisProfitLoss?.betPlaced ?? {};
 
   if (betData?.betPlacedData?.betType == betType.BACK) {
-    betProfitloss.yes = (betProfitloss.yes || 0) + (betData?.winAmount * partnership / 100);
-    betProfitloss.no = (betProfitloss.no || 0) - (betData?.lossAmount * partnership / 100);
+    betProfitloss.yes = parseFloat(betProfitloss.yes || 0) + (parseFloat(betData?.winAmount) * partnership / 100);
+    betProfitloss.no = parseFloat(betProfitloss.no || 0) - (parseFloat(betData?.lossAmount) * partnership / 100);
   }
   else if (betData?.betPlacedData?.betType == betType.LAY) {
-    betProfitloss.yes = (betProfitloss.yes || 0) - (betData?.lossAmount * partnership / 100);
-    betProfitloss.no = (betProfitloss.no || 0) + (betData?.winAmount * partnership / 100);
+    betProfitloss.yes = (betProfitloss.yes || 0) - (parseFloat(betData?.lossAmount) * partnership / 100);
+    betProfitloss.no = (parseFloat(betProfitloss.no) || 0) + (parseFloat(betData?.winAmount) * partnership / 100);
   }
 
   maxLoss = Number(Math.min(...Object.values(betProfitloss), 0).toFixed(2));
@@ -584,10 +584,10 @@ exports.calculateProfitLossSessionCasinoCricket = async (redisProfitLoss, betDat
 
   Array.from({ length: 10 }, (_, index) => index)?.forEach((item) => {
     if (betData?.betPlacedData?.teamName?.split(" ")?.[0] == item) {
-      betProfitloss[item] = parseFloat(betProfitloss[item] || 0) + (betData?.winAmount * partnership / 100);
+      betProfitloss[item] = parseFloat(betProfitloss[item] || 0) + (parseFloat(betData?.winAmount) * partnership / 100);
     }
     else {
-      betProfitloss[item] = parseFloat(betProfitloss[item] || 0) - (betData?.lossAmount * partnership / 100);
+      betProfitloss[item] = parseFloat(betProfitloss[item] || 0) - (parseFloat(betData?.lossAmount) * partnership / 100);
     }
   });
 
