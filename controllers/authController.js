@@ -304,7 +304,6 @@ exports.logout = async (req, res) => {
     } else {
       await internalRedis.del(user.childId);
       await deleteProfitLossData(user.childId);
-      await internalRedis.del(user.childId);
       const mainUserData = await internalRedis.hget(user.id, "accessUser");
       await internalRedis.hmset(user.id, { accessUser: JSON.stringify(JSON.parse(mainUserData || "[]")?.filter((item) => item != user.childId)) });
     }
