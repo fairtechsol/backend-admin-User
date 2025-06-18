@@ -1,4 +1,4 @@
-const { redisKeys, marketBettingTypeByBettingType } = require("../../config/contants");
+const { redisKeys, matchBettingType } = require("../../config/contants");
 const internalRedis = require("../../config/internalRedisConnection");
 const externalRedis = require("../../config/externalRedisConnection");
 
@@ -17,6 +17,37 @@ exports.getUserRedisData = async (userId) => {
   // Return the user data as an object or null if no data is found
   return Object.keys(userData)?.length == 0 ? null : userData;
 }
+
+exports.getUserRedisMultiKeyData = async (userIds, keys) => {
+  // Validate input to avoid unnecessary processing
+  if (!Array.isArray(userIds) || !Array.isArray(keys) || userIds.length === 0 || keys.length === 0) {
+    return {};
+  }
+
+  try {
+    const pipeline = internalRedis.pipeline();
+
+    // Use more efficient array iteration
+    for (const userId of userIds) {
+      pipeline.hmget(userId, ...keys);
+    }
+
+    const results = await pipeline.exec();
+
+    // Process results to extract values and handle potential individual command errors
+    return results.reduce((prev, [error, data], index) => {
+      if (!error&&data?.filter((item) => item !== null).length) {
+        prev[userIds[index]] = {};
+        for (let i = 0; i < data.length; i++) {
+          prev[userIds[index]][keys[i]] = data[i];
+        }
+      }
+      return prev;
+    }, {});
+  } catch (error) {
+    throw error;
+  }
+};
 
 exports.getUserRedisKey = async (userId, key) => {
 
@@ -149,7 +180,8 @@ exports.getMatchFromCache = async (matchId) => {
       matchData.sessionMaxBets = JSON.parse(matchData.sessionMaxBets)
     }
 
-    Object.values(marketBettingTypeByBettingType)?.forEach((item) => {
+
+    Object.values(matchBettingType)?.forEach((item) => {
       if (matchData?.[item]) {
         matchData[item] = JSON.parse(matchData[item]);
       }

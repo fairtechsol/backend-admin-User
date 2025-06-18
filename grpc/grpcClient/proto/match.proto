@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package grpc.matchProvider;
+
+// Message for match competitions
+message MatchCompetitionsRequest {
+    string type = 1;
+  }
+  
+  message MatchCompetitionsResponse {
+    string data = 1;
+  }
+  
+  // Message for match dates
+  message MatchDatesRequest {
+    string competitionId = 1;
+  }
+  
+  message MatchDatesResponse {
+    string data = 1;
+  }
+  
+  // Message for matches by date
+  message MatchesByDateRequest {
+    string competitionId = 1;
+    string date = 2;
+  }
+  
+  message MatchesByDateResponse {
+    string data = 1;
+  }
+
+  message MatchDetailRequest {
+    string matchId = 1;
+  }
+  
+  message MatchDetailResponse {
+    string data = 1;
+  }
+  
+  message CardDetailRequest {
+    string type = 1;
+  }
+  
+  message CardDetailResponse {
+    string data = 1;
+  }
+
+  message MatchListRequest {
+    string query = 1;
+  }
+  
+  message MatchListResponse {
+    string data = 1;
+  }
+
+
+  message RaceCountryCodeListRequest {
+    string matchType = 1;
+  }
+  
+  message RaceCountryCodeListResponse {
+    string data = 1;
+  }
+
+  message TournamentBettingRequest {
+    string matchId = 1;
+    string type = 2;
+    string id = 3;
+    bool isRate = 4;
+  }
+  
+  message TournamentBettingResponse {
+    string data = 1;
+  }
+  
+  
+  message BlinkingTabsRequest {}
+  
+  message BlinkingTabsResponse {
+    string data = 1;
+  }
+  
+  message SessionDetailRequest {
+    string matchId = 1;
+    string id = 2;
+  }
+  
+  message SessionDetailResponse {
+    string data = 1;
+  }
+
+  message GetCardResultRequest {
+    string query = 1; // You can encode query as JSON string if needed
+  }
+  
+  message GetCardResultResponse {
+    string data = 1; // JSON stringified result list
+  }
+  
+  // Get card result details by ID
+  message GetCardResultDetailRequest {
+    string id = 1;
+  }
+  
+  message GetCardResultDetailResponse {
+    string data = 1; // JSON stringified result detail
+  }
+  
+  // Declare virtual casino result
+  message DeclareVirtualCasinoResultRequest {
+    string data=1;
+  }
+  
+  message DeclareVirtualCasinoResultResponse {
+  }
+  
+
+  service MatchProvider {
+    rpc GetMatchCompetitions(MatchCompetitionsRequest) returns (MatchCompetitionsResponse);
+    rpc GetMatchDates(MatchDatesRequest) returns (MatchDatesResponse);
+    rpc GetMatchesByDate(MatchesByDateRequest) returns (MatchesByDateResponse);
+    rpc MatchDetail(MatchDetailRequest) returns (MatchDetailResponse);
+    rpc RaceDetail(MatchDetailRequest) returns (MatchDetailResponse);
+    rpc CardDetail(CardDetailRequest) returns (CardDetailResponse);
+    rpc MatchList(MatchListRequest) returns (MatchListResponse);
+    rpc RaceList(MatchListRequest) returns (MatchListResponse);
+    rpc RaceCountryCodeList(RaceCountryCodeListRequest) returns (RaceCountryCodeListResponse);
+    rpc GetTournamentBetting(TournamentBettingRequest) returns (TournamentBettingResponse);
+    rpc BlinkingTabs(BlinkingTabsRequest) returns (BlinkingTabsResponse);
+    rpc SessionDetail(SessionDetailRequest) returns (SessionDetailResponse);
+
+    
+  // New card result methods
+  rpc GetCardResult(GetCardResultRequest) returns (GetCardResultResponse);
+  rpc GetCardResultDetail(GetCardResultDetailRequest) returns (GetCardResultDetailResponse);
+  rpc DeclareVirtualCasinoResult(DeclareVirtualCasinoResultRequest) returns (DeclareVirtualCasinoResultResponse);
+}
+  

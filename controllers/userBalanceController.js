@@ -1,11 +1,8 @@
-const { transType, socketData, matchComissionTypeConstant, walletDomain, userRoleConstant } = require("../config/contants");
+const { transType, socketData, matchComissionTypeConstant, userRoleConstant, permissions } = require("../config/contants");
 const { getUser, getUserDataWithUserBalance } = require("../services/userService");
 const { ErrorResponse, SuccessResponse } = require("../utils/response");
 const { insertTransactions } = require("../services/transactionService");
 const {
-  getUserBalanceDataByUserIds,
-  updateUserBalanceByUserId,
-  addInitialUserBalance,
   getUserBalanceDataByUserId,
   updateUserBalanceData,
 } = require("../services/userBalanceService");
@@ -16,13 +13,40 @@ const {
 } = require("../services/redis/commonfunction");
 const { logger } = require("../config/logger");
 const { settleCommission, insertCommissions } = require("../services/commissionService");
-const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { transactionType: transactionTypeConstant } = require("../config/contants");
+const { updateBalanceAPICallHandler } = require("../grpc/grpcClient/handlers/wallet/userHandler");
 exports.updateUserBalance = async (req, res) => {
   try {
     let { userId, transactionType, amount, transactionPassword, remark } =
       req.body;
     let reqUser = req.user;
+
+    if (reqUser?.isAccessUser) {
+      if (transactionType == transType.add && !reqUser.permission?.[permissions.deposit]) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.unauthorizeRole",
+            },
+          },
+          req,
+          res
+        );
+      }
+      else if (transactionType == transType.withDraw && !reqUser.permission?.[permissions.withdraw]) {
+        return ErrorResponse(
+          {
+            statusCode: 403,
+            message: {
+              msg: "auth.unauthorizeRole",
+            },
+          },
+          req,
+          res
+        );
+      }
+    }
 
     const userExistRedis = await hasUserInCache(userId);
 
@@ -101,7 +125,7 @@ exports.updateUserBalance = async (req, res) => {
 
       updatedLoginUserBalanceData.currentBalance = parseFloat(loginUserBalanceData.currentBalance) - parseFloat(amount);
       loginUserBalanceChagne = -parseFloat(amount);
-
+     
     } else if (transactionType == transType.withDraw) {
       insertUserBalanceData = usersBalanceData[1];
       if (amount > insertUserBalanceData.currentBalance - (user.roleName == userRoleConstant.user ? insertUserBalanceData.exposure : 0))
@@ -172,9 +196,7 @@ exports.updateUserBalance = async (req, res) => {
     }
     let parentUser = await getUser({ id: reqUser.id }, ["id", "createBy"]);
     if (parentUser.id == parentUser.createBy) {
-      await apiCall(
-        apiMethod.post,
-        walletDomain + allApiRoutes.WALLET.updateBalance,
+      await updateBalanceAPICallHandler(
         {
           userId: reqUser.id,
           balance: updatedLoginUserBalanceData.currentBalance

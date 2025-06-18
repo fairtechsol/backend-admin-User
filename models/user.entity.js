@@ -206,6 +206,11 @@ const userSchema = new EntitySchema({
       name: 'user_userName',   // index name should be start with the table name
       unique: true, // Optional: Set to true if you want a unique index
       columns: ['id', 'userName'],
+    },
+    {
+      name: 'user_createBy',   // index name should be start with the table name
+      unique: false, // Optional: Set to true if you want a unique index
+      columns: ['createBy'],
     }
   ],
 });

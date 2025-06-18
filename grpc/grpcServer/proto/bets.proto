@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package grpc.betsProvider;
+
+message GetBetsRequest {
+  string query = 1; 
+}
+
+message GetBetsResponse {
+  string data = 1; 
+}
+
+message VerifyBetRequest {
+  bool isVerified = 1;
+  string id=2;
+  string verifyBy = 3; 
+}
+
+message VerifyBetResponse {}
+
+message GetSessionProfitLossUserWiseRequest {
+  string betId = 1; 
+}
+
+message  GetSessionProfitLossUserWiseResponse {
+  string data = 1; 
+}
+
+// Request for session profit/loss user-wise
+message SessionProfitLossBetRequest {
+  message User {
+    string roleName = 1;
+    string id = 2;
+  }
+
+  User user = 1;
+  string matchId = 2;
+  string betId = 3;
+  bool isSession = 4;
+  string searchId = 5;
+  string partnerShipRoleName = 6;
+
+}
+
+// Response for session profit/loss
+message SessionProfitLossBetResponse {
+  string data = 1;
+}
+
+message DeleteMultipleBetRequest {
+  string data = 1; // Key-value pairs of URLs and data
+  string deleteReason = 2;
+  string matchId = 3;
+  bool isPermanentDelete = 4;
+}
+
+message DeleteMultipleBetResponse {}
+
+message ChangeBetsDeleteReasonRequest {
+  string betIds = 1;
+  string deleteReason = 2;
+  string matchId = 3;
+}
+
+message ChangeBetsDeleteReasonResponse {
+  string data = 1;
+}
+
+message GetBetCountRequest {
+  string parentId = 1; 
+}
+
+message GetBetCountResponse {
+  string data = 1; 
+}
+
+
+service BetsProvider {
+  rpc GetBets(GetBetsRequest) returns (GetBetsResponse);
+  rpc VerifyBet(VerifyBetRequest) returns (VerifyBetResponse);
+  rpc GetSessionProfitLossUserWise(GetSessionProfitLossUserWiseRequest) returns (GetSessionProfitLossUserWiseResponse);
+  rpc GetSessionProfitLossBet(SessionProfitLossBetRequest) returns (SessionProfitLossBetResponse);
+  rpc DeleteMultipleBet(DeleteMultipleBetRequest) returns (DeleteMultipleBetResponse);
+  rpc ChangeBetsDeleteReason(ChangeBetsDeleteReasonRequest) returns (ChangeBetsDeleteReasonResponse);
+  rpc GetBetCount(GetBetCountRequest) returns (GetBetCountResponse);
+}

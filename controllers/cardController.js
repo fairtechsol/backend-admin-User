@@ -1,23 +1,24 @@
 const { In, Not } = require("typeorm");
-const { walletDomain, casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
+const { casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
 const { childIdquery, profitLossPercentCol } = require("../services/commonService");
 const { getAllUsers, getUsersByWallet, getChildsWithOnlyUserRole } = require("../services/userService");
 const { getTotalProfitLossLiveCasino, getAllLiveCasinoMatchTotalProfitLoss, getLiveCasinoBetsProfitLoss, getUserWiseProfitLossLiveCasino } = require("../services/virtualCasinoBetPlacedsService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { SuccessResponse, ErrorResponse } = require("../utils/response");
 const { getBetsCondition } = require("./betPlacedController");
-const { getQueryColumns } = require("./fairgameWalletController");
+const { getQueryColumns } = require("../services/commonService");
 const { logger } = require("../config/logger");
+const { getCardResultHandler, getCardResultDetailHandler } = require("../grpc/grpcClient/handlers/wallet/matchHandler");
 
 exports.getCardResultByFGWallet = async (req, res) => {
   try {
     const { type } = req.params;
     const query = req.query;
-    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultList + type, null, null, query);
+    let result = await getCardResultHandler({ query: JSON.stringify({ type: type, ...query }) });
     return SuccessResponse(
       {
         statusCode: 200,
-        data: result?.data,
+        data: result,
       },
       req,
       res
@@ -39,7 +40,7 @@ exports.getCardResultDetailByFGWallet = async (req, res) => {
   try {
     const { id } = req.params;
 
-    let result = await apiCall(apiMethod.get, walletDomain + allApiRoutes.WALLET.cardResultDetail + id, null, null, null)
+    let result = await getCardResultDetailHandler({ id: id })
     if (!result?.data) {
       result = await apiCall(apiMethod.get, casinoMicroServiceDomain + allApiRoutes.MICROSERVICE.cardResultDetail + id, null, null, null);
       result = {
@@ -204,7 +205,7 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
       totalLoss = '-' + totalLoss;
     }
     let subQuery = await childIdquery(user, searchId);
-    const domainUrl = `${req.protocol}://${req.get('host')}`;
+    const domainUrl = `${process.env.GRPC_URL}`;
 
     const result = await getLiveCasinoBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
     return SuccessResponse(
