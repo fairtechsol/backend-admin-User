@@ -1140,8 +1140,9 @@ const validateMatchBettingDetails = async (matchBettingDetail, betObj, teams, ru
       }
     };
   }
-
-  if (betObj.amount > matchBettingDetail?.maxBet || (matchBettingDetail.isManual && matchBettingDetail?.maxBet / (3 - teams.placeIndex) < betObj.amount)) {
+  
+  const percentages = [0.5, 0.75, 1]; // 100%, 75%, 50%
+  if (betObj.amount > matchBettingDetail?.maxBet || (matchBettingDetail.isManual && matchBettingDetail?.maxBet * (percentages[teams.placeIndex] || 1) < betObj.amount)) {
     logger.info({
       info: `bookmaker max value for index.`,
     });
@@ -1229,9 +1230,10 @@ let CheckThirdPartyRate = async (matchBettingDetail, betObj, teams, isBookmakerM
       }
 
       if (isBookmakerMarket) {
-        let oddLength = filterData?.odds?.filter((item) => item.otype == betObj?.betType?.toLowerCase())?.length;
-        // let oddLength = filterData?.odds?.filter((item) => item?.otype == betObj?.betType?.toLowerCase() && item.odds > 0).length;
-        if (matchBettingDetail?.maxBet / (oddLength - teams.placeIndex) < betObj.amount) {
+        let isThreeBoxRule = matchBettingData?.section.some(section => section.odds.length > 2 && section.odds.filter(odd => odd.size != 0).length > 2);
+        // let oddLength = filterData?.odds?.filter((item) => item.otype == betObj?.betType?.toLowerCase() && item.size != 0)?.length;
+        const percentages = [0.5, 0.75, 1]; // 100%, 75%, 50%
+        if (isThreeBoxRule && matchBettingDetail?.maxBet * (percentages[teams.placeIndex] || 1) < betObj.amount) {
           throw {
             statusCode: 400,
             message: {
