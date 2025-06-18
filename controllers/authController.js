@@ -21,7 +21,7 @@ const {
 const { userLoginAtUpdate, getAuthenticator, deleteAuthenticator, getAuthenticators } = require("../services/authService");
 const { forceLogoutIfLogin, findUserPartnerShipObj, settingBetsDataAtLogin, deleteDemoUser, connectAppWithToken } = require("../services/commonService");
 const { logger } = require("../config/logger");
-const { updateUserDataRedis, getRedisKey, setRedisKey } = require("../services/redis/commonfunction");
+const { updateUserDataRedis, getRedisKey, setRedisKey, setLoginVal, deleteProfitLossData } = require("../services/redis/commonfunction");
 const { getChildUsersSinglePlaceBet } = require("../services/betPlacedService");
 const { generateAuthToken, verifyAuthToken } = require("../utils/generateAuthToken");
 const bot = require("../config/telegramBot");
@@ -70,6 +70,8 @@ const setUserDetailsRedis = async (user) => {
 
     const setDefaultUserData = async (userObj) => {
       const betData = await settingBetsDataAtLogin(userObj);
+      await setLoginVal(betData?.plResult)
+
       const partnerShips = await findUserPartnerShipObj(userObj);
 
       return {
@@ -79,11 +81,11 @@ const setUserDetailsRedis = async (user) => {
         userName: userObj.userName,
         currentBalance: userObj?.userBal?.currentBalance || 0,
         roleName: userObj.roleName,
-        ...(betData || {}),
+        ...(betData?.expResult || {}),
         partnerShips,
       };
     }
-    
+
     if (user.isAccessUser) {
       const userData = await getUserDataWithUserBalance({ id: user.mainParentId });
       const redisUserData = await internalRedis.hget(userData.id, "userName");
@@ -288,16 +290,20 @@ exports.logout = async (req, res) => {
     // Get the user from the request object
     const user = req.user;
 
+    // Remove the user's token from Redis using their ID as the key
+
     if (!user.isAccessUser) {
       const userAccessData = await internalRedis.hget(user.id, "accessUser");
       if (!userAccessData || !JSON.parse(userAccessData || "[]").length) {
         await internalRedis.del(user.id);
+        await deleteProfitLossData(user.id);
       }
       else {
         await internalRedis.hdel(user.id, "token");
       }
     } else {
       await internalRedis.del(user.childId);
+      await deleteProfitLossData(user.childId);
       const mainUserData = await internalRedis.hget(user.id, "accessUser");
       await internalRedis.hmset(user.id, { accessUser: JSON.stringify(JSON.parse(mainUserData || "[]")?.filter((item) => item != user.childId)) });
     }

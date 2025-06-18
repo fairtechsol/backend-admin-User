@@ -28,7 +28,7 @@ const {
 } = require("../../../services/commonService");
 const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
-const { getUserRedisMultiKeyData } = require("../../../services/redis/commonfunction");
+const { getUserRedisMultiKeyData, getUserRedisMultiKeyDataMatch } = require("../../../services/redis/commonfunction");
 const {
     updateUserDeclareBalanceData,
 } = require("../../../services/userBalanceService");
@@ -169,7 +169,7 @@ exports.declareTournamentMatchResult = async (call) => {
             // 2️⃣ Compute deltas, queue Redis updates, and send socket messages
             const updatePipeline = internalRedis.pipeline();
 
-            userEntries.forEach(([userId, updateData], idx) => {
+            userEntries.forEach(([userId, updateData]) => {
                 upperUserObj[userId].exposure = -upperUserObj[userId].exposure;
                 upperUserObj[userId].myProfitLoss = -upperUserObj[userId].myProfitLoss;
 
@@ -200,13 +200,13 @@ exports.declareTournamentMatchResult = async (call) => {
                         adjustedExposure += newExposure;  // fold leftover back
                         newExposure = 0;
                     }
-
+                    const baseKey = `match:${userId}:${matchId}:${marketDetail?.id}:profitLoss`;
                     // queue Redis increments & key deletion
                     updatePipeline
                         .hincrbyfloat(userId, 'profitLoss', profitLossDelta)
                         .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
                         .hincrbyfloat(userId, 'exposure', adjustedExposure)
-                        .hdel(userId, `${marketDetail.id}${redisKeys.profitLoss}_${matchId}`);
+                        .del(baseKey);
 
                     logger.info({
                         message: "Declare result db update for parent ",
@@ -278,7 +278,7 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
         getMultipleAmountData,
         multiUserParentData
     ] = await Promise.all([
-        getUserRedisMultiKeyData(userIds, [`${betId}${redisKeys.profitLoss}_${matchId}`]),
+        getUserRedisMultiKeyDataMatch(userIds, matchId, betId),
         getMultipleAccountProfitLossTournament(betId, userIds),
         getMultiUserParentsWithBalance(userIds)
     ]);
@@ -299,8 +299,8 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
         logger.info({ message: "Updated users", data: user.user });
 
         // check if data is already present in the redis or not
-        if (userRedisData?.[user.user.id]?.[`${betId}${redisKeys.profitLoss}_${matchId}`]) {
-            maxLoss = (Math.abs(Math.min(...Object.values(JSON.parse(userRedisData[user.user.id][`${betId}${redisKeys.profitLoss}_${matchId}`]) || {}), 0))) || 0;
+        if (userRedisData?.[user.user.id]?.profitLoss) {
+            maxLoss = (Math.abs(Math.min(...Object.values(userRedisData[user.user.id].profitLoss || {}), 0))) || 0;
         }
         else {
             // if data is not available in the redis then get data from redis and find max loss amount for all placed bet by user
@@ -380,13 +380,15 @@ const calculateProfitLossTournamentMatchForUserDeclare = async (users, betId, ma
             totalCommission: totalCommissionData
         };
 
-        if (userRedisData?.[user.user.id]) {
+        if (userRedisData?.[user.user.id]?.profitLoss) {
+            const baseKey = `match:${user.user.id}:${matchId}:${betId}:profitLoss`;
+
             updateUserPipeline
                 .hincrbyfloat(user.user.id, 'profitLoss', profitLoss)
                 .hincrbyfloat(user.user.id, 'myProfitLoss', profitLoss)
                 .hincrbyfloat(user.user.id, 'exposure', -maxLoss)
                 .hincrbyfloat(user.user.id, 'currentBalance', profitLoss)
-                .hdel(user.user.id, `${betId}${redisKeys.profitLoss}_${matchId}`)
+                .del(baseKey)
                 .hdel(user.user.id, redisKeys.userMatchExposure + matchId);
         }
 
@@ -716,16 +718,15 @@ exports.unDeclareTournamentMatchResult = async (call) => {
                     }
 
                     let { exposure: ex, profitLoss: pl, myProfitLoss: mpl, ...parentRedisUpdateObj } = updateData;
-                    Object.keys(parentRedisUpdateObj)?.forEach((plKey) => {
-                        parentRedisUpdateObj[plKey] = JSON.stringify(parentRedisUpdateObj[plKey]);
-                    });
+                    parentRedisUpdateObj = parentRedisUpdateObj?.[`${matchBetting?.id}${redisKeys.profitLoss}_${matchId}`];
+                    const baseKey = `match:${userId}:${matchId}:${matchBetting?.id}:profitLoss`;
 
                     // queue Redis increments & key deletion
                     updatePipeline
                         .hincrbyfloat(userId, 'profitLoss', profitLossDelta)
                         .hincrbyfloat(userId, 'myProfitLoss', myProfitLossDelta)
                         .hincrbyfloat(userId, 'exposure', adjustedExposure)
-                        .hmset(userId, parentRedisUpdateObj);
+                        .hmset(baseKey, parentRedisUpdateObj);
 
                     logger.info({
                         message: "Un Declare result db update for parent ",
@@ -918,7 +919,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
 
         let matchTeamRates = {}
         Object.keys(redisData)?.forEach((plData) => {
-            matchTeamRates[plData] = JSON.stringify(redisData[plData]);
+            matchTeamRates[plData] = { ...matchTeamRates, ...redisData[plData] };
         });
 
         //adding users balance data to update in db
@@ -930,13 +931,15 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
         };
 
         if (userRedisData[user.user.id]) {
+            const baseKey = `match:${userId}:${matchId}:${betId}:profitLoss`;
+
             updateUserPipeline
                 .hincrbyfloat(user.user.id, 'profitLoss', -profitLoss)
                 .hincrbyfloat(user.user.id, 'myProfitLoss', -profitLoss)
                 .hincrbyfloat(user.user.id, 'exposure', maxLoss)
                 .hincrbyfloat(user.user.id, 'currentBalance', -profitLoss)
                 .hincrbyfloat(user.user.id, [redisKeys.userMatchExposure + matchId], maxLoss)
-                .hset(user.user.id, matchTeamRates);
+                .hset(baseKey, matchTeamRates);
         }
 
         logger.info({

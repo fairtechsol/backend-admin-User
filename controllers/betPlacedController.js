@@ -3,7 +3,7 @@ const userService = require('../services/userService');
 const { ErrorResponse, SuccessResponse } = require('../utils/response')
 const { betStatusType, teamStatus, betType, redisKeys, betResultStatus, marketBetType, userRoleConstant, partnershipPrefixByRole, microServiceDomain, casinoMicroServiceDomain, cardGameType, sessionBettingType, oldBetFairDomain } = require("../config/contants");
 const { logger } = require("../config/logger");
-const { getUserRedisData, getUserRedisKey, setCardBetPlaceRedis } = require("../services/redis/commonfunction");
+const { getUserRedisData, setCardBetPlaceRedis, getUserSessionAllPL, getProfitLossDataTournament } = require("../services/redis/commonfunction");
 const { getUserById } = require("../services/userService");
 const { apiCall, apiMethod, allApiRoutes } = require("../utils/apiService");
 const { calculateProfitLossSession, parseRedisData, calculateRacingRate, profitLossPercentCol, calculateProfitLossSessionOddEven, calculateProfitLossSessionCasinoCricket, calculateProfitLossSessionFancy1, checkBetLimit, calculateProfitLossKhado, calculateProfitLossMeter } = require('../services/commonService');
@@ -14,6 +14,7 @@ const { getCardMatch } = require('../services/cardMatchService');
 const { CardProfitLoss } = require('../services/cardService/cardProfitLossCalc');
 const { getMatchData } = require('../services/matchService');
 const { getSessionDetailsHandler, getTournamentBettingHandler } = require('../grpc/grpcClient/handlers/expert/matchHandler');
+const { roundToTwoDecimals } = require('../utils/mathUtils');
 
 exports.getBet = async (req, res) => {
   try {
@@ -131,11 +132,9 @@ exports.getSessionProfitLoss = async (req, res) => {
   try {
     const { id: userId } = req.user;
     const { betId } = req.params;
+    const { matchId } = req.query;
 
-    const sessionProfitLoss = await getUserRedisKey(
-      userId,
-      betId + redisKeys.profitLoss
-    );
+    const sessionProfitLoss = await getUserSessionAllPL(userId, matchId, betId);
 
     return SuccessResponse(
       {
@@ -280,15 +279,11 @@ exports.tournamentBettingBetPlaced = async (req, res) => {
 
     let userCurrentBalance = userBalanceData.currentBalance;
     let userRedisData = await getUserRedisData(reqUser.id);
+    let teamRates = await getProfitLossDataTournament(reqUser.id, matchId, betId);
+
     let matchExposure = userRedisData[redisKeys.userMatchExposure + matchId] ? parseFloat(userRedisData[redisKeys.userMatchExposure + matchId]) : 0.0;
 
     let userTotalExposure = matchExposure;
-
-    let teamRates = userRedisData?.[`${betId}${redisKeys.profitLoss}_${matchId}`];
-
-    if (teamRates) {
-      teamRates = JSON.parse(teamRates);
-    }
 
     if (!teamRates) {
       teamRates = runners.reduce((acc, key) => {
@@ -547,8 +542,7 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     await validateSessionBet(sessionDetails, req.body, id);
 
-    let winAmount = 0,
-      loseAmount = 0;
+    let winAmount = 0, loseAmount = 0;
 
     if (sessionDetails?.type == sessionBettingType.fancy1) {
 
@@ -679,12 +673,10 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     let sessionExp = parseFloat(userData[`${redisKeys.userSessionExposure}${matchId}`]) || 0.0;
 
-
     logger.info({
       message: "Session exposure coming from redis.",
       sessionExp
     });
-
 
     let betPlaceObject = {
       winAmount: parseFloat(winAmount),
@@ -712,11 +704,10 @@ exports.sessionBetPlace = async (req, res, next) => {
       totalExposure: userData?.exposure || 0,
     });
 
-    let sessionProfitLossData = userData[`${betId}_profitLoss`];
+    const sessionProfitLossData = await getUserSessionAllPL(id, matchId, betId, sessionDetails?.type);
     let maxSessionLoss = 0.0;
     if (sessionProfitLossData) {
-      sessionProfitLossData = JSON.parse(sessionProfitLossData);
-      maxSessionLoss = parseFloat(sessionProfitLossData["maxLoss"]);
+      maxSessionLoss = parseFloat(sessionProfitLossData.maxLoss || 0);
     }
 
     let redisData;
@@ -757,11 +748,9 @@ exports.sessionBetPlace = async (req, res, next) => {
 
 
     betPlaceObject.maxLoss = Math.abs(redisData.maxLoss - maxSessionLoss);
-    let redisSessionExp = Number(
-      (sessionExp + redisData?.maxLoss - maxSessionLoss).toFixed(2)
-    );
+    let redisSessionExp = Number((sessionExp + redisData?.maxLoss - maxSessionLoss).toFixed(2));
 
-    totalExposure = parseFloat(parseFloat(totalExposure + redisData.maxLoss - maxSessionLoss).toFixed(2));
+    totalExposure = roundToTwoDecimals(totalExposure + parseFloat(redisData.maxLoss) - maxSessionLoss);
 
     if (totalExposure > userExposureLimit) {
       logger.info({
@@ -783,11 +772,9 @@ exports.sessionBetPlace = async (req, res, next) => {
 
     let redisObject = {
       [`${redisKeys.userSessionExposure}${matchId}`]: redisSessionExp,
-      [`${betId}_profitLoss`]: JSON.stringify(redisData)
     };
 
-    let newBalance =
-      parseFloat(userData?.currentBalance).toFixed(2) - totalExposure;
+    let newBalance = roundToTwoDecimals(userData?.currentBalance) - totalExposure;
 
     betPlaceObject.diffSessionExp = redisData.maxLoss - maxSessionLoss;
 
@@ -840,6 +827,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       newBalance: newBalance,
       betPlaceObject: betPlaceObject,
       redisObject: redisObject,
+      redisData: redisData
     }
     //add redis queue function
     const job = SessionMatchBetQueue.createJob(jobData);
@@ -866,7 +854,7 @@ exports.sessionBetPlace = async (req, res, next) => {
       partnership: userData?.partnerShips,
       placedBet: placedBet,
       newBalance: newBalance,
-      userUpdatedExposure: parseFloat(parseFloat(betPlaceObject.maxLoss).toFixed(2)),
+      userUpdatedExposure: roundToTwoDecimals(betPlaceObject.maxLoss),
       betPlaceObject: betPlaceObject,
       domainUrl: domainUrl
     };

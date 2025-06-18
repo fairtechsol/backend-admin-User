@@ -43,6 +43,7 @@ module.exports.sessionBettingType = {
   meter: "meter",
 };
 
+module.exports.oddsSessionBetType = [this.sessionBettingType.session, this.sessionBettingType.overByOver, this.sessionBettingType.ballByBall, this.sessionBettingType.khado, this.sessionBettingType.meter];
 
 module.exports.transactionType = {
   withdraw: 0,
@@ -76,7 +77,7 @@ module.exports.fileType = {
 module.exports.redisTimeOut = 10 * 60 * 60;
 module.exports.demoRedisTimeOut = 60 * 60;
 module.exports.authenticatorExpiryTime = 33;
-module.exports.teleAuthenticatorExpiryTime = 60*5;
+module.exports.teleAuthenticatorExpiryTime = 60 * 5;
 
 module.exports.matchComissionTypeConstant = {
   totalLoss: "totalLoss",
@@ -133,7 +134,7 @@ module.exports.uplinePartnerShipForAllUsers = {
   [this.userRoleConstant.fairGameAdmin]: ["fw"],
   [this.userRoleConstant.superAdmin]: ["fw", "fa"],
   [this.userRoleConstant.admin]: ["fw", "fa", "sa"],
-  [this.userRoleConstant.superMaster]: ["fw","fa","sa","a"],
+  [this.userRoleConstant.superMaster]: ["fw", "fa", "sa", "a"],
   [this.userRoleConstant.master]: ["fw", "fa", "sa", "a", "sm"],
   [this.userRoleConstant.agent]: ["fw", "fa", "sa", "a", "sm", "m"],
 };
@@ -228,9 +229,9 @@ module.exports.redisKeys = {
   telegramToken: "telegramToken",
   profitLoss: "_profitLoss",
   card: "_card",
-  notification:"notification",
-  banner:"banner",
-  blinkingTabs:"blinkingTabs"
+  notification: "notification",
+  banner: "banner",
+  blinkingTabs: "blinkingTabs"
 }
 
 module.exports.betResultStatus = {
@@ -262,8 +263,8 @@ module.exports.socketData = {
   matchDeleteBet: "matchDeleteBet",
   logoutUserForceEvent: "logoutUserForce",
   betBlockEvent: "userBetBlock",
-  declaredMatchResultAllUser:"matchResultDeclareAllUser",
-  unDeclaredMatchResultAllUser:"matchResultUnDeclareAllUser",
+  declaredMatchResultAllUser: "matchResultDeclareAllUser",
+  unDeclaredMatchResultAllUser: "matchResultUnDeclareAllUser",
   updateDeleteReason: "updateDeleteReason"
 };
 
@@ -454,24 +455,24 @@ exports.cardGameType = {
   dt6: "dt6",
   lucky7eu: "lucky7eu",
   teen: "teen",
-  teen9:"teen9",
-  teen8:"teen8",
+  teen9: "teen9",
+  teen8: "teen8",
   poker: "poker",
   poker20: "poker20",
-  poker6:"poker6",
-  baccarat:"baccarat",
-  baccarat2:"baccarat2",
+  poker6: "poker6",
+  baccarat: "baccarat",
+  baccarat2: "baccarat2",
   card32eu: "card32eu",
-  ab20:"ab20",
-  "3cardj":"3cardj",
-  war:"war",
-  worli2:"worli2",
-  superover:"superover",
-  cmatch20:"cmatch20",
+  ab20: "ab20",
+  "3cardj": "3cardj",
+  war: "war",
+  worli2: "worli2",
+  superover: "superover",
+  cmatch20: "cmatch20",
   aaa: "aaa",
   btable: "btable",
-  race20:"race20",
-  cricketv3:"cricketv3",
+  race20: "race20",
+  cricketv3: "cricketv3",
   cmeter: "cmeter",
   worli: "worli",
   queen: "queen",
