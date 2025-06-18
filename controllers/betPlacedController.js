@@ -750,7 +750,7 @@ exports.sessionBetPlace = async (req, res, next) => {
     betPlaceObject.maxLoss = Math.abs(redisData.maxLoss - maxSessionLoss);
     let redisSessionExp = Number((sessionExp + redisData?.maxLoss - maxSessionLoss).toFixed(2));
 
-    totalExposure = roundToTwoDecimals(totalExposure + redisData.maxLoss - maxSessionLoss);
+    totalExposure = roundToTwoDecimals(totalExposure + parseFloat(redisData.maxLoss) - maxSessionLoss);
 
     if (totalExposure > userExposureLimit) {
       logger.info({
