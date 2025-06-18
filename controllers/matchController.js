@@ -270,7 +270,7 @@ exports.cardMatchDetails = async (req, res) => {
 exports.listMatch = async (req, res) => {
   try {
     let user = req.user;
-    let apiResponse = await getMatch({stopAt:IsNull()}, null, req.query);
+    let apiResponse = await getMatch({ stopAt: IsNull() }, null, req.query);
 
     const domainUrl = `${process.env.GRPC_URL}`;
 
@@ -572,7 +572,6 @@ exports.marketWiseUserBook = async (req, res) => {
     const userId = req.user.id;
     const { matchId } = req.params;
     const { betId, type } = req.query;
-
     const betIds = betId?.split(",");
 
     const usersWithBetPlace = await getChildUsersPlaceBetsByBetId(userId, betIds);
@@ -597,17 +596,19 @@ exports.marketWiseUserBook = async (req, res) => {
         switch (type) {
           case matchBettingType.tournament:
             if (isRedisExist) {
-              const redisData = await getUserRedisKeys(item?.createBy, `${betId}${redisKeys.profitLoss}_${matchId}`);
+              const userRedisData = await getAllTournament(item.createBy, matchId);
+
+              const redisData = userRedisData[`${item?.betId}${redisKeys.profitLoss}_${matchId}`];
               result.push({
                 user: { userName: item.userName },
-                profitLoss: JSON.parse(redisData?.[0] || "{}")
+                profitLoss: redisData
               });
             }
             else {
               const redisData = await calculateRatesRacingMatch(usersWithBetPlace.filter((items) => items.createBy == item.createBy), 100, apiResponse?.data);
               result.push({
                 user: { userName: item.userName },
-                profitLoss: redisData?.[`${betId}${redisKeys.profitLoss}_${matchId}`]
+                profitLoss: redisData?.[`${item?.betId}${redisKeys.profitLoss}_${matchId}`]
               });
             }
             break;
