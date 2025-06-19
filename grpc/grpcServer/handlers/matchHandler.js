@@ -1,7 +1,7 @@
 const grpc = require("@grpc/grpc-js");
 const { __mf } = require("i18n");
 const { logger } = require("../../../config/logger");
-const { addMatchData, getMatchList } = require("../../../services/matchService");
+const { addMatchData, getMatchList, updateMatchData } = require("../../../services/matchService");
 const { addRaceData } = require("../../../services/racingServices");
 const { userRoleConstant, matchWiseBlockType, expertDomain, marketBetType, redisKeys, matchBettingType } = require("../../../config/contants");
 const { getAllUsers, getChildUser, isAllChildDeactive, getUserMatchLock, addUserMatchLock, deleteUserMatchLock, getUser, getChildsWithOnlyMultiUserRole } = require("../../../services/userService");
@@ -18,6 +18,28 @@ exports.addMatch = async (call) => {
     const data = call.request;
 
     await addMatchData(data);
+
+    return {}
+  }
+  catch (err) {
+    logger.error({
+      error: `Error at get match for the user.`,
+      stack: err.stack,
+      message: err.message,
+    });
+    // Handle any errors and return an error response
+    throw {
+      code: grpc.status.INTERNAL,
+      message: err?.message || __mf("internalServerError"),
+    };
+  }
+}
+
+exports.updateMatch = async (call) => {
+  try {
+    const { id, data } = call.request;
+
+    await updateMatchData({ id: id }, JSON.parse(data || "{}"));
 
     return {}
   }
@@ -134,17 +156,17 @@ exports.userEventWiseExposure = async (call) => {
     const user = await getUser({ id: userId });
 
     const eventNameByMatchId = {};
-    const matchList = await getMatchList({ stopAt: IsNull() }, ["id", "matchType", "title","teamC"]);
+    const matchList = await getMatchList({ stopAt: IsNull() }, ["id", "matchType", "title", "teamC"]);
 
     for (let item of matchList) {
-      eventNameByMatchId[item.id] = { type: item.matchType, name: item.title,teamC: item.teamC };
+      eventNameByMatchId[item.id] = { type: item.matchType, name: item.title, teamC: item.teamC };
     }
 
     const result = {};
     let gamesExposure = await getUserExposuresGameWise(user, eventNameByMatchId);
 
     const allMatchBetData = gamesExposure || {};
-    
+
     if (Object.keys(allMatchBetData || {}).length) {
       for (let item of Object.keys(allMatchBetData)) {
         if (eventNameByMatchId[item]) {
@@ -207,8 +229,8 @@ exports.marketAnalysis = async (call) => {
 
       if (matchesBetsByUsers?.length) {
         try {
-          matchDetails = await getMatchDetailsHandler({matchId:Array.from(matchIds).join(",")})
-        
+          matchDetails = await getMatchDetailsHandler({ matchId: Array.from(matchIds).join(",") })
+
           if (!Array.isArray(matchDetails?.data)) {
             matchDetails.data = [matchDetails?.data];
           }
