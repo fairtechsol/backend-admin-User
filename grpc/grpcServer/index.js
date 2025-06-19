@@ -2,7 +2,7 @@ const { Server } = require("./grpcServer");
 const { getPlacedBets, verifyBet, getResultBetProfitLoss, getSessionBetProfitLossExpert, deleteMultipleBet, changeBetsDeleteReason, getBetCount } = require("./handlers/betsHandler");
 const { declareTournamentMatchResult, unDeclareTournamentMatchResult, unDeclareFinalMatchResult, declareFinalMatchResult } = require("./handlers/declareMatchHandler");
 const { declareSessionResult, declareSessionNoResult, unDeclareSessionResult } = require("./handlers/declareSessionHandler");
-const { addMatch, raceAdd, userMatchLock, userEventWiseExposure, marketAnalysis, getVirtualBetExposures } = require("./handlers/matchHandler");
+const { addMatch, raceAdd, userMatchLock, userEventWiseExposure, marketAnalysis, getVirtualBetExposures, updateMatch } = require("./handlers/matchHandler");
 const { declareCardMatchResult, totalProfitLossCardsWallet, totalProfitLossByRoundCards, getCardResultBetProfitLoss } = require("./handlers/cardHandler");
 const { createSuperAdmin, updateSuperAdmin, changePasswordSuperAdmin, setExposureLimitSuperAdmin, setCreditReferenceSuperAdmin, updateSuperAdminBalance, lockUnlockSuperAdmin, getTotalUserListBalance, userList, getAllUserBalance, getUsersProfitLoss, deleteWalletUsers, checkUserBalance, getAllChildSearchList } = require("./handlers/userHandler");
 const { totalProfitLossWallet, totalProfitLossByMatch, getUserWiseTotalProfitLoss, getSessionBetProfitLoss } = require("./handlers/matchProfitLossReportHandler");
@@ -76,6 +76,7 @@ server
     .addService("BetsProvider", "GetBetCount", getBetCount)
 
     .addService("MatchProvider", "AddMatch", addMatch)
+    .addService("MatchProvider", "UpdateMatch", updateMatch)
     .addService("MatchProvider", "AddRaceMatch", raceAdd)
     .addService("MatchProvider", "MatchLock", userMatchLock)
     .addService("MatchProvider", "UserEventWiseExposure", userEventWiseExposure)
