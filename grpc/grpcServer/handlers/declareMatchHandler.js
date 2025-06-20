@@ -919,7 +919,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
 
         let matchTeamRates = {}
         Object.keys(redisData)?.forEach((plData) => {
-            matchTeamRates[plData] = { ...matchTeamRates, ...redisData[plData] };
+            matchTeamRates = { ...matchTeamRates, ...redisData[plData] };
         });
 
         //adding users balance data to update in db
@@ -931,7 +931,7 @@ const calculateProfitLossTournamentMatchForUserUnDeclare = async (users, betId, 
         };
 
         if (userRedisData[user.user.id]) {
-            const baseKey = `match:${userId}:${matchId}:${betId}:profitLoss`;
+            const baseKey = `match:${user.user.id}:${matchId}:${betId}:profitLoss`;
 
             updateUserPipeline
                 .hincrbyfloat(user.user.id, 'profitLoss', -profitLoss)

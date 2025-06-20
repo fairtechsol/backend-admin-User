@@ -738,7 +738,7 @@ exports.getUserRedisMultiKeyDataMatch = async (userIds, matchId, betId) => {
 
     // Use more efficient array iteration
     for (const userId of userIds) {
-      pipeline.get(`match:${userId}:${matchId}:${betId}:profitLoss`);
+      pipeline.hgetall(`match:${userId}:${matchId}:${betId}:profitLoss`);
     }
 
     const results = await pipeline.exec();
