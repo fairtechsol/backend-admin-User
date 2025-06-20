@@ -28,6 +28,7 @@ const bot = require("../config/telegramBot");
 const { __mf } = require("i18n");
 const { getAccessUserWithPermission } = require("../services/accessUserService");
 const { ILike } = require("typeorm");
+const { v4: uuidv4 } = require('uuid');
 
 
 
@@ -382,7 +383,7 @@ exports.generateUserAuthToken = async (req, res) => {
         }
       }
 
-      const authId = new Date().getTime();
+      const authId = uuidv4().split('-')[4];
       await setRedisKey(authId, user.id, teleAuthenticatorExpiryTime);
       returnId = authId;
     }
