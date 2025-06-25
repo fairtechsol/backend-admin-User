@@ -745,7 +745,7 @@ exports.getUserRedisMultiKeyDataMatch = async (userIds, matchId, betId) => {
 
     // Process results to extract values and handle potential individual command errors
     return results.reduce((prev, [error, data], index) => {
-      if (!error && data != null) {
+      if (!error && Object.keys(data || {}).length) {
         prev[userIds[index]] = {};
         prev[userIds[index]].profitLoss = data;
       }
