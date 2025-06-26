@@ -49,7 +49,7 @@ exports.getBet = async (req, res) => {
 exports.getBetsCondition = async (reqUser, query, isCurrentBets) => {
   let where = {};
   let select = [
-    "betPlaced.id", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.ipAddress", "betPlaced.browserDetail", "betPlaced.bettingName", "match.id", "betPlaced.runnerId", "betPlaced.isCommissionActive"
+    "betPlaced.id", "betPlaced.teamName", "betPlaced.eventName", "betPlaced.betType", "betPlaced.amount", "betPlaced.rate", "betPlaced.winAmount", "betPlaced.lossAmount", "betPlaced.createdAt", "betPlaced.eventType", "betPlaced.marketType", "betPlaced.odds", "betPlaced.marketBetType", "betPlaced.result", "match.title", "match.startAt", "betPlaced.deleteReason", "betPlaced.ipAddress", "betPlaced.browserDetail", "betPlaced.bettingName", "match.id", "betPlaced.runnerId", "betPlaced.isCommissionActive", "betPlaced.betId"
   ];
 
   if (isCurrentBets) {
