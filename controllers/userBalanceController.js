@@ -269,7 +269,9 @@ exports.settleCommissions = async (req, res) => {
         createBy: userData.id,
         parentId: userData.id,
         commissionType: matchComissionTypeConstant.settled,
-        settled: true
+        settled: true,
+        matchName: "Settled",
+        matchStartDate: new Date(),
       });
 
       // userData.userBal.totalCommission = 0;

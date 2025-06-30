@@ -60,18 +60,18 @@ exports.commissionReport = async (userId, query, queryColumns) => {
 };
 
 
-exports.commissionMatchReport = (userId, matchId,queryColumns) => {
+exports.commissionMatchReport = (userId, matchId, queryColumns) => {
   const commissionMatches = Commission.createQueryBuilder().where({ parentId: userId, matchId: matchId })
-  .leftJoinAndMapOne("commission.match", "match", 'match', 'commission.matchId = match.id')
-  .leftJoinAndMapOne("commission.betPlaced", "betPlaced", 'betPlaced', 'commission.betPlaceId = betPlaced.id')
-  .leftJoinAndMapOne("commission.user", "user", 'user', 'commission.createBy = user.id')
-  .leftJoinAndMapOne("commission.parentuser", "user", 'parentuser', 'commission.createBy = parentuser.id')
+    .leftJoinAndMapOne("commission.match", "match", 'match', 'commission.matchId = match.id')
+    .leftJoinAndMapOne("commission.betPlaced", "betPlaced", 'betPlaced', 'commission.betPlaceId = betPlaced.id')
+    .leftJoinAndMapOne("commission.user", "user", 'user', 'commission.createBy = user.id')
+    .leftJoinAndMapOne("commission.parentuser", "user", 'parentuser', 'commission.createBy = parentuser.id')
     .select(['user.userName as "userName"', 'commission.matchType as "matchType"', 'betPlaced.marketBetType as "commissionType"', 'betPlaced.eventName as "name"', 'betPlaced.createdAt as "date"', 'betPlaced.teamName as "teamName"', 'betPlaced.odds as "odds"', 'betPlaced.betType as "betType"', 'betPlaced.amount as "stake"', 'commission.commissionAmount as "commissionAmount"', 'commission.commissionType as "commissionType"', 'commission.settled as "settled"', ...(queryColumns != '' && queryColumns ? [`${queryColumns} as "partnerShip"`] : [])]);
   return commissionMatches.getRawMany();
 }
 
 exports.settleCommission = async (userId) => {
   await Commission.update({ parentId: userId, settled: false }, {
-    settled:true
+    settled: true
   });
 }
