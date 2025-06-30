@@ -17,23 +17,27 @@ exports.deleteCommission = (betId) => {
 
 exports.commissionReport = async (userId, query, queryColumns) => {
   const baseQuery = Commission.createQueryBuilder("commission")
-    .where({ parentId: userId, title: Not(IsNull()) })
+    .where({ parentId: userId, matchId: Not(IsNull()) })
     .leftJoinAndMapOne("commission.match", "match", "match", "commission.matchId = match.id")
     .leftJoinAndMapOne("commission.parentuser", "user", "parentuser", "commission.createBy = parentuser.id")
     .groupBy("match.id")
     .addGroupBy("match.title")
-    .addGroupBy("match.startAt")
+    .addGroupBy("COALESCE(match.startAt,commission.createdAt)")
     .select([
-      'match.title as "matchName"',
-      'match.startAt as "matchStartDate"',
-      'match.id as "matchId"',
-      `ROUND((SUM(commission.commissionAmount * (${queryColumns})) / 100)::numeric, 2) as amount`
+      `COALESCE(match.title, 'Settled') as "matchName"`,
+      `COALESCE(
+        to_char(match.startAt, 'YYYY-MM-DD"T"HH24:MI:SS'),
+        to_char(MAX(commission.createdAt), 'YYYY-MM-DD"T"HH24:MI:SS')
+     ) as "matchStartDate"`,
+      `match.id as "matchId"`,
+      `ROUND((SUM(commission.commissionAmount * (${queryColumns})) / 100)::numeric, 2) as amount`,
+
     ])
-    .orderBy("match.startAt", "DESC");
+    .orderBy(`COALESCE(match.startAt, MAX(commission.createdAt))`, "DESC");
 
   // Count total records (before pagination)
   const countQuery = Commission.createQueryBuilder("commission")
-    .where({ parentId: userId, title: Not(IsNull()) })
+    .where({ parentId: userId, matchId: Not(IsNull()) })
     .leftJoin("match", "match", "commission.matchId = match.id")
     .groupBy("match.id")
     .addGroupBy("match.title")

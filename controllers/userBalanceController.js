@@ -12,7 +12,7 @@ const {
   updateUserDataRedis,
 } = require("../services/redis/commonfunction");
 const { logger } = require("../config/logger");
-const { settleCommission, insertCommissions } = require("../services/commissionService");
+const { settleCommission, insertCommissions, getCommission } = require("../services/commissionService");
 const { transactionType: transactionTypeConstant } = require("../config/contants");
 const { updateBalanceAPICallHandler } = require("../grpc/grpcClient/handlers/wallet/userHandler");
 exports.updateUserBalance = async (req, res) => {
@@ -269,9 +269,7 @@ exports.settleCommissions = async (req, res) => {
         createBy: userData.id,
         parentId: userData.id,
         commissionType: matchComissionTypeConstant.settled,
-        settled: true,
-        title: "Settled",
-        startAt: new Date(),
+        settled: true
       });
 
       // userData.userBal.totalCommission = 0;
