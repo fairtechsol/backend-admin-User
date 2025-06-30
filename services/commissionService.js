@@ -17,7 +17,7 @@ exports.deleteCommission = (betId) => {
 
 exports.commissionReport = async (userId, query, queryColumns) => {
   const baseQuery = Commission.createQueryBuilder("commission")
-    .where({ parentId: userId })
+    .where({ parentId: userId, title: Not(IsNull()) })
     .leftJoinAndMapOne("commission.match", "match", "match", "commission.matchId = match.id")
     .leftJoinAndMapOne("commission.parentuser", "user", "parentuser", "commission.createBy = parentuser.id")
     .groupBy("match.id")
@@ -33,7 +33,7 @@ exports.commissionReport = async (userId, query, queryColumns) => {
 
   // Count total records (before pagination)
   const countQuery = Commission.createQueryBuilder("commission")
-    .where({ parentId: userId })
+    .where({ parentId: userId, title: Not(IsNull()) })
     .leftJoin("match", "match", "commission.matchId = match.id")
     .groupBy("match.id")
     .addGroupBy("match.title")
