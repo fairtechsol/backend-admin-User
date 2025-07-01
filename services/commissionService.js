@@ -33,7 +33,7 @@ exports.commissionReport = async (userId, query, queryColumns) => {
       `ROUND((SUM(commission.commissionAmount * (${queryColumns})) / 100)::numeric, 2) as amount`,
 
     ])
-    .orderBy(`COALESCE(match.startAt, MAX(commission.createdAt))`, "DESC");
+    .orderBy(`MAX(commission.createdAt)`, "DESC");
 
   // Count total records (before pagination)
   const countQuery = Commission.createQueryBuilder("commission")
@@ -44,7 +44,7 @@ exports.commissionReport = async (userId, query, queryColumns) => {
     .select([
       'match.id as "matchId"',
     ])
-    .addGroupBy("match.startAt");
+    .addGroupBy('COALESCE(match.startAt,commission."createdAt")');
 
   const totalRecords = (await countQuery.getRawMany())?.length || 0;
 
