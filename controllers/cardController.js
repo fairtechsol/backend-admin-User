@@ -262,6 +262,8 @@ exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
       const start = new Date(startDate);
       const end = new Date(endDate);
 
+      end.setDate(end.getDate() - 1); // To include the end date fully
+
       where.createdAt = Between(start, end);
     }
     else if (startDate) {
