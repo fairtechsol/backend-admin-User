@@ -1,6 +1,4 @@
-const { In, Not,
-  MoreThanOrEqual,
-  LessThanOrEqual, Between } = require("typeorm");
+const { In, Not } = require("typeorm");
 const { casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
 const { childIdquery, profitLossPercentCol } = require("../services/commonService");
 const { getAllUsers, getUsersByWallet, getChildsWithOnlyUserRole } = require("../services/userService");
@@ -183,7 +181,7 @@ exports.totalProfitLossByProviderNameLiveCasino = async (req, res) => {
 
 exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
   try {
-    let { user, gameId, searchId, partnerShipRoleName, startDate, endDate } = req.body;
+    let { user, gameId, searchId, partnerShipRoleName,startDate,endDate } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
     let where = {};
@@ -192,19 +190,6 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
     if (gameId) {
       where.gameId = gameId;
     }
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-
-      where.createdAt = Between(start, end);
-    }
-    else if (startDate) {
-      where.createdAt = MoreThanOrEqual(new Date(startDate));
-    }
-    else if (endDate) {
-      where.createdAt = LessThanOrEqual(new Date(endDate));
-    }
-
 
     if (!user) {
       return ErrorResponse(
@@ -222,7 +207,7 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
     let subQuery = await childIdquery(user, searchId);
     const domainUrl = `${process.env.GRPC_URL}`;
 
-    const result = await getLiveCasinoBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
+    const result = await getLiveCasinoBetsProfitLoss(where, totalLoss, subQuery, domainUrl, startDate, endDate);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -249,7 +234,7 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
 
 exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
   try {
-    let { user, searchId, userIds, partnerShipRoleName, gameId, startDate, endDate } = req.body;
+    let { user, searchId, userIds, partnerShipRoleName, gameId ,startDate, endDate} = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
@@ -258,20 +243,7 @@ exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
     if (gameId) {
       where.gameId = gameId;
     }
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
 
-      end.setDate(end.getDate() - 1); // To include the end date fully
-
-      where.createdAt = Between(start, end);
-    }
-    else if (startDate) {
-      where.createdAt = MoreThanOrEqual(new Date(startDate));
-    }
-    else if (endDate) {
-      where.createdAt = LessThanOrEqual(new Date(endDate));
-    }
     if (!user) {
       return ErrorResponse(
         { statusCode: 400, message: { msg: "invalidData" } },
@@ -315,7 +287,7 @@ exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
       }
       where.userId = In(childrenId);
 
-      const userData = await getUserWiseProfitLossLiveCasino(where, [totalLoss, rateProfitLoss]);
+      const userData = await getUserWiseProfitLossLiveCasino(where, [totalLoss, rateProfitLoss],startDate, endDate);
       if (userData.totalLoss != null && userData.totalLoss != undefined) {
         result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, userName: directUser.userName });
       }
