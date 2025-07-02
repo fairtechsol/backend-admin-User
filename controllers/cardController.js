@@ -181,7 +181,7 @@ exports.totalProfitLossByProviderNameLiveCasino = async (req, res) => {
 
 exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
   try {
-    let { user, gameId, searchId, partnerShipRoleName } = req.body;
+    let { user, gameId, searchId, partnerShipRoleName,startDate,endDate } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
     let where = {};
@@ -207,7 +207,7 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
     let subQuery = await childIdquery(user, searchId);
     const domainUrl = `${process.env.GRPC_URL}`;
 
-    const result = await getLiveCasinoBetsProfitLoss(where, totalLoss, subQuery, domainUrl);
+    const result = await getLiveCasinoBetsProfitLoss(where, totalLoss, subQuery, domainUrl, startDate, endDate);
     return SuccessResponse(
       {
         statusCode: 200, data: result
@@ -234,7 +234,7 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
 
 exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
   try {
-    let { user, searchId, userIds, partnerShipRoleName, gameId } = req.body;
+    let { user, searchId, userIds, partnerShipRoleName, gameId ,startDate, endDate} = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
@@ -287,7 +287,7 @@ exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
       }
       where.userId = In(childrenId);
 
-      const userData = await getUserWiseProfitLossLiveCasino(where, [totalLoss, rateProfitLoss]);
+      const userData = await getUserWiseProfitLossLiveCasino(where, [totalLoss, rateProfitLoss],startDate, endDate);
       if (userData.totalLoss != null && userData.totalLoss != undefined) {
         result.push({ ...userData, userId: directUser.id, roleName: directUser.roleName, userName: directUser.userName });
       }

@@ -87,7 +87,9 @@ exports.getAllLiveCasinoMatchTotalProfitLoss = async (where, startDate, endDate,
         });
 
     if (startDate) {
-        query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
+        let newDate = new Date(startDate);
+        newDate.setHours(0, 0, 0, 0);
+        query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(newDate) })
     }
     if (endDate) {
         let newDate = new Date(endDate);
@@ -110,11 +112,23 @@ exports.getAllLiveCasinoMatchTotalProfitLoss = async (where, startDate, endDate,
     return { result };
 }
 
-exports.getLiveCasinoBetsProfitLoss = async (where, totalLoss, subQuery, domain) => {
+exports.getLiveCasinoBetsProfitLoss = async (where, totalLoss, subQuery, domain, startDate, endDate) => {
     let query = VirtualCasino.createQueryBuilder('placeBet')
         .innerJoinAndMapOne("placeBet.user", 'user', 'user', `placeBet.userId = user.id and placeBet.userId in (${subQuery})`)
         .where(where)
         .andWhere({ settled: true, isRollback: false });
+
+
+    if (startDate) {
+        let newDate = new Date(startDate);
+        newDate.setHours(0, 0, 0, 0);
+        query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(newDate) })
+    }
+    if (endDate) {
+        let newDate = new Date(endDate);
+        newDate.setHours(23, 59, 59, 999);
+        query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
+    }
 
 
     query = query
@@ -139,11 +153,23 @@ exports.getLiveCasinoBetsProfitLoss = async (where, totalLoss, subQuery, domain)
     return result;
 }
 
-exports.getUserWiseProfitLossLiveCasino = async (where, select) => {
+exports.getUserWiseProfitLossLiveCasino = async (where, select, startDate, endDate) => {
     let query = VirtualCasino.createQueryBuilder('placeBet')
         .leftJoinAndMapOne("placeBet.user", 'user', 'user', 'placeBet.userId = user.id')
         .where(where)
         .andWhere({ settled: true, isRollback: false })
+
+
+    if (startDate) {
+        let newDate = new Date(startDate);
+        newDate.setHours(0, 0, 0, 0);
+        query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(newDate) })
+    }
+    if (endDate) {
+        let newDate = new Date(endDate);
+        newDate.setHours(23, 59, 59, 999);
+        query = query.andWhere('placeBet.createdAt <= :to', { to: newDate })
+    }
 
     query = query
         .select(select);
