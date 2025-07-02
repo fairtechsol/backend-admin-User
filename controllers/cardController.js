@@ -249,7 +249,7 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
 
 exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
   try {
-    let { user, searchId, userIds, partnerShipRoleName, gameId } = req.body;
+    let { user, searchId, userIds, partnerShipRoleName, gameId, startDate, endDate } = req.body;
     user = user || req.user;
 
     let queryColumns = ``;
@@ -258,7 +258,18 @@ exports.getLiveCasinoUserWiseTotalProfitLoss = async (req, res) => {
     if (gameId) {
       where.gameId = gameId;
     }
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
 
+      where.createdAt = Between(start, end);
+    }
+    else if (startDate) {
+      where.createdAt = MoreThanOrEqual(new Date(startDate));
+    }
+    else if (endDate) {
+      where.createdAt = LessThanOrEqual(new Date(endDate));
+    }
     if (!user) {
       return ErrorResponse(
         { statusCode: 400, message: { msg: "invalidData" } },
