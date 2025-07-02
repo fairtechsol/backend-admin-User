@@ -181,7 +181,7 @@ exports.getUserWiseTotalProfitLoss = async (req, res) => {
       );
     }
 
-    const userData = await getUserWiseProfitLoss(user?.id, matchId || null, runnerId || null, userIds || null, searchId || null, partnerShipRoleName || null);
+    const userData = await getUserWiseProfitLoss(user?.id, matchId || null, runnerId || null, userIds || null, searchId || null, partnerShipRoleName || null, req.user?.roleName || null);
 
 
     return SuccessResponse(
