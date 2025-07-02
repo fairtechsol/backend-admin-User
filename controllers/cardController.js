@@ -193,7 +193,12 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
       where.gameId = gameId;
     }
     if (startDate && endDate) {
-      where.createdAt = Between(new Date(startDate), new Date(endDate));
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+
+      start.setDate(start.getDate() - 1);
+      end.setDate(end.getDate() + 1);
+      where.createdAt = Between(start, end);
     }
     else if (startDate) {
       where.createdAt = MoreThanOrEqual(new Date(startDate));
