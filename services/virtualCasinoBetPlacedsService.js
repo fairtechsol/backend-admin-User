@@ -87,7 +87,9 @@ exports.getAllLiveCasinoMatchTotalProfitLoss = async (where, startDate, endDate,
         });
 
     if (startDate) {
-        query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(startDate) })
+         let newDate = new Date(startDate);
+        newDate.setHours(0,0,0,0);
+        query = query.andWhere('placeBet.createdAt >= :from', { from: new Date(newDate) })
     }
     if (endDate) {
         let newDate = new Date(endDate);
