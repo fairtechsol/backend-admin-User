@@ -1,4 +1,6 @@
-const { In, Not } = require("typeorm");
+const { In, Not,
+  MoreThanOrEqual,
+  LessThanOrEqual, } = require("typeorm");
 const { casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
 const { childIdquery, profitLossPercentCol } = require("../services/commonService");
 const { getAllUsers, getUsersByWallet, getChildsWithOnlyUserRole } = require("../services/userService");
@@ -181,7 +183,7 @@ exports.totalProfitLossByProviderNameLiveCasino = async (req, res) => {
 
 exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
   try {
-    let { user, gameId, searchId, partnerShipRoleName } = req.body;
+    let { user, gameId, searchId, partnerShipRoleName, startDate, endDate } = req.body;
     user = user || req.user;
     partnerShipRoleName = partnerShipRoleName || req.user?.roleName;
     let where = {};
@@ -190,6 +192,13 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
     if (gameId) {
       where.gameId = gameId;
     }
+    if (startDate) {
+      where.createdAt = MoreThanOrEqual(new Date(startDate));
+    }
+    if (endDate) {
+      where.createdAt = LessThanOrEqual(new Date(endDate));
+    }
+
 
     if (!user) {
       return ErrorResponse(
