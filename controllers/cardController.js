@@ -1,6 +1,6 @@
 const { In, Not,
   MoreThanOrEqual,
-  LessThanOrEqual, } = require("typeorm");
+  LessThanOrEqual, Between } = require("typeorm");
 const { casinoMicroServiceDomain, userRoleConstant } = require("../config/contants");
 const { childIdquery, profitLossPercentCol } = require("../services/commonService");
 const { getAllUsers, getUsersByWallet, getChildsWithOnlyUserRole } = require("../services/userService");
@@ -192,10 +192,13 @@ exports.getLiveCasinoResultBetProfitLoss = async (req, res) => {
     if (gameId) {
       where.gameId = gameId;
     }
-    if (startDate) {
+    if (startDate && endDate) {
+      where.createdAt = Between(new Date(startDate), new Date(endDate));
+    }
+    else if (startDate) {
       where.createdAt = MoreThanOrEqual(new Date(startDate));
     }
-    if (endDate) {
+    else if (endDate) {
       where.createdAt = LessThanOrEqual(new Date(endDate));
     }
 
