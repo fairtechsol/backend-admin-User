@@ -947,7 +947,7 @@ const calculateProfitLossSessionForUserUnDeclare = async (users, betId, matchId,
     multiUserParentData,
     betPlace
   ] = await Promise.all([
-    getUserRedisMultiKeyData(userIds, [redisSessionExposureName]),
+    getUserRedisMultiKeyData(userIds, [redisSessionExposureName, "userName"]),
     getMultipleAccountProfitLoss(betId, userIds),
     getMultiUserParentsWithBalance(userIds),
     findAllPlacedBetWithUserIdAndBetId(In(userIds), betId).then((data) => {
